@@ -39,3 +39,8 @@ npm run build:admin
 ```
 
 Les builds sont indépendants : un échec sur `admin` ne bloque pas `build:learning`.
+
+## Branches & deploiement
+
+Voir **[BRANCHING.md](./BRANCHING.md)** : `feature/*` ? `develop` (CI) ? `release` (CD Azure).
+
