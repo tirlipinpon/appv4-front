@@ -5,11 +5,15 @@
     "ng": "ng",
     "start": "npm run start:learning",
     "start:learning": "ng serve learning --port 4200",
-    "build": "npm run build:learning",
+    "start:admin": "ng serve admin --port 4201",
+    "build": "npm run build:learning && npm run build:admin",
     "build:learning": "ng build learning",
+    "build:admin": "ng build admin",
     "watch:learning": "ng build learning --watch --configuration development",
+    "watch:admin": "ng build admin --watch --configuration development",
     "test": "ng test",
-    "test:learning": "ng test learning --watch=false --browsers=ChromeHeadless"
+    "test:learning": "ng test learning --watch=false --browsers=ChromeHeadless",
+    "test:admin": "ng test admin --watch=false --browsers=ChromeHeadless"
   },
   "private": true,
   "dependencies": {
