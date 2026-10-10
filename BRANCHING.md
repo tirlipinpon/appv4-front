@@ -47,4 +47,13 @@ Sur **`develop`** et **`release`** :
 Workflow : `.github/workflows/ci-develop.yml`  
 Triggers : `push` et `pull_request` vers **`develop`** (`npm ci` + build `learning` + build `admin`, Node 22.23).
 
-Ticket : **SCRUM-71** — suites CI : **SCRUM-72+** / Azure : **SCRUM-76+**.
+## CD release (squelette)
+
+Workflow : `.github/workflows/cd-release.yml`  
+Triggers : `push` sur **`release`** / **`release/**`** (et `workflow_dispatch`).  
+Jobs : `build` (learning + admin + artefacts) puis `deploy` (Environment GitHub `production`) **uniquement** si `vars.AZURE_DEPLOY_ENABLED=true`.
+
+Secrets / variables : voir [`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md) (**SCRUM-75**).  
+Provision Azure réelle : **SCRUM-76+**.
+
+Ticket : **SCRUM-71** — CD : **SCRUM-74** / secrets : **SCRUM-75** / Azure : **SCRUM-76+**.
