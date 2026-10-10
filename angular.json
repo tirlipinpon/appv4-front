@@ -99,7 +99,18 @@
             "styles": [
               "projects/learning/src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "karmaConfig": "karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/learning/**/*.ts",
+              "projects/learning/**/*.html"
+            ],
+            "eslintConfig": "projects/learning/eslint.config.js"
           }
         }
       }
@@ -199,7 +210,18 @@
               "@angular/material/prebuilt-themes/azure-blue.css",
               "projects/admin/src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "karmaConfig": "karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/admin/**/*.ts",
+              "projects/admin/**/*.html"
+            ],
+            "eslintConfig": "projects/admin/eslint.config.js"
           }
         }
       }

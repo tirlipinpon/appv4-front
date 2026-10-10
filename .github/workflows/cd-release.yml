@@ -29,6 +29,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Install Chrome for Karma
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Unit tests learning
+        run: npm run test:learning
+        env:
+          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+      - name: Unit tests admin
+        run: npm run test:admin
+        env:
+          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+
       - name: Build learning
         run: npm run build:learning
 

@@ -33,19 +33,26 @@ feature/*  --PR(+CI)-->  develop  --PR(+CI)-->  release  --CD-->  Azure
 - Les builds `learning` et `admin` sont indépendants, mais la CI doit faire les **deux**
 - CI rouge = pas de merge
 
-## Protections GitHub (obligatoires)
+## Protections GitHub (obligatoires) — déjà activées
 
-Sur **`develop`** et **`release`** :
+Sur **`develop`** et **`release`** (ruleset + branch protection) :
 
-- Require a pull request before merging
-- Require status checks to pass (CI)
-- Pas de force-push
-- Restrict direct pushes (équipe seulement / personne)
+- Merge **uniquement via PR** (pas de push direct)
+- Status check obligatoire : **`lint-test-build`** (ESLint + tests + builds)
+- CI rouge ⇒ bouton merge bloqué
+- Pas de force-push / suppression de branche
 
-## CI actuelle
+## CI actuelle (gate avant merge humain)
 
 Workflow : `.github/workflows/ci-develop.yml`  
-Triggers : `push` et `pull_request` vers **`develop`** (`npm ci` + build `learning` + build `admin`, Node 22.23).
+Triggers : `push` / `pull_request` vers **`develop`**, et `pull_request` vers **`release`** / **`release/**`.
+
+Obligatoire (CI rouge = **pas de merge**) :
+1. **Lint** — ESLint (`npm run lint` → learning + admin)
+2. **Tests** — Karma (`npm run test:learning` + `npm run test:admin`)
+3. **Build** — `npm run build:learning` + `npm run build:admin`
+
+Node : **22.23**.
 
 ## CD release (squelette)
 
