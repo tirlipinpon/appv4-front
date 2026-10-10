@@ -1,5 +1,5 @@
-# CD Azure — déclenché uniquement après merge vers release (via PR develop → release).
-# Squelette SCRUM-74 : build OK ; deploy activé quand les secrets (SCRUM-75) + Azure (SCRUM-76+) sont prêts.
+# CD Azure — déclenché après merge vers release (PR develop → release).
+# SCRUM-80 : deploy réel Static Web Apps (gate AZURE_DEPLOY_ENABLED).
 name: CD release (frontend)
 
 on:
@@ -72,7 +72,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
-    # Déployer seulement si le flag repo est activé (après provision Azure SCRUM-76+).
     if: ${{ vars.AZURE_DEPLOY_ENABLED == 'true' }}
 
     steps:
@@ -88,24 +87,18 @@ jobs:
           name: admin-dist
           path: dist/admin
 
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy learning + admin to Azure
+      - name: Deploy learning SWA
         env:
           AZURE_SWA_LEARNING_TOKEN: ${{ secrets.AZURE_SWA_LEARNING_TOKEN }}
-          AZURE_SWA_ADMIN_TOKEN: ${{ secrets.AZURE_SWA_ADMIN_TOKEN }}
-          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
         run: |
-          set -euo pipefail
-          echo "SCRUM-76+ : brancher ici le deploy réel (Static Web Apps ou App Service)."
-          echo "Artefacts présents :"
-          ls -la dist/learning dist/admin
-          # Exemple SWA (à adapter après ADR SCRUM-76) :
-          # npx @azure/static-web-apps-cli deploy dist/learning \
-          #   --deployment-token "$AZURE_SWA_LEARNING_TOKEN" --env production
-          # npx @azure/static-web-apps-cli deploy dist/admin \
-          #   --deployment-token "$AZURE_SWA_ADMIN_TOKEN" --env production
-          exit 1
+          npx --yes @azure/static-web-apps-cli deploy dist/learning \
+            --deployment-token "$AZURE_SWA_LEARNING_TOKEN" \
+            --env production
+
+      - name: Deploy admin SWA
+        env:
+          AZURE_SWA_ADMIN_TOKEN: ${{ secrets.AZURE_SWA_ADMIN_TOKEN }}
+        run: |
+          npx --yes @azure/static-web-apps-cli deploy dist/admin \
+            --deployment-token "$AZURE_SWA_ADMIN_TOKEN" \
+            --env production
