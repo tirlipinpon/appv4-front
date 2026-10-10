@@ -2,9 +2,9 @@
 
 Workspace Angular **19**.
 
-| App | Port | API backend |
-|-----|------|-------------|
-| `learning` | http://localhost:4200 | `GET http://localhost:8080/api/ext/hello` |
+| App | Port | API backend | UI |
+|-----|------|-------------|-----|
+| `learning` | http://localhost:4200 | `GET http://localhost:8080/api/ext/hello` | Bootstrap 5 |
 
 ## Prérequis
 

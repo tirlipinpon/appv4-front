@@ -1,8 +1,20 @@
-<main class="page">
-  <p class="eyebrow">appv4 · learning</p>
-  <h1>{{ message() }}</h1>
-  @if (error()) {
-    <p class="error" role="alert">{{ error() }}</p>
-    <p class="hint">Vérifie que le backend tourne sur http://localhost:8080</p>
-  }
+<main class="min-vh-100 d-flex align-items-center justify-content-center bg-primary-subtle">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-4 p-md-5 text-center">
+            <p class="text-uppercase text-secondary small mb-2 tracking-wide">appv4 · learning</p>
+            <h1 class="display-5 fw-bold mb-0">{{ message() }}</h1>
+            @if (error()) {
+              <div class="alert alert-danger mt-4 mb-0" role="alert">
+                {{ error() }}
+                <div class="small mt-2">Vérifie que le backend tourne sur http://localhost:8080</div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </main>
