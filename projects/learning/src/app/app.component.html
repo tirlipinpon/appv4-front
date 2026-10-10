@@ -1,0 +1,8 @@
+<main class="page">
+  <p class="eyebrow">appv4 · learning</p>
+  <h1>{{ message() }}</h1>
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+    <p class="hint">Vérifie que le backend tourne sur http://localhost:8080</p>
+  }
+</main>
