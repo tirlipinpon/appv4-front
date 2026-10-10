@@ -61,6 +61,7 @@ Triggers : `push` sur **`release`** / **`release/**`** (et `workflow_dispatch`).
 Jobs : `build` (learning + admin + artefacts) puis `deploy` (Environment GitHub `production`) **uniquement** si `vars.AZURE_DEPLOY_ENABLED=true`.
 
 Secrets / variables : voir [`docs/GITHUB_SECRETS.md`](docs/GITHUB_SECRETS.md) (**SCRUM-75**).  
-Provision Azure réelle : **SCRUM-76+**.
+Choix Azure (ADR) : [`docs/ADR-001-azure-hosting.md`](docs/ADR-001-azure-hosting.md) (**SCRUM-76**).  
+Provision Azure réelle : **SCRUM-77+** (fronts = **SCRUM-79**).
 
-Ticket : **SCRUM-71** — CD : **SCRUM-74** / secrets : **SCRUM-75** / Azure : **SCRUM-76+**.
+Ticket : **SCRUM-71** — CD : **SCRUM-74** / secrets : **SCRUM-75** / Azure ADR : **SCRUM-76** / provision : **SCRUM-77+**.
