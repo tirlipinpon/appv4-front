@@ -25,7 +25,7 @@ Création : repo → **Settings → Environments → New environment** → nom `
 | `AZURE_SWA_LEARNING_TOKEN` | Deployment token Static Web Apps (app **learning**) | token Azure portal / `az staticwebapp secrets…` |
 | `AZURE_SWA_ADMIN_TOKEN` | Deployment token Static Web Apps (app **admin**) | idem |
 
-> Si le choix final (SCRUM-76) est App Service au lieu de SWA, remplacer les tokens SWA par les secrets/noms App Service documentés dans l’ADR.
+> Choix figé (SCRUM-76 / ADR-001) : **Static Web Apps** pour learning et admin — pas App Service pour les fronts.
 
 ## Variables (non secrètes)
 
