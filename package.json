@@ -12,8 +12,8 @@
     "watch:learning": "ng build learning --watch --configuration development",
     "watch:admin": "ng build admin --watch --configuration development",
     "test": "npm run test:learning && npm run test:admin",
-    "test:learning": "ng test learning --watch=false --browsers=ChromeHeadless",
-    "test:admin": "ng test admin --watch=false --browsers=ChromeHeadless",
+    "test:learning": "ng test learning --watch=false --browsers=ChromeHeadlessCI",
+    "test:admin": "ng test admin --watch=false --browsers=ChromeHeadlessCI",
     "lint": "ng lint learning && ng lint admin",
     "lint:learning": "ng lint learning",
     "lint:admin": "ng lint admin"
