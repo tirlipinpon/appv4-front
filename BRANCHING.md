@@ -42,10 +42,17 @@ Sur **`develop`** et **`release`** :
 - Pas de force-push
 - Restrict direct pushes (équipe seulement / personne)
 
-## CI actuelle
+## CI actuelle (gate avant merge humain)
 
 Workflow : `.github/workflows/ci-develop.yml`  
-Triggers : `push` et `pull_request` vers **`develop`** (`npm ci` + build `learning` + build `admin`, Node 22.23).
+Triggers : `push` / `pull_request` vers **`develop`**, et `pull_request` vers **`release`** / **`release/**`.
+
+Obligatoire (CI rouge = **pas de merge**) :
+1. **Lint** — ESLint (`npm run lint` → learning + admin)
+2. **Tests** — Karma (`npm run test:learning` + `npm run test:admin`)
+3. **Build** — `npm run build:learning` + `npm run build:admin`
+
+Node : **22.23**.
 
 ## CD release (squelette)
 

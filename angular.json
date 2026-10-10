@@ -101,6 +101,16 @@
             ],
             "scripts": []
           }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/learning/**/*.ts",
+              "projects/learning/**/*.html"
+            ],
+            "eslintConfig": "projects/learning/eslint.config.js"
+          }
         }
       }
     },
@@ -200,6 +210,16 @@
               "projects/admin/src/styles.scss"
             ],
             "scripts": []
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/admin/**/*.ts",
+              "projects/admin/**/*.html"
+            ],
+            "eslintConfig": "projects/admin/eslint.config.js"
           }
         }
       }
