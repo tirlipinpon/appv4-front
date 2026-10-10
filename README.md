@@ -1,6 +1,6 @@
 # appv4-front
 
-Workspace Angular **19**.
+Workspace Angular **22**.
 
 | App | Port | API backend | UI |
 |-----|------|-------------|-----|
@@ -8,7 +8,7 @@ Workspace Angular **19**.
 
 ## Prérequis
 
-- Node.js 20+ (testé avec 22)
+- Node.js **≥ 22.22.3** (Angular 22) — testé avec 22.23.x
 - Backend `appv4-back` démarré (`docker compose up -d` + `.\mvnw.cmd spring-boot:run`)
 
 ## Install
