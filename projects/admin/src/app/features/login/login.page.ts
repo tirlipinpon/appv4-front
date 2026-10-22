@@ -1,17 +1,18 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { GoogleOAuthService } from './data-access/google-oauth.service';
 
 /**
- * Feature login — collage temporaire d'un JWT (login API = tickets suivants).
- * Data-access dédié arrivera avec l'endpoint login back.
+ * Feature login — Google (SCRUM-97) + collage JWT temporaire (smoke).
  */
 @Component({
   selector: 'app-login-page',
@@ -22,17 +23,44 @@ import { AuthService } from '../../core/auth/auth.service';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    MatDividerModule,
   ],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginPage {
+export class LoginPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly googleOAuth = inject(GoogleOAuthService);
 
   tokenInput = '';
   readonly error = signal<string | null>(null);
+  readonly googleLoading = signal(false);
+
+  ngOnInit(): void {
+    const fromQuery = this.route.snapshot.queryParamMap.get('error');
+    if (fromQuery) {
+      this.error.set(fromQuery);
+    }
+  }
+
+  continueWithGoogle(): void {
+    this.error.set(null);
+    this.googleLoading.set(true);
+    this.googleOAuth.getAuthorizeUrl().subscribe({
+      next: (res) => {
+        window.location.href = res.authorizationUrl;
+      },
+      error: () => {
+        this.googleLoading.set(false);
+        this.error.set(
+          'Impossible de démarrer Google. Vérifie que le back tourne et GOOGLE_CLIENT_ID/SECRET.',
+        );
+      },
+    });
+  }
 
   submitToken(): void {
     const token = this.tokenInput.trim();
