@@ -23,6 +23,11 @@ export const routes: Routes = [
       import('./features/forgot-password/forgot-password.routes').then((m) => m.FORGOT_PASSWORD_ROUTES),
   },
   {
+    path: 'reset-password',
+    loadChildren: () =>
+      import('./features/reset-password/reset-password.routes').then((m) => m.RESET_PASSWORD_ROUTES),
+  },
+  {
     path: 'account-recovery',
     loadChildren: () =>
       import('./features/account-recovery/account-recovery.routes').then((m) => m.ACCOUNT_RECOVERY_ROUTES),

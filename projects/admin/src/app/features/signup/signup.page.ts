@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { evaluatePasswordRules, isPasswordValid } from './data-access/password-rules';
+import { evaluatePasswordRules, isPasswordValid } from '../../shared/password-rules/password-rules';
 import { SignupService } from './data-access/signup.service';
 
 /**
