@@ -1,0 +1,78 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4 · admin · inscription</span>
+  </mat-toolbar>
+
+  <main class="content">
+    <mat-card class="signup-card">
+      <mat-card-header>
+        <mat-card-title>Créer un compte</mat-card-title>
+        <mat-card-subtitle>Email et mot de passe</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+          @if (socialCollision()) {
+            <p class="hint">
+              Tu peux te connecter via le fournisseur déjà lié, ou revenir à la
+              <a routerLink="/login">page de connexion</a>.
+            </p>
+          }
+        }
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            type="email"
+            name="email"
+            autocomplete="email"
+            [ngModel]="email()"
+            (ngModelChange)="email.set($event)"
+            required
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Nom affiché (optionnel)</mat-label>
+          <input matInput type="text" name="displayName" [(ngModel)]="displayName" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Mot de passe</mat-label>
+          <input
+            matInput
+            type="password"
+            name="password"
+            autocomplete="new-password"
+            [ngModel]="password()"
+            (ngModelChange)="password.set($event)"
+            required
+          />
+        </mat-form-field>
+
+        <ul class="rules" aria-label="Règles du mot de passe">
+          @for (rule of passwordRules(); track rule.id) {
+            <li [class.ok]="rule.ok" [class.ko]="!rule.ok">
+              {{ rule.ok ? '✓' : '○' }} {{ rule.label }}
+            </li>
+          }
+        </ul>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <a mat-button routerLink="/login">Déjà un compte ?</a>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="!canSubmit()"
+          (click)="submit()"
+        >
+          {{ loading() ? 'Création…' : 'Créer mon compte' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </main>
+</div>
