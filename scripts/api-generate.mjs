@@ -1,6 +1,8 @@
 /**
  * Régénère projects/<app>/src/app/core/api/schema.ts depuis
  * ../appv4-back/openapi/openapi.json (SCRUM-148).
+ *
+ * Utilise npx (pas de dépendance npm) pour éviter le peer TS5 vs Angular TS6.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
@@ -14,16 +16,18 @@ const apps = ['admin', 'learning'];
 if (!existsSync(openapi)) {
   console.error(
     `Manquant: ${openapi}\n` +
-      'Lance le back (OpenApiContractExportTest) ou merge la PR qui versionne openapi.json.',
+      'Merge la PR back qui versionne openapi.json, ou lance OpenApiContractExportTest.',
   );
   process.exit(1);
 }
 
-const bin = resolve(root, 'node_modules/openapi-typescript/bin/cli.js');
-
 for (const app of apps) {
   const out = resolve(root, `projects/${app}/src/app/core/api/schema.ts`);
   mkdirSync(dirname(out), { recursive: true });
-  execFileSync(process.execPath, [bin, openapi, '-o', out], { stdio: 'inherit' });
+  execFileSync(
+    'npx',
+    ['--yes', 'openapi-typescript@7.13.0', openapi, '-o', out],
+    { stdio: 'inherit', cwd: root, shell: true },
+  );
   console.log(`OK ${app} → ${out}`);
 }
