@@ -7,7 +7,7 @@
     <mat-card class="login-card">
       <mat-card-header>
         <mat-card-title>Connexion</mat-card-title>
-        <mat-card-subtitle>SCRUM-97 — Continuer avec Google</mat-card-subtitle>
+        <mat-card-subtitle>Google · Facebook</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         @if (error()) {
@@ -17,17 +17,27 @@
         <button
           mat-flat-button
           color="primary"
-          class="google-btn"
+          class="oauth-btn"
           type="button"
-          [disabled]="googleLoading()"
+          [disabled]="googleLoading() || facebookLoading()"
           (click)="continueWithGoogle()"
         >
           {{ googleLoading() ? 'Redirection…' : 'Continuer avec Google' }}
         </button>
 
+        <button
+          mat-stroked-button
+          class="oauth-btn facebook-btn"
+          type="button"
+          [disabled]="googleLoading() || facebookLoading()"
+          (click)="continueWithFacebook()"
+        >
+          {{ facebookLoading() ? 'Redirection…' : 'Continuer avec Facebook' }}
+        </button>
+
         <mat-divider class="divider"></mat-divider>
 
-        <p class="dev-hint">Smoke dev — coller un JWT (sans Google)</p>
+        <p class="dev-hint">Smoke dev — coller un JWT (sans OAuth)</p>
         <mat-form-field appearance="outline" class="full">
           <mat-label>JWT</mat-label>
           <textarea matInput rows="3" [(ngModel)]="tokenInput" name="token"></textarea>
