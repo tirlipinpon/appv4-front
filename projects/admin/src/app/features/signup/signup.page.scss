@@ -27,9 +27,23 @@
 }
 
 .hint {
-  margin: 0 0 1rem;
+  margin: 0.75rem 0 0;
   font-size: 0.9rem;
   color: #5f6368;
+}
+
+.roles {
+  border: 0;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.roles legend {
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
 }
 
 .rules {
