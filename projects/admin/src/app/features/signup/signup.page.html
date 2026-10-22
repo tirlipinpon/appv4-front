@@ -43,13 +43,23 @@
           <mat-label>Mot de passe</mat-label>
           <input
             matInput
-            type="password"
+            [type]="showPassword() ? 'text' : 'password'"
             name="password"
             autocomplete="new-password"
             [ngModel]="password()"
             (ngModelChange)="password.set($event)"
             required
           />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+            [attr.aria-pressed]="showPassword()"
+          >
+            <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
         </mat-form-field>
 
         <ul class="rules" aria-label="Règles du mot de passe">
