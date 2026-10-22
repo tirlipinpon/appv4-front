@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
@@ -25,6 +26,7 @@ import { SignupService } from './data-access/signup.service';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatIconModule,
     MatButtonModule,
   ],
   templateUrl: './signup.page.html',
@@ -40,9 +42,14 @@ export class SignupPage {
 
   readonly email = signal('');
   readonly password = signal('');
+  readonly showPassword = signal(false);
   readonly error = signal<string | null>(null);
   readonly socialCollision = signal(false);
   readonly loading = signal(false);
+
+  togglePasswordVisibility(): void {
+    this.showPassword.update((visible) => !visible);
+  }
 
   readonly passwordRules = computed(() => evaluatePasswordRules(this.password()));
   readonly canSubmit = computed(() => {
