@@ -2,6 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import type {
+  AuthorizeUrlResponse,
+  FacebookLoginRequest,
+  JwtTokenResponse,
+} from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -14,20 +19,18 @@ export class FacebookOAuthService {
   /** Redirect FE enregistré dans Meta for Developers (local). */
   readonly redirectUri = `${window.location.origin}/auth/callback/facebook`;
 
-  getAuthorizeUrl(): Observable<{ authorizationUrl: string }> {
-    return this.http.get<{ authorizationUrl: string }>(
+  getAuthorizeUrl(): Observable<AuthorizeUrlResponse> {
+    return this.http.get<AuthorizeUrlResponse>(
       `${environment.apiBaseUrl}/auth/oauth/facebook/authorize-url`,
       { params: { redirectUri: this.redirectUri } },
     );
   }
 
-  exchangeCode(authorizationCode: string): Observable<{ token: string; expiresAtEpochSeconds: number }> {
-    return this.http.post<{ token: string; expiresAtEpochSeconds: number }>(
-      `${environment.apiBaseUrl}/auth/oauth/facebook`,
-      {
-        authorizationCode,
-        redirectUri: this.redirectUri,
-      },
-    );
+  exchangeCode(authorizationCode: string): Observable<JwtTokenResponse> {
+    const body: FacebookLoginRequest = {
+      authorizationCode,
+      redirectUri: this.redirectUri,
+    };
+    return this.http.post<JwtTokenResponse>(`${environment.apiBaseUrl}/auth/oauth/facebook`, body);
   }
 }

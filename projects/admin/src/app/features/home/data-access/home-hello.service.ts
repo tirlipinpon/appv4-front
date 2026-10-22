@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import type { HelloMessageResponse } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -12,7 +13,7 @@ import { environment } from '../../../../environments/environment';
 export class HomeHelloService {
   private readonly http = inject(HttpClient);
 
-  getHello(): Observable<{ text: string }> {
-    return this.http.get<{ text: string }>(`${environment.apiBaseUrl}/hello`);
+  getHello(): Observable<HelloMessageResponse> {
+    return this.http.get<HelloMessageResponse>(`${environment.apiBaseUrl}/hello`);
   }
 }

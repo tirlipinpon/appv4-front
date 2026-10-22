@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import type { AuthMessageResponse, ForgotPasswordRequest } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -12,10 +13,11 @@ import { environment } from '../../../../environments/environment';
 export class ForgotPasswordService {
   private readonly http = inject(HttpClient);
 
-  requestReset(email: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(
+  requestReset(email: string): Observable<AuthMessageResponse> {
+    const body: ForgotPasswordRequest = { email };
+    return this.http.post<AuthMessageResponse>(
       `${environment.apiBaseUrl}/auth/forgot-password`,
-      { email },
+      body,
     );
   }
 }
