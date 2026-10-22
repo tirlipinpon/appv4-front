@@ -18,6 +18,16 @@ export const routes: Routes = [
     loadChildren: () => import('./features/signup/signup.routes').then((m) => m.SIGNUP_ROUTES),
   },
   {
+    path: 'forgot-password',
+    loadChildren: () =>
+      import('./features/forgot-password/forgot-password.routes').then((m) => m.FORGOT_PASSWORD_ROUTES),
+  },
+  {
+    path: 'account-recovery',
+    loadChildren: () =>
+      import('./features/account-recovery/account-recovery.routes').then((m) => m.ACCOUNT_RECOVERY_ROUTES),
+  },
+  {
     path: 'auth/callback/google',
     loadComponent: () =>
       import('./features/login/google-callback/google-callback.page').then((m) => m.GoogleCallbackPage),
