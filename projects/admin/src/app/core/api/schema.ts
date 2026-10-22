@@ -217,6 +217,7 @@ export interface components {
             email: string;
             password: string;
             displayName?: string;
+            roles: string[];
         };
         JwtTokenResponse: {
             token?: string;
