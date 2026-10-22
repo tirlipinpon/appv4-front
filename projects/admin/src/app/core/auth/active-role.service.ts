@@ -9,7 +9,7 @@ import type { SpaceRole } from './admin-token';
 
 /**
  * Change l'espace actif (SCRUM-125).
- * Le nouveau JWT remplace l'ancien. Le miroir local ne décide pas.
+ * Le nouveau JWT remplace l'ancien. L'espace affiché vient de ce jeton.
  */
 @Injectable({ providedIn: 'root' })
 export class ActiveRoleService {

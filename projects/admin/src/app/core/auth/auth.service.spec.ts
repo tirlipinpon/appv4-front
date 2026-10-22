@@ -5,7 +5,6 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     sessionStorage.clear();
-    localStorage.clear();
     service = new AuthService();
   });
 
@@ -19,25 +18,20 @@ describe('AuthService', () => {
     expect(service.isAuthenticated()).toBeFalse();
   });
 
-  it('mirrors the token active role and lets a new token replace a stale mirror', () => {
-    localStorage.setItem('admin.activeRole', 'teacher');
-
+  it('reads the active role from the token', () => {
     service.setToken(fakeToken({ activeRole: 'parent', roles: ['parent'] }));
 
-    expect(localStorage.getItem('admin.activeRole')).toBe('parent');
     expect(service.session().activeRole).toBe('parent');
     expect(service.session().roles).toEqual(['parent']);
 
     service.setToken(fakeToken({ activeRole: 'teacher', roles: ['parent', 'teacher'] }));
 
-    expect(localStorage.getItem('admin.activeRole')).toBe('teacher');
     expect(service.session().activeRole).toBe('teacher');
+    expect(service.session().roles).toEqual(['parent', 'teacher']);
   });
 
-  it('drops the mirror when the token does not choose a space', () => {
-    localStorage.setItem('admin.activeRole', 'parent');
+  it('leaves the space empty when the token does not choose one', () => {
     service.setToken(fakeToken({ roles: ['parent', 'teacher'] }));
-    expect(localStorage.getItem('admin.activeRole')).toBeNull();
     expect(service.session().activeRole).toBeNull();
   });
 });
