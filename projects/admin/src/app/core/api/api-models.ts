@@ -14,6 +14,7 @@ export type AuthErrorBody = Required<components['schemas']['AuthErrorBody']>;
 export type HelloMessageResponse = Required<components['schemas']['HelloMessageResponse']>;
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type SignupRequest = components['schemas']['SignupRequest'];
+export type SwitchRoleRequest = components['schemas']['SwitchRoleRequest'];
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest'];
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];

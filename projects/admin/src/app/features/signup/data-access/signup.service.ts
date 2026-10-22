@@ -3,14 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import type { JwtTokenResponse, SignupRequest } from '../../../core/api/api-models';
+import type { SpaceRole } from '../../../core/auth/space-roles';
 import { environment } from '../../../../environments/environment';
-
-/** Rôles cochables à l'inscription. `admin` n'est jamais envoyé (SCRUM-122). */
-export type SignupRole = 'parent' | 'teacher';
 
 /**
  * Data-access inscription email/mdp (SCRUM-106, rôles SCRUM-122).
- * Appelle POST /auth/signup avec au moins un rôle.
+ * Appelle POST /auth/signup avec au moins un rôle. `admin` n'est jamais envoyé.
  */
 @Injectable({ providedIn: 'root' })
 export class SignupService {
@@ -19,7 +17,7 @@ export class SignupService {
   signup(
     email: string,
     password: string,
-    roles: SignupRole[],
+    roles: SpaceRole[],
     displayName?: string,
   ): Observable<JwtTokenResponse> {
     const body: SignupRequest = {

@@ -4,17 +4,21 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
+import { RoleSwitch } from '../../core/layout/role-switch';
+
 /**
  * Cible minimale après une inscription avec la case Professeur (SCRUM-122).
  * L'écran d'attente complet (message, statut) reste SCRUM-140.
  */
 @Component({
   selector: 'app-teacher-pending-page',
-  imports: [RouterLink, MatToolbarModule, MatCardModule, MatButtonModule],
+  imports: [RouterLink, MatToolbarModule, MatCardModule, MatButtonModule, RoleSwitch],
   template: `
     <div class="page">
       <mat-toolbar color="primary">
         <span>appv4 · admin · professeur</span>
+        <span class="spacer"></span>
+        <app-role-switch />
       </mat-toolbar>
       <main class="content">
         <mat-card class="card">
@@ -50,6 +54,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     }
     .card {
       width: min(100%, 32rem);
+    }
+    .spacer {
+      flex: 1;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/int/auth/switch-role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Changer l'espace actif et recevoir un nouveau jeton */
+        post: operations["switchRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/auth/signup": {
         parameters: {
             query?: never;
@@ -212,17 +229,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SwitchRoleRequest: {
+            role: string;
+        };
+        AuthErrorBody: {
+            message?: string;
+        };
+        JwtTokenResponse: {
+            token?: string;
+            /** Format: int64 */
+            expiresAtEpochSeconds?: number;
+        };
         SignupRequest: {
             /** Format: email */
             email: string;
             password: string;
             displayName?: string;
             roles: string[];
-        };
-        JwtTokenResponse: {
-            token?: string;
-            /** Format: int64 */
-            expiresAtEpochSeconds?: number;
         };
         ResetPasswordRequest: {
             token: string;
@@ -248,9 +271,6 @@ export interface components {
             email: string;
             password: string;
         };
-        AuthErrorBody: {
-            message?: string;
-        };
         ForgotPasswordRequest: {
             /** Format: email */
             email: string;
@@ -270,6 +290,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    switchRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Nouveau JWT avec activeRole */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JwtTokenResponse"];
+                };
+            };
+            /** @description Le compte n'a pas ce rôle */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     signupWithEmail: {
         parameters: {
             query?: never;
