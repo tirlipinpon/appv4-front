@@ -1,4 +1,5 @@
 import { AuthService } from './auth.service';
+import { SpaceRoles } from './space-roles';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -19,19 +20,21 @@ describe('AuthService', () => {
   });
 
   it('reads the active role from the token', () => {
-    service.setToken(fakeToken({ activeRole: 'parent', roles: ['parent'] }));
+    service.setToken(fakeToken({ activeRole: SpaceRoles.parent, roles: [SpaceRoles.parent] }));
 
-    expect(service.session().activeRole).toBe('parent');
-    expect(service.session().roles).toEqual(['parent']);
+    expect(service.session().activeRole).toBe(SpaceRoles.parent);
+    expect(service.session().roles).toEqual([SpaceRoles.parent]);
 
-    service.setToken(fakeToken({ activeRole: 'teacher', roles: ['parent', 'teacher'] }));
+    service.setToken(
+      fakeToken({ activeRole: SpaceRoles.teacher, roles: [SpaceRoles.parent, SpaceRoles.teacher] }),
+    );
 
-    expect(service.session().activeRole).toBe('teacher');
-    expect(service.session().roles).toEqual(['parent', 'teacher']);
+    expect(service.session().activeRole).toBe(SpaceRoles.teacher);
+    expect(service.session().roles).toEqual([SpaceRoles.parent, SpaceRoles.teacher]);
   });
 
   it('leaves the space empty when the token does not choose one', () => {
-    service.setToken(fakeToken({ roles: ['parent', 'teacher'] }));
+    service.setToken(fakeToken({ roles: [SpaceRoles.parent, SpaceRoles.teacher] }));
     expect(service.session().activeRole).toBeNull();
   });
 });

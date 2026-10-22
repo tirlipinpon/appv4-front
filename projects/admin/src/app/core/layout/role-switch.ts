@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { MatButtonModule } from '@angular/material/button';
 
 import { ActiveRoleService } from '../auth/active-role.service';
-import type { SpaceRole } from '../auth/admin-token';
+import { otherSpaceRole, spaceRoleLabel, type SpaceRole } from '../auth/space-roles';
 import { AuthService } from '../auth/auth.service';
 
 /**
@@ -57,7 +57,7 @@ export class RoleSwitch {
     if (!activeRole || roles.length < 2) {
       return null;
     }
-    return activeRole === 'parent' ? 'teacher' : 'parent';
+    return otherSpaceRole(activeRole);
   });
 
   switchTo(role: SpaceRole): void {
@@ -74,6 +74,6 @@ export class RoleSwitch {
   }
 
   label(role: SpaceRole | null): string {
-    return role === 'teacher' ? 'professeur' : 'parent';
+    return spaceRoleLabel(role);
   }
 }

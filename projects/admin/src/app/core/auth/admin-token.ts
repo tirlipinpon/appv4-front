@@ -1,5 +1,6 @@
-/** Espace parent ou professeur, tel que le back le met dans le JWT. */
-export type SpaceRole = 'parent' | 'teacher';
+import { isSpaceRole, type SpaceRole } from './space-roles';
+
+export type { SpaceRole } from './space-roles';
 
 /** Lecture du jeton : source de l'espace affiché (SCRUM-125). */
 export interface AdminTokenSession {
@@ -31,10 +32,6 @@ export function readAdminToken(token: string | null): AdminTokenSession {
   } catch {
     return EMPTY_SESSION;
   }
-}
-
-function isSpaceRole(value: unknown): value is SpaceRole {
-  return value === 'parent' || value === 'teacher';
 }
 
 function decodeBase64Url(value: string): string {

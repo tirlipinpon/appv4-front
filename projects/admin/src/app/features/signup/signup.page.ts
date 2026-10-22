@@ -11,8 +11,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { SpaceRoles, type SpaceRole } from '../../core/auth/space-roles';
 import { evaluatePasswordRules, isPasswordValid } from '../../shared/password-rules/password-rules';
-import { SignupRole, SignupService } from './data-access/signup.service';
+import { SignupService } from './data-access/signup.service';
 
 /**
  * Feature signup — formulaire email/mdp + cases Parent / Professeur (SCRUM-106, SCRUM-122).
@@ -63,13 +64,13 @@ export class SignupPage {
   });
 
   /** Construit le body `roles` : parent et/ou teacher, jamais admin. */
-  private selectedRoles(): SignupRole[] {
-    const roles: SignupRole[] = [];
+  private selectedRoles(): SpaceRole[] {
+    const roles: SpaceRole[] = [];
     if (this.wantParent()) {
-      roles.push('parent');
+      roles.push(SpaceRoles.parent);
     }
     if (this.wantTeacher()) {
-      roles.push('teacher');
+      roles.push(SpaceRoles.teacher);
     }
     return roles;
   }
@@ -87,7 +88,7 @@ export class SignupPage {
       next: (res) => {
         this.auth.setToken(res.token);
         this.loading.set(false);
-        const target = roles.includes('teacher') ? '/teacher-pending' : '/';
+        const target = roles.includes(SpaceRoles.teacher) ? '/teacher-pending' : '/';
         void this.router.navigateByUrl(target);
       },
       error: (err: HttpErrorResponse) => {
