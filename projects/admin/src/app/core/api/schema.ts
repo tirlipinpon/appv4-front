@@ -14,7 +14,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Inscription email / mot de passe */
-        post: operations["signup"];
+        post: operations["signupWithEmail"];
         delete?: never;
         options?: never;
         head?: never;
@@ -31,7 +31,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Appliquer un nouveau mot de passe via jeton */
-        post: operations["reset"];
+        post: operations["resetPassword"];
         delete?: never;
         options?: never;
         head?: never;
@@ -48,7 +48,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Échanger le code Google contre un JWT */
-        post: operations["login"];
+        post: operations["loginWithGoogle"];
         delete?: never;
         options?: never;
         head?: never;
@@ -65,7 +65,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Échanger le code Facebook contre un JWT */
-        post: operations["login_1"];
+        post: operations["loginWithFacebook"];
         delete?: never;
         options?: never;
         head?: never;
@@ -82,7 +82,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Échanger le code Apple contre un JWT */
-        post: operations["login_2"];
+        post: operations["loginWithApple"];
         delete?: never;
         options?: never;
         head?: never;
@@ -99,7 +99,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Connexion email / mot de passe */
-        post: operations["login_3"];
+        post: operations["loginWithEmail"];
         delete?: never;
         options?: never;
         head?: never;
@@ -116,7 +116,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Demander un lien de réinitialisation */
-        post: operations["forgot"];
+        post: operations["forgotPassword"];
         delete?: never;
         options?: never;
         head?: never;
@@ -131,7 +131,7 @@ export interface paths {
             cookie?: never;
         };
         /** Hello admin (JWT requis) */
-        get: operations["hello"];
+        get: operations["getAdminHello"];
         put?: never;
         post?: never;
         delete?: never;
@@ -148,7 +148,7 @@ export interface paths {
             cookie?: never;
         };
         /** URL d'autorisation Google */
-        get: operations["authorizeUrl"];
+        get: operations["getGoogleAuthorizeUrl"];
         put?: never;
         post?: never;
         delete?: never;
@@ -165,7 +165,7 @@ export interface paths {
             cookie?: never;
         };
         /** URL d'autorisation Facebook */
-        get: operations["authorizeUrl_1"];
+        get: operations["getFacebookAuthorizeUrl"];
         put?: never;
         post?: never;
         delete?: never;
@@ -182,7 +182,7 @@ export interface paths {
             cookie?: never;
         };
         /** URL d'autorisation Apple */
-        get: operations["authorizeUrl_2"];
+        get: operations["getAppleAuthorizeUrl"];
         put?: never;
         post?: never;
         delete?: never;
@@ -199,7 +199,7 @@ export interface paths {
             cookie?: never;
         };
         /** Hello learning (public) */
-        get: operations["hello_1"];
+        get: operations["getLearningHello"];
         put?: never;
         post?: never;
         delete?: never;
@@ -269,7 +269,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    signup: {
+    signupWithEmail: {
         parameters: {
             query?: never;
             header?: never;
@@ -293,7 +293,7 @@ export interface operations {
             };
         };
     };
-    reset: {
+    resetPassword: {
         parameters: {
             query?: never;
             header?: never;
@@ -317,7 +317,7 @@ export interface operations {
             };
         };
     };
-    login: {
+    loginWithGoogle: {
         parameters: {
             query?: never;
             header?: never;
@@ -341,7 +341,7 @@ export interface operations {
             };
         };
     };
-    login_1: {
+    loginWithFacebook: {
         parameters: {
             query?: never;
             header?: never;
@@ -365,7 +365,7 @@ export interface operations {
             };
         };
     };
-    login_2: {
+    loginWithApple: {
         parameters: {
             query?: never;
             header?: never;
@@ -389,7 +389,7 @@ export interface operations {
             };
         };
     };
-    login_3: {
+    loginWithEmail: {
         parameters: {
             query?: never;
             header?: never;
@@ -422,7 +422,7 @@ export interface operations {
             };
         };
     };
-    forgot: {
+    forgotPassword: {
         parameters: {
             query?: never;
             header?: never;
@@ -446,7 +446,7 @@ export interface operations {
             };
         };
     };
-    hello: {
+    getAdminHello: {
         parameters: {
             query?: never;
             header?: never;
@@ -466,7 +466,7 @@ export interface operations {
             };
         };
     };
-    authorizeUrl: {
+    getGoogleAuthorizeUrl: {
         parameters: {
             query: {
                 redirectUri: string;
@@ -488,7 +488,7 @@ export interface operations {
             };
         };
     };
-    authorizeUrl_1: {
+    getFacebookAuthorizeUrl: {
         parameters: {
             query: {
                 redirectUri: string;
@@ -510,7 +510,7 @@ export interface operations {
             };
         };
     };
-    authorizeUrl_2: {
+    getAppleAuthorizeUrl: {
         parameters: {
             query: {
                 redirectUri: string;
@@ -532,7 +532,7 @@ export interface operations {
             };
         };
     };
-    hello_1: {
+    getLearningHello: {
         parameters: {
             query?: never;
             header?: never;
