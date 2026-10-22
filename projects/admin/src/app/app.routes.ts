@@ -14,6 +14,10 @@ export const routes: Routes = [
     loadChildren: () => import('./features/login/login.routes').then((m) => m.LOGIN_ROUTES),
   },
   {
+    path: 'signup',
+    loadChildren: () => import('./features/signup/signup.routes').then((m) => m.SIGNUP_ROUTES),
+  },
+  {
     path: 'auth/callback/google',
     loadComponent: () =>
       import('./features/login/google-callback/google-callback.page').then((m) => m.GoogleCallbackPage),

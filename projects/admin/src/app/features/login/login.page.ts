@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -19,6 +19,7 @@ import { GoogleOAuthService } from './data-access/google-oauth.service';
   selector: 'app-login-page',
   imports: [
     FormsModule,
+    RouterLink,
     MatToolbarModule,
     MatCardModule,
     MatFormFieldModule,
