@@ -1,5 +1,5 @@
 /**
- * Règles mot de passe alignées sur le back (SCRUM-105 / SCRUM-106).
+ * Règles mot de passe alignées sur le back (signup / reset — SCRUM-105 / SCRUM-112).
  */
 export interface PasswordRule {
   id: string;
