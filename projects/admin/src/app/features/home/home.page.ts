@@ -6,15 +6,16 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { RoleSwitch } from '../../core/layout/role-switch';
 import { HomeHelloService } from './data-access/home-hello.service';
 
 /**
  * Page home (feature) — smoke JWT + /api/int/hello.
- * Plus tard : shell avec onglets parent / teacher / admin (features séparées).
+ * L'en-tête change d'espace quand le jeton liste deux rôles (SCRUM-125).
  */
 @Component({
   selector: 'app-home-page',
-  imports: [MatToolbarModule, MatCardModule, MatProgressSpinnerModule, MatButtonModule],
+  imports: [MatToolbarModule, MatCardModule, MatProgressSpinnerModule, MatButtonModule, RoleSwitch],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
