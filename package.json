@@ -16,7 +16,9 @@
     "test:admin": "ng test admin --watch=false --browsers=ChromeHeadlessCI",
     "lint": "ng lint learning && ng lint admin",
     "lint:learning": "ng lint learning",
-    "lint:admin": "ng lint admin"
+    "lint:admin": "ng lint admin",
+    "api:generate": "node scripts/api-generate.mjs",
+    "api:check": "node scripts/api-check.mjs"
   },
   "private": true,
   "dependencies": {

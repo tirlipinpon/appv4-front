@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import type { JwtTokenResponse, SignupRequest } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -11,14 +12,12 @@ import { environment } from '../../../../environments/environment';
 export class SignupService {
   private readonly http = inject(HttpClient);
 
-  signup(
-    email: string,
-    password: string,
-    displayName?: string,
-  ): Observable<{ token: string; expiresAtEpochSeconds: number }> {
-    return this.http.post<{ token: string; expiresAtEpochSeconds: number }>(
-      `${environment.apiBaseUrl}/auth/signup`,
-      { email, password, displayName: displayName?.trim() || undefined },
-    );
+  signup(email: string, password: string, displayName?: string): Observable<JwtTokenResponse> {
+    const body: SignupRequest = {
+      email,
+      password,
+      displayName: displayName?.trim() || undefined,
+    };
+    return this.http.post<JwtTokenResponse>(`${environment.apiBaseUrl}/auth/signup`, body);
   }
 }
