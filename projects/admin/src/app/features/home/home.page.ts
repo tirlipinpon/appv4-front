@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,9 +5,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
-import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth/auth.service';
+import { HomeHelloService } from './data-access/home-hello.service';
 
+/**
+ * Page home (feature) — smoke JWT + /api/int/hello.
+ * Plus tard : shell avec onglets parent / teacher / admin (features séparées).
+ */
 @Component({
   selector: 'app-home-page',
   imports: [MatToolbarModule, MatCardModule, MatProgressSpinnerModule, MatButtonModule],
@@ -17,7 +20,7 @@ import { AuthService } from '../../core/auth/auth.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePage implements OnInit {
-  private readonly http = inject(HttpClient);
+  private readonly hello = inject(HomeHelloService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
@@ -26,7 +29,7 @@ export class HomePage implements OnInit {
   readonly loading = signal(true);
 
   ngOnInit(): void {
-    this.http.get<{ text: string }>(`${environment.apiBaseUrl}/hello`).subscribe({
+    this.hello.getHello().subscribe({
       next: (response) => {
         this.message.set(response.text);
         this.error.set(null);

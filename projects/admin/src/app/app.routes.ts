@@ -1,11 +1,17 @@
 import { Routes } from '@angular/router';
 
-import { authGuard } from './core/auth/auth.guard';
-import { HomePage } from './features/home/home.page';
-import { LoginPage } from './features/login/login.page';
-
+/**
+ * Shell routes — chaque feature expose ses propres `*.routes.ts` (lazy).
+ * Auth transverse = `core/auth` (guard / interceptor / AuthService).
+ */
 export const routes: Routes = [
-  { path: 'login', component: LoginPage },
-  { path: '', component: HomePage, canActivate: [authGuard] },
+  {
+    path: 'login',
+    loadChildren: () => import('./features/login/login.routes').then((m) => m.LOGIN_ROUTES),
+  },
+  {
+    path: '',
+    loadChildren: () => import('./features/home/home.routes').then((m) => m.HOME_ROUTES),
+  },
   { path: '**', redirectTo: '' },
 ];

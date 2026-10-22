@@ -10,7 +10,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { AuthService } from '../../core/auth/auth.service';
 
 /**
- * Page login socle — collage temporaire d'un JWT (login API = tickets suivants).
+ * Feature login — collage temporaire d'un JWT (login API = tickets suivants).
+ * Data-access dédié arrivera avec l'endpoint login back.
  */
 @Component({
   selector: 'app-login-page',
