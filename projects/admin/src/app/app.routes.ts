@@ -4,8 +4,9 @@ import { Routes } from '@angular/router';
  * Shell routes — chaque feature expose ses propres `*.routes.ts` (lazy).
  * Auth transverse = `core/auth` (guard / interceptor / AuthService).
  *
- * Callback Google : URL exacte enregistrée dans Google Cloud
- * {@code http://localhost:4201/auth/callback/google} (SCRUM-97).
+ * Callbacks OAuth (URL exactes enregistrées chez le provider) :
+ * {@code http://localhost:4201/auth/callback/google} (SCRUM-97)
+ * {@code http://localhost:4201/auth/callback/facebook} (SCRUM-100)
  */
 export const routes: Routes = [
   {
@@ -16,6 +17,13 @@ export const routes: Routes = [
     path: 'auth/callback/google',
     loadComponent: () =>
       import('./features/login/google-callback/google-callback.page').then((m) => m.GoogleCallbackPage),
+  },
+  {
+    path: 'auth/callback/facebook',
+    loadComponent: () =>
+      import('./features/login/facebook-callback/facebook-callback.page').then(
+        (m) => m.FacebookCallbackPage,
+      ),
   },
   {
     path: '',
