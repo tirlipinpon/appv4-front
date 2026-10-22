@@ -1,19 +1,22 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { FacebookOAuthService } from './data-access/facebook-oauth.service';
 import { GoogleOAuthService } from './data-access/google-oauth.service';
+import { LoginService } from './data-access/login.service';
 
 /**
- * Feature login — Google (SCRUM-97) + Facebook (SCRUM-100) + collage JWT temporaire (smoke).
+ * Feature login — email/mdp (SCRUM-118) + Google / Facebook OAuth.
  */
 @Component({
   selector: 'app-login-page',
@@ -24,6 +27,7 @@ import { GoogleOAuthService } from './data-access/google-oauth.service';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatIconModule,
     MatButtonModule,
     MatDividerModule,
   ],
@@ -35,19 +39,53 @@ export class LoginPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly loginApi = inject(LoginService);
   private readonly googleOAuth = inject(GoogleOAuthService);
   private readonly facebookOAuth = inject(FacebookOAuthService);
 
-  tokenInput = '';
+  readonly email = signal('');
+  readonly password = signal('');
+  readonly showPassword = signal(false);
   readonly error = signal<string | null>(null);
+  readonly loading = signal(false);
   readonly googleLoading = signal(false);
   readonly facebookLoading = signal(false);
+
+  readonly canSubmit = computed(() => {
+    const emailOk = this.email().trim().includes('@');
+    const passwordOk = this.password().length > 0;
+    return emailOk && passwordOk && !this.loading();
+  });
 
   ngOnInit(): void {
     const fromQuery = this.route.snapshot.queryParamMap.get('error');
     if (fromQuery) {
       this.error.set(fromQuery);
     }
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword.update((visible) => !visible);
+  }
+
+  submit(): void {
+    if (!this.canSubmit()) {
+      return;
+    }
+    this.error.set(null);
+    this.loading.set(true);
+
+    this.loginApi.login(this.email().trim(), this.password()).subscribe({
+      next: (res) => {
+        this.auth.setToken(res.token);
+        this.loading.set(false);
+        void this.router.navigateByUrl('/');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.error.set(this.extractMessage(err));
+      },
+    });
   }
 
   continueWithGoogle(): void {
@@ -82,14 +120,14 @@ export class LoginPage implements OnInit {
     });
   }
 
-  submitToken(): void {
-    const token = this.tokenInput.trim();
-    if (!token) {
-      this.error.set('Colle un JWT valide (émis par le back) pour le smoke auth.');
-      return;
+  private extractMessage(err: HttpErrorResponse): string {
+    const body = err.error as { message?: string } | null;
+    if (body?.message && typeof body.message === 'string') {
+      return body.message;
     }
-    this.auth.setToken(token);
-    this.error.set(null);
-    void this.router.navigateByUrl('/');
+    if (err.status === 0) {
+      return 'Impossible de joindre le serveur. Vérifie que le back tourne.';
+    }
+    return 'Connexion impossible.';
   }
 }
