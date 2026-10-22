@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { landingPath } from '../../core/auth/space-landing';
 import { FacebookOAuthService } from './data-access/facebook-oauth.service';
 import { GoogleOAuthService } from './data-access/google-oauth.service';
 import { LoginService } from './data-access/login.service';
@@ -79,7 +80,7 @@ export class LoginPage implements OnInit {
       next: (res) => {
         this.auth.setToken(res.token);
         this.loading.set(false);
-        void this.router.navigateByUrl('/');
+        void this.router.navigateByUrl(landingPath(this.auth.session()));
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);

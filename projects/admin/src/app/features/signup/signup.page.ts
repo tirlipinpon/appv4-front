@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { landingPath } from '../../core/auth/space-landing';
 import { SpaceRoles, type SpaceRole } from '../../core/auth/space-roles';
 import { evaluatePasswordRules, isPasswordValid } from '../../shared/password-rules/password-rules';
 import { SignupService } from './data-access/signup.service';
@@ -88,7 +89,9 @@ export class SignupPage {
       next: (res) => {
         this.auth.setToken(res.token);
         this.loading.set(false);
-        const target = roles.includes(SpaceRoles.teacher) ? '/teacher-pending' : '/';
+        const target = roles.includes(SpaceRoles.teacher)
+          ? '/teacher-pending'
+          : landingPath(this.auth.session());
         void this.router.navigateByUrl(target);
       },
       error: (err: HttpErrorResponse) => {
