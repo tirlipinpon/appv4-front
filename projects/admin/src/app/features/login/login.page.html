@@ -1,0 +1,30 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4 · admin · connexion</span>
+  </mat-toolbar>
+
+  <main class="content">
+    <mat-card class="login-card">
+      <mat-card-header>
+        <mat-card-title>Connexion</mat-card-title>
+        <mat-card-subtitle>
+          Socle SCRUM-94 — colle un JWT back (Bearer) en attendant signup/login.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>JWT</mat-label>
+          <textarea matInput rows="4" [(ngModel)]="tokenInput" name="token"></textarea>
+        </mat-form-field>
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button mat-flat-button color="primary" type="button" (click)="submitToken()">
+          Entrer
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </main>
+</div>
