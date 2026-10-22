@@ -1,0 +1,29 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4 · admin</span>
+    <span class="spacer"></span>
+    <button mat-button type="button" (click)="logout()">Déconnexion</button>
+  </mat-toolbar>
+
+  <main class="content">
+    <mat-card class="hello-card">
+      <mat-card-header>
+        <mat-card-title>Hello smoke</mat-card-title>
+        <mat-card-subtitle>GET /api/int/hello (Bearer)</mat-card-subtitle>
+      </mat-card-header>
+      <p class="cd-check" data-testid="cd-check">CD check · SCRUM-80 · release</p>
+      <mat-card-content>
+        @if (loading()) {
+          <div class="loading">
+            <mat-spinner diameter="40"></mat-spinner>
+          </div>
+        } @else if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+          <p class="hint">Vérifie le backend (:8080) et ton JWT en sessionStorage (admin.jwt).</p>
+        } @else {
+          <h1>{{ message() }}</h1>
+        }
+      </mat-card-content>
+    </mat-card>
+  </main>
+</div>
