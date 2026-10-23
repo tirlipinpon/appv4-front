@@ -33,10 +33,22 @@ export const routes: Routes = [
       import('./features/account-recovery/account-recovery.routes').then((m) => m.ACCOUNT_RECOVERY_ROUTES),
   },
   {
-    // Cible minimale après inscription professeur (SCRUM-122). Page complète : SCRUM-140.
     path: 'teacher-pending',
     loadChildren: () =>
       import('./features/teacher-pending/teacher-pending.routes').then((m) => m.TEACHER_PENDING_ROUTES),
+  },
+  {
+    path: 'select-role',
+    loadChildren: () =>
+      import('./features/select-role/select-role.routes').then((m) => m.SELECT_ROLE_ROUTES),
+  },
+  {
+    path: 'parent',
+    loadChildren: () => import('./features/parent/parent.routes').then((m) => m.PARENT_ROUTES),
+  },
+  {
+    path: 'teacher',
+    loadChildren: () => import('./features/teacher/teacher.routes').then((m) => m.TEACHER_ROUTES),
   },
   {
     path: 'auth/callback/google',

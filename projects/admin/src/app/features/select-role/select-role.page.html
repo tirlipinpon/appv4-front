@@ -1,0 +1,28 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4 · admin</span>
+  </mat-toolbar>
+  <main class="content">
+    <mat-card class="card">
+      <mat-card-content>
+        <p>Choisis ton espace</p>
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+        <div class="choices">
+          @for (role of choices; track role) {
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="loading()"
+              (click)="choose(role)"
+            >
+              {{ buttonLabel(role) }}
+            </button>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </main>
+</div>

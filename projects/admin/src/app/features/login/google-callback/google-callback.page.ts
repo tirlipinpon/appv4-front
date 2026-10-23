@@ -5,6 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { landingPath } from '../../../core/auth/space-landing';
 import { GoogleOAuthService } from '../data-access/google-oauth.service';
 
 /**
@@ -46,7 +47,7 @@ export class GoogleCallbackPage implements OnInit {
     this.googleOAuth.exchangeCode(code).subscribe({
       next: (res) => {
         this.auth.setToken(res.token);
-        void this.router.navigateByUrl('/');
+        void this.router.navigateByUrl(landingPath(this.auth.session()));
       },
       error: () => {
         void this.router.navigate(['/login'], {

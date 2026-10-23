@@ -1,0 +1,11 @@
+@if (session().activeRole) {
+  <span class="space">Espace {{ spaceLabel() }}</span>
+}
+@if (otherRole(); as target) {
+  <button mat-button type="button" [disabled]="loading()" (click)="switchTo(target)">
+    Passer en {{ label(target) }}
+  </button>
+}
+@if (error()) {
+  <span class="switch-error" role="alert">{{ error() }}</span>
+}

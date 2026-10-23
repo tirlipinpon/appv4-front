@@ -10,10 +10,16 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth/auth.service';
+import { landingPath } from '../../core/auth/space-landing';
 import { FacebookOAuthService } from './data-access/facebook-oauth.service';
 import { GoogleOAuthService } from './data-access/google-oauth.service';
 import { LoginService } from './data-access/login.service';
+
+/** Préremplissage local uniquement — le build prod laisse les champs vides. */
+const DEV_LOGIN_EMAIL = 'test1@test.com';
+const DEV_LOGIN_PASSWORD = 'Secret1!';
 
 /**
  * Feature login — email/mdp (SCRUM-118) + Google / Facebook OAuth.
@@ -43,8 +49,8 @@ export class LoginPage implements OnInit {
   private readonly googleOAuth = inject(GoogleOAuthService);
   private readonly facebookOAuth = inject(FacebookOAuthService);
 
-  readonly email = signal('');
-  readonly password = signal('');
+  readonly email = signal(environment.production ? '' : DEV_LOGIN_EMAIL);
+  readonly password = signal(environment.production ? '' : DEV_LOGIN_PASSWORD);
   readonly showPassword = signal(false);
   readonly error = signal<string | null>(null);
   readonly loading = signal(false);
@@ -79,7 +85,7 @@ export class LoginPage implements OnInit {
       next: (res) => {
         this.auth.setToken(res.token);
         this.loading.set(false);
-        void this.router.navigateByUrl('/');
+        void this.router.navigateByUrl(landingPath(this.auth.session()));
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
