@@ -24,4 +24,11 @@ export class TeacherRequestsService {
       {},
     );
   }
+
+  revoke(id: number): Observable<TeacherRequestItem> {
+    return this.http.post<TeacherRequestItem>(
+      `${environment.apiBaseUrl}/admin/teacher-requests/${id}/revoke`,
+      {},
+    );
+  }
 }

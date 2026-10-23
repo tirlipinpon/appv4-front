@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 test('un admin arrive sur la file, valide, et voit la demande acceptée', async ({ page }) => {
   const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-  let approved = false;
+  let status: 'pending' | 'approved' | 'revoked' = 'pending';
 
   await page.route('**/api/int/auth/login', async (route) => {
     await route.fulfill({
@@ -19,9 +19,9 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
     const item = {
       id: 7,
       email: 'prof@example.com',
-      status: approved ? 'approved' : 'pending',
+      status,
       createdAt,
-      reviewedAt: approved ? new Date().toISOString() : undefined,
+      reviewedAt: status === 'pending' ? undefined : new Date().toISOString(),
     };
     await route.fulfill({
       status: 200,
@@ -29,8 +29,22 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
       body: JSON.stringify({ requests: [item] }),
     });
   });
+  await page.route('**/api/int/admin/teacher-requests/7/revoke', async (route) => {
+    status = 'revoked';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 7,
+        email: 'prof@example.com',
+        status: 'revoked',
+        createdAt,
+        reviewedAt: new Date().toISOString(),
+      }),
+    });
+  });
   await page.route('**/api/int/admin/teacher-requests/7/approve', async (route) => {
-    approved = true;
+    status = 'approved';
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -51,7 +65,9 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
   await page.getByRole('button', { name: 'Valider' }).click();
   await expect(page.getByText('Aucune demande en attente.')).toBeVisible();
   await expect(page.getByText(/Validée le/)).toBeVisible();
-  await expect(page.getByText('prof@example.com')).toBeVisible();
+  await page.getByRole('button', { name: 'Révoquer' }).click();
+  await expect(page.getByText(/Révoquée le/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Approuver' })).toBeVisible();
 });
 
 test('un parent n ouvre pas la file de modération', async ({ page }) => {

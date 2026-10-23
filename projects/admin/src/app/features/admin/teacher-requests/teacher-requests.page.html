@@ -36,17 +36,25 @@
     </section>
 
     <section>
-      <h2>Déjà acceptées</h2>
-      @if (approved().length === 0) {
-        <p class="empty">Aucune demande acceptée.</p>
+      <h2>Déjà traitées</h2>
+      @if (decided().length === 0) {
+        <p class="empty">Aucune demande traitée.</p>
       }
-      @for (item of approved(); track item.id) {
+      @for (item of decided(); track item.id) {
         <article class="row">
           <div>
             <strong>{{ item.email }}</strong>
             <span>Demande faite le {{ when(item.createdAt) }}</span>
-            <span>Validée le {{ when(item.reviewedAt) }}</span>
+            <span>{{ decisionLabel(item) }}</span>
           </div>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="approvingId() === item.id"
+            (click)="toggleDecision(item)"
+          >
+            {{ item.status === 'approved' ? 'Révoquer' : 'Approuver' }}
+          </button>
         </article>
       }
     </section>
