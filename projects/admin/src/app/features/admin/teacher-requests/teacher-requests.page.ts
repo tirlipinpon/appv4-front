@@ -58,6 +58,10 @@ export class TeacherRequestsPage implements OnInit {
     return requestAgeLabel(createdAt);
   }
 
+  when(value: string | undefined): string {
+    return requestDateLabel(value);
+  }
+
   private load(): void {
     this.api.list().subscribe({
       next: (requests) => {
@@ -75,6 +79,21 @@ export class TeacherRequestsPage implements OnInit {
     const message = (err.error as { message?: string } | null)?.message;
     return message || 'Impossible de charger les demandes.';
   }
+}
+
+/** Date lisible : demande (`createdAt`) ou validation (`reviewedAt`). */
+export function requestDateLabel(value: string | undefined): string {
+  if (!value) {
+    return '';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date);
 }
 
 /** Ancienneté affichée à côté de l'email. */

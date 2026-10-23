@@ -50,7 +50,7 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
   await expect(page.getByText(/depuis \d+ h/)).toBeVisible();
   await page.getByRole('button', { name: 'Valider' }).click();
   await expect(page.getByText('Aucune demande en attente.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Déjà acceptées' })).toBeVisible();
+  await expect(page.getByText(/Validée le/)).toBeVisible();
   await expect(page.getByText('prof@example.com')).toBeVisible();
 });
 

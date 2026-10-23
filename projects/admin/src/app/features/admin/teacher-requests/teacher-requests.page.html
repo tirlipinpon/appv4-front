@@ -20,7 +20,7 @@
         <article class="row">
           <div>
             <strong>{{ item.email }}</strong>
-            <span>{{ age(item.createdAt) }}</span>
+            <span>Demande faite le {{ when(item.createdAt) }} ({{ age(item.createdAt) }})</span>
           </div>
           <button
             mat-flat-button
@@ -42,7 +42,11 @@
       }
       @for (item of approved(); track item.id) {
         <article class="row">
-          <strong>{{ item.email }}</strong>
+          <div>
+            <strong>{{ item.email }}</strong>
+            <span>Demande faite le {{ when(item.createdAt) }}</span>
+            <span>Validée le {{ when(item.reviewedAt) }}</span>
+          </div>
         </article>
       }
     </section>
