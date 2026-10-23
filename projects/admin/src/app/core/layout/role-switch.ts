@@ -15,32 +15,8 @@ import { otherSpaceRole, spaceRoleLabel, type SpaceRole } from '../auth/space-ro
 @Component({
   selector: 'app-role-switch',
   imports: [MatButtonModule],
-  template: `
-    @if (session().activeRole) {
-      <span class="space">Espace {{ spaceLabel() }}</span>
-    }
-    @if (otherRole(); as target) {
-      <button mat-button type="button" [disabled]="loading()" (click)="switchTo(target)">
-        Passer en {{ label(target) }}
-      </button>
-    }
-    @if (error()) {
-      <span class="switch-error" role="alert">{{ error() }}</span>
-    }
-  `,
-  styles: `
-    :host {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-    .space {
-      font-size: 0.95rem;
-    }
-    .switch-error {
-      font-size: 0.85rem;
-    }
-  `,
+  templateUrl: './role-switch.html',
+  styleUrl: './role-switch.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RoleSwitch {

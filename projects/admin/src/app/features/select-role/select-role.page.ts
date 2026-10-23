@@ -17,61 +17,8 @@ import { SpaceRoles, spaceRoleLabel, type SpaceRole } from '../../core/auth/spac
 @Component({
   selector: 'app-select-role-page',
   imports: [MatToolbarModule, MatCardModule, MatButtonModule],
-  template: `
-    <div class="page">
-      <mat-toolbar color="primary">
-        <span>appv4 · admin</span>
-      </mat-toolbar>
-      <main class="content">
-        <mat-card class="card">
-          <mat-card-content>
-            <p>Choisis ton espace</p>
-            @if (error()) {
-              <p class="error" role="alert">{{ error() }}</p>
-            }
-            <div class="choices">
-              @for (role of choices; track role) {
-                <button
-                  mat-flat-button
-                  color="primary"
-                  type="button"
-                  [disabled]="loading()"
-                  (click)="choose(role)"
-                >
-                  {{ buttonLabel(role) }}
-                </button>
-              }
-            </div>
-          </mat-card-content>
-        </mat-card>
-      </main>
-    </div>
-  `,
-  styles: `
-    .page {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #f5f7fb;
-    }
-    .content {
-      flex: 1;
-      display: grid;
-      place-items: center;
-      padding: 2rem 1rem;
-    }
-    .card {
-      width: min(100%, 28rem);
-    }
-    .choices {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-    .error {
-      color: #b3261e;
-    }
-  `,
+  templateUrl: './select-role.page.html',
+  styleUrl: './select-role.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelectRolePage {
