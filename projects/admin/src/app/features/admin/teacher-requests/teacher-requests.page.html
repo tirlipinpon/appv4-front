@@ -1,0 +1,50 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4 · admin</span>
+    <span class="spacer"></span>
+    <button mat-button type="button" (click)="logout()">Déconnexion</button>
+  </mat-toolbar>
+
+  <main class="content">
+    <h1>Demandes professeur</h1>
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+
+    <section>
+      <h2>En attente</h2>
+      @if (pending().length === 0) {
+        <p class="empty">Aucune demande en attente.</p>
+      }
+      @for (item of pending(); track item.id) {
+        <article class="row">
+          <div>
+            <strong>{{ item.email }}</strong>
+            <span>{{ age(item.createdAt) }}</span>
+          </div>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="approvingId() === item.id"
+            (click)="approve(item)"
+          >
+            Valider
+          </button>
+        </article>
+      }
+    </section>
+
+    <section>
+      <h2>Déjà acceptées</h2>
+      @if (approved().length === 0) {
+        <p class="empty">Aucune demande acceptée.</p>
+      }
+      @for (item of approved(); track item.id) {
+        <article class="row">
+          <strong>{{ item.email }}</strong>
+        </article>
+      }
+    </section>
+  </main>
+</div>

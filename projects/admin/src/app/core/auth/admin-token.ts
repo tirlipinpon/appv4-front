@@ -7,9 +7,16 @@ export interface AdminTokenSession {
   activeRole: SpaceRole | null;
   roles: SpaceRole[];
   pendingTeacher: boolean;
+  /** Modération des demandes professeur. Ce n'est pas un espace parent ou professeur. */
+  admin: boolean;
 }
 
-const EMPTY_SESSION: AdminTokenSession = { activeRole: null, roles: [], pendingTeacher: false };
+const EMPTY_SESSION: AdminTokenSession = {
+  activeRole: null,
+  roles: [],
+  pendingTeacher: false,
+  admin: false,
+};
 
 /**
  * Lit les claims sans vérifier la signature. Le back reste la source au prochain appel.
@@ -29,8 +36,14 @@ export function readAdminToken(token: string | null): AdminTokenSession {
       pendingTeacher?: unknown;
     };
     const activeRole = isSpaceRole(json.activeRole) ? json.activeRole : null;
-    const roles = Array.isArray(json.roles) ? json.roles.filter(isSpaceRole) : [];
-    return { activeRole, roles, pendingTeacher: json.pendingTeacher === true };
+    const rawRoles = Array.isArray(json.roles) ? json.roles : [];
+    const roles = rawRoles.filter(isSpaceRole);
+    return {
+      activeRole,
+      roles,
+      pendingTeacher: json.pendingTeacher === true,
+      admin: rawRoles.includes('admin'),
+    };
   } catch {
     return EMPTY_SESSION;
   }

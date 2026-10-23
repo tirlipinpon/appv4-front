@@ -33,6 +33,14 @@ describe('AuthService', () => {
     expect(service.session().roles).toEqual([SpaceRoles.parent, SpaceRoles.teacher]);
   });
 
+  it('reads admin without treating it as a space', () => {
+    service.setToken(fakeToken({ roles: ['admin'] }));
+
+    expect(service.session().admin).toBeTrue();
+    expect(service.session().roles).toEqual([]);
+    expect(service.session().activeRole).toBeNull();
+  });
+
   it('leaves the space empty when the token does not choose one', () => {
     service.setToken(fakeToken({ roles: [SpaceRoles.parent, SpaceRoles.teacher] }));
     expect(service.session().activeRole).toBeNull();

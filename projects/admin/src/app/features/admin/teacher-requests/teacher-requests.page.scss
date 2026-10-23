@@ -1,0 +1,56 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f7fb;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.content {
+  width: min(100%, 40rem);
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.6rem;
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+section + section {
+  margin-top: 2rem;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.row span {
+  display: block;
+  color: #5f6368;
+  font-size: 0.9rem;
+}
+
+.empty {
+  margin: 0;
+  color: #5f6368;
+}
+
+.error {
+  color: #b3261e;
+}

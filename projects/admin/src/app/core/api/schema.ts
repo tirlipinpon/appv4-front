@@ -157,6 +157,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/admin/teacher-requests/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accepter une demande professeur */
+        post: operations["approveTeacherRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/hello": {
         parameters: {
             query?: never;
@@ -259,6 +276,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/admin/teacher-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les demandes professeur en attente et acceptées */
+        get: operations["listTeacherRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/hello": {
         parameters: {
             query?: never;
@@ -328,11 +362,24 @@ export interface components {
         CompleteRolesRequest: {
             roles: string[];
         };
+        TeacherRequestItem: {
+            /** Format: int64 */
+            id?: number;
+            email?: string;
+            status?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            reviewedAt?: string;
+        };
         HelloMessageResponse: {
             text?: string;
         };
         AuthorizeUrlResponse: {
             authorizationUrl?: string;
+        };
+        TeacherRequestListResponse: {
+            requests?: components["schemas"]["TeacherRequestItem"][];
         };
     };
     responses: never;
@@ -586,6 +633,46 @@ export interface operations {
             };
         };
     };
+    approveTeacherRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demande acceptée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherRequestItem"];
+                };
+            };
+            /** @description Le compte n'est pas admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Demande inconnue */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     getTeacherHello: {
         parameters: {
             query?: never;
@@ -726,6 +813,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthorizeUrlResponse"];
+                };
+            };
+        };
+    };
+    listTeacherRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File de modération */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherRequestListResponse"];
+                };
+            };
+            /** @description Le compte n'est pas admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
         };

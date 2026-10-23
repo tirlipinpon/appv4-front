@@ -56,6 +56,13 @@ export const routes: Routes = [
     loadChildren: () => import('./features/teacher/teacher.routes').then((m) => m.TEACHER_ROUTES),
   },
   {
+    path: 'admin/teacher-requests',
+    loadChildren: () =>
+      import('./features/admin/teacher-requests/teacher-requests.routes').then(
+        (m) => m.TEACHER_REQUESTS_ROUTES,
+      ),
+  },
+  {
     path: 'auth/callback/google',
     loadComponent: () =>
       import('./features/login/google-callback/google-callback.page').then((m) => m.GoogleCallbackPage),
