@@ -389,6 +389,8 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             reviewedAt?: string;
+            /** Format: date-time */
+            revokedAt?: string;
         };
         HelloMessageResponse: {
             text?: string;

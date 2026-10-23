@@ -40,10 +40,10 @@
 
     <section>
       <h2>Déjà traitées</h2>
-      @if (decided().length === 0) {
+      @if (approved().length === 0) {
         <p class="empty">Aucune demande traitée.</p>
       }
-      @for (item of decided(); track item.id) {
+      @for (item of approved(); track item.id) {
         <article class="row">
           <div>
             <strong>{{ item.displayName || item.email }}</strong>
@@ -51,29 +51,45 @@
               <span>{{ item.email }}</span>
             }
             <span>Demande faite le {{ when(item.createdAt) }}</span>
-            <span>{{ decisionLabel(item) }}</span>
+            <span>{{ validatedOn(item) }}</span>
           </div>
-          <div class="actions">
-            <button
-              mat-flat-button
-              color="primary"
-              type="button"
-              [disabled]="approvingId() === item.id"
-              (click)="approve(item)"
-            >
-              Re-valider
-            </button>
-            @if (item.status === 'approved') {
-              <button
-                mat-stroked-button
-                type="button"
-                [disabled]="approvingId() === item.id"
-                (click)="revoke(item)"
-              >
-                Révoquer
-              </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="approvingId() === item.id"
+            (click)="revoke(item)"
+          >
+            Révoquer
+          </button>
+        </article>
+      }
+    </section>
+
+    <section>
+      <h2>Révoquées</h2>
+      @if (revoked().length === 0) {
+        <p class="empty">Aucune demande révoquée.</p>
+      }
+      @for (item of revoked(); track item.id) {
+        <article class="row">
+          <div>
+            <strong>{{ item.displayName || item.email }}</strong>
+            @if (item.displayName) {
+              <span>{{ item.email }}</span>
             }
+            <span>Demande faite le {{ when(item.createdAt) }}</span>
+            <span>{{ validatedOn(item) }}</span>
+            <span>{{ revokedOn(item) }}</span>
           </div>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="approvingId() === item.id"
+            (click)="approve(item)"
+          >
+            Re-valider
+          </button>
         </article>
       }
     </section>

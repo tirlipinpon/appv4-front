@@ -10,7 +10,8 @@ import { TeacherRequestsService } from './data-access/teacher-requests.service';
 
 /**
  * File des demandes professeur (SCRUM-143).
- * Seul le rôle admin arrive ici. Une demande traitée a Re-valider, et Révoquer tant qu'elle est acceptée.
+ * Seul le rôle admin arrive ici.
+ * Révoquer sort de Déjà traitées. Re-valider, dans Révoquées, y ramène.
  */
 @Component({
   selector: 'app-teacher-requests-page',
@@ -26,9 +27,8 @@ export class TeacherRequestsPage implements OnInit {
 
   readonly requests = signal<TeacherRequestItem[]>([]);
   readonly pending = computed(() => this.requests().filter((item) => item.status === 'pending'));
-  readonly decided = computed(() =>
-    this.requests().filter((item) => item.status === 'approved' || item.status === 'revoked'),
-  );
+  readonly approved = computed(() => this.requests().filter((item) => item.status === 'approved'));
+  readonly revoked = computed(() => this.requests().filter((item) => item.status === 'revoked'));
   readonly approvingId = signal<number | null>(null);
   readonly error = signal<string | null>(null);
 
@@ -44,9 +44,12 @@ export class TeacherRequestsPage implements OnInit {
     this.change(item, this.api.revoke(item.id!));
   }
 
-  decisionLabel(item: TeacherRequestItem): string {
-    const when = this.when(item.reviewedAt);
-    return item.status === 'revoked' ? `Révoquée le ${when}` : `Validée le ${when}`;
+  validatedOn(item: TeacherRequestItem): string {
+    return `Validée le ${this.when(item.reviewedAt)}`;
+  }
+
+  revokedOn(item: TeacherRequestItem): string {
+    return `Révoquée le ${this.when(item.revokedAt)}`;
   }
 
   private change(item: TeacherRequestItem, call: ReturnType<TeacherRequestsService['approve']>): void {

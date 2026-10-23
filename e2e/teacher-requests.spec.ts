@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 test('un admin arrive sur la file, valide, et voit la demande acceptée', async ({ page }) => {
   const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+  const validatedAt = '2026-10-23T18:00:00.000Z';
   let status: 'pending' | 'approved' | 'revoked' = 'pending';
 
   await page.route('**/api/int/auth/login', async (route) => {
@@ -22,7 +23,8 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
       displayName: 'Prof Test',
       status,
       createdAt,
-      reviewedAt: status === 'pending' ? undefined : new Date().toISOString(),
+      reviewedAt: status === 'pending' ? undefined : validatedAt,
+      revokedAt: status === 'revoked' ? new Date().toISOString() : undefined,
     };
     await route.fulfill({
       status: 200,
@@ -41,7 +43,8 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
         displayName: 'Prof Test',
         status: 'revoked',
         createdAt,
-        reviewedAt: new Date().toISOString(),
+        reviewedAt: validatedAt,
+        revokedAt: new Date().toISOString(),
       }),
     });
   });
@@ -68,11 +71,16 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
   await expect(page.getByText(/depuis \d+ h/)).toBeVisible();
   await page.getByRole('button', { name: 'Valider' }).click();
   await expect(page.getByText('Aucune demande en attente.')).toBeVisible();
-  await expect(page.getByText(/Validée le/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Re-valider' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Déjà traitées' }).locator('..')).toContainText('Prof Test');
+  await expect(page.getByRole('button', { name: 'Révoquer' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Re-valider' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Révoquer' }).click();
+  await expect(page.getByText('Aucune demande traitée.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Révoquées' }).locator('..')).toContainText('Prof Test');
+  await expect(page.getByText(/Validée le/)).toBeVisible();
   await expect(page.getByText(/Révoquée le/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Re-valider' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Révoquer' })).toHaveCount(0);
 });
 
 test('un parent n ouvre pas la file de modération', async ({ page }) => {
