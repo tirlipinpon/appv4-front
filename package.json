@@ -17,6 +17,7 @@
     "lint": "ng lint learning && ng lint admin",
     "lint:learning": "ng lint learning",
     "lint:admin": "ng lint admin",
+    "e2e": "playwright test",
     "api:generate": "node scripts/api-generate.mjs",
     "api:check": "node scripts/api-check.mjs"
   },
@@ -42,6 +43,7 @@
     "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^22.2.2",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
     "@types/jasmine": "~5.1.0",
     "angular-eslint": "22.5.0",
     "eslint": "^10.9.1",

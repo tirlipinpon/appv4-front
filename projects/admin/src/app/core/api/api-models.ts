@@ -15,6 +15,7 @@ export type HelloMessageResponse = Required<components['schemas']['HelloMessageR
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type SignupRequest = components['schemas']['SignupRequest'];
 export type SwitchRoleRequest = components['schemas']['SwitchRoleRequest'];
+export type CompleteRolesRequest = components['schemas']['CompleteRolesRequest'];
 export type ForgotPasswordRequest = components['schemas']['ForgotPasswordRequest'];
 export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest'];
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];

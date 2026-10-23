@@ -140,6 +140,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/auth/complete-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Choisir Parent ou Professeur après la création du compte */
+        post: operations["completeRoles"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/hello": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Hello de l'espace professeur */
+        get: operations["getTeacherHello"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/hello": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Hello de l'espace parent */
+        get: operations["getParentHello"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/hello": {
         parameters: {
             query?: never;
@@ -245,7 +296,6 @@ export interface components {
             email: string;
             password: string;
             displayName?: string;
-            roles: string[];
         };
         ResetPasswordRequest: {
             token: string;
@@ -274,6 +324,9 @@ export interface components {
         ForgotPasswordRequest: {
             /** Format: email */
             email: string;
+        };
+        CompleteRolesRequest: {
+            roles: string[];
         };
         HelloMessageResponse: {
             text?: string;
@@ -496,6 +549,97 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthMessageResponse"];
+                };
+            };
+        };
+    };
+    completeRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteRolesRequest"];
+            };
+        };
+        responses: {
+            /** @description JWT à jour */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JwtTokenResponse"];
+                };
+            };
+            /** @description Aucun rôle, ou rôle interdit */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getTeacherHello: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jeton professeur */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HelloMessageResponse"];
+                };
+            };
+            /** @description Jeton parent, ou espace non choisi */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getParentHello: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jeton parent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HelloMessageResponse"];
+                };
+            };
+            /** @description Jeton professeur, ou espace non choisi */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
         };

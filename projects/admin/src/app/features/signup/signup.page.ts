@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -12,13 +11,12 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { landingPath } from '../../core/auth/space-landing';
-import { SpaceRoles, type SpaceRole } from '../../core/auth/space-roles';
 import { evaluatePasswordRules, isPasswordValid } from '../../shared/password-rules/password-rules';
 import { SignupService } from './data-access/signup.service';
 
 /**
- * Feature signup — formulaire email/mdp + cases Parent / Professeur (SCRUM-106, SCRUM-122).
- * Professeur coché → /teacher-pending. Parent seul → accueil protégé.
+ * Feature signup — email et mot de passe (SCRUM-106).
+ * Le choix de rôle est la page suivante, la même qu'après Google ou Facebook (SCRUM-155).
  */
 @Component({
   selector: 'app-signup-page',
@@ -28,7 +26,6 @@ import { SignupService } from './data-access/signup.service';
     MatToolbarModule,
     MatCardModule,
     MatFormFieldModule,
-    MatCheckboxModule,
     MatInputModule,
     MatIconModule,
     MatButtonModule,
@@ -46,8 +43,6 @@ export class SignupPage {
 
   readonly email = signal('');
   readonly password = signal('');
-  readonly wantParent = signal(false);
-  readonly wantTeacher = signal(false);
   readonly showPassword = signal(false);
   readonly error = signal<string | null>(null);
   readonly socialCollision = signal(false);
@@ -60,21 +55,8 @@ export class SignupPage {
   readonly passwordRules = computed(() => evaluatePasswordRules(this.password()));
   readonly canSubmit = computed(() => {
     const emailOk = this.email().trim().includes('@');
-    const roleOk = this.wantParent() || this.wantTeacher();
-    return emailOk && roleOk && isPasswordValid(this.password()) && !this.loading();
+    return emailOk && isPasswordValid(this.password()) && !this.loading();
   });
-
-  /** Construit le body `roles` : parent et/ou teacher, jamais admin. */
-  private selectedRoles(): SpaceRole[] {
-    const roles: SpaceRole[] = [];
-    if (this.wantParent()) {
-      roles.push(SpaceRoles.parent);
-    }
-    if (this.wantTeacher()) {
-      roles.push(SpaceRoles.teacher);
-    }
-    return roles;
-  }
 
   submit(): void {
     if (!this.canSubmit()) {
@@ -84,15 +66,11 @@ export class SignupPage {
     this.socialCollision.set(false);
     this.loading.set(true);
 
-    const roles = this.selectedRoles();
-    this.signupApi.signup(this.email().trim(), this.password(), roles, this.displayName).subscribe({
+    this.signupApi.signup(this.email().trim(), this.password(), this.displayName).subscribe({
       next: (res) => {
         this.auth.setToken(res.token);
         this.loading.set(false);
-        const target = roles.includes(SpaceRoles.teacher)
-          ? '/teacher-pending'
-          : landingPath(this.auth.session());
-        void this.router.navigateByUrl(target);
+        void this.router.navigateByUrl(landingPath(this.auth.session()));
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
