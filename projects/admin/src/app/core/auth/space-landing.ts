@@ -18,6 +18,9 @@ export function landingPath(session: AdminTokenSession): string {
   if (session.pendingTeacher) {
     return '/teacher-pending';
   }
+  if (session.admin && session.roles.length === 0 && !session.activeRole) {
+    return '/admin/teacher-requests';
+  }
   if (session.roles.length === 0 && !session.activeRole) {
     return '/complete-roles';
   }

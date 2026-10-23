@@ -53,3 +53,18 @@ export const completeRolesGuard: CanActivateFn = () => {
   }
   return router.createUrlTree([landingPath(auth.session())]);
 };
+
+/**
+ * La file de modération n'est visible que pour le rôle admin (SCRUM-143).
+ */
+export const adminModerationGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isAuthenticated()) {
+    return router.createUrlTree(['/login']);
+  }
+  if (auth.session().admin) {
+    return true;
+  }
+  return router.createUrlTree([landingPath(auth.session())]);
+};
