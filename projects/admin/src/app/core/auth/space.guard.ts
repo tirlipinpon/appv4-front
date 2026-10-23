@@ -38,3 +38,18 @@ export const selectRoleGuard: CanActivateFn = () => {
   }
   return router.createUrlTree([landingPath(session)]);
 };
+
+/**
+ * La page de rôle n'existe que tant que le compte n'a pas encore choisi (SCRUM-155).
+ */
+export const completeRolesGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isAuthenticated()) {
+    return router.createUrlTree(['/login']);
+  }
+  if (landingPath(auth.session()) === '/complete-roles') {
+    return true;
+  }
+  return router.createUrlTree([landingPath(auth.session())]);
+};

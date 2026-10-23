@@ -18,6 +18,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/signup/signup.routes').then((m) => m.SIGNUP_ROUTES),
   },
   {
+    path: 'complete-roles',
+    loadChildren: () =>
+      import('./features/complete-roles/complete-roles.routes').then((m) => m.COMPLETE_ROLES_ROUTES),
+  },
+  {
     path: 'forgot-password',
     loadChildren: () =>
       import('./features/forgot-password/forgot-password.routes').then((m) => m.FORGOT_PASSWORD_ROUTES),

@@ -39,23 +39,6 @@
           <input matInput type="text" name="displayName" [(ngModel)]="displayName" />
         </mat-form-field>
 
-        <fieldset class="roles">
-          <legend>Je m'inscris en tant que</legend>
-          <mat-checkbox
-            [checked]="wantParent()"
-            (change)="wantParent.set($event.checked)"
-          >
-            Parent
-          </mat-checkbox>
-          <mat-checkbox
-            [checked]="wantTeacher()"
-            (change)="wantTeacher.set($event.checked)"
-          >
-            Professeur
-          </mat-checkbox>
-          <p class="hint">Au moins Parent ou Professeur. Le professeur reste en attente de validation.</p>
-        </fieldset>
-
         <mat-form-field appearance="outline" class="full">
           <mat-label>Mot de passe</mat-label>
           <input

@@ -1,0 +1,34 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4 · admin</span>
+  </mat-toolbar>
+
+  <main class="content">
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Qui es-tu ?</mat-card-title>
+        <mat-card-subtitle>Ce choix est le même après un email, Google ou Facebook</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+        <fieldset class="roles">
+          <legend>Je m'inscris en tant que</legend>
+          <mat-checkbox [checked]="wantParent()" (change)="wantParent.set($event.checked)">
+            Parent
+          </mat-checkbox>
+          <mat-checkbox [checked]="wantTeacher()" (change)="wantTeacher.set($event.checked)">
+            Professeur
+          </mat-checkbox>
+          <p class="hint">Au moins Parent ou Professeur. Le professeur reste en attente de validation.</p>
+        </fieldset>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button mat-flat-button color="primary" type="button" [disabled]="!canSubmit()" (click)="submit()">
+          {{ loading() ? 'Enregistrement…' : 'Continuer' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </main>
+</div>

@@ -15,5 +15,11 @@ export function landingPath(session: AdminTokenSession): string {
   if (session.roles.length >= 2) {
     return '/select-role';
   }
+  if (session.pendingTeacher) {
+    return '/teacher-pending';
+  }
+  if (session.roles.length === 0 && !session.activeRole) {
+    return '/complete-roles';
+  }
   return '/';
 }
