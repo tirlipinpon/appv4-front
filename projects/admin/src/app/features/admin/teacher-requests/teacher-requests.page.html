@@ -19,7 +19,10 @@
       @for (item of pending(); track item.id) {
         <article class="row">
           <div>
-            <strong>{{ item.email }}</strong>
+            <strong>{{ item.displayName || item.email }}</strong>
+            @if (item.displayName) {
+              <span>{{ item.email }}</span>
+            }
             <span>Demande faite le {{ when(item.createdAt) }} ({{ age(item.createdAt) }})</span>
           </div>
           <button
@@ -43,7 +46,10 @@
       @for (item of decided(); track item.id) {
         <article class="row">
           <div>
-            <strong>{{ item.email }}</strong>
+            <strong>{{ item.displayName || item.email }}</strong>
+            @if (item.displayName) {
+              <span>{{ item.email }}</span>
+            }
             <span>Demande faite le {{ when(item.createdAt) }}</span>
             <span>{{ decisionLabel(item) }}</span>
           </div>

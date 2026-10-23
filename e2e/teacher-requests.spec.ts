@@ -19,6 +19,7 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
     const item = {
       id: 7,
       email: 'prof@example.com',
+      displayName: 'Prof Test',
       status,
       createdAt,
       reviewedAt: status === 'pending' ? undefined : new Date().toISOString(),
@@ -37,6 +38,7 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
       body: JSON.stringify({
         id: 7,
         email: 'prof@example.com',
+        displayName: 'Prof Test',
         status: 'revoked',
         createdAt,
         reviewedAt: new Date().toISOString(),
@@ -51,6 +53,7 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
       body: JSON.stringify({
         id: 7,
         email: 'prof@example.com',
+        displayName: 'Prof Test',
         status: 'approved',
         createdAt,
         reviewedAt: new Date().toISOString(),
@@ -60,6 +63,7 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
 
   await login(page, 'admin@example.com');
   await expect(page).toHaveURL(/\/admin\/teacher-requests$/);
+  await expect(page.getByText('Prof Test')).toBeVisible();
   await expect(page.getByText('prof@example.com')).toBeVisible();
   await expect(page.getByText(/depuis \d+ h/)).toBeVisible();
   await page.getByRole('button', { name: 'Valider' }).click();

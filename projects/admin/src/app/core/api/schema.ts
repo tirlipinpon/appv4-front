@@ -383,6 +383,7 @@ export interface components {
             /** Format: int64 */
             id?: number;
             email?: string;
+            displayName?: string;
             status?: string;
             /** Format: date-time */
             createdAt?: string;
