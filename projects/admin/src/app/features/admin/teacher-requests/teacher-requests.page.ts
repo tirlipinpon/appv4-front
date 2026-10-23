@@ -10,7 +10,7 @@ import { TeacherRequestsService } from './data-access/teacher-requests.service';
 
 /**
  * File des demandes professeur (SCRUM-143).
- * Seul le rôle admin arrive ici. Sur une demande traitée, le bouton passe de approved à revoked.
+ * Seul le rôle admin arrive ici. Une demande traitée a Re-valider, et Révoquer tant qu'elle est acceptée.
  */
 @Component({
   selector: 'app-teacher-requests-page',
@@ -40,10 +40,8 @@ export class TeacherRequestsPage implements OnInit {
     this.change(item, this.api.approve(item.id!));
   }
 
-  /** Bascule approved ↔ revoked sur une demande déjà traitée. */
-  toggleDecision(item: TeacherRequestItem): void {
-    const call = item.status === 'approved' ? this.api.revoke(item.id!) : this.api.approve(item.id!);
-    this.change(item, call);
+  revoke(item: TeacherRequestItem): void {
+    this.change(item, this.api.revoke(item.id!));
   }
 
   decisionLabel(item: TeacherRequestItem): string {

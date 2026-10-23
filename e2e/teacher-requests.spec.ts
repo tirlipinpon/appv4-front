@@ -69,9 +69,10 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
   await page.getByRole('button', { name: 'Valider' }).click();
   await expect(page.getByText('Aucune demande en attente.')).toBeVisible();
   await expect(page.getByText(/Validée le/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Re-valider' })).toBeVisible();
   await page.getByRole('button', { name: 'Révoquer' }).click();
   await expect(page.getByText(/Révoquée le/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Approuver' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Re-valider' })).toBeVisible();
 });
 
 test('un parent n ouvre pas la file de modération', async ({ page }) => {

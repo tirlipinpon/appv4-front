@@ -40,6 +40,12 @@ section + section {
   border-radius: 8px;
 }
 
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 .row span {
   display: block;
   color: #5f6368;

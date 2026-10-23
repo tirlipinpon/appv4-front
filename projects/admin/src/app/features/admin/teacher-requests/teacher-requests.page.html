@@ -53,14 +53,27 @@
             <span>Demande faite le {{ when(item.createdAt) }}</span>
             <span>{{ decisionLabel(item) }}</span>
           </div>
-          <button
-            mat-stroked-button
-            type="button"
-            [disabled]="approvingId() === item.id"
-            (click)="toggleDecision(item)"
-          >
-            {{ item.status === 'approved' ? 'Révoquer' : 'Approuver' }}
-          </button>
+          <div class="actions">
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="approvingId() === item.id"
+              (click)="approve(item)"
+            >
+              Re-valider
+            </button>
+            @if (item.status === 'approved') {
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="approvingId() === item.id"
+                (click)="revoke(item)"
+              >
+                Révoquer
+              </button>
+            }
+          </div>
         </article>
       }
     </section>
