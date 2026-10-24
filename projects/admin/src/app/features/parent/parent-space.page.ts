@@ -5,6 +5,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { RoleSwitch } from '../../core/layout/role-switch';
+import { SpaceAccess } from '../../core/layout/space-access';
 
 /**
  * Adresse de l'espace parent (SCRUM-128).
@@ -12,7 +13,7 @@ import { RoleSwitch } from '../../core/layout/role-switch';
  */
 @Component({
   selector: 'app-parent-space-page',
-  imports: [MatToolbarModule, MatButtonModule, RoleSwitch],
+  imports: [MatToolbarModule, MatButtonModule, RoleSwitch, SpaceAccess],
   templateUrl: './parent-space.page.html',
   styleUrl: './parent-space.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

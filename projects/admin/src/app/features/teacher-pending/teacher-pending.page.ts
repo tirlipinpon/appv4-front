@@ -1,10 +1,14 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
+import { AuthService } from '../../core/auth/auth.service';
+import { landingPath } from '../../core/auth/space-landing';
+import { spaceRoleLabel } from '../../core/auth/space-roles';
 import { RoleSwitch } from '../../core/layout/role-switch';
+import { SpaceAccess } from '../../core/layout/space-access';
 
 /**
  * Cible minimale après une inscription avec la case Professeur (SCRUM-122).
@@ -12,13 +16,14 @@ import { RoleSwitch } from '../../core/layout/role-switch';
  */
 @Component({
   selector: 'app-teacher-pending-page',
-  imports: [RouterLink, MatToolbarModule, MatCardModule, MatButtonModule, RoleSwitch],
+  imports: [RouterLink, MatToolbarModule, MatCardModule, MatButtonModule, RoleSwitch, SpaceAccess],
   template: `
     <div class="page">
       <mat-toolbar color="primary">
         <span>appv4 · admin · professeur</span>
         <span class="spacer"></span>
         <app-role-switch />
+        <app-space-access />
       </mat-toolbar>
       <main class="content">
         <mat-card class="card">
@@ -32,9 +37,13 @@ import { RoleSwitch } from '../../core/layout/role-switch';
               avant que l'espace professeur s'ouvre.
             </p>
           </mat-card-content>
-          <mat-card-actions align="end">
-            <a mat-flat-button color="primary" routerLink="/">Aller à l'accueil</a>
-          </mat-card-actions>
+          @if (backToSpace(); as back) {
+            <mat-card-actions align="end">
+              <a mat-flat-button color="primary" [routerLink]="back.path">
+                Retour à l'espace {{ back.label }}
+              </a>
+            </mat-card-actions>
+          }
         </mat-card>
       </main>
     </div>
@@ -61,4 +70,18 @@ import { RoleSwitch } from '../../core/layout/role-switch';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TeacherPendingPage {}
+export class TeacherPendingPage {
+  private readonly auth = inject(AuthService);
+
+  /** Dernier espace ouvert. Absent tant qu'aucun rôle n'est accordé (on resterait sur cette page). */
+  readonly backToSpace = computed(() => {
+    const session = this.auth.session();
+    if (!session.activeRole) {
+      return null;
+    }
+    return {
+      path: landingPath(session),
+      label: spaceRoleLabel(session.activeRole),
+    };
+  });
+}

@@ -21,6 +21,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/auth/spaces/teacher": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demander l'espace professeur sans écrire le rôle teacher */
+        post: operations["requestTeacherSpace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/auth/spaces/parent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ouvrir l'espace parent tout de suite et recevoir un jeton à jour */
+        post: operations["openParentSpace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/auth/signup": {
         parameters: {
             query?: never;
@@ -262,6 +296,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/auth/spaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rôles déjà accordés et état de la demande professeur */
+        get: operations["getSpaceAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/auth/oauth/google/authorize-url": {
         parameters: {
             query?: never;
@@ -361,6 +412,15 @@ export interface components {
             token?: string;
             /** Format: int64 */
             expiresAtEpochSeconds?: number;
+        };
+        SpaceAccessResponse: {
+            /** @description Rôles d'espace déjà accordés : parent et/ou teacher */
+            roles?: string[];
+            /**
+             * @description Demande professeur : none, pending, approved ou revoked
+             * @enum {string}
+             */
+            teacherRequest?: "none" | "pending" | "approved" | "revoked";
         };
         SignupRequest: {
             /** Format: email */
@@ -465,6 +525,46 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    requestTeacherSpace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demande pending, ou état inchangé si déjà demandé ou déjà teacher */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SpaceAccessResponse"];
+                };
+            };
+        };
+    };
+    openParentSpace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JWT avec le rôle parent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JwtTokenResponse"];
                 };
             };
         };
@@ -859,6 +959,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["HelloMessageResponse"];
+                };
+            };
+        };
+    };
+    getSpaceAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description État pour l'en-tête */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SpaceAccessResponse"];
                 };
             };
         };
