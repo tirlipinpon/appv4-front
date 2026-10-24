@@ -27,6 +27,19 @@ interface SchoolBlock {
   grades: string[];
 }
 
+/** Même plafond que le back (`DisplayNames.MAX_LENGTH`). */
+const NAME_MAX_LENGTH = 255;
+const NAME_REQUIRED = 'Le nom est obligatoire.';
+const NAME_TOO_LONG = 'Le nom est trop long (maximum 255).';
+const SCHOOL_REQUIRED = 'Choisis une école dans la liste, ou retire-la.';
+const SCHOOL_UNKNOWN = "Cette école n'est pas proposable.";
+const SCHOOL_DUPLICATE = 'Cette école est déjà sur le profil.';
+const GRADE_REQUIRED = 'Choisis une classe pour cette école, ou retire-la.';
+const GRADE_NOT_OFFERED = "Cette classe n'est pas proposée par cette école.";
+const COUNTRY_WITHOUT_GRADES = "Ce pays n'a pas de liste de classes.";
+const PENDING_EDIT =
+  "La version envoyée est enregistrée. La saisie faite pendant l'enregistrement n'est pas encore enregistrée.";
+
 /**
  * Profil professeur (SCRUM-159) : nom du compte, puis écoles si le référentiel en propose.
  * La liste des écoles vient de SCRUM-163. Tant qu'elle est vide, on ne saisit pas un nom libre.
@@ -65,6 +78,10 @@ export class TeacherProfilePage implements OnInit {
   readonly ready = signal(false);
   readonly saved = signal(false);
   readonly error = signal<string | null>(null);
+  readonly nameError = signal<string | null>(null);
+  readonly blockErrors = signal<Readonly<Record<number, string>>>({});
+  /** Saisie arrivée après l'envoi : on ne l'écrase pas avec la réponse. */
+  readonly pendingNotice = signal<string | null>(null);
 
   readonly catalogEmpty = computed(
     () => this.availableSchools().length === 0 && this.blocks().length === 0,
@@ -106,7 +123,8 @@ export class TeacherProfilePage implements OnInit {
   }
 
   onName(value: string): void {
-    this.saved.set(false);
+    this.markDirty();
+    this.nameError.set(null);
     this.displayName.set(value);
   }
 
@@ -114,7 +132,7 @@ export class TeacherProfilePage implements OnInit {
     if (!this.canAdd()) {
       return;
     }
-    this.saved.set(false);
+    this.markDirty();
     this.blocks.update((list) => [
       ...list,
       { key: this.nextKey++, country: null, schoolId: null, grades: [] },
@@ -122,22 +140,26 @@ export class TeacherProfilePage implements OnInit {
   }
 
   removeSchool(key: number): void {
-    this.saved.set(false);
+    this.markDirty();
+    this.clearBlockError(key);
     this.blocks.update((list) => list.filter((block) => block.key !== key));
   }
 
   onCountry(key: number, country: string): void {
-    this.saved.set(false);
+    this.markDirty();
+    this.clearBlockError(key);
     this.patch(key, { country, schoolId: null, grades: [] });
   }
 
   onSchool(key: number, schoolId: number): void {
-    this.saved.set(false);
+    this.markDirty();
+    this.clearBlockError(key);
     this.patch(key, { schoolId, grades: [] });
   }
 
   toggleGrade(key: number, grade: string, checked: boolean): void {
-    this.saved.set(false);
+    this.markDirty();
+    this.clearBlockError(key);
     const block = this.blocks().find((item) => item.key === key);
     if (!block) {
       return;
@@ -172,34 +194,128 @@ export class TeacherProfilePage implements OnInit {
     return this.availableSchools().find((school) => school.id === block.schoolId)?.grades ?? [];
   }
 
+  blockError(key: number): string | null {
+    return this.blockErrors()[key] ?? null;
+  }
+
+  /**
+   * Enregistre le formulaire tel qu'il est au clic.
+   * Si une saisie arrive pendant la requête, on ne la remplace pas par la réponse :
+   * « Enregistré » ne s'affiche que lorsque l'écran correspond encore à ce qui est parti.
+   */
   save(): void {
     if (!this.ready() || this.saving()) {
       return;
     }
+    if (!this.validate()) {
+      this.saved.set(false);
+      this.pendingNotice.set(null);
+      return;
+    }
+    const sent = this.payload();
     this.error.set(null);
     this.saved.set(false);
+    this.pendingNotice.set(null);
     this.saving.set(true);
-    this.api.save(this.payload()).subscribe({
+    this.api.save(sent).subscribe({
       next: (profile) => {
-        this.apply(profile);
         this.saving.set(false);
+        if (!this.samePayload(sent, this.payload())) {
+          this.saved.set(false);
+          this.pendingNotice.set(PENDING_EDIT);
+          return;
+        }
+        this.apply(profile);
         this.saved.set(true);
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
+        this.saved.set(false);
         this.error.set(this.message(err, 'Enregistrement impossible.'));
       },
     });
   }
 
+  private validate(): boolean {
+    const name = this.displayName().trim();
+    const nameError = this.nameProblem(name);
+    this.nameError.set(nameError);
+
+    const errors: Record<number, string> = {};
+    const seen = new Set<number>();
+    for (const block of this.blocks()) {
+      const problem = this.blockProblem(block, seen);
+      if (problem) {
+        errors[block.key] = problem;
+      }
+    }
+    this.blockErrors.set(errors);
+    return nameError === null && Object.keys(errors).length === 0;
+  }
+
+  private nameProblem(name: string): string | null {
+    if (!name) {
+      return NAME_REQUIRED;
+    }
+    if (name.length > NAME_MAX_LENGTH) {
+      return NAME_TOO_LONG;
+    }
+    return null;
+  }
+
+  private blockProblem(block: SchoolBlock, seen: Set<number>): string | null {
+    if (block.schoolId == null) {
+      return SCHOOL_REQUIRED;
+    }
+    const school = this.availableSchools().find((item) => item.id === block.schoolId);
+    if (!school) {
+      return SCHOOL_UNKNOWN;
+    }
+    if (seen.has(block.schoolId)) {
+      return SCHOOL_DUPLICATE;
+    }
+    seen.add(block.schoolId);
+    const offered = school.grades ?? [];
+    if (offered.length === 0) {
+      return COUNTRY_WITHOUT_GRADES;
+    }
+    if (block.grades.length === 0) {
+      return GRADE_REQUIRED;
+    }
+    if (block.grades.some((grade) => !offered.includes(grade))) {
+      return GRADE_NOT_OFFERED;
+    }
+    return null;
+  }
+
   private payload(): UpdateTeacherProfileRequest {
     return {
-      displayName: this.displayName(),
+      displayName: this.displayName().trim(),
       schools: this.blocks().map((block) => ({
         schoolId: block.schoolId ?? undefined,
         grades: block.grades,
       })),
     };
+  }
+
+  private samePayload(left: UpdateTeacherProfileRequest, right: UpdateTeacherProfileRequest): boolean {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+
+  private markDirty(): void {
+    this.saved.set(false);
+    this.pendingNotice.set(null);
+  }
+
+  private clearBlockError(key: number): void {
+    this.blockErrors.update((current) => {
+      if (!(key in current)) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
   }
 
   private apply(profile: TeacherProfileResponse): void {
