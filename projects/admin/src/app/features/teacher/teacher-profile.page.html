@@ -50,16 +50,30 @@
               <p class="hint">Aucune école n'est proposable pour l'instant.</p>
             } @else {
               <p class="hint">
-                Pour chaque école, une norme, puis au moins une année. Une école déjà choisie ne revient pas dans la liste.
+                Choisis le pays, puis une école. Les classes affichées sont celles de cette école.
               </p>
             }
 
             @for (block of blocks(); track block.key) {
               <article class="school">
                 <mat-form-field appearance="outline" class="full">
+                  <mat-label>Pays</mat-label>
+                  <mat-select
+                    [value]="block.country"
+                    (selectionChange)="onCountry(block.key, $event.value)"
+                    placeholder="Choisir un pays"
+                  >
+                    @for (country of countries(); track country) {
+                      <mat-option [value]="country">{{ country }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full">
                   <mat-label>École</mat-label>
                   <mat-select
                     [value]="block.schoolId"
+                    [disabled]="!block.country"
                     (selectionChange)="onSchool(block.key, $event.value)"
                     placeholder="Choisir une école"
                   >
@@ -69,20 +83,9 @@
                   </mat-select>
                 </mat-form-field>
 
-                <mat-radio-group
-                  class="norms"
-                  [value]="block.curriculum"
-                  (change)="onCurriculum(block.key, $event.value)"
-                  [attr.aria-label]="'Norme des années'"
-                >
-                  @for (choice of curricula(); track choice.code) {
-                    <mat-radio-button [value]="choice.code">{{ choice.label }}</mat-radio-button>
-                  }
-                </mat-radio-group>
-
-                @if (block.curriculum) {
+                @if (gradesFor(block).length) {
                   <div class="grades">
-                    @for (grade of gradesFor(block.curriculum); track grade) {
+                    @for (grade of gradesFor(block); track grade) {
                       <mat-checkbox
                         [checked]="block.grades.includes(grade)"
                         (change)="toggleGrade(block.key, grade, $event.checked)"

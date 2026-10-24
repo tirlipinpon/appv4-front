@@ -437,6 +437,7 @@ export interface components {
             /** Format: int64 */
             schoolId?: number;
             schoolName?: string;
+            country?: string;
             curriculum?: string;
             grades?: string[];
         };
@@ -444,6 +445,8 @@ export interface components {
             /** Format: int64 */
             id?: number;
             name?: string;
+            country?: string;
+            grades?: string[];
         };
         TeacherCurriculumOption: {
             code?: string;

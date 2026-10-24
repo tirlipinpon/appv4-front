@@ -7,13 +7,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import type {
   TeacherAvailableSchool,
-  TeacherCurriculumOption,
   TeacherProfileResponse,
   UpdateTeacherProfileRequest,
 } from '../../core/api/api-models';
@@ -24,8 +22,8 @@ import { TeacherProfileService } from './data-access/teacher-profile.service';
 
 interface SchoolBlock {
   key: number;
+  country: string | null;
   schoolId: number | null;
-  curriculum: string | null;
   grades: string[];
 }
 
@@ -44,7 +42,6 @@ interface SchoolBlock {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatRadioModule,
     MatCheckboxModule,
     RoleSwitch,
     SpaceAccess,
@@ -62,7 +59,6 @@ export class TeacherProfilePage implements OnInit {
   readonly email = signal('');
   readonly displayName = signal('');
   readonly availableSchools = signal<TeacherAvailableSchool[]>([]);
-  readonly curricula = signal<TeacherCurriculumOption[]>([]);
   readonly blocks = signal<SchoolBlock[]>([]);
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -73,6 +69,18 @@ export class TeacherProfilePage implements OnInit {
   readonly catalogEmpty = computed(
     () => this.availableSchools().length === 0 && this.blocks().length === 0,
   );
+  readonly countries = computed(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const school of this.availableSchools()) {
+      const country = school.country?.trim();
+      if (country && !seen.has(country)) {
+        seen.add(country);
+        list.push(country);
+      }
+    }
+    return list;
+  });
   readonly canAdd = computed(() => {
     const available = this.availableSchools().filter((school) => school.id != null);
     return available.length > 0 && this.blocks().length < available.length;
@@ -109,7 +117,7 @@ export class TeacherProfilePage implements OnInit {
     this.saved.set(false);
     this.blocks.update((list) => [
       ...list,
-      { key: this.nextKey++, schoolId: null, curriculum: null, grades: [] },
+      { key: this.nextKey++, country: null, schoolId: null, grades: [] },
     ]);
   }
 
@@ -118,14 +126,14 @@ export class TeacherProfilePage implements OnInit {
     this.blocks.update((list) => list.filter((block) => block.key !== key));
   }
 
-  onSchool(key: number, schoolId: number): void {
+  onCountry(key: number, country: string): void {
     this.saved.set(false);
-    this.patch(key, { schoolId });
+    this.patch(key, { country, schoolId: null, grades: [] });
   }
 
-  onCurriculum(key: number, curriculum: string): void {
+  onSchool(key: number, schoolId: number): void {
     this.saved.set(false);
-    this.patch(key, { curriculum, grades: [] });
+    this.patch(key, { schoolId, grades: [] });
   }
 
   toggleGrade(key: number, grade: string, checked: boolean): void {
@@ -141,24 +149,27 @@ export class TeacherProfilePage implements OnInit {
   }
 
   optionsFor(block: SchoolBlock): TeacherAvailableSchool[] {
+    if (!block.country) {
+      return [];
+    }
     const taken = new Set(
       this.blocks()
         .filter((other) => other.key !== block.key && other.schoolId != null)
         .map((other) => other.schoolId),
     );
     return this.availableSchools().filter((school) => {
-      if (school.id == null) {
+      if (school.id == null || school.country !== block.country) {
         return false;
       }
       return school.id === block.schoolId || !taken.has(school.id);
     });
   }
 
-  gradesFor(curriculum: string | null): string[] {
-    if (!curriculum) {
+  gradesFor(block: SchoolBlock): string[] {
+    if (block.schoolId == null) {
       return [];
     }
-    return this.curricula().find((choice) => choice.code === curriculum)?.grades ?? [];
+    return this.availableSchools().find((school) => school.id === block.schoolId)?.grades ?? [];
   }
 
   save(): void {
@@ -186,7 +197,6 @@ export class TeacherProfilePage implements OnInit {
       displayName: this.displayName(),
       schools: this.blocks().map((block) => ({
         schoolId: block.schoolId ?? undefined,
-        curriculum: block.curriculum ?? undefined,
         grades: block.grades,
       })),
     };
@@ -196,12 +206,11 @@ export class TeacherProfilePage implements OnInit {
     this.email.set(profile.email ?? '');
     this.displayName.set(profile.displayName ?? '');
     this.availableSchools.set(profile.availableSchools ?? []);
-    this.curricula.set(profile.curricula ?? []);
     this.blocks.set(
       (profile.schools ?? []).map((school) => ({
         key: this.nextKey++,
+        country: school.country ?? null,
         schoolId: school.schoolId ?? null,
-        curriculum: school.curriculum ?? null,
         grades: [...(school.grades ?? [])],
       })),
     );
