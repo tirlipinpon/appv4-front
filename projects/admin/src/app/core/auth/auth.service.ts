@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 
-import { readAdminToken } from './admin-token';
+import { readAdminToken, isUsableAdminToken } from './admin-token';
 
 const TOKEN_KEY = 'admin.jwt';
 
@@ -33,8 +33,7 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    const token = this.getToken();
-    return token !== null && token.trim().length > 0;
+    return isUsableAdminToken(this.getToken());
   }
 
   logout(): void {
