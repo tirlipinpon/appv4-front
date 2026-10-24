@@ -1,0 +1,162 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4 · admin</span>
+    <span class="spacer"></span>
+    <a mat-button routerLink="/parent">Espace</a>
+    <app-role-switch />
+    <app-space-access />
+    <button mat-button type="button" (click)="logout()">Déconnexion</button>
+  </mat-toolbar>
+
+  <main class="content">
+    <section class="panel">
+      <header class="heading">
+        <h1>Mes enfants</h1>
+        <button mat-flat-button color="primary" type="button" (click)="openForm()">Ajouter un enfant</button>
+      </header>
+
+      @if (loading()) {
+        <p>Chargement…</p>
+      }
+      @if (error()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
+      @if (!loading() && children().length === 0) {
+        <p class="hint">Aucun enfant pour l'instant.</p>
+      }
+
+      <ul class="list">
+        @for (child of children(); track child.id) {
+          <li class="child">
+            @if (child.hasPhoto && photos()[child.id!]) {
+              <img class="portrait" [src]="photos()[child.id!]" [alt]="child.firstName + ' ' + child.lastName" />
+            } @else {
+              <span class="portrait avatar" [attr.aria-label]="child.avatarCode">{{ emoji(child.avatarCode) }}</span>
+            }
+            <div>
+              <strong>{{ child.firstName }} {{ child.lastName }}</strong>
+              <p>{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
+              <p>{{ child.schoolName || 'École non renseignée' }}</p>
+            </div>
+          </li>
+        }
+      </ul>
+
+      @if (formOpen()) {
+        <mat-card class="form">
+          <mat-card-header>
+            <mat-card-title>Nouvel enfant</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Prénom</mat-label>
+              <input matInput name="firstName" [ngModel]="firstName()" (ngModelChange)="firstName.set($event)" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Nom</mat-label>
+              <input matInput name="lastName" [ngModel]="lastName()" (ngModelChange)="lastName.set($event)" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Âge</mat-label>
+              <input matInput name="age" inputmode="numeric" [ngModel]="age()" (ngModelChange)="age.set($event)" required />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Pays</mat-label>
+              <mat-select [value]="country()" (selectionChange)="onCountry($event.value)" placeholder="Choisir un pays">
+                @for (item of countries(); track item) {
+                  <mat-option [value]="item">{{ item }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Filtrer les écoles</mat-label>
+              <input
+                matInput
+                name="schoolFilter"
+                [ngModel]="schoolFilter()"
+                (ngModelChange)="schoolFilter.set($event)"
+                [disabled]="!country()"
+                placeholder="Nom de l'école"
+              />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>École</mat-label>
+              <mat-select
+                [value]="schoolId()"
+                [disabled]="!country()"
+                (selectionChange)="onSchool($event.value)"
+                placeholder="Aucune école"
+              >
+                <mat-option [value]="null">Aucune école</mat-option>
+                @for (school of schoolOptions(); track school.id) {
+                  <mat-option [value]="school.id">{{ school.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            @if (country() && schools().every((school) => school.country !== country())) {
+              <p class="hint">Aucune école n'est proposable pour ce pays. L'enfant peut être enregistré sans école.</p>
+            } @else if (country() && schoolFilter().trim().length < 2) {
+              <p class="hint">Tape au moins deux lettres du nom pour voir les écoles. Tu peux aussi laisser l'école vide.</p>
+            }
+
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Classe</mat-label>
+              <mat-select [value]="grade()" [disabled]="!country()" (selectionChange)="grade.set($event.value)">
+                @for (item of gradeOptions(); track item) {
+                  <mat-option [value]="item">{{ item }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <p class="label">Avatar</p>
+            <div class="avatars">
+              @for (avatar of avatars; track avatar.code) {
+                <button
+                  type="button"
+                  class="avatar-btn"
+                  [class.selected]="avatarCode() === avatar.code"
+                  (click)="chooseAvatar(avatar.code)"
+                  [attr.aria-label]="avatar.label"
+                >
+                  {{ avatar.emoji }}
+                </button>
+              }
+            </div>
+            <label class="photo">
+              Photo (JPEG, PNG, GIF ou WebP, 5 Mo maximum)
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" (change)="onPhoto($event)" />
+            </label>
+            @if (photoName()) {
+              <p class="hint">Photo choisie : {{ photoName() }}. L'avatar est retiré.</p>
+            }
+
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Code PIN</mat-label>
+              <input matInput name="pin" inputmode="numeric" maxlength="4" autocomplete="off" [ngModel]="pin()" (ngModelChange)="pin.set($event)" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Confirmer le code PIN</mat-label>
+              <input
+                matInput
+                name="pinConfirmation"
+                inputmode="numeric"
+                maxlength="4"
+                autocomplete="off"
+                [ngModel]="pinConfirmation()"
+                (ngModelChange)="pinConfirmation.set($event)"
+              />
+            </mat-form-field>
+          </mat-card-content>
+          <mat-card-actions align="end">
+            <button mat-button type="button" (click)="formOpen.set(false)">Fermer</button>
+            <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+              {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </section>
+  </main>
+</div>

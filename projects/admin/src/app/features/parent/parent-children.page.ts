@@ -1,0 +1,263 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatToolbarModule } from '@angular/material/toolbar';
+
+import type {
+  CreateParentChildRequest,
+  ParentChildResponse,
+  ParentGradeList,
+  ParentSchoolOption,
+} from '../../core/api/api-models';
+import { AuthService } from '../../core/auth/auth.service';
+import { RoleSwitch } from '../../core/layout/role-switch';
+import { SpaceAccess } from '../../core/layout/space-access';
+import { CHILD_AVATARS, avatarEmoji } from './child-avatars';
+import { ParentChildrenService } from './data-access/parent-children.service';
+
+/**
+ * Liste et ajout des enfants (SCRUM-156).
+ * Le pays filtre les écoles. Une école choisie limite les classes à celles qu'elle a.
+ */
+@Component({
+  selector: 'app-parent-children-page',
+  imports: [
+    FormsModule,
+    RouterLink,
+    MatToolbarModule,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    RoleSwitch,
+    SpaceAccess,
+  ],
+  templateUrl: './parent-children.page.html',
+  styleUrl: './parent-children.page.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ParentChildrenPage implements OnInit {
+  private readonly api = inject(ParentChildrenService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  readonly avatars = CHILD_AVATARS;
+  readonly emoji = avatarEmoji;
+
+  readonly children = signal<ParentChildResponse[]>([]);
+  readonly schools = signal<ParentSchoolOption[]>([]);
+  readonly curricula = signal<ParentGradeList[]>([]);
+  readonly photos = signal<Record<number, string>>({});
+  readonly loading = signal(true);
+  readonly saving = signal(false);
+  readonly formOpen = signal(false);
+  readonly error = signal<string | null>(null);
+
+  readonly firstName = signal('');
+  readonly lastName = signal('');
+  readonly age = signal('');
+  readonly country = signal<string | null>(null);
+  readonly grade = signal<string | null>(null);
+  readonly schoolId = signal<number | null>(null);
+  readonly schoolFilter = signal('');
+  readonly avatarCode = signal<string | null>(null);
+  readonly photoName = signal<string | null>(null);
+  readonly photoBase64 = signal<string | null>(null);
+  readonly photoContentType = signal<string | null>(null);
+  readonly pin = signal('');
+  readonly pinConfirmation = signal('');
+
+  readonly countries = computed(() =>
+    this.curricula()
+      .map((list) => list.country)
+      .filter((country): country is string => !!country),
+  );
+
+  readonly schoolOptions = computed(() => {
+    const country = this.country();
+    if (!country) {
+      return [];
+    }
+    const query = this.schoolFilter().trim().toLowerCase();
+    if (query.length < 2) {
+      const selected = this.schools().find((school) => school.id === this.schoolId());
+      return selected ? [selected] : [];
+    }
+    return this.schools()
+      .filter((school) => {
+        if (school.country !== country || school.id == null) {
+          return false;
+        }
+        return (school.name ?? '').toLowerCase().includes(query);
+      })
+      .slice(0, 40);
+  });
+
+  readonly gradeOptions = computed(() => {
+    const selected = this.schools().find((school) => school.id === this.schoolId());
+    if (selected?.grades?.length) {
+      return selected.grades;
+    }
+    return this.curricula().find((list) => list.country === this.country())?.grades ?? [];
+  });
+
+  ngOnInit(): void {
+    this.reload();
+  }
+
+  logout(): void {
+    this.auth.logout();
+    void this.router.navigateByUrl('/login');
+  }
+
+  openForm(): void {
+    this.error.set(null);
+    this.formOpen.set(true);
+  }
+
+  onCountry(country: string): void {
+    this.country.set(country);
+    this.schoolId.set(null);
+    this.grade.set(null);
+    this.schoolFilter.set('');
+  }
+
+  onSchool(schoolId: number | null): void {
+    this.schoolId.set(schoolId);
+    const grades = this.gradeOptions();
+    if (this.grade() && !grades.includes(this.grade()!)) {
+      this.grade.set(null);
+    }
+  }
+
+  chooseAvatar(code: string): void {
+    this.avatarCode.set(code);
+    this.photoBase64.set(null);
+    this.photoContentType.set(null);
+    this.photoName.set(null);
+  }
+
+  onPhoto(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      this.error.set("Le fichier n'est pas une image.");
+      input.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.error.set("L'image dépasse 5 Mo.");
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      const comma = result.indexOf(',');
+      this.photoBase64.set(comma >= 0 ? result.slice(comma + 1) : result);
+      this.photoContentType.set(file.type);
+      this.photoName.set(file.name);
+      this.avatarCode.set(null);
+      this.error.set(null);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  save(): void {
+    if (this.saving()) {
+      return;
+    }
+    this.error.set(null);
+    this.saving.set(true);
+    this.api.add(this.payload()).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.formOpen.set(false);
+        this.resetForm();
+        this.reload();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.error.set(this.message(err, 'Enregistrement impossible.'));
+      },
+    });
+  }
+
+  private reload(): void {
+    this.api.load().subscribe({
+      next: (page) => {
+        this.children.set(page.children ?? []);
+        this.schools.set(page.schools ?? []);
+        this.curricula.set(page.curricula ?? []);
+        this.loading.set(false);
+        this.loadPhotos(page.children ?? []);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.error.set(this.message(err, 'Liste indisponible.'));
+      },
+    });
+  }
+
+  private loadPhotos(children: ParentChildResponse[]): void {
+    for (const child of children) {
+      if (!child.hasPhoto || child.id == null) {
+        continue;
+      }
+      const id = child.id;
+      this.api.photo(id).subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          this.photos.update((current) => ({ ...current, [id]: url }));
+        },
+      });
+    }
+  }
+
+  private payload(): CreateParentChildRequest {
+    return {
+      firstName: this.firstName(),
+      lastName: this.lastName(),
+      age: this.age(),
+      country: this.country() ?? undefined,
+      grade: this.grade() ?? undefined,
+      schoolId: this.schoolId() ?? undefined,
+      avatarCode: this.avatarCode() ?? undefined,
+      photoBase64: this.photoBase64() ?? undefined,
+      photoContentType: this.photoContentType() ?? undefined,
+      pin: this.pin(),
+      pinConfirmation: this.pinConfirmation(),
+    };
+  }
+
+  private resetForm(): void {
+    this.firstName.set('');
+    this.lastName.set('');
+    this.age.set('');
+    this.country.set(null);
+    this.grade.set(null);
+    this.schoolId.set(null);
+    this.schoolFilter.set('');
+    this.avatarCode.set(null);
+    this.photoName.set(null);
+    this.photoBase64.set(null);
+    this.photoContentType.set(null);
+    this.pin.set('');
+    this.pinConfirmation.set('');
+  }
+
+  private message(err: HttpErrorResponse, fallback: string): string {
+    const body = err.error as { message?: string } | null;
+    return body?.message || fallback;
+  }
+}
