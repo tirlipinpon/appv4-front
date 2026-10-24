@@ -23,6 +23,8 @@ export class TeacherRequestsPage implements OnInit {
   private readonly api = inject(TeacherRequestsService);
 
   readonly requests = signal<TeacherRequestItem[]>([]);
+  /** Vrai quand le back a encore des demandes au-delà des 100 renvoyées. */
+  readonly truncated = signal(false);
   readonly pending = computed(() => this.requests().filter((item) => item.status === 'pending'));
   readonly approved = computed(() => this.requests().filter((item) => item.status === 'approved'));
   readonly revoked = computed(() => this.requests().filter((item) => item.status === 'revoked'));
@@ -69,6 +71,16 @@ export class TeacherRequestsPage implements OnInit {
     });
   }
 
+  emptyLabel(kind: 'en attente' | 'traitée' | 'révoquée'): string {
+    if (this.truncated()) {
+      return `Aucune demande ${kind} dans ces 100 premières.`;
+    }
+    if (kind === 'traitée') {
+      return 'Aucune demande traitée.';
+    }
+    return `Aucune demande ${kind}.`;
+  }
+
   age(createdAt: string | undefined): string {
     return requestAgeLabel(createdAt);
   }
@@ -79,8 +91,9 @@ export class TeacherRequestsPage implements OnInit {
 
   private load(): void {
     this.api.list().subscribe({
-      next: (requests) => {
-        this.requests.set(requests);
+      next: (page) => {
+        this.requests.set(page.requests);
+        this.truncated.set(page.truncated);
         this.approvingId.set(null);
       },
       error: (err: HttpErrorResponse) => {
@@ -93,8 +106,9 @@ export class TeacherRequestsPage implements OnInit {
   /** Le POST a déjà déplacé la demande. Un GET raté ne doit pas annuler ce résultat. */
   private reloadAfterChange(): void {
     this.api.list().subscribe({
-      next: (requests) => {
-        this.requests.set(requests);
+      next: (page) => {
+        this.requests.set(page.requests);
+        this.truncated.set(page.truncated);
         this.approvingId.set(null);
         this.error.set(null);
       },
