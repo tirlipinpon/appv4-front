@@ -1,0 +1,40 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f7fb;
+}
+
+.content {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.login-card {
+  width: min(100%, 32rem);
+}
+
+.full {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.error {
+  color: #b3261e;
+  margin: 0 0 1rem;
+}
+
+.oauth-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.facebook-btn {
+  margin-top: 0.75rem;
+}
+
+.divider {
+  margin: 1.25rem 0;
+}

@@ -1,10 +1,11 @@
 # appv4-front
 
-Workspace Angular **22**.
+Workspace Angular **22** avec deux applications :
 
 | App | Port | API backend | UI |
 |-----|------|-------------|-----|
 | `learning` | http://localhost:4200 | `GET http://localhost:8080/api/ext/hello` | Bootstrap 5 |
+| `admin` | http://localhost:4201 | `GET http://localhost:8080/api/int/hello` | Angular Material |
 
 ## Prérequis
 
@@ -18,16 +19,29 @@ cd C:\Users\tonys\Desktop\appv4\appv4-front
 npm install
 ```
 
-## Lancer learning
+## Lancer
 
 ```bash
 npm run start:learning
+npm run start:admin
 ```
 
-Smoke attendu : la page affiche **hello learning**.
+Smoke attendu :
+
+- learning affiche **hello learning**
+- admin affiche **admin-helloworld**
 
 ## Build
 
 ```bash
 npm run build:learning
+npm run build:admin
 ```
+
+Les builds sont indépendants : un échec sur `admin` ne bloque pas `build:learning`.
+
+## Branches & deploiement
+
+Voir **[BRANCHING.md](./BRANCHING.md)** : `feature/*` → **PR** → `develop` (CI) → **PR** → `release` (CD Azure).  
+Important : le passage `develop` → `release` passe **toujours** par une Pull Request.
+

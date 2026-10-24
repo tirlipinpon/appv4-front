@@ -1,0 +1,104 @@
+# CD Azure — déclenché après merge vers release (PR develop → release).
+# SCRUM-80 : deploy réel Static Web Apps (gate AZURE_DEPLOY_ENABLED).
+name: CD release (frontend)
+
+on:
+  push:
+    branches:
+      - release
+      - "release/**"
+  workflow_dispatch:
+
+concurrency:
+  group: cd-front-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Install Chrome for Karma
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Unit tests learning
+        run: npm run test:learning
+        env:
+          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+      - name: Unit tests admin
+        run: npm run test:admin
+        env:
+          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+      - name: Build learning
+        run: npm run build:learning
+
+      - name: Build admin
+        run: npm run build:admin
+
+      - name: Upload learning dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: learning-dist
+          path: dist/learning/browser
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload admin dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist
+          path: dist/admin/browser
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    if: ${{ vars.AZURE_DEPLOY_ENABLED == 'true' }}
+
+    steps:
+      - name: Download learning dist
+        uses: actions/download-artifact@v4
+        with:
+          name: learning-dist
+          path: dist/learning
+
+      - name: Download admin dist
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-dist
+          path: dist/admin
+
+      - name: Deploy learning SWA
+        env:
+          AZURE_SWA_LEARNING_TOKEN: ${{ secrets.AZURE_SWA_LEARNING_TOKEN }}
+        run: |
+          npx --yes @azure/static-web-apps-cli deploy dist/learning \
+            --deployment-token "$AZURE_SWA_LEARNING_TOKEN" \
+            --env production
+
+      - name: Deploy admin SWA
+        env:
+          AZURE_SWA_ADMIN_TOKEN: ${{ secrets.AZURE_SWA_ADMIN_TOKEN }}
+        run: |
+          npx --yes @azure/static-web-apps-cli deploy dist/admin \
+            --deployment-token "$AZURE_SWA_ADMIN_TOKEN" \
+            --env production
