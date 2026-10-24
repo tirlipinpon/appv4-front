@@ -98,8 +98,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Échanger le code Apple contre un JWT */
+        /**
+         * Échanger le code Apple contre un JWT
+         * @description redirectUri doit être APPLE_CALLBACK_URI (Return URL form_post), pas l'URL SPA.
+         */
         post: operations["loginWithApple"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/auth/oauth/apple/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Callback form_post Apple → redirect SPA */
+        post: operations["appleOAuthFormPostCallback"];
         delete?: never;
         options?: never;
         head?: never;
@@ -283,7 +303,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** URL d'autorisation Apple */
+        /** URL d'autorisation Apple (form_post vers le callback back) */
         get: operations["getAppleAuthorizeUrl"];
         put?: never;
         post?: never;
@@ -365,6 +385,7 @@ export interface components {
         };
         AppleLoginRequest: {
             authorizationCode: string;
+            /** @description Doit égaler APPLE_CALLBACK_URI quand configuré */
             redirectUri: string;
         };
         LoginRequest: {
@@ -561,6 +582,32 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["JwtTokenResponse"];
                 };
+            };
+        };
+    };
+    appleOAuthFormPostCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/x-www-form-urlencoded": {
+                    state?: string;
+                    code?: string;
+                    error?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
