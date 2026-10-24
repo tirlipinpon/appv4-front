@@ -99,6 +99,7 @@ async function login(page: Page, email: string): Promise<void> {
 }
 
 function jwt(payload: object): string {
-  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  const body = Buffer.from(JSON.stringify({ exp, ...payload })).toString('base64url');
   return `e30.${body}.sig`;
 }

@@ -12,7 +12,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = auth.getToken();
   const isAdminApi = req.url.startsWith(environment.apiBaseUrl);
 
-  if (token && isAdminApi) {
+  if (token && auth.isAuthenticated() && isAdminApi) {
     return next(
       req.clone({
         setHeaders: { Authorization: `Bearer ${token}` },
