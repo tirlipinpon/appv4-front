@@ -7,8 +7,15 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { landingPath } from '../../../core/auth/space-landing';
-import { takeOAuthState } from '../data-access/oauth-browser-state';
+import { connectOAuthCallback, type OAuthCallbackCopy } from '../data-access/oauth-callback';
 import { GoogleOAuthService } from '../data-access/google-oauth.service';
+
+const GOOGLE: OAuthCallbackCopy = {
+  id: 'google',
+  cancelled: 'Connexion Google annulée ou refusée.',
+  invalidState: 'Session Google invalide ou expirée. Réessaie.',
+  exchangeFailed: 'Échec de la connexion Google. Réessaie.',
+};
 
 /**
  * Callback OAuth Google — reçoit ?code=&state=, vérifie le state navigateur, échange JWT.
@@ -31,36 +38,25 @@ export class GoogleCallbackPage implements OnInit {
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
-    const oauthError = params.get('error');
-    if (oauthError) {
-      void this.router.navigate(['/login'], {
-        queryParams: { error: 'Connexion Google annulée ou refusée.' },
-      });
-      return;
-    }
-
-    const code = params.get('code');
-    const state = takeOAuthState('google', params.get('state'));
-    if (!code || !state) {
-      void this.router.navigate(['/login'], {
-        queryParams: { error: 'Session Google invalide ou expirée. Réessaie.' },
-      });
-      return;
-    }
-
-    this.googleOAuth
-      .exchangeCode(code, state)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-      next: (res) => {
-        this.auth.setToken(res.token);
+    const pending = connectOAuthCallback({
+      copy: GOOGLE,
+      query: {
+        error: params.get('error'),
+        code: params.get('code'),
+        state: params.get('state'),
+      },
+      exchange: (code, state) => this.googleOAuth.exchangeCode(code, state),
+      onLoginError: (error) => {
+        void this.router.navigate(['/login'], { queryParams: { error } });
+      },
+      onSuccess: (token) => {
+        this.auth.setToken(token);
         void this.router.navigateByUrl(landingPath(this.auth.session()));
       },
-      error: () => {
-        void this.router.navigate(['/login'], {
-          queryParams: { error: 'Échec de la connexion Google. Réessaie.' },
-        });
+      onExchangeError: (error) => {
+        void this.router.navigate(['/login'], { queryParams: { error } });
       },
     });
+    pending?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 }
