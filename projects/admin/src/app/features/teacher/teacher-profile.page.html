@@ -1,0 +1,118 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4 · admin</span>
+    <span class="spacer"></span>
+    <a mat-button routerLink="/teacher">Espace</a>
+    <app-role-switch />
+    <app-space-access />
+    <button mat-button type="button" (click)="logout()">Déconnexion</button>
+  </mat-toolbar>
+
+  <main class="content">
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Profil</mat-card-title>
+        <mat-card-subtitle>Nom affiché, écoles et classes</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (loading()) {
+          <p>Chargement…</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+        @if (saved()) {
+          <p class="ok" role="status">Enregistré.</p>
+        }
+
+        @if (ready()) {
+          <p class="email">
+            <span class="label">Email</span>
+            {{ email() }}
+          </p>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Nom affiché</mat-label>
+            <input
+              matInput
+              type="text"
+              name="displayName"
+              autocomplete="name"
+              [ngModel]="displayName()"
+              (ngModelChange)="onName($event)"
+              required
+            />
+          </mat-form-field>
+
+          <section class="schools" aria-labelledby="schools-title">
+            <h2 id="schools-title">Écoles</h2>
+            @if (catalogEmpty()) {
+              <p class="hint">Aucune école n'est proposable pour l'instant.</p>
+            } @else {
+              <p class="hint">
+                Choisis le pays, puis une école. Les classes affichées sont celles de cette école.
+              </p>
+            }
+
+            @for (block of blocks(); track block.key) {
+              <article class="school">
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>Pays</mat-label>
+                  <mat-select
+                    [value]="block.country"
+                    (selectionChange)="onCountry(block.key, $event.value)"
+                    placeholder="Choisir un pays"
+                  >
+                    @for (country of countries(); track country) {
+                      <mat-option [value]="country">{{ country }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>École</mat-label>
+                  <mat-select
+                    [value]="block.schoolId"
+                    [disabled]="!block.country"
+                    (selectionChange)="onSchool(block.key, $event.value)"
+                    placeholder="Choisir une école"
+                  >
+                    @for (school of optionsFor(block); track school.id) {
+                      <mat-option [value]="school.id">{{ school.name }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                @if (gradesFor(block).length) {
+                  <div class="grades">
+                    @for (grade of gradesFor(block); track grade) {
+                      <mat-checkbox
+                        [checked]="block.grades.includes(grade)"
+                        (change)="toggleGrade(block.key, grade, $event.checked)"
+                      >
+                        {{ grade }}
+                      </mat-checkbox>
+                    }
+                  </div>
+                }
+
+                <button mat-button type="button" (click)="removeSchool(block.key)">Retirer cette école</button>
+              </article>
+            }
+
+            @if (canAdd()) {
+              <button mat-stroked-button type="button" (click)="addSchool()">Ajouter une école</button>
+            }
+          </section>
+        }
+      </mat-card-content>
+      @if (ready()) {
+        <mat-card-actions align="end">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
+        </mat-card-actions>
+      }
+    </mat-card>
+  </main>
+</div>
