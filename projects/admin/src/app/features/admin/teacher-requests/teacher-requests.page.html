@@ -6,11 +6,17 @@
     @if (error()) {
       <p class="error" role="alert">{{ error() }}</p>
     }
+    @if (truncated()) {
+      <p class="hint" role="status">
+        Seules les 100 premières demandes de la file sont affichées. Il en reste d'autres, et le
+        serveur ne propose pas encore de page suivante.
+      </p>
+    }
 
     <section>
       <h2>En attente</h2>
       @if (pending().length === 0) {
-        <p class="empty">Aucune demande en attente.</p>
+        <p class="empty">{{ emptyLabel('en attente') }}</p>
       }
       @for (item of pending(); track item.id) {
         <article class="row">
@@ -37,7 +43,7 @@
     <section>
       <h2>Déjà traitées</h2>
       @if (approved().length === 0) {
-        <p class="empty">Aucune demande traitée.</p>
+        <p class="empty">{{ emptyLabel('traitée') }}</p>
       }
       @for (item of approved(); track item.id) {
         <article class="row">
@@ -64,7 +70,7 @@
     <section>
       <h2>Révoquées</h2>
       @if (revoked().length === 0) {
-        <p class="empty">Aucune demande révoquée.</p>
+        <p class="empty">{{ emptyLabel('révoquée') }}</p>
       }
       @for (item of revoked(); track item.id) {
         <article class="row">
