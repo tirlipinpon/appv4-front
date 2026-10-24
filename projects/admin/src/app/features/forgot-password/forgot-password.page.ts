@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { ForgotPasswordService } from './data-access/forgot-password.service';
+import { EMAIL_FORMAT_MESSAGE, isPlausibleEmail } from '../../shared/email-format/email-format';
 
 /**
  * Feature forgot-password — saisie email (SCRUM-109).
@@ -37,13 +38,17 @@ export class ForgotPasswordPage {
   readonly error = signal<string | null>(null);
   readonly loading = signal(false);
 
-  readonly canSubmit = computed(() => {
+  readonly canSubmit = computed(() => isPlausibleEmail(this.email()) && !this.loading());
+  readonly emailFormatError = computed(() => {
     const value = this.email().trim();
-    return this.isEmailFormatValid(value) && !this.loading();
+    if (!value || isPlausibleEmail(value)) {
+      return null;
+    }
+    return EMAIL_FORMAT_MESSAGE;
   });
 
   submit(): void {
-    if (!this.canSubmit()) {
+    if (this.loading() || !isPlausibleEmail(this.email())) {
       return;
     }
     this.error.set(null);
@@ -75,10 +80,5 @@ export class ForgotPasswordPage {
         );
       },
     });
-  }
-
-  private isEmailFormatValid(email: string): boolean {
-    // Validation front légère (AC format invalide) — alignée sur un email « raisonnable »
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 }

@@ -12,6 +12,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { AuthService } from '../../core/auth/auth.service';
 import { landingPath } from '../../core/auth/space-landing';
 import { evaluatePasswordRules, isPasswordValid } from '../../shared/password-rules/password-rules';
+import { EMAIL_FORMAT_MESSAGE, isPlausibleEmail } from '../../shared/email-format/email-format';
 import { SignupService } from './data-access/signup.service';
 
 /**
@@ -45,7 +46,6 @@ export class SignupPage {
   readonly password = signal('');
   readonly showPassword = signal(false);
   readonly error = signal<string | null>(null);
-  readonly socialCollision = signal(false);
   readonly loading = signal(false);
 
   togglePasswordVisibility(): void {
@@ -53,17 +53,22 @@ export class SignupPage {
   }
 
   readonly passwordRules = computed(() => evaluatePasswordRules(this.password()));
+  readonly emailFormatError = computed(() => {
+    const value = this.email().trim();
+    if (!value || isPlausibleEmail(value)) {
+      return null;
+    }
+    return EMAIL_FORMAT_MESSAGE;
+  });
   readonly canSubmit = computed(() => {
-    const emailOk = this.email().trim().includes('@');
-    return emailOk && isPasswordValid(this.password()) && !this.loading();
+    return isPlausibleEmail(this.email()) && isPasswordValid(this.password()) && !this.loading();
   });
 
   submit(): void {
-    if (!this.canSubmit()) {
+    if (this.loading() || !isPlausibleEmail(this.email()) || !isPasswordValid(this.password())) {
       return;
     }
     this.error.set(null);
-    this.socialCollision.set(false);
     this.loading.set(true);
 
     this.signupApi.signup(this.email().trim(), this.password(), this.displayName).subscribe({
@@ -74,9 +79,7 @@ export class SignupPage {
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
-        const message = this.extractMessage(err);
-        this.error.set(message);
-        this.socialCollision.set(this.looksLikeSocialCollision(message));
+        this.error.set(this.extractMessage(err));
       },
     });
   }
@@ -90,15 +93,5 @@ export class SignupPage {
       return 'Impossible de joindre le serveur. Vérifie que le back tourne.';
     }
     return 'Inscription impossible.';
-  }
-
-  private looksLikeSocialCollision(message: string): boolean {
-    const lower = message.toLowerCase();
-    return (
-      lower.includes('google') ||
-      lower.includes('facebook') ||
-      lower.includes('apple') ||
-      lower.includes('fournisseur')
-    );
   }
 }
