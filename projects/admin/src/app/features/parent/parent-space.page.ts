@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
@@ -13,7 +13,7 @@ import { SpaceAccess } from '../../core/layout/space-access';
  */
 @Component({
   selector: 'app-parent-space-page',
-  imports: [MatToolbarModule, MatButtonModule, RoleSwitch, SpaceAccess],
+  imports: [RouterLink, MatToolbarModule, MatButtonModule, RoleSwitch, SpaceAccess],
   templateUrl: './parent-space.page.html',
   styleUrl: './parent-space.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

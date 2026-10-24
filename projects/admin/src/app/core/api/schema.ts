@@ -22,6 +22,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les enfants du parent connecté */
+        get: operations["listParentChildren"];
+        put?: never;
+        /** Ajouter un enfant au parent connecté */
+        post: operations["addParentChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/auth/switch-role": {
         parameters: {
             query?: never;
@@ -297,6 +315,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/{id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la photo d'un enfant du parent connecté */
+        get: operations["getParentChildPhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/hello": {
         parameters: {
             query?: never;
@@ -460,6 +495,36 @@ export interface components {
             availableSchools?: components["schemas"]["TeacherAvailableSchool"][];
             curricula?: components["schemas"]["TeacherCurriculumOption"][];
         };
+        CreateParentChildRequest: {
+            firstName?: string;
+            lastName?: string;
+            age?: string;
+            country?: string;
+            grade?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            avatarCode?: string;
+            photoBase64?: string;
+            photoContentType?: string;
+            pin?: string;
+            pinConfirmation?: string;
+        };
+        ParentChildResponse: {
+            /** Format: int64 */
+            id?: number;
+            firstName?: string;
+            lastName?: string;
+            /** Format: int32 */
+            age?: number;
+            country?: string;
+            curriculum?: string;
+            grade?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            avatarCode?: string;
+            hasPhoto?: boolean;
+        };
         SwitchRoleRequest: {
             role: string;
         };
@@ -533,6 +598,22 @@ export interface components {
         };
         HelloMessageResponse: {
             text?: string;
+        };
+        ParentChildrenResponse: {
+            children?: components["schemas"]["ParentChildResponse"][];
+            schools?: components["schemas"]["ParentSchoolOption"][];
+            curricula?: components["schemas"]["ParentGradeList"][];
+        };
+        ParentGradeList: {
+            country?: string;
+            grades?: string[];
+        };
+        ParentSchoolOption: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            country?: string;
+            grades?: string[];
         };
         AuthorizeUrlResponse: {
             authorizationUrl?: string;
@@ -612,6 +693,77 @@ export interface operations {
                 };
             };
             /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listParentChildren: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fiches du parent et écoles proposables */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentChildrenResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    addParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateParentChildRequest"];
+            };
+        };
+        responses: {
+            /** @description Fiche créée, sans le PIN */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentChildResponse"];
+                };
+            };
+            /** @description Champ obligatoire manquant, âge, classe, image ou PIN refusé */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1060,6 +1212,37 @@ export interface operations {
             };
             /** @description Jeton professeur, ou espace non choisi */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getParentChildPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Image de l'enfant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Pas de photo pour cet enfant, ou enfant d'un autre parent */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
