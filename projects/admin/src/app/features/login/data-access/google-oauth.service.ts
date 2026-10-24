@@ -1,39 +1,23 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, tap } from 'rxjs';
 
-import type {
-  AuthorizeUrlResponse,
-  GoogleLoginRequest,
-  JwtTokenResponse,
-} from '../../../core/api/api-models';
-import { environment } from '../../../../environments/environment';
-import { storeOAuthState } from './oauth-browser-state';
+import { OAuthHttp } from './oauth-http';
 
 /**
  * Data-access login Google (SCRUM-97) — aucun secret Google côté front.
+ * L'échange HTTP est celui de {@link OAuthHttp}.
  */
 @Injectable({ providedIn: 'root' })
 export class GoogleOAuthService {
-  private readonly http = inject(HttpClient);
+  private readonly oauth = inject(OAuthHttp);
 
   /** Redirect FE enregistré dans Google Cloud (local). */
   readonly redirectUri = `${window.location.origin}/auth/callback/google`;
 
-  getAuthorizeUrl(): Observable<AuthorizeUrlResponse> {
-    return this.http
-      .get<AuthorizeUrlResponse>(`${environment.apiBaseUrl}/auth/oauth/google/authorize-url`, {
-        params: { redirectUri: this.redirectUri },
-      })
-      .pipe(tap((res) => storeOAuthState('google', res.state)));
+  getAuthorizeUrl() {
+    return this.oauth.authorize('google', this.redirectUri);
   }
 
-  exchangeCode(authorizationCode: string, state: string): Observable<JwtTokenResponse> {
-    const body: GoogleLoginRequest = {
-      authorizationCode,
-      redirectUri: this.redirectUri,
-      state,
-    };
-    return this.http.post<JwtTokenResponse>(`${environment.apiBaseUrl}/auth/oauth/google`, body);
+  exchangeCode(authorizationCode: string, state: string) {
+    return this.oauth.exchange('google', this.redirectUri, authorizationCode, state);
   }
 }
