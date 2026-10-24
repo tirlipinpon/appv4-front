@@ -1,13 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatToolbarModule } from '@angular/material/toolbar';
 
 import type {
   CreateParentChildRequest,
@@ -15,9 +14,7 @@ import type {
   ParentGradeList,
   ParentSchoolOption,
 } from '../../core/api/api-models';
-import { AuthService } from '../../core/auth/auth.service';
-import { RoleSwitch } from '../../core/layout/role-switch';
-import { SpaceAccess } from '../../core/layout/space-access';
+import { SpaceHeader } from '../../core/layout/space-header';
 import { CHILD_AVATARS, avatarEmoji } from './child-avatars';
 import { ParentChildrenService } from './data-access/parent-children.service';
 
@@ -30,14 +27,12 @@ import { ParentChildrenService } from './data-access/parent-children.service';
   imports: [
     FormsModule,
     RouterLink,
-    MatToolbarModule,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    RoleSwitch,
-    SpaceAccess,
+    SpaceHeader,
   ],
   templateUrl: './parent-children.page.html',
   styleUrl: './parent-children.page.scss',
@@ -45,8 +40,6 @@ import { ParentChildrenService } from './data-access/parent-children.service';
 })
 export class ParentChildrenPage implements OnInit {
   private readonly api = inject(ParentChildrenService);
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
 
   readonly avatars = CHILD_AVATARS;
   readonly emoji = avatarEmoji;
@@ -110,11 +103,6 @@ export class ParentChildrenPage implements OnInit {
 
   ngOnInit(): void {
     this.reload();
-  }
-
-  logout(): void {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
   }
 
   openForm(): void {

@@ -1,23 +1,20 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatToolbarModule } from '@angular/material/toolbar';
 
 import type {
   TeacherAvailableSchool,
   TeacherProfileResponse,
   UpdateTeacherProfileRequest,
 } from '../../core/api/api-models';
-import { AuthService } from '../../core/auth/auth.service';
-import { RoleSwitch } from '../../core/layout/role-switch';
-import { SpaceAccess } from '../../core/layout/space-access';
+import { SpaceHeader } from '../../core/layout/space-header';
 import { TeacherProfileService } from './data-access/teacher-profile.service';
 
 interface SchoolBlock {
@@ -49,15 +46,13 @@ const PENDING_EDIT =
   imports: [
     FormsModule,
     RouterLink,
-    MatToolbarModule,
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatCheckboxModule,
-    RoleSwitch,
-    SpaceAccess,
+    SpaceHeader,
   ],
   templateUrl: './teacher-profile.page.html',
   styleUrl: './teacher-profile.page.scss',
@@ -65,8 +60,6 @@ const PENDING_EDIT =
 })
 export class TeacherProfilePage implements OnInit {
   private readonly api = inject(TeacherProfileService);
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
   private nextKey = 1;
 
   readonly email = signal('');
@@ -115,11 +108,6 @@ export class TeacherProfilePage implements OnInit {
         this.error.set(this.message(err, 'Profil indisponible.'));
       },
     });
-  }
-
-  logout(): void {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
   }
 
   onName(value: string): void {

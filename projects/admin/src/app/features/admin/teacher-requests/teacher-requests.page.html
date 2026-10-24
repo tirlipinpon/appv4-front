@@ -1,9 +1,5 @@
 <div class="page">
-  <mat-toolbar color="primary">
-    <span>appv4 · admin</span>
-    <span class="spacer"></span>
-    <button mat-button type="button" (click)="logout()">Déconnexion</button>
-  </mat-toolbar>
+  <app-space-header [showSpaceActions]="false" />
 
   <main class="content">
     <h1>Demandes professeur</h1>
