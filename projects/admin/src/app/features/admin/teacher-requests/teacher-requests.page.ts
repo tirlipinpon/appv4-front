@@ -1,11 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
 
 import type { TeacherRequestItem } from '../../../core/api/api-models';
-import { AuthService } from '../../../core/auth/auth.service';
+import { SpaceHeader } from '../../../core/layout/space-header';
 import { TeacherRequestsService } from './data-access/teacher-requests.service';
 
 /**
@@ -15,15 +13,13 @@ import { TeacherRequestsService } from './data-access/teacher-requests.service';
  */
 @Component({
   selector: 'app-teacher-requests-page',
-  imports: [MatToolbarModule, MatButtonModule],
+  imports: [MatButtonModule, SpaceHeader],
   templateUrl: './teacher-requests.page.html',
   styleUrl: './teacher-requests.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TeacherRequestsPage implements OnInit {
   private readonly api = inject(TeacherRequestsService);
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
 
   readonly requests = signal<TeacherRequestItem[]>([]);
   readonly pending = computed(() => this.requests().filter((item) => item.status === 'pending'));
@@ -65,11 +61,6 @@ export class TeacherRequestsPage implements OnInit {
         this.error.set(this.extractMessage(err));
       },
     });
-  }
-
-  logout(): void {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
   }
 
   age(createdAt: string | undefined): string {
