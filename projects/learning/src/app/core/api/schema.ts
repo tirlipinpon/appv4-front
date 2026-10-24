@@ -100,7 +100,7 @@ export interface paths {
         put?: never;
         /**
          * Échanger le code Apple contre un JWT
-         * @description redirectUri doit être APPLE_CALLBACK_URI (Return URL form_post), pas l'URL SPA.
+         * @description redirectUri = URL SPA de reprise ; l'échange token utilise APPLE_CALLBACK_URI.
          */
         post: operations["loginWithApple"];
         delete?: never;
@@ -378,15 +378,18 @@ export interface components {
         GoogleLoginRequest: {
             authorizationCode: string;
             redirectUri: string;
+            state: string;
         };
         FacebookLoginRequest: {
             authorizationCode: string;
             redirectUri: string;
+            state: string;
         };
         AppleLoginRequest: {
             authorizationCode: string;
-            /** @description Doit égaler APPLE_CALLBACK_URI quand configuré */
+            /** @description URL SPA de reprise (lié au state) */
             redirectUri: string;
+            state: string;
         };
         LoginRequest: {
             /** Format: email */
@@ -418,6 +421,7 @@ export interface components {
         };
         AuthorizeUrlResponse: {
             authorizationUrl?: string;
+            state?: string;
         };
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
