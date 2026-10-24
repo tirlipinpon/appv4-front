@@ -58,3 +58,42 @@ describe('TeacherRequestsPage', () => {
     expect(fixture.nativeElement.textContent).not.toContain('liste indisponible');
   });
 });
+
+describe('TeacherRequestsPage tronquée', () => {
+  let fixture: ComponentFixture<TeacherRequestsPage>;
+  let http: HttpTestingController;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [TeacherRequestsPage],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideAnimationsAsync(),
+        provideRouter([]),
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(TeacherRequestsPage);
+    http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    http
+      .expectOne((req) => req.method === 'GET' && req.url.includes('/admin/teacher-requests'))
+      .flush({ requests: [], truncated: true });
+    fixture.detectChanges();
+  });
+
+  afterEach(() => http.verify());
+
+  it('annonce une file partielle et ne promet pas que les groupes vides sont complets', () => {
+    const empties = [...fixture.nativeElement.querySelectorAll('.empty')].map((node) =>
+      (node as HTMLElement).textContent?.trim(),
+    );
+    expect(fixture.nativeElement.textContent).toContain('Il en reste d\'autres');
+    expect(empties).toEqual([
+      'Aucune demande en attente dans ces 100 premières.',
+      'Aucune demande traitée dans ces 100 premières.',
+      'Aucune demande révoquée dans ces 100 premières.',
+    ]);
+  });
+});
