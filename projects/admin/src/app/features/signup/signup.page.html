@@ -13,12 +13,6 @@
       <mat-card-content>
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
-          @if (socialCollision()) {
-            <p class="hint">
-              Tu peux te connecter via le fournisseur déjà lié, ou revenir à la
-              <a routerLink="/login">page de connexion</a>.
-            </p>
-          }
         }
 
         <mat-form-field appearance="outline" class="full">
@@ -33,6 +27,9 @@
             required
           />
         </mat-form-field>
+        @if (emailFormatError()) {
+          <p class="error" role="alert">{{ emailFormatError() }}</p>
+        }
 
         <mat-form-field appearance="outline" class="full">
           <mat-label>Nom affiché (optionnel)</mat-label>

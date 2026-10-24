@@ -13,6 +13,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth/auth.service';
 import { landingPath } from '../../core/auth/space-landing';
+import { EMAIL_FORMAT_MESSAGE, isPlausibleEmail } from '../../shared/email-format/email-format';
 import { FacebookOAuthService } from './data-access/facebook-oauth.service';
 import { GoogleOAuthService } from './data-access/google-oauth.service';
 import { LoginService } from './data-access/login.service';
@@ -58,9 +59,15 @@ export class LoginPage implements OnInit {
   readonly facebookLoading = signal(false);
 
   readonly canSubmit = computed(() => {
-    const emailOk = this.email().trim().includes('@');
     const passwordOk = this.password().length > 0;
-    return emailOk && passwordOk && !this.loading();
+    return isPlausibleEmail(this.email()) && passwordOk && !this.loading();
+  });
+  readonly emailFormatError = computed(() => {
+    const value = this.email().trim();
+    if (!value || isPlausibleEmail(value)) {
+      return null;
+    }
+    return EMAIL_FORMAT_MESSAGE;
   });
 
   ngOnInit(): void {
@@ -75,7 +82,7 @@ export class LoginPage implements OnInit {
   }
 
   submit(): void {
-    if (!this.canSubmit()) {
+    if (this.loading() || !isPlausibleEmail(this.email()) || this.password().length === 0) {
       return;
     }
     this.error.set(null);

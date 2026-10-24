@@ -26,6 +26,9 @@
             required
           />
         </mat-form-field>
+        @if (emailFormatError()) {
+          <p class="error" role="alert">{{ emailFormatError() }}</p>
+        }
 
         <mat-form-field appearance="outline" class="full">
           <mat-label>Mot de passe</mat-label>
