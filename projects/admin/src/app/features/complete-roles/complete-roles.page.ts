@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -10,6 +11,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { landingPath } from '../../core/auth/space-landing';
 import { SpaceRoles, type SpaceRole } from '../../core/auth/space-roles';
 import { CompleteRolesService } from './data-access/complete-roles.service';
+import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 
 /**
  * Choix de rôle après la création du compte (SCRUM-155).
@@ -26,6 +28,7 @@ export class CompleteRolesPage {
   private readonly api = inject(CompleteRolesService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly wantParent = signal(false);
   readonly wantTeacher = signal(false);
@@ -42,17 +45,19 @@ export class CompleteRolesPage {
     }
     this.error.set(null);
     this.loading.set(true);
-    this.api.complete(this.selectedRoles()).subscribe({
-      next: () => {
-        this.loading.set(false);
-        void this.router.navigateByUrl(landingPath(this.auth.session()));
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        const message = (err.error as { message?: string } | null)?.message;
-        this.error.set(message || 'Choix impossible.');
-      },
-    });
+    this.api
+      .complete(this.selectedRoles())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loading.set(false);
+          void this.router.navigateByUrl(landingPath(this.auth.session()));
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading.set(false);
+          this.error.set(httpErrorMessage(err, 'Choix impossible.'));
+        },
+      });
   }
 
   private selectedRoles(): SpaceRole[] {

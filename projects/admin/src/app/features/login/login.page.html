@@ -59,7 +59,7 @@
           color="primary"
           class="oauth-btn"
           type="button"
-          [disabled]="!canSubmit() || googleLoading() || facebookLoading()"
+          [disabled]="!canSubmit()"
           (click)="submit()"
         >
           {{ loading() ? 'Connexion…' : 'Se connecter' }}
@@ -71,7 +71,7 @@
           mat-stroked-button
           class="oauth-btn"
           type="button"
-          [disabled]="loading() || googleLoading() || facebookLoading()"
+          [disabled]="busy()"
           (click)="continueWithGoogle()"
         >
           {{ googleLoading() ? 'Redirection…' : 'Continuer avec Google' }}
@@ -81,7 +81,7 @@
           mat-stroked-button
           class="oauth-btn facebook-btn"
           type="button"
-          [disabled]="loading() || googleLoading() || facebookLoading()"
+          [disabled]="busy()"
           (click)="continueWithFacebook()"
         >
           {{ facebookLoading() ? 'Redirection…' : 'Continuer avec Facebook' }}

@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 
 import type { TeacherRequestItem } from '../../../core/api/api-models';
 import { SpaceHeader } from '../../../core/layout/space-header';
+import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherRequestsService } from './data-access/teacher-requests.service';
 
 /**
@@ -85,8 +86,7 @@ export class TeacherRequestsPage implements OnInit {
   }
 
   private extractMessage(err: HttpErrorResponse): string {
-    const message = (err.error as { message?: string } | null)?.message;
-    return message || 'Impossible de charger les demandes.';
+    return httpErrorMessage(err, 'Impossible de charger les demandes.');
   }
 }
 

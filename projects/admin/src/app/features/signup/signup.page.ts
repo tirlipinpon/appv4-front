@@ -13,6 +13,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { landingPath } from '../../core/auth/space-landing';
 import { evaluatePasswordRules, isPasswordValid } from '../../shared/password-rules/password-rules';
 import { EMAIL_FORMAT_MESSAGE, isPlausibleEmail } from '../../shared/email-format/email-format';
+import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { SignupService } from './data-access/signup.service';
 
 /**
@@ -85,13 +86,10 @@ export class SignupPage {
   }
 
   private extractMessage(err: HttpErrorResponse): string {
-    const body = err.error as { message?: string } | null;
-    if (body?.message && typeof body.message === 'string') {
-      return body.message;
-    }
-    if (err.status === 0) {
-      return 'Impossible de joindre le serveur. Vérifie que le back tourne.';
-    }
-    return 'Inscription impossible.';
+    const fallback =
+      err.status === 0
+        ? 'Impossible de joindre le serveur. Vérifie que le back tourne.'
+        : 'Inscription impossible.';
+    return httpErrorMessage(err, fallback);
   }
 }

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -24,6 +25,7 @@ export class GoogleCallbackPage implements OnInit {
   private readonly router = inject(Router);
   private readonly googleOAuth = inject(GoogleOAuthService);
   private readonly auth = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly message = signal('Connexion Google…');
 
@@ -46,7 +48,10 @@ export class GoogleCallbackPage implements OnInit {
       return;
     }
 
-    this.googleOAuth.exchangeCode(code, state).subscribe({
+    this.googleOAuth
+      .exchangeCode(code, state)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         this.auth.setToken(res.token);
         void this.router.navigateByUrl(landingPath(this.auth.session()));

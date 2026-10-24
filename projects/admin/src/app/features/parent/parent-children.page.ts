@@ -15,6 +15,7 @@ import type {
   ParentSchoolOption,
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
+import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { CHILD_AVATARS, avatarEmoji } from './child-avatars';
 import { ParentChildrenService } from './data-access/parent-children.service';
 
@@ -245,7 +246,6 @@ export class ParentChildrenPage implements OnInit {
   }
 
   private message(err: HttpErrorResponse, fallback: string): string {
-    const body = err.error as { message?: string } | null;
-    return body?.message || fallback;
+    return httpErrorMessage(err, fallback);
   }
 }

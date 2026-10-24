@@ -15,6 +15,7 @@ import type {
   UpdateTeacherProfileRequest,
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
+import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { TeacherProfileService } from './data-access/teacher-profile.service';
 
 interface SchoolBlock {
@@ -327,7 +328,6 @@ export class TeacherProfilePage implements OnInit {
   }
 
   private message(err: HttpErrorResponse, fallback: string): string {
-    const body = err.error as { message?: string } | null;
-    return body?.message || fallback;
+    return httpErrorMessage(err, fallback);
   }
 }

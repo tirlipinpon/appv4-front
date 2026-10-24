@@ -10,6 +10,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { ForgotPasswordService } from './data-access/forgot-password.service';
 import { EMAIL_FORMAT_MESSAGE, isPlausibleEmail } from '../../shared/email-format/email-format';
+import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 
 /**
  * Feature forgot-password — saisie email (SCRUM-109).
@@ -67,11 +68,11 @@ export class ForgotPasswordPage {
         this.loading.set(false);
         // Validation email invalide côté API (400) — sinon message générique réseau
         if (err.status === 400) {
-          this.error.set('Adresse email invalide.');
+          this.error.set(httpErrorMessage(err, 'Adresse email invalide.'));
           return;
         }
         if (err.status === 0) {
-          this.error.set('Impossible de joindre le serveur. Vérifie que le back tourne.');
+          this.error.set(httpErrorMessage(err, 'Impossible de joindre le serveur. Vérifie que le back tourne.'));
           return;
         }
         // Anti-énumération : en cas d'erreur inattendue, ne pas révéler l'existence du compte
