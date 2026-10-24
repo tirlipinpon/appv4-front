@@ -5,6 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { RoleSwitch } from '../../core/layout/role-switch';
+import { SpaceAccess } from '../../core/layout/space-access';
 
 /**
  * Cible minimale après une inscription avec la case Professeur (SCRUM-122).
@@ -12,13 +13,14 @@ import { RoleSwitch } from '../../core/layout/role-switch';
  */
 @Component({
   selector: 'app-teacher-pending-page',
-  imports: [RouterLink, MatToolbarModule, MatCardModule, MatButtonModule, RoleSwitch],
+  imports: [RouterLink, MatToolbarModule, MatCardModule, MatButtonModule, RoleSwitch, SpaceAccess],
   template: `
     <div class="page">
       <mat-toolbar color="primary">
         <span>appv4 · admin · professeur</span>
         <span class="spacer"></span>
         <app-role-switch />
+        <app-space-access />
       </mat-toolbar>
       <main class="content">
         <mat-card class="card">

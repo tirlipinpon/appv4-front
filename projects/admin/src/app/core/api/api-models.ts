@@ -15,6 +15,7 @@ export type HelloMessageResponse = Required<components['schemas']['HelloMessageR
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type SignupRequest = components['schemas']['SignupRequest'];
 export type SwitchRoleRequest = components['schemas']['SwitchRoleRequest'];
+export type SpaceAccessResponse = Required<components['schemas']['SpaceAccessResponse']>;
 export type CompleteRolesRequest = components['schemas']['CompleteRolesRequest'];
 export type TeacherRequestItem = components['schemas']['TeacherRequestItem'];
 export type TeacherRequestListResponse = components['schemas']['TeacherRequestListResponse'];

@@ -7,6 +7,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { RoleSwitch } from '../../core/layout/role-switch';
+import { SpaceAccess } from '../../core/layout/space-access';
 import { HomeHelloService } from './data-access/home-hello.service';
 
 /**
@@ -15,7 +16,14 @@ import { HomeHelloService } from './data-access/home-hello.service';
  */
 @Component({
   selector: 'app-home-page',
-  imports: [MatToolbarModule, MatCardModule, MatProgressSpinnerModule, MatButtonModule, RoleSwitch],
+  imports: [
+    MatToolbarModule,
+    MatCardModule,
+    MatProgressSpinnerModule,
+    MatButtonModule,
+    RoleSwitch,
+    SpaceAccess,
+  ],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
