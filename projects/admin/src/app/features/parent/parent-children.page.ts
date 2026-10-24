@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -28,6 +29,7 @@ import { ParentChildrenService } from './data-access/parent-children.service';
 @Component({
   selector: 'app-parent-children-page',
   imports: [
+    NgTemplateOutlet,
     FormsModule,
     RouterLink,
     MatToolbarModule,
@@ -58,6 +60,10 @@ export class ParentChildrenPage implements OnInit {
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly formOpen = signal(false);
+  readonly editingId = signal<number | null>(null);
+  readonly pendingKind = signal<'deactivate' | 'hide' | null>(null);
+  readonly pendingChildId = signal<number | null>(null);
+  readonly keepPhoto = signal(false);
   readonly error = signal<string | null>(null);
 
   readonly firstName = signal('');
@@ -118,8 +124,97 @@ export class ParentChildrenPage implements OnInit {
   }
 
   openForm(): void {
+    this.clearPending();
+    this.resetForm();
     this.error.set(null);
     this.formOpen.set(true);
+  }
+
+  closeForm(): void {
+    this.formOpen.set(false);
+    this.resetForm();
+  }
+
+  edit(child: ParentChildResponse): void {
+    this.clearPending();
+    this.error.set(null);
+    this.editingId.set(child.id ?? null);
+    this.firstName.set(child.firstName ?? '');
+    this.lastName.set(child.lastName ?? '');
+    this.age.set(child.age == null ? '' : String(child.age));
+    this.country.set(child.country ?? null);
+    this.grade.set(child.grade ?? null);
+    this.schoolId.set(child.schoolId ?? null);
+    this.schoolFilter.set(child.schoolName ?? '');
+    this.avatarCode.set(child.hasPhoto ? null : (child.avatarCode ?? null));
+    this.keepPhoto.set(!!child.hasPhoto);
+    this.photoBase64.set(null);
+    this.photoContentType.set(null);
+    this.photoName.set(null);
+    this.pin.set('');
+    this.pinConfirmation.set('');
+    this.formOpen.set(true);
+  }
+
+  askDeactivate(child: ParentChildResponse): void {
+    this.pendingKind.set('deactivate');
+    this.pendingChildId.set(child.id ?? null);
+  }
+
+  askRemove(child: ParentChildResponse): void {
+    if (this.editingId() === child.id) {
+      this.closeForm();
+    }
+    this.pendingKind.set('hide');
+    this.pendingChildId.set(child.id ?? null);
+  }
+
+  cancelPending(): void {
+    this.clearPending();
+  }
+
+  confirmDeactivate(child: ParentChildResponse): void {
+    if (child.id == null) {
+      return;
+    }
+    this.api.deactivate(child.id).subscribe({
+      next: () => {
+        this.clearPending();
+        this.reload();
+      },
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Désactivation impossible.')),
+    });
+  }
+
+  reactivate(child: ParentChildResponse): void {
+    if (child.id == null) {
+      return;
+    }
+    this.api.reactivate(child.id).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Réactivation impossible.')),
+    });
+  }
+
+  confirmRemove(child: ParentChildResponse): void {
+    if (child.id == null) {
+      return;
+    }
+    this.api.remove(child.id).subscribe({
+      next: () => {
+        if (this.editingId() === child.id) {
+          this.closeForm();
+        }
+        this.clearPending();
+        this.reload();
+      },
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Retrait impossible.')),
+    });
+  }
+
+  private clearPending(): void {
+    this.pendingKind.set(null);
+    this.pendingChildId.set(null);
   }
 
   onCountry(country: string): void {
@@ -142,6 +237,7 @@ export class ParentChildrenPage implements OnInit {
     this.photoBase64.set(null);
     this.photoContentType.set(null);
     this.photoName.set(null);
+    this.keepPhoto.set(false);
   }
 
   onPhoto(event: Event): void {
@@ -179,7 +275,10 @@ export class ParentChildrenPage implements OnInit {
     }
     this.error.set(null);
     this.saving.set(true);
-    this.api.add(this.payload()).subscribe({
+    const request = this.editingId() == null
+      ? this.api.add(this.payload())
+      : this.api.update(this.editingId()!, this.payload());
+    request.subscribe({
       next: () => {
         this.saving.set(false);
         this.formOpen.set(false);
@@ -252,6 +351,8 @@ export class ParentChildrenPage implements OnInit {
     this.photoName.set(null);
     this.photoBase64.set(null);
     this.photoContentType.set(null);
+    this.keepPhoto.set(false);
+    this.editingId.set(null);
     this.pin.set('');
     this.pinConfirmation.set('');
   }
