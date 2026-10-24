@@ -56,10 +56,15 @@ export class TeacherRequestsPage implements OnInit {
     this.error.set(null);
     this.approvingId.set(item.id);
     call.subscribe({
-      next: () => this.load(),
+      next: (updated) => {
+        this.requests.update((list) =>
+          list.map((current) => (current.id === updated.id ? { ...current, ...updated } : current)),
+        );
+        this.reloadAfterChange();
+      },
       error: (err: HttpErrorResponse) => {
         this.approvingId.set(null);
-        this.error.set(this.extractMessage(err));
+        this.error.set(httpErrorMessage(err, "La demande n'a pas pu être modifiée."));
       },
     });
   }
@@ -81,6 +86,21 @@ export class TeacherRequestsPage implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.approvingId.set(null);
         this.error.set(this.extractMessage(err));
+      },
+    });
+  }
+
+  /** Le POST a déjà déplacé la demande. Un GET raté ne doit pas annuler ce résultat. */
+  private reloadAfterChange(): void {
+    this.api.list().subscribe({
+      next: (requests) => {
+        this.requests.set(requests);
+        this.approvingId.set(null);
+        this.error.set(null);
+      },
+      error: () => {
+        this.approvingId.set(null);
+        this.error.set("La demande est à jour, mais la liste n'a pas pu être rechargée.");
       },
     });
   }
