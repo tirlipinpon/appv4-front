@@ -20,9 +20,8 @@ test('email professeur seul arrive sur la page d attente, et y revient', async (
   await signupThroughUi(page, email);
   await chooseRoles(page, { teacher: true });
   await expect(page).toHaveURL(/\/teacher-pending$/);
+  await expect(page.getByText('Demande en attente')).toBeVisible();
 
-  await page.getByRole('link', { name: "Aller à l'accueil" }).click();
-  await page.getByRole('button', { name: 'Déconnexion' }).click();
   await loginThroughUi(page, email);
   await expect(page).toHaveURL(/\/teacher-pending$/);
 });
@@ -39,7 +38,7 @@ test('google neuf passe par le choix de role puis /parent', async ({ page, reque
   const email = uniqueEmail('google');
   const token = await signupByApi(request, email);
   await interceptOAuth(page, 'google', token);
-  await page.goto('/auth/callback/google?code=test-code');
+  await openOAuthCallback(page, 'google');
   await expect(page).toHaveURL(/\/complete-roles$/);
   await chooseRoles(page, { parent: true });
   await expect(page).toHaveURL(/\/parent$/);
@@ -49,7 +48,7 @@ test('facebook neuf passe par le choix de role puis /parent', async ({ page, req
   const email = uniqueEmail('facebook');
   const token = await signupByApi(request, email);
   await interceptOAuth(page, 'facebook', token);
-  await page.goto('/auth/callback/facebook?code=test-code');
+  await openOAuthCallback(page, 'facebook');
   await expect(page).toHaveURL(/\/complete-roles$/);
   await chooseRoles(page, { parent: true });
   await expect(page).toHaveURL(/\/parent$/);
@@ -60,9 +59,21 @@ test('google sur un email deja parent saute la page de choix', async ({ page, re
   const fresh = await signupByApi(request, email);
   const chosen = await completeByApi(request, fresh, ['parent']);
   await interceptOAuth(page, 'google', chosen);
-  await page.goto('/auth/callback/google?code=test-code');
+  await openOAuthCallback(page, 'google');
   await expect(page).toHaveURL(/\/parent$/);
   await expect(page).not.toHaveURL(/complete-roles/);
+});
+
+test('un callback google sans le state du navigateur revient au login', async ({ page }) => {
+  await page.goto('/auth/callback/google?code=test-code&state=absent');
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByText('Session Google invalide ou expirée. Réessaie.')).toBeVisible();
+});
+
+test('un callback google avec un state different revient au login', async ({ page }) => {
+  await openOAuthCallback(page, 'google', 'stocke', 'autre');
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByText('Session Google invalide ou expirée. Réessaie.')).toBeVisible();
 });
 
 function uniqueEmail(prefix: string): string {
@@ -75,6 +86,21 @@ async function signupThroughUi(page: Page, email: string): Promise<void> {
   await page.getByLabel('Mot de passe', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Créer mon compte' }).click();
   await expect(page).toHaveURL(/\/complete-roles$/);
+}
+
+async function openOAuthCallback(
+  page: Page,
+  provider: 'google' | 'facebook',
+  stored = 'e2e-oauth-state',
+  returned = stored,
+): Promise<void> {
+  await page.addInitScript(
+    ({ key, value }) => sessionStorage.setItem(key, value),
+    { key: `appv4.oauth.state.${provider}`, value: stored },
+  );
+  await page.goto(
+    `/auth/callback/${provider}?code=test-code&state=${encodeURIComponent(returned)}`,
+  );
 }
 
 async function loginThroughUi(page: Page, email: string): Promise<void> {
