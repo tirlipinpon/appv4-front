@@ -300,7 +300,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lister les demandes professeur en attente et acceptées */
+        /** Lister les demandes professeur (pending, approved, revoked), lecture bornée */
         get: operations["listTeacherRequests"];
         put?: never;
         post?: never;
@@ -400,6 +400,7 @@ export interface components {
         };
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
+            truncated?: boolean;
         };
     };
     responses: never;
@@ -879,14 +880,16 @@ export interface operations {
     };
     listTeacherRequests: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description File de modération */
+            /** @description File de modération (limitée) */
             200: {
                 headers: {
                     [name: string]: unknown;

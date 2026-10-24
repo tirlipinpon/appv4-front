@@ -14,7 +14,9 @@ export class TeacherRequestsService {
 
   list(): Observable<TeacherRequestItem[]> {
     return this.http
-      .get<TeacherRequestListResponse>(`${environment.apiBaseUrl}/admin/teacher-requests`)
+      .get<TeacherRequestListResponse>(`${environment.apiBaseUrl}/admin/teacher-requests`, {
+        params: { limit: '100' },
+      })
       .pipe(map((body) => body.requests ?? []));
   }
 
