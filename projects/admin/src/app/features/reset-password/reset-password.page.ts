@@ -12,6 +12,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { map } from 'rxjs/operators';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { evaluatePasswordRules, isPasswordValid } from '../../shared/password-rules/password-rules';
 import { ResetPasswordService } from './data-access/reset-password.service';
 
@@ -82,16 +83,12 @@ export class ResetPasswordPage {
   }
 
   private extractMessage(err: HttpErrorResponse): string {
-    const body = err.error as { message?: string } | null;
-    if (body?.message && typeof body.message === 'string') {
-      return body.message;
-    }
     if (err.status === 0) {
-      return 'Impossible de joindre le serveur. Vérifie que le back tourne.';
+      return httpErrorMessage(err, 'Impossible de joindre le serveur. Vérifie que le back tourne.');
     }
     if (err.status === 400) {
-      return 'Lien invalide ou expiré.';
+      return httpErrorMessage(err, 'Lien invalide ou expiré.');
     }
-    return 'Impossible de mettre à jour le mot de passe.';
+    return httpErrorMessage(err, 'Impossible de mettre à jour le mot de passe.');
   }
 }

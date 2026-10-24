@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 
@@ -8,6 +9,7 @@ import { AuthService } from '../auth/auth.service';
 import { landingPath } from '../auth/space-landing';
 import { SpaceAccessService } from '../auth/space-access.service';
 import { SpaceRoles } from '../auth/space-roles';
+import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 
 /**
  * Boutons d'en-tête pour l'espace qui manque encore (SCRUM-152).
@@ -24,6 +26,7 @@ export class SpaceAccess implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly spaces = inject(SpaceAccessService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly access = signal<SpaceAccessResponse | null>(null);
   readonly loading = signal(false);
@@ -65,7 +68,10 @@ export class SpaceAccess implements OnInit {
   });
 
   ngOnInit(): void {
-    this.spaces.load().subscribe({
+    this.spaces
+      .load()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (access) => this.access.set(access),
       error: (err: HttpErrorResponse) => this.fail(err),
     });
@@ -74,7 +80,10 @@ export class SpaceAccess implements OnInit {
   openParent(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.spaces.openParent().subscribe({
+    this.spaces
+      .openParent()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: () => {
         this.loading.set(false);
         void this.router.navigateByUrl(landingPath(this.auth.session()));
@@ -86,7 +95,10 @@ export class SpaceAccess implements OnInit {
   requestTeacher(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.spaces.requestTeacher().subscribe({
+    this.spaces
+      .requestTeacher()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (access) => {
         this.access.set(access);
         this.loading.set(false);
@@ -106,7 +118,6 @@ export class SpaceAccess implements OnInit {
 
   private fail(err: HttpErrorResponse): void {
     this.loading.set(false);
-    const message = (err.error as { message?: string } | null)?.message;
-    this.error.set(message || 'Action impossible pour le moment.');
+    this.error.set(httpErrorMessage(err, 'Action impossible pour le moment.'));
   }
 }

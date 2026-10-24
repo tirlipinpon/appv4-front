@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -24,6 +25,7 @@ export class FacebookCallbackPage implements OnInit {
   private readonly router = inject(Router);
   private readonly facebookOAuth = inject(FacebookOAuthService);
   private readonly auth = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly message = signal('Connexion Facebook…');
 
@@ -46,7 +48,10 @@ export class FacebookCallbackPage implements OnInit {
       return;
     }
 
-    this.facebookOAuth.exchangeCode(code, state).subscribe({
+    this.facebookOAuth
+      .exchangeCode(code, state)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: (res) => {
         this.auth.setToken(res.token);
         void this.router.navigateByUrl(landingPath(this.auth.session()));
