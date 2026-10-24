@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/int/teacher/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire le profil du professeur connecté */
+        get: operations["getTeacherProfile"];
+        /** Enregistrer le nom et les écoles du professeur */
+        put: operations["updateTeacherProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/auth/switch-role": {
         parameters: {
             query?: never;
@@ -402,11 +420,45 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        SwitchRoleRequest: {
-            role: string;
+        TeacherSchoolInput: {
+            /** Format: int64 */
+            schoolId?: number;
+            curriculum?: string;
+            grades?: string[];
+        };
+        UpdateTeacherProfileRequest: {
+            displayName?: string;
+            schools?: components["schemas"]["TeacherSchoolInput"][];
         };
         AuthErrorBody: {
             message?: string;
+        };
+        TeacherAssignedSchool: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            curriculum?: string;
+            grades?: string[];
+        };
+        TeacherAvailableSchool: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+        };
+        TeacherCurriculumOption: {
+            code?: string;
+            label?: string;
+            grades?: string[];
+        };
+        TeacherProfileResponse: {
+            email?: string;
+            displayName?: string;
+            schools?: components["schemas"]["TeacherAssignedSchool"][];
+            availableSchools?: components["schemas"]["TeacherAvailableSchool"][];
+            curricula?: components["schemas"]["TeacherCurriculumOption"][];
+        };
+        SwitchRoleRequest: {
+            role: string;
         };
         JwtTokenResponse: {
             token?: string;
@@ -496,6 +548,77 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getTeacherProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Email, nom, écoles déjà choisies et écoles proposables */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherProfileResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    updateTeacherProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTeacherProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Profil enregistré */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherProfileResponse"];
+                };
+            };
+            /** @description Nom vide ou trop long, école inconnue, école en double, ou année manquante */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     switchRole: {
         parameters: {
             query?: never;
