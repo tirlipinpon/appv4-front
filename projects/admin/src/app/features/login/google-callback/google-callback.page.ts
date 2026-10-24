@@ -6,10 +6,11 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { landingPath } from '../../../core/auth/space-landing';
+import { takeOAuthState } from '../data-access/oauth-browser-state';
 import { GoogleOAuthService } from '../data-access/google-oauth.service';
 
 /**
- * Callback OAuth Google — reçoit ?code=…, échange contre JWT via le back, stocke la session.
+ * Callback OAuth Google — reçoit ?code=&state=, vérifie le state navigateur, échange JWT.
  */
 @Component({
   selector: 'app-google-callback-page',
@@ -37,14 +38,15 @@ export class GoogleCallbackPage implements OnInit {
     }
 
     const code = params.get('code');
-    if (!code) {
+    const state = takeOAuthState('google', params.get('state'));
+    if (!code || !state) {
       void this.router.navigate(['/login'], {
-        queryParams: { error: 'Code Google manquant.' },
+        queryParams: { error: 'Session Google invalide ou expirée. Réessaie.' },
       });
       return;
     }
 
-    this.googleOAuth.exchangeCode(code).subscribe({
+    this.googleOAuth.exchangeCode(code, state).subscribe({
       next: (res) => {
         this.auth.setToken(res.token);
         void this.router.navigateByUrl(landingPath(this.auth.session()));

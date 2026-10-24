@@ -6,10 +6,11 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { landingPath } from '../../../core/auth/space-landing';
+import { takeOAuthState } from '../data-access/oauth-browser-state';
 import { FacebookOAuthService } from '../data-access/facebook-oauth.service';
 
 /**
- * Callback OAuth Facebook — reçoit ?code=…, échange contre JWT via le back, stocke la session.
+ * Callback OAuth Facebook — reçoit ?code=&state=, vérifie le state navigateur, échange JWT.
  */
 @Component({
   selector: 'app-facebook-callback-page',
@@ -37,14 +38,15 @@ export class FacebookCallbackPage implements OnInit {
     }
 
     const code = params.get('code');
-    if (!code) {
+    const state = takeOAuthState('facebook', params.get('state'));
+    if (!code || !state) {
       void this.router.navigate(['/login'], {
-        queryParams: { error: 'Code Facebook manquant.' },
+        queryParams: { error: 'Session Facebook invalide ou expirée. Réessaie.' },
       });
       return;
     }
 
-    this.facebookOAuth.exchangeCode(code).subscribe({
+    this.facebookOAuth.exchangeCode(code, state).subscribe({
       next: (res) => {
         this.auth.setToken(res.token);
         void this.router.navigateByUrl(landingPath(this.auth.session()));
