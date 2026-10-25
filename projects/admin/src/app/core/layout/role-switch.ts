@@ -1,11 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 
 import { ActiveRoleService } from '../auth/active-role.service';
 import { AuthService } from '../auth/auth.service';
 import { landingPath } from '../auth/space-landing';
+import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { otherSpaceRole, spaceRoleLabel, type SpaceRole } from '../auth/space-roles';
 
 /**
@@ -23,6 +25,7 @@ export class RoleSwitch {
   private readonly auth = inject(AuthService);
   private readonly roles = inject(ActiveRoleService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly session = this.auth.session;
   readonly loading = signal(false);
@@ -42,17 +45,19 @@ export class RoleSwitch {
   switchTo(role: SpaceRole): void {
     this.loading.set(true);
     this.error.set(null);
-    this.roles.switchTo(role).subscribe({
-      next: () => {
-        this.loading.set(false);
-        void this.router.navigateByUrl(landingPath(this.auth.session()));
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        const message = (err.error as { message?: string } | null)?.message;
-        this.error.set(message || 'Changement d’espace impossible.');
-      },
-    });
+    this.roles
+      .switchTo(role)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loading.set(false);
+          void this.router.navigateByUrl(landingPath(this.auth.session()));
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading.set(false);
+          this.error.set(httpErrorMessage(err, 'Changement d’espace impossible.'));
+        },
+      });
   }
 
   label(role: SpaceRole | null): string {

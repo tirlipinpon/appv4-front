@@ -1,12 +1,7 @@
 <div class="page">
-  <mat-toolbar color="primary">
-    <span>appv4 · admin</span>
-    <span class="spacer"></span>
+  <app-space-header>
     <a mat-button routerLink="/teacher">Espace</a>
-    <app-role-switch />
-    <app-space-access />
-    <button mat-button type="button" (click)="logout()">Déconnexion</button>
-  </mat-toolbar>
+  </app-space-header>
 
   <main class="content">
     <mat-card class="card">
@@ -24,6 +19,9 @@
         @if (saved()) {
           <p class="ok" role="status">Enregistré.</p>
         }
+        @if (pendingNotice()) {
+          <p class="hint" role="status">{{ pendingNotice() }}</p>
+        }
 
         @if (ready()) {
           <p class="email">
@@ -40,9 +38,14 @@
               autocomplete="name"
               [ngModel]="displayName()"
               (ngModelChange)="onName($event)"
+              [attr.disabled]="saving() ? '' : null"
+              [attr.maxlength]="255"
               required
             />
           </mat-form-field>
+          @if (nameError()) {
+            <p class="field-error" role="alert">{{ nameError() }}</p>
+          }
 
           <section class="schools" aria-labelledby="schools-title">
             <h2 id="schools-title">Écoles</h2>
@@ -56,10 +59,14 @@
 
             @for (block of blocks(); track block.key) {
               <article class="school">
+                @if (blockError(block.key); as blockMessage) {
+                  <p class="field-error" role="alert">{{ blockMessage }}</p>
+                }
                 <mat-form-field appearance="outline" class="full">
                   <mat-label>Pays</mat-label>
                   <mat-select
                     [value]="block.country"
+                    [disabled]="saving()"
                     (selectionChange)="onCountry(block.key, $event.value)"
                     placeholder="Choisir un pays"
                   >
@@ -73,7 +80,7 @@
                   <mat-label>École</mat-label>
                   <mat-select
                     [value]="block.schoolId"
-                    [disabled]="!block.country"
+                    [disabled]="saving() || !block.country"
                     (selectionChange)="onSchool(block.key, $event.value)"
                     placeholder="Choisir une école"
                   >
@@ -88,6 +95,7 @@
                     @for (grade of gradesFor(block); track grade) {
                       <mat-checkbox
                         [checked]="block.grades.includes(grade)"
+                        [disabled]="saving()"
                         (change)="toggleGrade(block.key, grade, $event.checked)"
                       >
                         {{ grade }}
@@ -96,12 +104,16 @@
                   </div>
                 }
 
-                <button mat-button type="button" (click)="removeSchool(block.key)">Retirer cette école</button>
+                <button mat-button type="button" [disabled]="saving()" (click)="removeSchool(block.key)">
+                  Retirer cette école
+                </button>
               </article>
             }
 
             @if (canAdd()) {
-              <button mat-stroked-button type="button" (click)="addSchool()">Ajouter une école</button>
+              <button mat-stroked-button type="button" [disabled]="saving()" (click)="addSchool()">
+                Ajouter une école
+              </button>
             }
           </section>
         }

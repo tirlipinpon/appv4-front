@@ -1,11 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
 
 import type { TeacherRequestItem } from '../../../core/api/api-models';
-import { AuthService } from '../../../core/auth/auth.service';
+import { SpaceHeader } from '../../../core/layout/space-header';
+import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherRequestsService } from './data-access/teacher-requests.service';
 
 /**
@@ -15,17 +14,17 @@ import { TeacherRequestsService } from './data-access/teacher-requests.service';
  */
 @Component({
   selector: 'app-teacher-requests-page',
-  imports: [MatToolbarModule, MatButtonModule],
+  imports: [MatButtonModule, SpaceHeader],
   templateUrl: './teacher-requests.page.html',
   styleUrl: './teacher-requests.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TeacherRequestsPage implements OnInit {
   private readonly api = inject(TeacherRequestsService);
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
 
   readonly requests = signal<TeacherRequestItem[]>([]);
+  /** Vrai quand le back a encore des demandes au-delà des 100 renvoyées. */
+  readonly truncated = signal(false);
   readonly pending = computed(() => this.requests().filter((item) => item.status === 'pending'));
   readonly approved = computed(() => this.requests().filter((item) => item.status === 'approved'));
   readonly revoked = computed(() => this.requests().filter((item) => item.status === 'revoked'));
@@ -59,17 +58,27 @@ export class TeacherRequestsPage implements OnInit {
     this.error.set(null);
     this.approvingId.set(item.id);
     call.subscribe({
-      next: () => this.load(),
+      next: (updated) => {
+        this.requests.update((list) =>
+          list.map((current) => (current.id === updated.id ? { ...current, ...updated } : current)),
+        );
+        this.reloadAfterChange();
+      },
       error: (err: HttpErrorResponse) => {
         this.approvingId.set(null);
-        this.error.set(this.extractMessage(err));
+        this.error.set(httpErrorMessage(err, "La demande n'a pas pu être modifiée."));
       },
     });
   }
 
-  logout(): void {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
+  emptyLabel(kind: 'en attente' | 'traitée' | 'révoquée'): string {
+    if (this.truncated()) {
+      return `Aucune demande ${kind} dans ces 100 premières.`;
+    }
+    if (kind === 'traitée') {
+      return 'Aucune demande traitée.';
+    }
+    return `Aucune demande ${kind}.`;
   }
 
   age(createdAt: string | undefined): string {
@@ -82,8 +91,9 @@ export class TeacherRequestsPage implements OnInit {
 
   private load(): void {
     this.api.list().subscribe({
-      next: (requests) => {
-        this.requests.set(requests);
+      next: (page) => {
+        this.requests.set(page.requests);
+        this.truncated.set(page.truncated);
         this.approvingId.set(null);
       },
       error: (err: HttpErrorResponse) => {
@@ -93,9 +103,24 @@ export class TeacherRequestsPage implements OnInit {
     });
   }
 
+  /** Le POST a déjà déplacé la demande. Un GET raté ne doit pas annuler ce résultat. */
+  private reloadAfterChange(): void {
+    this.api.list().subscribe({
+      next: (page) => {
+        this.requests.set(page.requests);
+        this.truncated.set(page.truncated);
+        this.approvingId.set(null);
+        this.error.set(null);
+      },
+      error: () => {
+        this.approvingId.set(null);
+        this.error.set("La demande est à jour, mais la liste n'a pas pu être rechargée.");
+      },
+    });
+  }
+
   private extractMessage(err: HttpErrorResponse): string {
-    const message = (err.error as { message?: string } | null)?.message;
-    return message || 'Impossible de charger les demandes.';
+    return httpErrorMessage(err, 'Impossible de charger les demandes.');
   }
 }
 

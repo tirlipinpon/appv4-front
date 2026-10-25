@@ -1,0 +1,10 @@
+<mat-toolbar color="primary">
+  <span>appv4 · admin</span>
+  <span class="spacer"></span>
+  <ng-content />
+  @if (showSpaceActions()) {
+    <app-role-switch />
+    <app-space-access />
+  }
+  <button mat-button type="button" (click)="logout()">Déconnexion</button>
+</mat-toolbar>

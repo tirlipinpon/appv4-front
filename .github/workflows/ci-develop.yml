@@ -25,6 +25,9 @@ jobs:
       - name: Lint (ESLint)
         run: npm run lint
 
+      - name: Test api:check decisions
+        run: npm run test:api-check
+
       - name: Install Chrome for Karma
         id: setup-chrome
         uses: browser-actions/setup-chrome@v1

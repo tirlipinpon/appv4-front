@@ -1,12 +1,7 @@
 <div class="page">
-  <mat-toolbar color="primary">
-    <span>appv4 · admin</span>
-    <span class="spacer"></span>
+  <app-space-header>
     <a mat-button routerLink="/parent">Espace</a>
-    <app-role-switch />
-    <app-space-access />
-    <button mat-button type="button" (click)="logout()">Déconnexion</button>
-  </mat-toolbar>
+  </app-space-header>
 
   <main class="content">
     <section class="panel">
@@ -14,15 +9,6 @@
         <h1>Mes enfants</h1>
         <button mat-flat-button color="primary" type="button" (click)="openForm()">Ajouter un enfant</button>
       </header>
-
-      @if (formOpen() && editingId() == null) {
-        <mat-card class="form">
-          <mat-card-header>
-            <mat-card-title>Nouvel enfant</mat-card-title>
-          </mat-card-header>
-          <ng-container *ngTemplateOutlet="childForm" />
-        </mat-card>
-      }
 
       @if (loading()) {
         <p>Chargement…</p>
@@ -36,66 +22,78 @@
 
       <ul class="list">
         @for (child of children(); track child.id) {
-          <li class="child" [class.editing]="editingId() === child.id" [class.inactive]="child.active === false">
-            @if (child.hasPhoto && photos()[child.id!]) {
-              <img class="portrait" [src]="photos()[child.id!]" [alt]="child.firstName + ' ' + child.lastName" />
-            } @else {
-              <span class="portrait avatar" [attr.aria-label]="child.avatarCode">{{ emoji(child.avatarCode) }}</span>
-            }
-            <div>
-              <strong>{{ child.firstName }} {{ child.lastName }}</strong>
-              @if (child.active === false) {
-                <span class="badge">Désactivé</span>
-              }
-              <p>{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
-              <p>{{ child.schoolName || 'École non renseignée' }}</p>
-              @if (child.active === false) {
-                <p class="hint">Visible dans cette liste, plus proposé dans le reste de l'application.</p>
-              }
-              @if (pendingKind() === 'deactivate' && pendingChildId() === child.id) {
-                <p class="confirm" role="alert">
-                  Désactiver {{ child.firstName }} {{ child.lastName }} ? Il reste dans cette liste, mais il ne sera plus proposé ailleurs.
-                </p>
-                <p class="actions">
-                  <button mat-button type="button" (click)="cancelPending()">Annuler</button>
-                  <button mat-flat-button type="button" (click)="confirmDeactivate(child)">Confirmer la désactivation</button>
-                </p>
-              } @else if (pendingKind() === 'hide' && pendingChildId() === child.id) {
-                <p class="confirm" role="alert">
-                  Retirer {{ child.firstName }} {{ child.lastName }} de l'affichage ? La fiche reste enregistrée, elle n'apparaîtra plus ici.
-                </p>
-                <p class="actions">
-                  <button mat-button type="button" (click)="cancelPending()">Annuler</button>
-                  <button mat-flat-button color="warn" type="button" (click)="confirmRemove(child)">
-                    Confirmer le retrait
-                  </button>
-                </p>
+          <li class="child" [class.inactive]="child.active === false">
+            <div class="identity">
+              @if (child.hasPhoto && photos()[child.id!]) {
+                <img class="portrait" [src]="photos()[child.id!]" [alt]="child.firstName + ' ' + child.lastName" />
               } @else {
-                <p class="actions">
-                  <button mat-button type="button" (click)="edit(child)">Modifier</button>
-                  @if (child.active === false) {
-                    <button mat-button type="button" (click)="reactivate(child)">Réactiver</button>
-                  } @else {
-                    <button mat-button type="button" (click)="askDeactivate(child)">Désactiver</button>
-                  }
-                  <button mat-button type="button" (click)="askRemove(child)">Supprimer</button>
-                </p>
+                <span class="portrait avatar" [attr.aria-label]="child.avatarCode">{{ emoji(child.avatarCode) }}</span>
               }
+              <div>
+                <strong>{{ child.firstName }} {{ child.lastName }}</strong>
+                @if (child.active === false) {
+                  <span class="badge">Désactivé</span>
+                }
+                <p>{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
+                <p>{{ child.schoolName || 'École non renseignée' }}</p>
+                @for (phrase of child.linkPhrases ?? []; track $index) {
+                  <p class="kinship">{{ phrase }}</p>
+                }
+                @if (child.active === false) {
+                  <p class="hint">Visible dans cette liste, plus proposé dans le reste de l'application.</p>
+                }
+                @if (pendingKind() === 'deactivate' && pendingChildId() === child.id) {
+                  <p class="confirm" role="alert">
+                    Désactiver {{ child.firstName }} {{ child.lastName }} ? Il reste dans cette liste, mais il ne sera plus proposé ailleurs.
+                  </p>
+                  <p class="actions">
+                    <button mat-button type="button" (click)="cancelPending()">Annuler</button>
+                    <button mat-flat-button type="button" (click)="confirmDeactivate(child)">Confirmer la désactivation</button>
+                  </p>
+                } @else if (pendingKind() === 'hide' && pendingChildId() === child.id) {
+                  <p class="confirm" role="alert">
+                    Retirer {{ child.firstName }} {{ child.lastName }} de l'affichage ? La fiche reste enregistrée, elle n'apparaîtra plus ici.
+                  </p>
+                  <p class="actions">
+                    <button mat-button type="button" (click)="cancelPending()">Annuler</button>
+                    <button mat-flat-button color="warn" type="button" (click)="confirmRemove(child)">Confirmer le retrait</button>
+                  </p>
+                } @else {
+                  <p class="actions">
+                    <button mat-button type="button" (click)="edit(child)">Modifier</button>
+                    @if (child.active === false) {
+                      <button mat-button type="button" (click)="reactivate(child)">Réactiver</button>
+                    } @else {
+                      <button mat-button type="button" (click)="askDeactivate(child)">Désactiver</button>
+                    }
+                    <button mat-button type="button" (click)="askRemove(child)">Supprimer</button>
+                  </p>
+                }
+              </div>
             </div>
-            @if (editingId() === child.id) {
-              <mat-card class="form">
-                <mat-card-header>
-                  <mat-card-title>Modifier {{ child.firstName }} {{ child.lastName }}</mat-card-title>
-                </mat-card-header>
-                <ng-container *ngTemplateOutlet="childForm" />
-              </mat-card>
-            }
+            <button mat-stroked-button type="button" [disabled]="preparing()" (click)="openFrom(child)">
+              Ajouter à partir de celui-ci
+            </button>
           </li>
         }
       </ul>
 
-      <ng-template #childForm>
+      @if (formOpen()) {
+        <mat-card class="form">
+          <mat-card-header>
+            <mat-card-title>{{ editingId() == null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
+          </mat-card-header>
           <mat-card-content>
+            @if (editingId() == null && fromChildId() !== null) {
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Lien avec {{ fromChildFirstName() }}</mat-label>
+                <mat-select [value]="link()" (selectionChange)="link.set($event.value)">
+                  @for (item of kinship; track item.code) {
+                    <mat-option [value]="item.code">{{ item.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
             <mat-form-field appearance="outline" class="full">
               <mat-label>Prénom</mat-label>
               <input matInput name="firstName" [ngModel]="firstName()" (ngModelChange)="firstName.set($event)" required />
@@ -208,7 +206,8 @@
               {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
           </mat-card-actions>
-      </ng-template>
+        </mat-card>
+      }
     </section>
   </main>
 </div>
