@@ -227,7 +227,7 @@
             @if (schoolSuggestions().length > 0) {
               <ul id="school-suggestions" class="suggestions" role="listbox">
                 @for (school of schoolSuggestions(); track school.id) {
-                  <li role="option">
+                  <li role="option" [attr.aria-selected]="school.id === schoolId() ? 'true' : 'false'">
                     <button type="button" (click)="onSchoolPicked(school)">{{ school.name }}</button>
                   </li>
                 }
