@@ -508,6 +508,13 @@ export interface components {
             photoContentType?: string;
             pin?: string;
             pinConfirmation?: string;
+            /**
+             * Format: int64
+             * @description Enfant de départ. Absent pour un formulaire vide.
+             */
+            fromChildId?: number;
+            /** @description AUCUN, FRERE, SOEUR, DEMI_FRERE, DEMI_SOEUR, JUMEAU, JUMELLE, COUSIN ou COUSINE. */
+            link?: string;
         };
         ParentChildResponse: {
             /** Format: int64 */
@@ -524,6 +531,8 @@ export interface components {
             schoolName?: string;
             avatarCode?: string;
             hasPhoto?: boolean;
+            /** @description Phrases de lien, par exemple « Noah est le frère de Léa ». Vide s'il n'y en a pas. */
+            linkPhrases?: string[];
         };
         SwitchRoleRequest: {
             role: string;
@@ -754,7 +763,7 @@ export interface operations {
                     "*/*": components["schemas"]["ParentChildResponse"];
                 };
             };
-            /** @description Champ obligatoire manquant, âge, classe, image ou PIN refusé */
+            /** @description Champ obligatoire manquant, âge, classe, image, PIN ou lien refusé */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -765,6 +774,15 @@ export interface operations {
             };
             /** @description Le jeton n'est pas dans l'espace parent */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description L'enfant de départ n'appartient pas à ce parent */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -23,16 +23,24 @@
       <ul class="list">
         @for (child of children(); track child.id) {
           <li class="child">
-            @if (child.hasPhoto && photos()[child.id!]) {
-              <img class="portrait" [src]="photos()[child.id!]" [alt]="child.firstName + ' ' + child.lastName" />
-            } @else {
-              <span class="portrait avatar" [attr.aria-label]="child.avatarCode">{{ emoji(child.avatarCode) }}</span>
-            }
-            <div>
-              <strong>{{ child.firstName }} {{ child.lastName }}</strong>
-              <p>{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
-              <p>{{ child.schoolName || 'École non renseignée' }}</p>
+            <div class="identity">
+              @if (child.hasPhoto && photos()[child.id!]) {
+                <img class="portrait" [src]="photos()[child.id!]" [alt]="child.firstName + ' ' + child.lastName" />
+              } @else {
+                <span class="portrait avatar" [attr.aria-label]="child.avatarCode">{{ emoji(child.avatarCode) }}</span>
+              }
+              <div>
+                <strong>{{ child.firstName }} {{ child.lastName }}</strong>
+                <p>{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
+                <p>{{ child.schoolName || 'École non renseignée' }}</p>
+                @for (phrase of child.linkPhrases ?? []; track $index) {
+                  <p class="kinship">{{ phrase }}</p>
+                }
+              </div>
             </div>
+            <button mat-stroked-button type="button" [disabled]="preparing()" (click)="openFrom(child)">
+              Ajouter à partir de celui-ci
+            </button>
           </li>
         }
       </ul>
@@ -43,6 +51,16 @@
             <mat-card-title>Nouvel enfant</mat-card-title>
           </mat-card-header>
           <mat-card-content>
+            @if (fromChildId() !== null) {
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Lien avec {{ fromChildFirstName() }}</mat-label>
+                <mat-select [value]="link()" (selectionChange)="link.set($event.value)">
+                  @for (item of kinship; track item.code) {
+                    <mat-option [value]="item.code">{{ item.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
             <mat-form-field appearance="outline" class="full">
               <mat-label>Prénom</mat-label>
               <input matInput name="firstName" [ngModel]="firstName()" (ngModelChange)="firstName.set($event)" required />
@@ -145,7 +163,7 @@
             </mat-form-field>
           </mat-card-content>
           <mat-card-actions align="end">
-            <button mat-button type="button" (click)="formOpen.set(false)">Fermer</button>
+            <button mat-button type="button" (click)="closeForm()">Fermer</button>
             <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
               {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
