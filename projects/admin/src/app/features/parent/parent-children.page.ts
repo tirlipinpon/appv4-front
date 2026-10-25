@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,11 +17,13 @@ import type {
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { CHILD_AVATARS, avatarEmoji } from './child-avatars';
+import { CHILD_LINKS } from './child-links';
 import { ParentChildrenService } from './data-access/parent-children.service';
 
 /**
  * Liste et ajout des enfants (SCRUM-156).
- * Le pays filtre les écoles. Une école choisie limite les classes à celles qu'elle a.
+ * À partir d'un enfant déjà inscrit, le formulaire reprend le nom, l'âge, la classe et l'image (SCRUM-158).
+ * Le prénom et le PIN restent vides. Le lien choisi s'affiche sur les deux fiches.
  */
 @Component({
   selector: 'app-parent-children-page',
@@ -41,8 +43,11 @@ import { ParentChildrenService } from './data-access/parent-children.service';
 })
 export class ParentChildrenPage implements OnInit {
   private readonly api = inject(ParentChildrenService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly avatars = CHILD_AVATARS;
+  readonly kinship = CHILD_LINKS;
   readonly emoji = avatarEmoji;
 
   readonly children = signal<ParentChildResponse[]>([]);
@@ -51,6 +56,7 @@ export class ParentChildrenPage implements OnInit {
   readonly photos = signal<Record<number, string>>({});
   readonly loading = signal(true);
   readonly saving = signal(false);
+  readonly preparing = signal(false);
   readonly formOpen = signal(false);
   readonly error = signal<string | null>(null);
 
@@ -67,6 +73,11 @@ export class ParentChildrenPage implements OnInit {
   readonly photoContentType = signal<string | null>(null);
   readonly pin = signal('');
   readonly pinConfirmation = signal('');
+  readonly fromChildId = signal<number | null>(null);
+  readonly fromChildFirstName = signal('');
+  readonly link = signal('AUCUN');
+
+  private fromQueryHandled = false;
 
   readonly countries = computed(() =>
     this.curricula()
@@ -108,7 +119,55 @@ export class ParentChildrenPage implements OnInit {
 
   openForm(): void {
     this.error.set(null);
+    this.resetForm();
     this.formOpen.set(true);
+  }
+
+  openFrom(child: ParentChildResponse): void {
+    if (child.id == null || this.preparing()) {
+      return;
+    }
+    this.error.set(null);
+    this.resetForm();
+    this.fromChildId.set(child.id);
+    this.fromChildFirstName.set(child.firstName ?? '');
+    this.link.set('AUCUN');
+    this.lastName.set(child.lastName ?? '');
+    this.age.set(child.age == null ? '' : String(child.age));
+    this.country.set(child.country ?? null);
+    this.grade.set(child.grade ?? null);
+    if (child.hasPhoto) {
+      this.preparing.set(true);
+      this.api.photo(child.id).subscribe({
+        next: (blob) => {
+          this.photoContentType.set(blob.type || 'image/jpeg');
+          this.photoName.set('Photo actuelle');
+          this.avatarCode.set(null);
+          void this.readPhoto(blob)
+            .then((encoded) => {
+              this.photoBase64.set(encoded);
+              this.preparing.set(false);
+              this.formOpen.set(true);
+            })
+            .catch(() => {
+              this.preparing.set(false);
+              this.error.set('Photo indisponible.');
+            });
+        },
+        error: () => {
+          this.preparing.set(false);
+          this.error.set('Photo indisponible.');
+        },
+      });
+      return;
+    }
+    this.avatarCode.set(child.avatarCode ?? null);
+    this.formOpen.set(true);
+  }
+
+  closeForm(): void {
+    this.formOpen.set(false);
+    this.resetForm();
   }
 
   onCountry(country: string): void {
@@ -190,6 +249,7 @@ export class ParentChildrenPage implements OnInit {
         this.curricula.set(page.curricula ?? []);
         this.loading.set(false);
         this.loadPhotos(page.children ?? []);
+        this.openFromQuery(page.children ?? []);
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
@@ -226,7 +286,46 @@ export class ParentChildrenPage implements OnInit {
       photoContentType: this.photoContentType() ?? undefined,
       pin: this.pin(),
       pinConfirmation: this.pinConfirmation(),
+      fromChildId: this.fromChildId() ?? undefined,
+      link: this.fromChildId() == null ? undefined : this.link(),
     };
+  }
+
+  private openFromQuery(children: ParentChildResponse[]): void {
+    if (this.fromQueryHandled) {
+      return;
+    }
+    const raw = this.route.snapshot.queryParamMap.get('depuis');
+    if (raw == null) {
+      return;
+    }
+    this.fromQueryHandled = true;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { depuis: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    const id = Number(raw);
+    const child = children.find((item) => item.id === id);
+    if (!Number.isInteger(id) || id <= 0 || !child) {
+      this.error.set('Cet enfant est introuvable.');
+      return;
+    }
+    this.openFrom(child);
+  }
+
+  private readPhoto(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = typeof reader.result === 'string' ? reader.result : '';
+        const comma = result.indexOf(',');
+        resolve(comma >= 0 ? result.slice(comma + 1) : result);
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
   }
 
   private resetForm(): void {
@@ -243,6 +342,9 @@ export class ParentChildrenPage implements OnInit {
     this.photoContentType.set(null);
     this.pin.set('');
     this.pinConfirmation.set('');
+    this.fromChildId.set(null);
+    this.fromChildFirstName.set('');
+    this.link.set('AUCUN');
   }
 
   private message(err: HttpErrorResponse, fallback: string): string {
