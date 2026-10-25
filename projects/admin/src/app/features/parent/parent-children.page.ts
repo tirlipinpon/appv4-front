@@ -17,7 +17,7 @@ import type {
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { CHILD_AVATARS, avatarEmoji } from './child-avatars';
-import { CHILD_LINKS } from './child-links';
+import { linksForSex } from './child-links';
 import { CHILD_SEXES, sexLabel } from './child-sex';
 import { ParentChildrenService } from './data-access/parent-children.service';
 
@@ -47,8 +47,12 @@ export class ParentChildrenPage implements OnInit {
   private readonly router = inject(Router);
 
   readonly avatars = CHILD_AVATARS;
-  readonly kinship = CHILD_LINKS;
-  readonly relationChoices = CHILD_LINKS.filter((item) => item.code !== 'AUCUN');
+  /** Mots du second menu : ils suivent le sexe de l'enfant choisi dans « Lier avec ». */
+  readonly relationChoices = computed(() => {
+    const id = this.fromChildId();
+    const child = this.children().find((item) => item.id === id);
+    return linksForSex(child?.sex);
+  });
   readonly sexes = CHILD_SEXES;
   readonly sexLabel = sexLabel;
   readonly emoji = avatarEmoji;
@@ -234,12 +238,22 @@ export class ParentChildrenPage implements OnInit {
       this.link.set('AUCUN');
       return;
     }
-    if (this.editingId() === null) {
+    const choices = linksForSex(child?.sex);
+    if (this.editingId() !== null) {
+      const existing = this.currentLinks().find((item) => item.otherChildId === childId);
+      const known = choices.find((item) => item.label === existing?.label);
+      if (known) {
+        this.link.set(known.code);
+        return;
+      }
+      if (this.link() === 'AUCUN' || !choices.some((item) => item.code === this.link())) {
+        this.link.set('');
+      }
       return;
     }
-    const existing = this.currentLinks().find((item) => item.otherChildId === childId);
-    const known = this.kinship.find((item) => item.label === existing?.label);
-    this.link.set(known?.code ?? '');
+    if (this.link() !== 'AUCUN' && !choices.some((item) => item.code === this.link())) {
+      this.link.set('');
+    }
   }
 
   /** Vrai si l'enfant choisi dans Modifier a déjà un lien avec la fiche en cours. */
@@ -457,14 +471,14 @@ export class ParentChildrenPage implements OnInit {
   }
 
   private linkChoiceReady(): boolean {
-    if (this.editingId() === null || this.fromChildId() === null) {
+    if (this.fromChildId() === null) {
       return true;
     }
     const word = this.link();
-    if (word && word !== 'AUCUN') {
+    if (this.relationChoices().some((item) => item.code === word)) {
       return true;
     }
-    if (word === 'AUCUN' && this.selectedAlreadyLinked()) {
+    if (word === 'AUCUN' && (this.editingId() === null || this.selectedAlreadyLinked())) {
       return true;
     }
     this.error.set(`Choisis le lien avec ${this.fromChildFirstName()}.`);
