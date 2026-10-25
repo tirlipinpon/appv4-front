@@ -1,15 +1,15 @@
 @if (showOpenParent()) {
-  <button mat-button type="button" [disabled]="loading()" (click)="openParent()">
+  <button mat-button class="space-action" type="button" [disabled]="loading()" (click)="openParent()">
     Ouvrir l'espace parent
   </button>
 }
 @if (showRequestTeacher()) {
-  <button mat-button type="button" [disabled]="loading()" (click)="requestTeacher()">
+  <button mat-button class="space-action" type="button" [disabled]="loading()" (click)="requestTeacher()">
     Demander l'espace professeur
   </button>
 }
 @if (showViewRequest()) {
-  <button mat-button type="button" [disabled]="loading()" (click)="viewRequest()">
+  <button mat-button class="space-action" type="button" [disabled]="loading()" (click)="viewRequest()">
     Voir ma demande
   </button>
 }

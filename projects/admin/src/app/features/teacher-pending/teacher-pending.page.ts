@@ -2,13 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { landingPath } from '../../core/auth/space-landing';
 import { spaceRoleLabel } from '../../core/auth/space-roles';
-import { RoleSwitch } from '../../core/layout/role-switch';
-import { SpaceAccess } from '../../core/layout/space-access';
+import { SpaceHeader } from '../../core/layout/space-header';
 
 /**
  * Cible minimale après une inscription avec la case Professeur (SCRUM-122).
@@ -16,15 +14,10 @@ import { SpaceAccess } from '../../core/layout/space-access';
  */
 @Component({
   selector: 'app-teacher-pending-page',
-  imports: [RouterLink, MatToolbarModule, MatCardModule, MatButtonModule, RoleSwitch, SpaceAccess],
+  imports: [RouterLink, MatCardModule, MatButtonModule, SpaceHeader],
   template: `
     <div class="page">
-      <mat-toolbar color="primary">
-        <span>appv4 · admin · professeur</span>
-        <span class="spacer"></span>
-        <app-role-switch />
-        <app-space-access />
-      </mat-toolbar>
+      <app-space-header />
       <main class="content">
         <mat-card class="card">
           <mat-card-header>
@@ -63,9 +56,6 @@ import { SpaceAccess } from '../../core/layout/space-access';
     }
     .card {
       width: min(100%, 32rem);
-    }
-    .spacer {
-      flex: 1;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

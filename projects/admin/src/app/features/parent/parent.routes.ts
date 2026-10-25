@@ -9,6 +9,11 @@ import { ParentSpacePage } from './parent-space.page';
 export const PARENT_ROUTES: Routes = [
   { path: 'enfants', component: ParentChildrenPage, canActivate: [spaceGuard(SpaceRoles.parent)] },
   {
+    path: 'matieres',
+    loadComponent: () => import('./parent-subjects.page').then((m) => m.ParentSubjectsPage),
+    canActivate: [spaceGuard(SpaceRoles.parent)],
+  },
+  {
     path: '',
     pathMatch: 'full',
     component: ParentSpacePage,

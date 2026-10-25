@@ -2,21 +2,25 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
 
 import { ActiveRoleService } from '../auth/active-role.service';
 import { AuthService } from '../auth/auth.service';
 import { landingPath } from '../auth/space-landing';
+import { SpaceRoles, type SpaceRole } from '../auth/space-roles';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
-import { otherSpaceRole, spaceRoleLabel, type SpaceRole } from '../auth/space-roles';
+
+interface SpaceTab {
+  role: SpaceRole;
+  label: string;
+  current: boolean;
+}
 
 /**
- * Bouton d'en-tête pour changer d'espace sans se déconnecter (SCRUM-125).
- * Absent quand le jeton ne contient qu'un seul rôle.
+ * Onglets Parent et Professeur (SCRUM-166).
+ * Un onglet n'existe que si le jeton a déjà ce rôle. Le clic sur l'autre espace réutilise le changement déjà en place.
  */
 @Component({
   selector: 'app-role-switch',
-  imports: [MatButtonModule],
   templateUrl: './role-switch.html',
   styleUrl: './role-switch.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,18 +35,28 @@ export class RoleSwitch {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
 
-  readonly spaceLabel = computed(() => this.label(this.session().activeRole));
-
-  /** L'autre espace, seulement si le jeton en liste deux. */
-  readonly otherRole = computed((): SpaceRole | null => {
+  /** Parent puis Professeur. L'onglet marqué est l'espace actif, pas l'adresse ouverte. */
+  readonly tabs = computed((): SpaceTab[] => {
     const { activeRole, roles } = this.session();
-    if (!activeRole || roles.length < 2) {
-      return null;
-    }
-    return otherSpaceRole(activeRole);
+    const granted = new Set(roles);
+    const order: { role: SpaceRole; label: string }[] = [
+      { role: SpaceRoles.parent, label: 'Parent' },
+      { role: SpaceRoles.teacher, label: 'Professeur' },
+    ];
+    return order
+      .filter((tab) => granted.has(tab.role))
+      .map((tab) => ({ ...tab, current: activeRole === tab.role }));
   });
 
-  switchTo(role: SpaceRole): void {
+  open(role: SpaceRole): void {
+    if (this.session().activeRole === role) {
+      void this.router.navigateByUrl(this.home(role));
+      return;
+    }
+    this.switchTo(role);
+  }
+
+  private switchTo(role: SpaceRole): void {
     this.loading.set(true);
     this.error.set(null);
     this.roles
@@ -60,7 +74,7 @@ export class RoleSwitch {
       });
   }
 
-  label(role: SpaceRole | null): string {
-    return spaceRoleLabel(role);
+  private home(role: SpaceRole): string {
+    return role === SpaceRoles.parent ? '/parent' : '/teacher';
   }
 }
