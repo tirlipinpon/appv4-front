@@ -1,101 +1,51 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 
-import type {
-  TeacherAvailableSchool,
-  TeacherProfileResponse,
-  UpdateTeacherProfileRequest,
-} from '../../core/api/api-models';
+import type { TeacherProfileResponse, UpdateTeacherProfileRequest } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { TeacherProfileService } from './data-access/teacher-profile.service';
-
-interface SchoolBlock {
-  key: number;
-  country: string | null;
-  schoolId: number | null;
-  grades: string[];
-}
 
 /** Même plafond que le back (`DisplayNames.MAX_LENGTH`). */
 const NAME_MAX_LENGTH = 255;
 const NAME_REQUIRED = 'Le nom est obligatoire.';
 const NAME_TOO_LONG = 'Le nom est trop long (maximum 255).';
-const SCHOOL_REQUIRED = 'Choisis une école dans la liste, ou retire-la.';
-const SCHOOL_UNKNOWN = "Cette école n'est pas proposable.";
-const SCHOOL_DUPLICATE = 'Cette école est déjà sur le profil.';
-const GRADE_REQUIRED = 'Choisis une classe pour cette école, ou retire-la.';
-const GRADE_NOT_OFFERED = "Cette classe n'est pas proposée par cette école.";
-const COUNTRY_WITHOUT_GRADES = "Ce pays n'a pas de liste de classes.";
 const PENDING_EDIT =
   "La version envoyée est enregistrée. La saisie faite pendant l'enregistrement n'est pas encore enregistrée.";
 
+type KeptSchool = NonNullable<UpdateTeacherProfileRequest['schools']>[number];
+
 /**
- * Profil professeur (SCRUM-159) : nom du compte, puis écoles si le référentiel en propose.
- * La liste des écoles vient de SCRUM-163. Tant qu'elle est vide, on ne saisit pas un nom libre.
+ * Nom du professeur (SCRUM-159).
+ * Les écoles se règlent sur leur page. L'enregistrement du nom les renvoie telles quelles,
+ * parce que l'API remplace le nom et les écoles ensemble.
  */
 @Component({
   selector: 'app-teacher-profile-page',
-  imports: [
-    FormsModule,
-    RouterLink,
-    MatButtonModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatCheckboxModule,
-    SpaceHeader,
-  ],
+  imports: [FormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, SpaceHeader],
   templateUrl: './teacher-profile.page.html',
   styleUrl: './teacher-profile.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TeacherProfilePage implements OnInit {
   private readonly api = inject(TeacherProfileService);
-  private nextKey = 1;
 
   readonly email = signal('');
   readonly displayName = signal('');
-  readonly availableSchools = signal<TeacherAvailableSchool[]>([]);
-  readonly blocks = signal<SchoolBlock[]>([]);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly ready = signal(false);
   readonly saved = signal(false);
   readonly error = signal<string | null>(null);
   readonly nameError = signal<string | null>(null);
-  readonly blockErrors = signal<Readonly<Record<number, string>>>({});
   /** Saisie arrivée après l'envoi : on ne l'écrase pas avec la réponse. */
   readonly pendingNotice = signal<string | null>(null);
-
-  readonly catalogEmpty = computed(
-    () => this.availableSchools().length === 0 && this.blocks().length === 0,
-  );
-  readonly countries = computed(() => {
-    const seen = new Set<string>();
-    const list: string[] = [];
-    for (const school of this.availableSchools()) {
-      const country = school.country?.trim();
-      if (country && !seen.has(country)) {
-        seen.add(country);
-        list.push(country);
-      }
-    }
-    return list;
-  });
-  readonly canAdd = computed(() => {
-    const available = this.availableSchools().filter((school) => school.id != null);
-    return available.length > 0 && this.blocks().length < available.length;
-  });
+  private readonly keptSchools = signal<KeptSchool[]>([]);
 
   ngOnInit(): void {
     this.api.load().subscribe({
@@ -117,86 +67,17 @@ export class TeacherProfilePage implements OnInit {
     this.displayName.set(value);
   }
 
-  addSchool(): void {
-    if (!this.canAdd()) {
-      return;
-    }
-    this.markDirty();
-    this.blocks.update((list) => [
-      ...list,
-      { key: this.nextKey++, country: null, schoolId: null, grades: [] },
-    ]);
-  }
-
-  removeSchool(key: number): void {
-    this.markDirty();
-    this.clearBlockError(key);
-    this.blocks.update((list) => list.filter((block) => block.key !== key));
-  }
-
-  onCountry(key: number, country: string): void {
-    this.markDirty();
-    this.clearBlockError(key);
-    this.patch(key, { country, schoolId: null, grades: [] });
-  }
-
-  onSchool(key: number, schoolId: number): void {
-    this.markDirty();
-    this.clearBlockError(key);
-    this.patch(key, { schoolId, grades: [] });
-  }
-
-  toggleGrade(key: number, grade: string, checked: boolean): void {
-    this.markDirty();
-    this.clearBlockError(key);
-    const block = this.blocks().find((item) => item.key === key);
-    if (!block) {
-      return;
-    }
-    const grades = checked
-      ? [...block.grades, grade]
-      : block.grades.filter((item) => item !== grade);
-    this.patch(key, { grades });
-  }
-
-  optionsFor(block: SchoolBlock): TeacherAvailableSchool[] {
-    if (!block.country) {
-      return [];
-    }
-    const taken = new Set(
-      this.blocks()
-        .filter((other) => other.key !== block.key && other.schoolId != null)
-        .map((other) => other.schoolId),
-    );
-    return this.availableSchools().filter((school) => {
-      if (school.id == null || school.country !== block.country) {
-        return false;
-      }
-      return school.id === block.schoolId || !taken.has(school.id);
-    });
-  }
-
-  gradesFor(block: SchoolBlock): string[] {
-    if (block.schoolId == null) {
-      return [];
-    }
-    return this.availableSchools().find((school) => school.id === block.schoolId)?.grades ?? [];
-  }
-
-  blockError(key: number): string | null {
-    return this.blockErrors()[key] ?? null;
-  }
-
   /**
-   * Enregistre le formulaire tel qu'il est au clic.
-   * Si une saisie arrive pendant la requête, on ne la remplace pas par la réponse :
-   * « Enregistré » ne s'affiche que lorsque l'écran correspond encore à ce qui est parti.
+   * Enregistre le nom tel qu'il est au clic, avec les écoles déjà connues.
+   * Si une saisie arrive pendant la requête, on ne la remplace pas par la réponse.
    */
   save(): void {
     if (!this.ready() || this.saving()) {
       return;
     }
-    if (!this.validate()) {
+    const nameError = this.nameProblem(this.displayName().trim());
+    this.nameError.set(nameError);
+    if (nameError) {
       this.saved.set(false);
       this.pendingNotice.set(null);
       return;
@@ -225,23 +106,6 @@ export class TeacherProfilePage implements OnInit {
     });
   }
 
-  private validate(): boolean {
-    const name = this.displayName().trim();
-    const nameError = this.nameProblem(name);
-    this.nameError.set(nameError);
-
-    const errors: Record<number, string> = {};
-    const seen = new Set<number>();
-    for (const block of this.blocks()) {
-      const problem = this.blockProblem(block, seen);
-      if (problem) {
-        errors[block.key] = problem;
-      }
-    }
-    this.blockErrors.set(errors);
-    return nameError === null && Object.keys(errors).length === 0;
-  }
-
   private nameProblem(name: string): string | null {
     if (!name) {
       return NAME_REQUIRED;
@@ -252,38 +116,10 @@ export class TeacherProfilePage implements OnInit {
     return null;
   }
 
-  private blockProblem(block: SchoolBlock, seen: Set<number>): string | null {
-    if (block.schoolId == null) {
-      return SCHOOL_REQUIRED;
-    }
-    const school = this.availableSchools().find((item) => item.id === block.schoolId);
-    if (!school) {
-      return SCHOOL_UNKNOWN;
-    }
-    if (seen.has(block.schoolId)) {
-      return SCHOOL_DUPLICATE;
-    }
-    seen.add(block.schoolId);
-    const offered = school.grades ?? [];
-    if (offered.length === 0) {
-      return COUNTRY_WITHOUT_GRADES;
-    }
-    if (block.grades.length === 0) {
-      return GRADE_REQUIRED;
-    }
-    if (block.grades.some((grade) => !offered.includes(grade))) {
-      return GRADE_NOT_OFFERED;
-    }
-    return null;
-  }
-
   private payload(): UpdateTeacherProfileRequest {
     return {
       displayName: this.displayName().trim(),
-      schools: this.blocks().map((block) => ({
-        schoolId: block.schoolId ?? undefined,
-        grades: block.grades,
-      })),
+      schools: this.keptSchools(),
     };
   }
 
@@ -296,34 +132,14 @@ export class TeacherProfilePage implements OnInit {
     this.pendingNotice.set(null);
   }
 
-  private clearBlockError(key: number): void {
-    this.blockErrors.update((current) => {
-      if (!(key in current)) {
-        return current;
-      }
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-  }
-
   private apply(profile: TeacherProfileResponse): void {
     this.email.set(profile.email ?? '');
     this.displayName.set(profile.displayName ?? '');
-    this.availableSchools.set(profile.availableSchools ?? []);
-    this.blocks.set(
+    this.keptSchools.set(
       (profile.schools ?? []).map((school) => ({
-        key: this.nextKey++,
-        country: school.country ?? null,
-        schoolId: school.schoolId ?? null,
+        schoolId: school.schoolId,
         grades: [...(school.grades ?? [])],
       })),
-    );
-  }
-
-  private patch(key: number, partial: Partial<SchoolBlock>): void {
-    this.blocks.update((list) =>
-      list.map((block) => (block.key === key ? { ...block, ...partial } : block)),
     );
   }
 

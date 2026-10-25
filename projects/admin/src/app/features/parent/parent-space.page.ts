@@ -1,6 +1,4 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
 
 import { SpaceHeader } from '../../core/layout/space-header';
 
@@ -10,7 +8,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
  */
 @Component({
   selector: 'app-parent-space-page',
-  imports: [RouterLink, MatButtonModule, SpaceHeader],
+  imports: [SpaceHeader],
   templateUrl: './parent-space.page.html',
   styleUrl: './parent-space.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

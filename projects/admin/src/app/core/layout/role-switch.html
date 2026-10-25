@@ -1,10 +1,18 @@
-@if (session().activeRole) {
-  <span class="space">Espace {{ spaceLabel() }}</span>
-}
-@if (otherRole(); as target) {
-  <button mat-button type="button" [disabled]="loading()" (click)="switchTo(target)">
-    Passer en {{ label(target) }}
-  </button>
+@if (tabs().length > 0) {
+  <nav class="tabs" aria-label="Espaces">
+    @for (tab of tabs(); track tab.role) {
+      <button
+        type="button"
+        class="tab"
+        [class.is-current]="tab.current"
+        [attr.aria-current]="tab.current ? 'page' : null"
+        [disabled]="loading()"
+        (click)="open(tab.role)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
 }
 @if (error()) {
   <span class="switch-error" role="alert">{{ error() }}</span>

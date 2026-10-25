@@ -1,0 +1,23 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f7fb;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem 3rem;
+}
+
+.card {
+  width: min(100%, 40rem);
+  height: fit-content;
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  color: #5f6368;
+}

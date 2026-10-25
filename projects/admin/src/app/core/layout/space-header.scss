@@ -1,3 +1,31 @@
+.banner {
+  display: flex;
+  flex-direction: column;
+}
+
 .spacer {
   flex: 1;
+}
+
+.subnav {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.35rem 1rem;
+  background: #eef2f8;
+  border-bottom: 1px solid #d5deea;
+}
+
+.subnav a {
+  color: #1c2b3a;
+  text-decoration: none;
+  font-size: 0.95rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border-bottom: 2px solid transparent;
+}
+
+.subnav a.is-current {
+  font-weight: 700;
+  background: #fff;
+  border-bottom-color: #3f51b5;
 }

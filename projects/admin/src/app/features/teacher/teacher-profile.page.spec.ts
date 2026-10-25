@@ -13,7 +13,7 @@ const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
 const loaded: TeacherProfileResponse = {
   email: 'prof@example.com',
   displayName: 'Ancien',
-  schools: [],
+  schools: [{ schoolId: 1, schoolName: 'Ecole Nouvelle', country: 'Belgique', grades: ['1e primaire'] }],
   availableSchools: [
     { id: 1, name: 'Ecole Nouvelle', country: 'Belgique', grades: ['1e primaire', '2e primaire'] },
     { id: 2, name: 'Autre', country: 'Belgique', grades: ['1e primaire'] },
@@ -60,7 +60,10 @@ describe('TeacherProfilePage', () => {
 
     const put = http.expectOne(profileUrl);
     expect(put.request.method).toBe('PUT');
-    expect(put.request.body).toEqual({ displayName: 'Version envoyee', schools: [] });
+    expect(put.request.body).toEqual({
+      displayName: 'Version envoyee',
+      schools: [{ schoolId: 1, grades: ['1e primaire'] }],
+    });
 
     page.onName('Modification pendant sauvegarde');
     put.flush({ ...loaded, displayName: 'Version envoyee' });
@@ -96,24 +99,6 @@ describe('TeacherProfilePage', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Le nom est trop long (maximum 255).');
-    http.expectNone(profileUrl);
-  });
-
-  it('signale un bloc école incomplet sans appeler l’API', () => {
-    page.addSchool();
-    page.save();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('Choisis une école dans la liste, ou retire-la.');
-    http.expectNone(profileUrl);
-
-    const block = page.blocks()[0];
-    page.onCountry(block.key, 'Belgique');
-    page.onSchool(block.key, 1);
-    page.save();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('Choisis une classe pour cette école, ou retire-la.');
     http.expectNone(profileUrl);
   });
 
