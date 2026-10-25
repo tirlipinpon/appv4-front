@@ -25,6 +25,22 @@ export class ParentChildrenService {
     return this.http.post<ParentChildResponse>(`${environment.apiBaseUrl}/parent/children`, body);
   }
 
+  update(id: number, body: CreateParentChildRequest): Observable<ParentChildResponse> {
+    return this.http.put<ParentChildResponse>(`${environment.apiBaseUrl}/parent/children/${id}`, body);
+  }
+
+  deactivate(id: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/parent/children/${id}/deactivate`, null);
+  }
+
+  reactivate(id: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/parent/children/${id}/reactivate`, null);
+  }
+
+  remove(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiBaseUrl}/parent/children/${id}`);
+  }
+
   photo(id: number): Observable<Blob> {
     return this.http.get(`${environment.apiBaseUrl}/parent/children/${id}/photo`, {
       responseType: 'blob',

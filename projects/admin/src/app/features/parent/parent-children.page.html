@@ -22,7 +22,7 @@
 
       <ul class="list">
         @for (child of children(); track child.id) {
-          <li class="child">
+          <li class="child" [class.inactive]="child.active === false">
             <div class="identity">
               @if (child.hasPhoto && photos()[child.id!]) {
                 <img class="portrait" [src]="photos()[child.id!]" [alt]="child.firstName + ' ' + child.lastName" />
@@ -31,10 +31,43 @@
               }
               <div>
                 <strong>{{ child.firstName }} {{ child.lastName }}</strong>
+                @if (child.active === false) {
+                  <span class="badge">Désactivé</span>
+                }
                 <p>{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
                 <p>{{ child.schoolName || 'École non renseignée' }}</p>
                 @for (phrase of child.linkPhrases ?? []; track $index) {
                   <p class="kinship">{{ phrase }}</p>
+                }
+                @if (child.active === false) {
+                  <p class="hint">Visible dans cette liste, plus proposé dans le reste de l'application.</p>
+                }
+                @if (pendingKind() === 'deactivate' && pendingChildId() === child.id) {
+                  <p class="confirm" role="alert">
+                    Désactiver {{ child.firstName }} {{ child.lastName }} ? Il reste dans cette liste, mais il ne sera plus proposé ailleurs.
+                  </p>
+                  <p class="actions">
+                    <button mat-button type="button" (click)="cancelPending()">Annuler</button>
+                    <button mat-flat-button type="button" (click)="confirmDeactivate(child)">Confirmer la désactivation</button>
+                  </p>
+                } @else if (pendingKind() === 'hide' && pendingChildId() === child.id) {
+                  <p class="confirm" role="alert">
+                    Retirer {{ child.firstName }} {{ child.lastName }} de l'affichage ? La fiche reste enregistrée, elle n'apparaîtra plus ici.
+                  </p>
+                  <p class="actions">
+                    <button mat-button type="button" (click)="cancelPending()">Annuler</button>
+                    <button mat-flat-button color="warn" type="button" (click)="confirmRemove(child)">Confirmer le retrait</button>
+                  </p>
+                } @else {
+                  <p class="actions">
+                    <button mat-button type="button" (click)="edit(child)">Modifier</button>
+                    @if (child.active === false) {
+                      <button mat-button type="button" (click)="reactivate(child)">Réactiver</button>
+                    } @else {
+                      <button mat-button type="button" (click)="askDeactivate(child)">Désactiver</button>
+                    }
+                    <button mat-button type="button" (click)="askRemove(child)">Supprimer</button>
+                  </p>
                 }
               </div>
             </div>
@@ -48,10 +81,10 @@
       @if (formOpen()) {
         <mat-card class="form">
           <mat-card-header>
-            <mat-card-title>Nouvel enfant</mat-card-title>
+            <mat-card-title>{{ editingId() === null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            @if (fromChildId() !== null) {
+            @if (editingId() === null && fromChildId() !== null) {
               <mat-form-field appearance="outline" class="full">
                 <mat-label>Lien avec {{ fromChildFirstName() }}</mat-label>
                 <mat-select [value]="link()" (selectionChange)="link.set($event.value)">
@@ -143,6 +176,11 @@
             </label>
             @if (photoName()) {
               <p class="hint">Photo choisie : {{ photoName() }}. L'avatar est retiré.</p>
+            } @else if (keepPhoto()) {
+              <p class="hint">La photo actuelle est conservée, sauf si tu choisis un avatar ou une autre photo.</p>
+            }
+            @if (editingId() !== null) {
+              <p class="hint">Laisse les deux codes vides pour garder le PIN actuel.</p>
             }
 
             <mat-form-field appearance="outline" class="full">

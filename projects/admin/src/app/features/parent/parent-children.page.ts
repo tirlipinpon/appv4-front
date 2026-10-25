@@ -76,6 +76,10 @@ export class ParentChildrenPage implements OnInit {
   readonly fromChildId = signal<number | null>(null);
   readonly fromChildFirstName = signal('');
   readonly link = signal('AUCUN');
+  readonly editingId = signal<number | null>(null);
+  readonly keepPhoto = signal(false);
+  readonly pendingKind = signal<'deactivate' | 'hide' | null>(null);
+  readonly pendingChildId = signal<number | null>(null);
 
   private fromQueryHandled = false;
 
@@ -119,6 +123,7 @@ export class ParentChildrenPage implements OnInit {
 
   openForm(): void {
     this.error.set(null);
+    this.clearPending();
     this.resetForm();
     this.formOpen.set(true);
   }
@@ -170,6 +175,81 @@ export class ParentChildrenPage implements OnInit {
     this.resetForm();
   }
 
+  edit(child: ParentChildResponse): void {
+    this.clearPending();
+    this.error.set(null);
+    this.resetForm();
+    this.editingId.set(child.id ?? null);
+    this.firstName.set(child.firstName ?? '');
+    this.lastName.set(child.lastName ?? '');
+    this.age.set(child.age == null ? '' : String(child.age));
+    this.country.set(child.country ?? null);
+    this.grade.set(child.grade ?? null);
+    if (child.schoolId != null) {
+      this.schoolId.set(child.schoolId);
+      this.schoolFilter.set(child.schoolName ?? '');
+    }
+    this.avatarCode.set(child.hasPhoto ? null : (child.avatarCode ?? null));
+    this.keepPhoto.set(!!child.hasPhoto);
+    this.formOpen.set(true);
+  }
+
+  askDeactivate(child: ParentChildResponse): void {
+    this.pendingKind.set('deactivate');
+    this.pendingChildId.set(child.id ?? null);
+  }
+
+  askRemove(child: ParentChildResponse): void {
+    if (this.editingId() === child.id) {
+      this.closeForm();
+    }
+    this.pendingKind.set('hide');
+    this.pendingChildId.set(child.id ?? null);
+  }
+
+  cancelPending(): void {
+    this.clearPending();
+  }
+
+  confirmDeactivate(child: ParentChildResponse): void {
+    if (child.id == null) {
+      return;
+    }
+    this.api.deactivate(child.id).subscribe({
+      next: () => {
+        this.clearPending();
+        this.reload();
+      },
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Désactivation impossible.')),
+    });
+  }
+
+  reactivate(child: ParentChildResponse): void {
+    if (child.id == null) {
+      return;
+    }
+    this.api.reactivate(child.id).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Réactivation impossible.')),
+    });
+  }
+
+  confirmRemove(child: ParentChildResponse): void {
+    if (child.id == null) {
+      return;
+    }
+    this.api.remove(child.id).subscribe({
+      next: () => {
+        if (this.editingId() === child.id) {
+          this.closeForm();
+        }
+        this.clearPending();
+        this.reload();
+      },
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Retrait impossible.')),
+    });
+  }
+
   onCountry(country: string): void {
     this.country.set(country);
     this.schoolId.set(null);
@@ -190,6 +270,7 @@ export class ParentChildrenPage implements OnInit {
     this.photoBase64.set(null);
     this.photoContentType.set(null);
     this.photoName.set(null);
+    this.keepPhoto.set(false);
   }
 
   onPhoto(event: Event): void {
@@ -216,6 +297,7 @@ export class ParentChildrenPage implements OnInit {
       this.photoContentType.set(file.type);
       this.photoName.set(file.name);
       this.avatarCode.set(null);
+      this.keepPhoto.set(false);
       this.error.set(null);
     };
     reader.readAsDataURL(file);
@@ -227,7 +309,10 @@ export class ParentChildrenPage implements OnInit {
     }
     this.error.set(null);
     this.saving.set(true);
-    this.api.add(this.payload()).subscribe({
+    const request = this.editingId() == null
+      ? this.api.add(this.payload())
+      : this.api.update(this.editingId()!, this.payload());
+    request.subscribe({
       next: () => {
         this.saving.set(false);
         this.formOpen.set(false);
@@ -286,8 +371,8 @@ export class ParentChildrenPage implements OnInit {
       photoContentType: this.photoContentType() ?? undefined,
       pin: this.pin(),
       pinConfirmation: this.pinConfirmation(),
-      fromChildId: this.fromChildId() ?? undefined,
-      link: this.fromChildId() == null ? undefined : this.link(),
+      fromChildId: this.editingId() == null ? (this.fromChildId() ?? undefined) : undefined,
+      link: this.editingId() != null || this.fromChildId() == null ? undefined : this.link(),
     };
   }
 
@@ -345,6 +430,13 @@ export class ParentChildrenPage implements OnInit {
     this.fromChildId.set(null);
     this.fromChildFirstName.set('');
     this.link.set('AUCUN');
+    this.keepPhoto.set(false);
+    this.editingId.set(null);
+  }
+
+  private clearPending(): void {
+    this.pendingKind.set(null);
+    this.pendingChildId.set(null);
   }
 
   private message(err: HttpErrorResponse, fallback: string): string {
