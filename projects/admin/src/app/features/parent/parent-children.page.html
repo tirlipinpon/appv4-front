@@ -144,6 +144,9 @@
                   }
                 </mat-select>
               </mat-form-field>
+              @if (editingId() !== null) {
+                <p class="hint">Aucun retire le lien avec {{ fromChildFirstName() }}. Les autres liens restent.</p>
+              }
             }
             <mat-form-field appearance="outline" class="full">
               <mat-label>Prénom</mat-label>
