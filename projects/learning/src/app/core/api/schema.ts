@@ -571,6 +571,7 @@ export interface components {
         ParentChildLink: {
             /** Format: int64 */
             otherChildId?: number;
+            /** @description Mot court du lien, par exemple « Frère ». */
             label?: string;
         };
         ParentChildResponse: {
