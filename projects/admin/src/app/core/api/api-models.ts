@@ -42,3 +42,7 @@ export type TeacherSubjectGrade = components['schemas']['TeacherSubjectGrade'];
 export type TeacherSubjectItem = components['schemas']['TeacherSubjectItem'];
 export type CreateTeacherSubjectRequest = components['schemas']['CreateTeacherSubjectRequest'];
 export type RenameTeacherSubjectRequest = components['schemas']['RenameTeacherSubjectRequest'];
+export type ChildSubjectsResponse = components['schemas']['ChildSubjectsResponse'];
+export type ChildSubjectOffer = components['schemas']['ChildSubjectOffer'];
+export type ParentSubjectsResponse = components['schemas']['ParentSubjectsResponse'];
+export type AddChildSubjectRequest = components['schemas']['AddChildSubjectRequest'];

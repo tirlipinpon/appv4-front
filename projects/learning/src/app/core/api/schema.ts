@@ -552,6 +552,38 @@ export interface components {
             name?: string;
             active?: boolean;
         };
+        ChildSubjectOffer: {
+            /** Format: int64 */
+            subjectId?: number;
+            name?: string;
+            teacherName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            scolaire?: boolean;
+        };
+        ChildSubjectsResponse: {
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
+            lastName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            chosen?: components["schemas"]["ChildSubjectOffer"][];
+            proposed?: components["schemas"]["ChildSubjectOffer"][];
+        };
+        ParentSubjectsResponse: {
+            children?: components["schemas"]["ChildSubjectsResponse"][];
+        };
+        AddChildSubjectRequest: {
+            /** Format: int64 */
+            childId?: number;
+            /** Format: int64 */
+            subjectId?: number;
+        };
         CreateTeacherSubjectRequest: {
             /** Format: int64 */
             schoolId?: number;
@@ -661,6 +693,10 @@ export interface components {
             active?: boolean;
             /** @description Phrases de lien, par exemple « Noah est le frère de Léa ». Vide s'il n'y en a pas. */
             linkPhrases?: string[];
+            /** @description Matières visibles de la même école et de la même année */
+            schoolSubjectCount?: number;
+            /** @description Autres matières visibles, hors de sa classe */
+            extraSubjectCount?: number;
             /** @description L'autre enfant du lien, pour afficher sa photo ou son avatar, et le mot court. */
             links?: components["schemas"]["ParentChildLink"][];
         };

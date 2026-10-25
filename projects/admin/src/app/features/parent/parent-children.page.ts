@@ -175,6 +175,12 @@ export class ParentChildrenPage implements OnInit {
     return this.children().find((child) => child.id === id);
   }
 
+  subjectSummary(child: ParentChildResponse): string {
+    const school = child.schoolSubjectCount ?? 0;
+    const extra = child.extraSubjectCount ?? 0;
+    return `${this.countText(school, 'matière scolaire', 'matières scolaires')} et ${this.countText(extra, 'extra-scolaire', 'extra-scolaires')}`;
+  }
+
   ngOnInit(): void {
     this.reload();
   }
@@ -577,6 +583,10 @@ export class ParentChildrenPage implements OnInit {
   private clearPending(): void {
     this.pendingKind.set(null);
     this.pendingChildId.set(null);
+  }
+
+  private countText(value: number, one: string, many: string): string {
+    return `${value} ${value === 1 ? one : many}`;
   }
 
   private message(err: HttpErrorResponse, fallback: string): string {

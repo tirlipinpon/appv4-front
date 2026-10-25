@@ -61,6 +61,7 @@
                 }
                 <p>{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
                 <p>{{ child.schoolName || 'École non renseignée' }}</p>
+                <p class="hint">{{ subjectSummary(child) }}</p>
                 @if ((child.links ?? []).length > 0) {
                   <div class="chips">
                     @for (link of child.links ?? []; track link.otherChildId) {

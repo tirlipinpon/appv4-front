@@ -1,0 +1,70 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f7fb;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem 3rem;
+}
+
+.card {
+  width: min(100%, 46rem);
+  height: fit-content;
+}
+
+.back {
+  margin: 0 0 1rem;
+}
+
+.back a {
+  color: #1a73e8;
+}
+
+.block {
+  margin-top: 1.25rem;
+}
+
+.block h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.block h3 {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.meta {
+  display: block;
+  font-weight: 400;
+  color: #5f6368;
+}
+
+.hint {
+  margin: 0.35rem 0 0;
+  color: #5f6368;
+}
+
+.error,
+.confirm {
+  color: #b3261e;
+  margin: 0.35rem 0 0;
+}
