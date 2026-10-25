@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { Observable } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,6 +14,7 @@ import { TeacherSubjectsService } from './data-access/teacher-subjects.service';
 interface SubjectRow {
   id: number;
   name: string;
+  active: boolean;
 }
 
 interface GradeBlock {
@@ -54,7 +56,7 @@ export class TeacherSubjectsPage implements OnInit {
   readonly subjectErrors = signal<Readonly<Record<number, string>>>({});
   readonly renamingId = signal<number | null>(null);
   readonly renameDraft = signal('');
-  readonly pendingRemoveId = signal<number | null>(null);
+  readonly pending = signal<{ id: number; kind: 'remove' | 'disable' } | null>(null);
 
   ngOnInit(): void {
     this.api.load().subscribe({
@@ -80,7 +82,7 @@ export class TeacherSubjectsPage implements OnInit {
 
   confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
     const place = school.schoolName ? `${grade.grade} de ${school.schoolName}` : grade.grade;
-    return `Retirer ${subject.name} du ${place} ?`;
+    return `Retirer ${subject.name} du ${place} ? Elle disparaît de cette page et reste enregistrée.`;
   }
 
   inputValue(event: Event): string {
@@ -120,7 +122,7 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   startRename(subject: SubjectRow): void {
-    this.pendingRemoveId.set(null);
+    this.pending.set(null);
     this.renamingId.set(subject.id);
     this.renameDraft.set(subject.name);
     this.clearSubjectError(subject.id);
@@ -160,27 +162,49 @@ export class TeacherSubjectsPage implements OnInit {
     });
   }
 
-  askRemove(subject: SubjectRow): void {
+  askDisable(subject: SubjectRow): void {
     this.renamingId.set(null);
-    this.pendingRemoveId.set(subject.id);
+    this.pending.set({ id: subject.id, kind: 'disable' });
     this.clearSubjectError(subject.id);
   }
 
-  cancelRemove(): void {
-    this.pendingRemoveId.set(null);
+  askRemove(subject: SubjectRow): void {
+    this.renamingId.set(null);
+    this.pending.set({ id: subject.id, kind: 'remove' });
+    this.clearSubjectError(subject.id);
+  }
+
+  cancelPending(): void {
+    this.pending.set(null);
+  }
+
+  confirmDisable(subjectId: number): void {
+    this.postState(subjectId, () => this.api.deactivate(subjectId), 'Désactivation impossible.');
+  }
+
+  reactivate(subjectId: number): void {
+    this.postState(subjectId, () => this.api.reactivate(subjectId), 'Réactivation impossible.');
   }
 
   confirmRemove(subjectId: number): void {
+    this.postState(subjectId, () => this.api.remove(subjectId), 'Retrait impossible.');
+  }
+
+  private postState(
+    subjectId: number,
+    call: () => Observable<void>,
+    fallback: string,
+  ): void {
     if (this.saving()) {
       return;
     }
     this.error.set(null);
     this.saving.set(true);
-    this.api.remove(subjectId).subscribe({
+    call().subscribe({
       next: () => this.reload(),
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
-        this.setSubjectError(subjectId, httpErrorMessage(err, 'Retrait impossible.'));
+        this.setSubjectError(subjectId, httpErrorMessage(err, fallback));
       },
     });
   }
@@ -192,7 +216,7 @@ export class TeacherSubjectsPage implements OnInit {
         this.saving.set(false);
         this.renamingId.set(null);
         this.renameDraft.set('');
-        this.pendingRemoveId.set(null);
+        this.pending.set(null);
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
@@ -217,7 +241,7 @@ export class TeacherSubjectsPage implements OnInit {
           if (subject.id == null || !subject.name) {
             continue;
           }
-          subjects.push({ id: subject.id, name: subject.name });
+          subjects.push({ id: subject.id, name: subject.name, active: subject.active !== false });
         }
         grades.push({ grade: grade.grade, subjects });
       }

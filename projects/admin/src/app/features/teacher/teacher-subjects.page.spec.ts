@@ -18,8 +18,8 @@ const loaded: TeacherSubjectsResponse = {
       schoolId: 1,
       schoolName: 'École française',
       grades: [
-        { grade: 'CE1', subjects: [{ id: 2, name: 'Lecture' }] },
-        { grade: 'CE2', subjects: [{ id: 3, name: 'Mathématiques' }] },
+        { grade: 'CE1', subjects: [{ id: 2, name: 'Lecture', active: true }] },
+        { grade: 'CE2', subjects: [{ id: 3, name: 'Mathématiques', active: true }] },
       ],
     },
     {
@@ -119,7 +119,7 @@ describe('TeacherSubjectsPage', () => {
 
   it('renomme sans changer de classe', () => {
     boot(loaded);
-    page.startRename({ id: 2, name: 'Lecture' });
+    page.startRename({ id: 2, name: 'Lecture', active: true });
     page.onRenameDraft('  Français  ');
     page.saveRename(2);
 
@@ -132,22 +132,55 @@ describe('TeacherSubjectsPage', () => {
 
   it('retire une matière seulement après confirmation', () => {
     boot(loaded);
-    page.askRemove({ id: 3, name: 'Mathématiques' });
+    page.askRemove({ id: 3, name: 'Mathématiques', active: true });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      'Retirer Mathématiques du CE2 de École française ?',
+      'Retirer Mathématiques du CE2 de École française ? Elle disparaît de cette page et reste enregistrée.',
     );
-    page.cancelRemove();
+    page.cancelPending();
     fixture.detectChanges();
     http.expectNone(`${subjectsUrl}/3`);
     expect(fixture.nativeElement.textContent).toContain('Mathématiques');
 
-    page.askRemove({ id: 3, name: 'Mathématiques' });
+    page.askRemove({ id: 3, name: 'Mathématiques', active: true });
     page.confirmRemove(3);
     const del = http.expectOne(`${subjectsUrl}/3`);
     expect(del.request.method).toBe('DELETE');
     del.flush(null);
     http.expectOne(subjectsUrl).flush(loaded);
+  });
+
+  it('désactive une matière sans la retirer de la liste', () => {
+    boot(loaded);
+    page.askDisable({ id: 2, name: 'Lecture', active: true });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain(
+      "Désactiver Lecture ? Elle reste dans cette liste, elle n'est plus proposée dans le reste de l'application.",
+    );
+
+    page.confirmDisable(2);
+    const post = http.expectOne(`${subjectsUrl}/2/deactivate`);
+    expect(post.request.method).toBe('POST');
+    post.flush(null);
+    const refreshed: TeacherSubjectsResponse = {
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            { grade: 'CE1', subjects: [{ id: 2, name: 'Lecture', active: false }] },
+            { grade: 'CE2', subjects: [{ id: 3, name: 'Mathématiques', active: true }] },
+          ],
+        },
+      ],
+    };
+    http.expectOne(subjectsUrl).flush(refreshed);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      "Visible ici, plus proposée dans le reste de l'application.",
+    );
+    expect(fixture.nativeElement.textContent).toContain('Réactiver');
   });
 });

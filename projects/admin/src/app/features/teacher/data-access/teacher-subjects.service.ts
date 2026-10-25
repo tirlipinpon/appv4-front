@@ -33,4 +33,12 @@ export class TeacherSubjectsService {
   remove(id: number): Observable<void> {
     return this.http.delete<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}`);
   }
+
+  deactivate(id: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/deactivate`, null);
+  }
+
+  reactivate(id: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/reactivate`, null);
+  }
 }

@@ -550,6 +550,7 @@ export interface components {
             /** Format: int64 */
             id?: number;
             name?: string;
+            active?: boolean;
         };
         CreateTeacherSubjectRequest: {
             /** Format: int64 */

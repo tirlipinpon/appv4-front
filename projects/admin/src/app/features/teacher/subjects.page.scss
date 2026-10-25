@@ -66,8 +66,9 @@
   margin-top: 0.5rem;
 }
 
-.name {
-  font-weight: 600;
+.name.inactive {
+  color: #5f6368;
+  font-weight: 500;
 }
 
 .add {
