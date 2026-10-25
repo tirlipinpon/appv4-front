@@ -11,7 +11,7 @@
       @if (loading()) {
         <p>Chargement…</p>
       }
-      @if (error()) {
+      @if (error() && !formOpen()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
       @if (!loading() && children().length === 0) {
@@ -124,6 +124,9 @@
             <mat-card-title>{{ editingId() === null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
           </mat-card-header>
           <mat-card-content>
+            @if (error()) {
+              <p class="error" role="alert">{{ error() }}</p>
+            }
             @if (editingId() !== null && currentLinks().length > 0) {
               <p class="label">Liens déjà enregistrés</p>
               @for (item of currentLinks(); track item.otherChildId) {
@@ -185,7 +188,15 @@
             </mat-form-field>
             <mat-form-field appearance="outline" class="full">
               <mat-label>Âge</mat-label>
-              <input matInput name="age" inputmode="numeric" [ngModel]="age()" (ngModelChange)="age.set($event)" required />
+              <input
+                matInput
+                name="age"
+                inputmode="numeric"
+                autocomplete="off"
+                [value]="age()"
+                (input)="onAgeInput($event)"
+                required
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full">
@@ -198,33 +209,33 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="full">
-              <mat-label>Filtrer les écoles</mat-label>
+              <mat-label>École</mat-label>
               <input
                 matInput
-                name="schoolFilter"
-                [ngModel]="schoolFilter()"
-                (ngModelChange)="schoolFilter.set($event)"
+                name="school"
+                role="combobox"
+                aria-autocomplete="list"
+                [attr.aria-expanded]="schoolSuggestions().length > 0"
+                aria-controls="school-suggestions"
+                autocomplete="off"
+                [value]="schoolText()"
+                (input)="onSchoolInput($event)"
                 [disabled]="!country()"
                 placeholder="Nom de l'école"
               />
             </mat-form-field>
-            <mat-form-field appearance="outline" class="full">
-              <mat-label>École</mat-label>
-              <mat-select
-                [value]="schoolId()"
-                [disabled]="!country()"
-                (selectionChange)="onSchool($event.value)"
-                placeholder="Aucune école"
-              >
-                <mat-option [value]="null">Aucune école</mat-option>
-                @for (school of schoolOptions(); track school.id) {
-                  <mat-option [value]="school.id">{{ school.name }}</mat-option>
+            @if (schoolSuggestions().length > 0) {
+              <ul id="school-suggestions" class="suggestions" role="listbox">
+                @for (school of schoolSuggestions(); track school.id) {
+                  <li role="option" [attr.aria-selected]="school.id === schoolId() ? 'true' : 'false'">
+                    <button type="button" (click)="onSchoolPicked(school)">{{ school.name }}</button>
+                  </li>
                 }
-              </mat-select>
-            </mat-form-field>
+              </ul>
+            }
             @if (country() && schools().every((school) => school.country !== country())) {
               <p class="hint">Aucune école n'est proposable pour ce pays. L'enfant peut être enregistré sans école.</p>
-            } @else if (country() && schoolId() === null && schoolFilter().trim().length < 2) {
+            } @else if (country() && schoolId() === null && schoolText().trim().length < 2) {
               <p class="hint">Tape au moins deux lettres du nom pour voir les écoles. Tu peux aussi laisser l'école vide.</p>
             }
 
@@ -255,9 +266,31 @@
               Photo (JPEG, PNG, GIF ou WebP, 5 Mo maximum)
               <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" (change)="onPhoto($event)" />
             </label>
-            @if (photoName()) {
-              <p class="hint">Photo choisie : {{ photoName() }}. L'avatar est retiré.</p>
-            } @else if (keepPhoto()) {
+            @if (cropOpen()) {
+              <div class="crop" role="dialog" aria-label="Recadrer la photo">
+                <image-cropper
+                  [imageBase64]="cropSourceUrl() ?? ''"
+                  [maintainAspectRatio]="true"
+                  [aspectRatio]="1"
+                  format="webp"
+                  output="base64"
+                  [autoCrop]="false"
+                  [onlyScaleDown]="true"
+                  [allowMoveImage]="true"
+                  imageAltText="Photo à recadrer"
+                  cropperFrameAriaLabel="Cadre carré"
+                  (loadImageFailed)="onCropLoadFailed()"
+                />
+                <p class="hint">Déplace le cadre et zoome avec les poignées. La liste montrera ce carré en portrait rond.</p>
+                <p class="actions">
+                  <button mat-button type="button" (click)="cancelCrop()">Fermer</button>
+                  <button mat-flat-button color="primary" type="button" (click)="confirmCrop()">Valider le cadre</button>
+                </p>
+              </div>
+            }
+            @if (photoPreview()) {
+              <img class="photo-preview" [src]="photoPreview()" alt="Photo" />
+            } @else if (keepPhoto() && !cropOpen()) {
               <p class="hint">La photo actuelle est conservée, sauf si tu choisis un avatar ou une autre photo.</p>
             }
             @if (editingId() !== null) {
@@ -266,7 +299,15 @@
 
             <mat-form-field appearance="outline" class="full">
               <mat-label>Code PIN</mat-label>
-              <input matInput name="pin" inputmode="numeric" maxlength="4" autocomplete="off" [ngModel]="pin()" (ngModelChange)="pin.set($event)" />
+              <input
+                matInput
+                name="pin"
+                inputmode="numeric"
+                maxlength="4"
+                autocomplete="off"
+                [value]="pin()"
+                (input)="onPinInput($event)"
+              />
             </mat-form-field>
             <mat-form-field appearance="outline" class="full">
               <mat-label>Confirmer le code PIN</mat-label>
@@ -276,8 +317,8 @@
                 inputmode="numeric"
                 maxlength="4"
                 autocomplete="off"
-                [ngModel]="pinConfirmation()"
-                (ngModelChange)="pinConfirmation.set($event)"
+                [value]="pinConfirmation()"
+                (input)="onPinConfirmationInput($event)"
               />
             </mat-form-field>
           </mat-card-content>
