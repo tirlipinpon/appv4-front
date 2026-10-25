@@ -26,6 +26,7 @@ export type TeacherCurriculumOption = components['schemas']['TeacherCurriculumOp
 export type TeacherSchoolInput = components['schemas']['TeacherSchoolInput'];
 export type ParentChildrenResponse = components['schemas']['ParentChildrenResponse'];
 export type ParentChildResponse = components['schemas']['ParentChildResponse'];
+export type ParentChildLink = components['schemas']['ParentChildLink'];
 export type ParentSchoolOption = components['schemas']['ParentSchoolOption'];
 export type ParentGradeList = components['schemas']['ParentGradeList'];
 export type CreateParentChildRequest = components['schemas']['CreateParentChildRequest'];

@@ -568,6 +568,11 @@ export interface components {
             /** @description AUCUN, FRERE, SOEUR, DEMI_FRERE, DEMI_SOEUR, JUMEAU, JUMELLE, COUSIN ou COUSINE. */
             link?: string;
         };
+        ParentChildLink: {
+            /** Format: int64 */
+            otherChildId?: number;
+            label?: string;
+        };
         ParentChildResponse: {
             /** Format: int64 */
             id?: number;
@@ -587,6 +592,8 @@ export interface components {
             active?: boolean;
             /** @description Phrases de lien, par exemple « Noah est le frère de Léa ». Vide s'il n'y en a pas. */
             linkPhrases?: string[];
+            /** @description L'autre enfant du lien, pour afficher sa photo ou son avatar, et le mot court. */
+            links?: components["schemas"]["ParentChildLink"][];
         };
         SwitchRoleRequest: {
             role: string;
