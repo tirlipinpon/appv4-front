@@ -124,18 +124,18 @@
             <mat-card-title>{{ editingId() === null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            @if (editingId() === null && children().length > 0) {
+            @if (linkChoices().length > 0) {
               <mat-form-field appearance="outline" class="full">
                 <mat-label>Lier avec</mat-label>
                 <mat-select [value]="fromChildId()" (selectionChange)="onLinkTarget($event.value)">
                   <mat-option [value]="null">Aucun</mat-option>
-                  @for (existing of children(); track existing.id) {
+                  @for (existing of linkChoices(); track existing.id) {
                     <mat-option [value]="existing.id">{{ existing.firstName }} {{ existing.lastName }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
             }
-            @if (editingId() === null && fromChildId() !== null) {
+            @if (fromChildId() !== null) {
               <mat-form-field appearance="outline" class="full">
                 <mat-label>Lien avec {{ fromChildFirstName() }}</mat-label>
                 <mat-select [value]="link()" (selectionChange)="link.set($event.value)">

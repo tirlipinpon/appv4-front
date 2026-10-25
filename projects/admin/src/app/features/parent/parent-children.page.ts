@@ -109,6 +109,11 @@ export class ParentChildrenPage implements OnInit {
       .slice(0, 40);
   });
 
+  readonly linkChoices = computed(() => {
+    const editing = this.editingId();
+    return this.children().filter((child) => child.id != null && child.id !== editing);
+  });
+
   readonly gradeOptions = computed(() => {
     const selected = this.schools().find((school) => school.id === this.schoolId());
     if (selected?.grades?.length) {
@@ -217,7 +222,15 @@ export class ParentChildrenPage implements OnInit {
     this.fromChildFirstName.set(child?.firstName ?? '');
     if (childId === null) {
       this.link.set('AUCUN');
+      return;
     }
+    if (this.editingId() === null) {
+      return;
+    }
+    const current = this.children().find((item) => item.id === this.editingId());
+    const existing = current?.links?.find((item) => item.otherChildId === childId);
+    const known = this.kinship.find((item) => item.label === existing?.label);
+    this.link.set(known?.code ?? 'AUCUN');
   }
 
   edit(child: ParentChildResponse): void {
@@ -419,8 +432,8 @@ export class ParentChildrenPage implements OnInit {
       photoContentType: this.photoContentType() ?? undefined,
       pin: this.pin(),
       pinConfirmation: this.pinConfirmation(),
-      fromChildId: this.editingId() === null ? (this.fromChildId() ?? undefined) : undefined,
-      link: this.editingId() !== null || this.fromChildId() === null ? undefined : this.link(),
+      fromChildId: this.fromChildId() ?? undefined,
+      link: this.fromChildId() === null ? undefined : this.link(),
     };
   }
 
