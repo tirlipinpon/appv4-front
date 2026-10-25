@@ -48,6 +48,7 @@ export class ParentChildrenPage implements OnInit {
 
   readonly avatars = CHILD_AVATARS;
   readonly kinship = CHILD_LINKS;
+  readonly relationChoices = CHILD_LINKS.filter((item) => item.code !== 'AUCUN');
   readonly emoji = avatarEmoji;
 
   readonly children = signal<ParentChildResponse[]>([]);
@@ -112,6 +113,11 @@ export class ParentChildrenPage implements OnInit {
   readonly linkChoices = computed(() => {
     const editing = this.editingId();
     return this.children().filter((child) => child.id != null && child.id !== editing);
+  });
+
+  readonly currentLinks = computed(() => {
+    const id = this.editingId();
+    return this.children().find((child) => child.id === id)?.links ?? [];
   });
 
   readonly gradeOptions = computed(() => {
@@ -227,10 +233,29 @@ export class ParentChildrenPage implements OnInit {
     if (this.editingId() === null) {
       return;
     }
-    const current = this.children().find((item) => item.id === this.editingId());
-    const existing = current?.links?.find((item) => item.otherChildId === childId);
+    const existing = this.currentLinks().find((item) => item.otherChildId === childId);
     const known = this.kinship.find((item) => item.label === existing?.label);
-    this.link.set(known?.code ?? 'AUCUN');
+    this.link.set(known?.code ?? '');
+  }
+
+  /** Vrai si l'enfant choisi dans Modifier a déjà un lien avec la fiche en cours. */
+  selectedAlreadyLinked(): boolean {
+    const otherId = this.fromChildId();
+    if (otherId == null) {
+      return false;
+    }
+    return this.currentLinks().some((item) => item.otherChildId === otherId);
+  }
+
+  dropLink(otherChildId: number | undefined): void {
+    if (otherChildId == null || this.saving()) {
+      return;
+    }
+    const other = this.children().find((child) => child.id === otherChildId);
+    this.fromChildId.set(otherChildId);
+    this.fromChildFirstName.set(other?.firstName ?? '');
+    this.link.set('AUCUN');
+    this.save();
   }
 
   edit(child: ParentChildResponse): void {
@@ -369,6 +394,9 @@ export class ParentChildrenPage implements OnInit {
       return;
     }
     this.error.set(null);
+    if (!this.linkChoiceReady()) {
+      return;
+    }
     this.saving.set(true);
     const request = this.editingId() === null
       ? this.api.add(this.payload())
@@ -417,6 +445,21 @@ export class ParentChildrenPage implements OnInit {
         },
       });
     }
+  }
+
+  private linkChoiceReady(): boolean {
+    if (this.editingId() === null || this.fromChildId() === null) {
+      return true;
+    }
+    const word = this.link();
+    if (word && word !== 'AUCUN') {
+      return true;
+    }
+    if (word === 'AUCUN' && this.selectedAlreadyLinked()) {
+      return true;
+    }
+    this.error.set(`Choisis le lien avec ${this.fromChildFirstName()}.`);
+    return false;
   }
 
   private payload(): CreateParentChildRequest {

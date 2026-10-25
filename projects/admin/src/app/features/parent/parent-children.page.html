@@ -124,11 +124,21 @@
             <mat-card-title>{{ editingId() === null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
           </mat-card-header>
           <mat-card-content>
+            @if (editingId() !== null && currentLinks().length > 0) {
+              <p class="label">Liens déjà enregistrés</p>
+              @for (item of currentLinks(); track item.otherChildId) {
+                @let other = otherChild(item.otherChildId);
+                <p class="actions">
+                  <span class="chip">{{ other?.firstName }} · {{ item.label }}</span>
+                  <button mat-button type="button" (click)="dropLink(item.otherChildId)">Retirer</button>
+                </p>
+              }
+            }
             @if (linkChoices().length > 0) {
               <mat-form-field appearance="outline" class="full">
                 <mat-label>Lier avec</mat-label>
                 <mat-select [value]="fromChildId()" (selectionChange)="onLinkTarget($event.value)">
-                  <mat-option [value]="null">Aucun</mat-option>
+                  <mat-option [value]="null">{{ editingId() === null ? 'Aucun' : 'Ne pas changer' }}</mat-option>
                   @for (existing of linkChoices(); track existing.id) {
                     <mat-option [value]="existing.id">{{ existing.firstName }} {{ existing.lastName }}</mat-option>
                   }
@@ -138,14 +148,23 @@
             @if (fromChildId() !== null) {
               <mat-form-field appearance="outline" class="full">
                 <mat-label>Lien avec {{ fromChildFirstName() }}</mat-label>
-                <mat-select [value]="link()" (selectionChange)="link.set($event.value)">
-                  @for (item of kinship; track item.code) {
+                <mat-select [value]="link() || null" (selectionChange)="link.set($event.value)" placeholder="Choisir">
+                  @if (editingId() === null || selectedAlreadyLinked()) {
+                    <mat-option value="AUCUN">{{ editingId() === null ? 'Aucun' : 'Aucun — retirer ce lien' }}</mat-option>
+                  }
+                  @for (item of relationChoices; track item.code) {
                     <mat-option [value]="item.code">{{ item.label }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
               @if (editingId() !== null) {
-                <p class="hint">Aucun retire le lien avec {{ fromChildFirstName() }}. Les autres liens restent.</p>
+                <p class="hint">
+                  @if (selectedAlreadyLinked()) {
+                    « Aucun — retirer ce lien » enlève seulement celui avec {{ fromChildFirstName() }}.
+                  } @else {
+                    Choisis le mot du lien avec {{ fromChildFirstName() }}, puis enregistre.
+                  }
+                </p>
               }
             }
             <mat-form-field appearance="outline" class="full">
