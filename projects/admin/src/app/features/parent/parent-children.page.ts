@@ -18,6 +18,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { CHILD_AVATARS, avatarEmoji } from './child-avatars';
 import { CHILD_LINKS } from './child-links';
+import { CHILD_SEXES, sexLabel } from './child-sex';
 import { ParentChildrenService } from './data-access/parent-children.service';
 
 /**
@@ -48,6 +49,9 @@ export class ParentChildrenPage implements OnInit {
 
   readonly avatars = CHILD_AVATARS;
   readonly kinship = CHILD_LINKS;
+  readonly relationChoices = CHILD_LINKS.filter((item) => item.code !== 'AUCUN');
+  readonly sexes = CHILD_SEXES;
+  readonly sexLabel = sexLabel;
   readonly emoji = avatarEmoji;
 
   readonly children = signal<ParentChildResponse[]>([]);
@@ -62,6 +66,7 @@ export class ParentChildrenPage implements OnInit {
 
   readonly firstName = signal('');
   readonly lastName = signal('');
+  readonly sex = signal<string | null>(null);
   readonly age = signal('');
   readonly country = signal<string | null>(null);
   readonly grade = signal<string | null>(null);
@@ -109,6 +114,16 @@ export class ParentChildrenPage implements OnInit {
       .slice(0, 40);
   });
 
+  readonly linkChoices = computed(() => {
+    const editing = this.editingId();
+    return this.children().filter((child) => child.id != null && child.id !== editing);
+  });
+
+  readonly currentLinks = computed(() => {
+    const id = this.editingId();
+    return this.children().find((child) => child.id === id)?.links ?? [];
+  });
+
   readonly gradeOptions = computed(() => {
     const selected = this.schools().find((school) => school.id === this.schoolId());
     if (selected?.grades?.length) {
@@ -146,7 +161,8 @@ export class ParentChildrenPage implements OnInit {
         seen.add(key);
         const left = childId < otherId ? child : other;
         const right = left === child ? other : child;
-        lines.push({ left, right, label: link.label });
+        const aboutLeft = (right.links ?? []).find((item) => item.otherChildId === left.id);
+        lines.push({ left, right, label: aboutLeft?.label ?? link.label });
       }
     }
     return lines;
@@ -217,7 +233,34 @@ export class ParentChildrenPage implements OnInit {
     this.fromChildFirstName.set(child?.firstName ?? '');
     if (childId === null) {
       this.link.set('AUCUN');
+      return;
     }
+    if (this.editingId() === null) {
+      return;
+    }
+    const existing = this.currentLinks().find((item) => item.otherChildId === childId);
+    const known = this.kinship.find((item) => item.label === existing?.label);
+    this.link.set(known?.code ?? '');
+  }
+
+  /** Vrai si l'enfant choisi dans Modifier a déjà un lien avec la fiche en cours. */
+  selectedAlreadyLinked(): boolean {
+    const otherId = this.fromChildId();
+    if (otherId == null) {
+      return false;
+    }
+    return this.currentLinks().some((item) => item.otherChildId === otherId);
+  }
+
+  dropLink(otherChildId: number | undefined): void {
+    if (otherChildId == null || this.saving()) {
+      return;
+    }
+    const other = this.children().find((child) => child.id === otherChildId);
+    this.fromChildId.set(otherChildId);
+    this.fromChildFirstName.set(other?.firstName ?? '');
+    this.link.set('AUCUN');
+    this.save();
   }
 
   edit(child: ParentChildResponse): void {
@@ -227,6 +270,7 @@ export class ParentChildrenPage implements OnInit {
     this.editingId.set(child.id ?? null);
     this.firstName.set(child.firstName ?? '');
     this.lastName.set(child.lastName ?? '');
+    this.sex.set(child.sex ?? null);
     this.age.set(child.age == null ? '' : String(child.age));
     this.country.set(child.country ?? null);
     this.grade.set(child.grade ?? null);
@@ -356,6 +400,13 @@ export class ParentChildrenPage implements OnInit {
       return;
     }
     this.error.set(null);
+    if (!this.sex()) {
+      this.error.set('Choisis fille, garçon ou non genré.');
+      return;
+    }
+    if (!this.linkChoiceReady()) {
+      return;
+    }
     this.saving.set(true);
     const request = this.editingId() === null
       ? this.api.add(this.payload())
@@ -406,10 +457,26 @@ export class ParentChildrenPage implements OnInit {
     }
   }
 
+  private linkChoiceReady(): boolean {
+    if (this.editingId() === null || this.fromChildId() === null) {
+      return true;
+    }
+    const word = this.link();
+    if (word && word !== 'AUCUN') {
+      return true;
+    }
+    if (word === 'AUCUN' && this.selectedAlreadyLinked()) {
+      return true;
+    }
+    this.error.set(`Choisis le lien avec ${this.fromChildFirstName()}.`);
+    return false;
+  }
+
   private payload(): CreateParentChildRequest {
     return {
       firstName: this.firstName(),
       lastName: this.lastName(),
+      sex: this.sex() ?? undefined,
       age: this.age(),
       country: this.country() ?? undefined,
       grade: this.grade() ?? undefined,
@@ -419,8 +486,8 @@ export class ParentChildrenPage implements OnInit {
       photoContentType: this.photoContentType() ?? undefined,
       pin: this.pin(),
       pinConfirmation: this.pinConfirmation(),
-      fromChildId: this.editingId() === null ? (this.fromChildId() ?? undefined) : undefined,
-      link: this.editingId() !== null || this.fromChildId() === null ? undefined : this.link(),
+      fromChildId: this.fromChildId() ?? undefined,
+      link: this.fromChildId() === null ? undefined : this.link(),
     };
   }
 
@@ -475,6 +542,7 @@ export class ParentChildrenPage implements OnInit {
   private resetForm(): void {
     this.firstName.set('');
     this.lastName.set('');
+    this.sex.set(null);
     this.age.set('');
     this.country.set(null);
     this.grade.set(null);
