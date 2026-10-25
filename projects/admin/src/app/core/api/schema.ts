@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/int/teacher/subjects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Renommer une matière du professeur connecté */
+        put: operations["renameTeacherSubject"];
+        post?: never;
+        /** Retirer une matière du professeur connecté */
+        delete: operations["deleteTeacherSubject"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/profile": {
         parameters: {
             query?: never;
@@ -35,6 +53,24 @@ export interface paths {
         post?: never;
         /** Retirer un enfant de l'affichage */
         delete: operations["deleteParentChild"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les matières du professeur connecté */
+        get: operations["listTeacherSubjects"];
+        put?: never;
+        /** Créer une matière dans une classe du professeur */
+        post: operations["createTeacherSubject"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -507,6 +543,33 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RenameTeacherSubjectRequest: {
+            name?: string;
+        };
+        TeacherSubjectItem: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+        };
+        CreateTeacherSubjectRequest: {
+            /** Format: int64 */
+            schoolId?: number;
+            grade?: string;
+            name?: string;
+        };
+        TeacherSubjectGrade: {
+            grade?: string;
+            subjects?: components["schemas"]["TeacherSubjectItem"][];
+        };
+        TeacherSubjectSchool: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grades?: components["schemas"]["TeacherSubjectGrade"][];
+        };
+        TeacherSubjectsResponse: {
+            schools?: components["schemas"]["TeacherSubjectSchool"][];
+        };
         TeacherSchoolInput: {
             /** Format: int64 */
             schoolId?: number;
@@ -707,6 +770,168 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    renameTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Nom enregistré, la classe ne change pas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectItem"];
+                };
+            };
+            /** @description Nom vide, trop long, ou déjà pris dans la même classe */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deleteTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matière retirée. L'année du profil reste cochée */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Écoles du profil, années cochées, matières triées par nom */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    createTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Matière créée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectItem"];
+                };
+            };
+            /** @description Nom vide, trop long, déjà pris dans la classe, ou classe absente du profil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     getTeacherProfile: {
         parameters: {
             query?: never;
