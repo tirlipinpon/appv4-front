@@ -80,6 +80,26 @@
   font-weight: 600;
 }
 
+.child.inactive {
+  opacity: 0.72;
+}
+
+.badge {
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+  color: #5f6368;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.confirm {
+  color: #b3261e;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;

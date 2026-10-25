@@ -22,6 +22,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Modifier un enfant du parent connecté */
+        put: operations["updateParentChild"];
+        post?: never;
+        /** Retirer un enfant de l'affichage */
+        delete: operations["deleteParentChild"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/children": {
         parameters: {
             query?: never;
@@ -34,6 +52,40 @@ export interface paths {
         put?: never;
         /** Ajouter un enfant au parent connecté */
         post: operations["addParentChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Réactiver un enfant du parent connecté */
+        post: operations["reactivateParentChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Désactiver un enfant du parent connecté */
+        post: operations["deactivateParentChild"];
         delete?: never;
         options?: never;
         head?: never;
@@ -536,6 +588,8 @@ export interface components {
             schoolName?: string;
             avatarCode?: string;
             hasPhoto?: boolean;
+            /** @description Faux : encore dans la liste, plus proposé dans le reste de l'application */
+            active?: boolean;
             /** @description Phrases de lien, par exemple « Noah est le frère de Léa ». Vide s'il n'y en a pas. */
             linkPhrases?: string[];
             /** @description L'autre enfant du lien, pour afficher sa photo ou son avatar, et le mot court. */
@@ -719,6 +773,79 @@ export interface operations {
             };
         };
     };
+    updateParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateParentChildRequest"];
+            };
+        };
+        responses: {
+            /** @description Fiche mise à jour, sans le PIN */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentChildResponse"];
+                };
+            };
+            /** @description Champ refusé */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deleteParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retiré de l'affichage, fiche conservée en base */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     listParentChildren: {
         parameters: {
             query?: never;
@@ -789,6 +916,64 @@ export interface operations {
                 };
             };
             /** @description L'enfant de départ n'appartient pas à ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    reactivateParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description De nouveau proposé dans le reste de l'application */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deactivateParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Toujours affiché dans la liste, plus proposé ailleurs */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Enfant introuvable pour ce parent */
             404: {
                 headers: {
                     [name: string]: unknown;
