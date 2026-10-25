@@ -152,7 +152,7 @@
                   @if (editingId() === null || selectedAlreadyLinked()) {
                     <mat-option value="AUCUN">{{ editingId() === null ? 'Aucun' : 'Aucun — retirer ce lien' }}</mat-option>
                   }
-                  @for (item of relationChoices; track item.code) {
+                  @for (item of relationChoices(); track item.code) {
                     <mat-option [value]="item.code">{{ item.label }}</mat-option>
                   }
                 </mat-select>
