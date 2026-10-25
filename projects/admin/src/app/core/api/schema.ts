@@ -550,6 +550,8 @@ export interface components {
         CreateParentChildRequest: {
             firstName?: string;
             lastName?: string;
+            /** @description GARCON, FILLE ou NON_GENRE */
+            sex?: string;
             age?: string;
             country?: string;
             grade?: string;
@@ -579,6 +581,8 @@ export interface components {
             id?: number;
             firstName?: string;
             lastName?: string;
+            /** @description GARCON, FILLE ou NON_GENRE */
+            sex?: string;
             /** Format: int32 */
             age?: number;
             country?: string;

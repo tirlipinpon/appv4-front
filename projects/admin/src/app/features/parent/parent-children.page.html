@@ -57,6 +57,7 @@
               }
               <div>
                 <strong>{{ child.firstName }} {{ child.lastName }}</strong>
+                <span class="badge">{{ sexLabel(child.sex) }}</span>
                 @if (child.active === false) {
                   <span class="badge">Désactivé</span>
                 }
@@ -67,13 +68,14 @@
                     @for (link of child.links ?? []; track link.otherChildId) {
                       @let other = otherChild(link.otherChildId);
                       @if (other) {
-                        <span class="chip">
+                        <span class="chip" tabindex="0" [attr.aria-label]="(other.firstName ?? '') + ' ' + (other.lastName ?? '')">
                           @if (other.hasPhoto && photos()[other.id!]) {
                             <img class="mini" [src]="photos()[other.id!]" [alt]="other.firstName" />
                           } @else {
                             <span class="mini">{{ emoji(other.avatarCode) }}</span>
                           }
                           {{ link.label }}
+                          <span class="chip-tip" aria-hidden="true">{{ other.firstName }} {{ other.lastName }}</span>
                         </span>
                       }
                     }
@@ -174,6 +176,14 @@
             <mat-form-field appearance="outline" class="full">
               <mat-label>Nom</mat-label>
               <input matInput name="lastName" [ngModel]="lastName()" (ngModelChange)="lastName.set($event)" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Sexe</mat-label>
+              <mat-select [value]="sex()" (selectionChange)="sex.set($event.value)" placeholder="Choisir">
+                @for (item of sexes; track item.code) {
+                  <mat-option [value]="item.code">{{ item.label }}</mat-option>
+                }
+              </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline" class="full">
               <mat-label>Âge</mat-label>

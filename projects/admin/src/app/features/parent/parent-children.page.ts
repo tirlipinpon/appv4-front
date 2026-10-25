@@ -18,6 +18,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { CHILD_AVATARS, avatarEmoji } from './child-avatars';
 import { CHILD_LINKS } from './child-links';
+import { CHILD_SEXES, sexLabel } from './child-sex';
 import { ParentChildrenService } from './data-access/parent-children.service';
 
 /**
@@ -49,6 +50,8 @@ export class ParentChildrenPage implements OnInit {
   readonly avatars = CHILD_AVATARS;
   readonly kinship = CHILD_LINKS;
   readonly relationChoices = CHILD_LINKS.filter((item) => item.code !== 'AUCUN');
+  readonly sexes = CHILD_SEXES;
+  readonly sexLabel = sexLabel;
   readonly emoji = avatarEmoji;
 
   readonly children = signal<ParentChildResponse[]>([]);
@@ -63,6 +66,7 @@ export class ParentChildrenPage implements OnInit {
 
   readonly firstName = signal('');
   readonly lastName = signal('');
+  readonly sex = signal<string | null>(null);
   readonly age = signal('');
   readonly country = signal<string | null>(null);
   readonly grade = signal<string | null>(null);
@@ -157,7 +161,8 @@ export class ParentChildrenPage implements OnInit {
         seen.add(key);
         const left = childId < otherId ? child : other;
         const right = left === child ? other : child;
-        lines.push({ left, right, label: link.label });
+        const aboutLeft = (right.links ?? []).find((item) => item.otherChildId === left.id);
+        lines.push({ left, right, label: aboutLeft?.label ?? link.label });
       }
     }
     return lines;
@@ -265,6 +270,7 @@ export class ParentChildrenPage implements OnInit {
     this.editingId.set(child.id ?? null);
     this.firstName.set(child.firstName ?? '');
     this.lastName.set(child.lastName ?? '');
+    this.sex.set(child.sex ?? null);
     this.age.set(child.age == null ? '' : String(child.age));
     this.country.set(child.country ?? null);
     this.grade.set(child.grade ?? null);
@@ -394,6 +400,10 @@ export class ParentChildrenPage implements OnInit {
       return;
     }
     this.error.set(null);
+    if (!this.sex()) {
+      this.error.set('Choisis fille, garçon ou non genré.');
+      return;
+    }
     if (!this.linkChoiceReady()) {
       return;
     }
@@ -466,6 +476,7 @@ export class ParentChildrenPage implements OnInit {
     return {
       firstName: this.firstName(),
       lastName: this.lastName(),
+      sex: this.sex() ?? undefined,
       age: this.age(),
       country: this.country() ?? undefined,
       grade: this.grade() ?? undefined,
@@ -531,6 +542,7 @@ export class ParentChildrenPage implements OnInit {
   private resetForm(): void {
     this.firstName.set('');
     this.lastName.set('');
+    this.sex.set(null);
     this.age.set('');
     this.country.set(null);
     this.grade.set(null);
