@@ -53,8 +53,56 @@
   min-width: 0;
 }
 
-.kinship {
+.family {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.family-line,
+.family-person,
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.family-line {
+  background: white;
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+}
+
+.family-word,
+.chip {
   color: #1a3d7c;
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.chip {
+  background: #e8eef8;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem 0.1rem 0.1rem;
+  font-weight: 600;
+}
+
+.mini {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: #e8eef8;
+  font-size: 1rem;
 }
 
 .child p {

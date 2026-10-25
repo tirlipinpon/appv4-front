@@ -22,8 +22,8 @@ import { ParentChildrenService } from './data-access/parent-children.service';
 
 /**
  * Liste et ajout des enfants (SCRUM-156).
- * À partir d'un enfant déjà inscrit, le formulaire reprend le nom, l'âge, la classe et l'image (SCRUM-158).
- * Le prénom et le PIN restent vides. Le lien choisi s'affiche sur les deux fiches.
+ * À partir d'un enfant déjà inscrit, le formulaire reprend le nom, l'âge, la classe, l'école et l'image.
+ * Un nouvel enfant peut aussi être lié à un enfant déjà inscrit. Le prénom et le PIN restent vides.
  */
 @Component({
   selector: 'app-parent-children-page',
@@ -113,6 +113,43 @@ export class ParentChildrenPage implements OnInit {
     return this.curricula().find((list) => list.country === this.country())?.grades ?? [];
   });
 
+  readonly familyLines = computed(() => {
+    const byId = new Map(
+      this.children()
+        .filter((child) => child.id != null)
+        .map((child) => [child.id as number, child]),
+    );
+    const seen = new Set<string>();
+    const lines: { left: ParentChildResponse; right: ParentChildResponse; label: string }[] = [];
+    for (const child of this.children()) {
+      if (child.id == null) {
+        continue;
+      }
+      for (const link of child.links ?? []) {
+        if (link.otherChildId == null || !link.label) {
+          continue;
+        }
+        const other = byId.get(link.otherChildId);
+        if (!other?.id) {
+          continue;
+        }
+        const key = [child.id, other.id].sort((left, right) => left - right).join(':');
+        if (seen.has(key)) {
+          continue;
+        }
+        seen.add(key);
+        const left = child.id < other.id ? child : other;
+        const right = left === child ? other : child;
+        lines.push({ left, right, label: link.label });
+      }
+    }
+    return lines;
+  });
+
+  otherChild(id: number | undefined): ParentChildResponse | undefined {
+    return this.children().find((child) => child.id === id);
+  }
+
   ngOnInit(): void {
     this.reload();
   }
@@ -132,10 +169,7 @@ export class ParentChildrenPage implements OnInit {
     this.fromChildId.set(child.id);
     this.fromChildFirstName.set(child.firstName ?? '');
     this.link.set('AUCUN');
-    this.lastName.set(child.lastName ?? '');
-    this.age.set(child.age == null ? '' : String(child.age));
-    this.country.set(child.country ?? null);
-    this.grade.set(child.grade ?? null);
+    this.copyReusableFields(child);
     if (child.hasPhoto) {
       this.preparing.set(true);
       this.api.photo(child.id).subscribe({
@@ -168,6 +202,15 @@ export class ParentChildrenPage implements OnInit {
   closeForm(): void {
     this.formOpen.set(false);
     this.resetForm();
+  }
+
+  onLinkTarget(childId: number | null): void {
+    this.fromChildId.set(childId);
+    const child = this.children().find((item) => item.id === childId);
+    this.fromChildFirstName.set(child?.firstName ?? '');
+    if (childId == null) {
+      this.link.set('AUCUN');
+    }
   }
 
   onCountry(country: string): void {
@@ -313,6 +356,17 @@ export class ParentChildrenPage implements OnInit {
       return;
     }
     this.openFrom(child);
+  }
+
+  private copyReusableFields(child: ParentChildResponse): void {
+    this.lastName.set(child.lastName ?? '');
+    this.age.set(child.age == null ? '' : String(child.age));
+    this.country.set(child.country ?? null);
+    this.grade.set(child.grade ?? null);
+    if (child.schoolId != null) {
+      this.schoolId.set(child.schoolId);
+      this.schoolFilter.set(child.schoolName ?? '');
+    }
   }
 
   private readPhoto(blob: Blob): Promise<string> {

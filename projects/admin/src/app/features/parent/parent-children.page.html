@@ -20,6 +20,32 @@
         <p class="hint">Aucun enfant pour l'instant.</p>
       }
 
+      @if (familyLines().length > 0) {
+        <div class="family">
+          @for (line of familyLines(); track line.left.id + '-' + line.right.id) {
+            <div class="family-line">
+              <span class="family-person">
+                @if (line.left.hasPhoto && photos()[line.left.id!]) {
+                  <img class="mini" [src]="photos()[line.left.id!]" [alt]="line.left.firstName" />
+                } @else {
+                  <span class="mini">{{ emoji(line.left.avatarCode) }}</span>
+                }
+                {{ line.left.firstName }}
+              </span>
+              <span class="family-word">{{ line.label }}</span>
+              <span class="family-person">
+                @if (line.right.hasPhoto && photos()[line.right.id!]) {
+                  <img class="mini" [src]="photos()[line.right.id!]" [alt]="line.right.firstName" />
+                } @else {
+                  <span class="mini">{{ emoji(line.right.avatarCode) }}</span>
+                }
+                {{ line.right.firstName }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+
       <ul class="list">
         @for (child of children(); track child.id) {
           <li class="child">
@@ -33,8 +59,22 @@
                 <strong>{{ child.firstName }} {{ child.lastName }}</strong>
                 <p>{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
                 <p>{{ child.schoolName || 'École non renseignée' }}</p>
-                @for (phrase of child.linkPhrases ?? []; track $index) {
-                  <p class="kinship">{{ phrase }}</p>
+                @if ((child.links ?? []).length > 0) {
+                  <div class="chips">
+                    @for (link of child.links ?? []; track link.otherChildId) {
+                      @let other = otherChild(link.otherChildId);
+                      @if (other) {
+                        <span class="chip">
+                          @if (other.hasPhoto && photos()[other.id!]) {
+                            <img class="mini" [src]="photos()[other.id!]" [alt]="other.firstName" />
+                          } @else {
+                            <span class="mini">{{ emoji(other.avatarCode) }}</span>
+                          }
+                          {{ link.label }}
+                        </span>
+                      }
+                    }
+                  </div>
                 }
               </div>
             </div>
@@ -51,6 +91,17 @@
             <mat-card-title>Nouvel enfant</mat-card-title>
           </mat-card-header>
           <mat-card-content>
+            @if (children().length > 0) {
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>Lier avec</mat-label>
+                <mat-select [value]="fromChildId()" (selectionChange)="onLinkTarget($event.value)">
+                  <mat-option [value]="null">Aucun</mat-option>
+                  @for (existing of children(); track existing.id) {
+                    <mat-option [value]="existing.id">{{ existing.firstName }} {{ existing.lastName }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
             @if (fromChildId() !== null) {
               <mat-form-field appearance="outline" class="full">
                 <mat-label>Lien avec {{ fromChildFirstName() }}</mat-label>
@@ -110,7 +161,7 @@
             </mat-form-field>
             @if (country() && schools().every((school) => school.country !== country())) {
               <p class="hint">Aucune école n'est proposable pour ce pays. L'enfant peut être enregistré sans école.</p>
-            } @else if (country() && schoolFilter().trim().length < 2) {
+            } @else if (country() && schoolId() == null && schoolFilter().trim().length < 2) {
               <p class="hint">Tape au moins deux lettres du nom pour voir les écoles. Tu peux aussi laisser l'école vide.</p>
             }
 
