@@ -126,23 +126,25 @@ export class ParentChildrenPage implements OnInit {
     const seen = new Set<string>();
     const lines: { left: ParentChildResponse; right: ParentChildResponse; label: string }[] = [];
     for (const child of this.children()) {
-      if (child.id === null) {
+      const childId = child.id;
+      if (childId === undefined || childId === null) {
         continue;
       }
       for (const link of child.links ?? []) {
-        if (link.otherChildId === null || link.otherChildId === undefined || !link.label) {
+        const otherId = link.otherChildId;
+        if (otherId === undefined || otherId === null || !link.label) {
           continue;
         }
-        const other = byId.get(link.otherChildId);
-        if (!other?.id) {
+        const other = byId.get(otherId);
+        if (!other) {
           continue;
         }
-        const key = [child.id, other.id].sort((left, right) => left - right).join(':');
+        const key = childId < otherId ? `${childId}:${otherId}` : `${otherId}:${childId}`;
         if (seen.has(key)) {
           continue;
         }
         seen.add(key);
-        const left = child.id < other.id ? child : other;
+        const left = childId < otherId ? child : other;
         const right = left === child ? other : child;
         lines.push({ left, right, label: link.label });
       }
@@ -255,10 +257,11 @@ export class ParentChildrenPage implements OnInit {
   }
 
   confirmDeactivate(child: ParentChildResponse): void {
-    if (child.id === null) {
+    const id = child.id;
+    if (id === undefined || id === null) {
       return;
     }
-    this.api.deactivate(child.id).subscribe({
+    this.api.deactivate(id).subscribe({
       next: () => {
         this.clearPending();
         this.reload();
@@ -268,22 +271,24 @@ export class ParentChildrenPage implements OnInit {
   }
 
   reactivate(child: ParentChildResponse): void {
-    if (child.id === null) {
+    const id = child.id;
+    if (id === undefined || id === null) {
       return;
     }
-    this.api.reactivate(child.id).subscribe({
+    this.api.reactivate(id).subscribe({
       next: () => this.reload(),
       error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Réactivation impossible.')),
     });
   }
 
   confirmRemove(child: ParentChildResponse): void {
-    if (child.id === null) {
+    const id = child.id;
+    if (id === undefined || id === null) {
       return;
     }
-    this.api.remove(child.id).subscribe({
+    this.api.remove(id).subscribe({
       next: () => {
-        if (this.editingId() === child.id) {
+        if (this.editingId() === id) {
           this.closeForm();
         }
         this.clearPending();
