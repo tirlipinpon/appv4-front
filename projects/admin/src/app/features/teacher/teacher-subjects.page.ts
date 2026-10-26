@@ -15,6 +15,7 @@ interface SubjectRow {
   id: number;
   name: string;
   active: boolean;
+  sharedWith: string[];
 }
 
 interface GradeBlock {
@@ -28,13 +29,21 @@ interface SchoolBlock {
   grades: GradeBlock[];
 }
 
+type TransferMode = 'move' | 'share';
+
+type Pending =
+  | { id: number; kind: 'remove' | 'disable' }
+  | { id: number; kind: 'transfer'; mode: TransferMode | null; email: string; confirm: boolean };
+
 const NAME_REQUIRED = 'Le nom est obligatoire.';
 const NAME_TOO_LONG = 'Le nom dépasse 100 caractères.';
 const NAME_MAX = 100;
+const EMAIL_REQUIRED = "Indique l'email du professeur.";
+const MODE_REQUIRED = 'Choisis de déplacer ou de partager.';
 
 /**
- * Matières du professeur, une liste par classe déjà cochée sur son profil.
- * Les exercices, le clone et les formes de questions ne sont pas sur cette page.
+ * Matières du professeur : créer, renommer, désactiver, retirer, déplacer ou partager.
+ * Les exercices et les formes de questions ne sont pas sur cette page.
  */
 @Component({
   selector: 'app-teacher-subjects-page',
@@ -56,7 +65,7 @@ export class TeacherSubjectsPage implements OnInit {
   readonly subjectErrors = signal<Readonly<Record<number, string>>>({});
   readonly renamingId = signal<number | null>(null);
   readonly renameDraft = signal('');
-  readonly pending = signal<{ id: number; kind: 'remove' | 'disable' } | null>(null);
+  readonly pending = signal<Pending | null>(null);
 
   ngOnInit(): void {
     this.api.load().subscribe({
@@ -80,9 +89,49 @@ export class TeacherSubjectsPage implements OnInit {
     return this.subjectErrors()[subjectId] ?? null;
   }
 
+  sharedLabel(subject: SubjectRow): string | null {
+    if (subject.sharedWith.length === 0) {
+      return null;
+    }
+    return `Partagée avec ${subject.sharedWith.join(', ')}`;
+  }
+
   confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
+    if (subject.sharedWith.length > 0) {
+      const keepers = subject.sharedWith.join(', ');
+      return `Retirer ${subject.name} de ta liste ? ${keepers} la garde.`;
+    }
     const place = school.schoolName ? `${grade.grade} de ${school.schoolName}` : grade.grade;
     return `Retirer ${subject.name} du ${place} ? Elle disparaît de cette page et reste enregistrée.`;
+  }
+
+  transferConfirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
+    const current = this.pending();
+    if (!current || current.kind !== 'transfer' || current.mode == null) {
+      return '';
+    }
+    const place = school.schoolName
+      ? `${subject.name} (${school.schoolName}, ${grade.grade})`
+      : `${subject.name} (${grade.grade})`;
+    if (current.mode === 'move') {
+      return `Déplacer ${place} vers cet email ? Elle quittera ta liste. Le collègue pourra la renommer, la désactiver, la réactiver et la retirer.`;
+    }
+    return `Partager ${place} avec cet email ? Vous pourrez tous les deux la renommer, la désactiver, la réactiver et la retirer.`;
+  }
+
+  transferEmail(): string {
+    const current = this.pending();
+    return current?.kind === 'transfer' ? current.email : '';
+  }
+
+  transferMode(): TransferMode | null {
+    const current = this.pending();
+    return current?.kind === 'transfer' ? current.mode : null;
+  }
+
+  transferConfirming(): boolean {
+    const current = this.pending();
+    return current?.kind === 'transfer' ? current.confirm : false;
   }
 
   inputValue(event: Event): string {
@@ -174,6 +223,47 @@ export class TeacherSubjectsPage implements OnInit {
     this.clearSubjectError(subject.id);
   }
 
+  askTransfer(subject: SubjectRow): void {
+    this.renamingId.set(null);
+    this.pending.set({ id: subject.id, kind: 'transfer', mode: null, email: '', confirm: false });
+    this.clearSubjectError(subject.id);
+  }
+
+  setTransferMode(mode: TransferMode): void {
+    const current = this.pending();
+    if (!current || current.kind !== 'transfer') {
+      return;
+    }
+    this.pending.set({ ...current, mode, confirm: false });
+    this.clearSubjectError(current.id);
+  }
+
+  onTransferEmail(value: string): void {
+    const current = this.pending();
+    if (!current || current.kind !== 'transfer') {
+      return;
+    }
+    this.pending.set({ ...current, email: value, confirm: false });
+    this.clearSubjectError(current.id);
+  }
+
+  prepareTransferConfirm(subjectId: number): void {
+    const current = this.pending();
+    if (!current || current.kind !== 'transfer' || current.id !== subjectId) {
+      return;
+    }
+    if (current.mode == null) {
+      this.setSubjectError(subjectId, MODE_REQUIRED);
+      return;
+    }
+    if (!current.email.trim()) {
+      this.setSubjectError(subjectId, EMAIL_REQUIRED);
+      return;
+    }
+    this.clearSubjectError(subjectId);
+    this.pending.set({ ...current, confirm: true });
+  }
+
   cancelPending(): void {
     this.pending.set(null);
   }
@@ -188,6 +278,22 @@ export class TeacherSubjectsPage implements OnInit {
 
   confirmRemove(subjectId: number): void {
     this.postState(subjectId, () => this.api.remove(subjectId), 'Retrait impossible.');
+  }
+
+  confirmTransfer(subjectId: number): void {
+    const current = this.pending();
+    if (!current || current.kind !== 'transfer' || current.mode == null || this.saving()) {
+      return;
+    }
+    this.error.set(null);
+    this.saving.set(true);
+    this.api.transfer(subjectId, { email: current.email.trim(), mode: current.mode }).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.setSubjectError(subjectId, httpErrorMessage(err, 'Transfert impossible.'));
+      },
+    });
   }
 
   private postState(
@@ -241,7 +347,12 @@ export class TeacherSubjectsPage implements OnInit {
           if (subject.id == null || !subject.name) {
             continue;
           }
-          subjects.push({ id: subject.id, name: subject.name, active: subject.active !== false });
+          subjects.push({
+            id: subject.id,
+            name: subject.name,
+            active: subject.active !== false,
+            sharedWith: [...(subject.sharedWith ?? [])],
+          });
         }
         grades.push({ grade: grade.grade, subjects });
       }

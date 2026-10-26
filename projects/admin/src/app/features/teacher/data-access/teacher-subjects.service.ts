@@ -7,11 +7,12 @@ import type {
   RenameTeacherSubjectRequest,
   TeacherSubjectItem,
   TeacherSubjectsResponse,
+  TransferTeacherSubjectRequest,
 } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
 /**
- * Matières du professeur connecté (SCRUM-161).
+ * Matières du professeur connecté (SCRUM-161, SCRUM-172).
  * L'écriture en base reste côté API : ce service ne fait qu'envoyer le formulaire.
  */
 @Injectable({ providedIn: 'root' })
@@ -40,5 +41,9 @@ export class TeacherSubjectsService {
 
   reactivate(id: number): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/reactivate`, null);
+  }
+
+  transfer(id: number, body: TransferTeacherSubjectRequest): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/transfer`, body);
   }
 }

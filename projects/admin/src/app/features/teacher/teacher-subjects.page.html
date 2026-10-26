@@ -81,8 +81,69 @@
                           >
                             Confirmer le retrait
                           </button>
+                        } @else if (pending()?.id === subject.id && pending()?.kind === 'transfer') {
+                          @if (transferConfirming()) {
+                            <p class="confirm" role="alert">{{ transferConfirmText(school, grade, subject) }}</p>
+                            <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                              Annuler
+                            </button>
+                            <button
+                              mat-flat-button
+                              type="button"
+                              [disabled]="saving()"
+                              (click)="confirmTransfer(subject.id)"
+                            >
+                              Confirmer
+                            </button>
+                          } @else {
+                            <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
+                            <div class="transfer">
+                              <button
+                                mat-button
+                                type="button"
+                                [disabled]="saving()"
+                                [class.selected]="transferMode() === 'move'"
+                                (click)="setTransferMode('move')"
+                              >
+                                Déplacer
+                              </button>
+                              <button
+                                mat-button
+                                type="button"
+                                [disabled]="saving()"
+                                [class.selected]="transferMode() === 'share'"
+                                (click)="setTransferMode('share')"
+                              >
+                                Partager
+                              </button>
+                              <mat-form-field appearance="outline" class="transfer-field">
+                                <mat-label>Email du collègue</mat-label>
+                                <input
+                                  matInput
+                                  type="email"
+                                  [value]="transferEmail()"
+                                  [disabled]="saving()"
+                                  (input)="onTransferEmail(inputValue($event))"
+                                />
+                              </mat-form-field>
+                              <button
+                                mat-flat-button
+                                type="button"
+                                [disabled]="saving()"
+                                (click)="prepareTransferConfirm(subject.id)"
+                              >
+                                Continuer
+                              </button>
+                              <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                                Annuler
+                              </button>
+                            </div>
+                          }
                         } @else {
                           <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
+                          @if (sharedLabel(subject); as shared) {
+                            <p class="hint shared">{{ shared }}</p>
+                          }
                           @if (!subject.active) {
                             <p class="hint">Visible ici, plus proposée dans le reste de l'application.</p>
                           }
@@ -100,6 +161,9 @@
                           }
                           <button mat-button type="button" [disabled]="saving()" (click)="askRemove(subject)">
                             Retirer
+                          </button>
+                          <button mat-button type="button" [disabled]="saving()" (click)="askTransfer(subject)">
+                            Transférer
                           </button>
                         }
                         @if (subjectError(subject.id); as subjectMessage) {
