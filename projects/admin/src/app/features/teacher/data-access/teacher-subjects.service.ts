@@ -5,14 +5,17 @@ import { Observable } from 'rxjs';
 import type {
   CreateTeacherSubjectRequest,
   RenameTeacherSubjectRequest,
+  TeacherSubjectColleaguesResponse,
   TeacherSubjectItem,
   TeacherSubjectsResponse,
+  TeacherTransferInvitesResponse,
+  TransferTeacherSubjectRequest,
 } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
 /**
- * Matières du professeur connecté (SCRUM-161).
- * L'écriture en base reste côté API : ce service ne fait qu'envoyer le formulaire.
+ * Matières du professeur (SCRUM-161, SCRUM-172, SCRUM-189).
+ * Transfert : liste de collègues + demande à valider, pas d'email libre.
  */
 @Injectable({ providedIn: 'root' })
 export class TeacherSubjectsService {
@@ -40,5 +43,35 @@ export class TeacherSubjectsService {
 
   reactivate(id: number): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/reactivate`, null);
+  }
+
+  colleagues(id: number): Observable<TeacherSubjectColleaguesResponse> {
+    return this.http.get<TeacherSubjectColleaguesResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${id}/colleagues`,
+    );
+  }
+
+  transfer(id: number, body: TransferTeacherSubjectRequest): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/transfer`, body);
+  }
+
+  transferInvites(): Observable<TeacherTransferInvitesResponse> {
+    return this.http.get<TeacherTransferInvitesResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/transfer-invites`,
+    );
+  }
+
+  acceptTransfer(inviteId: number): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiBaseUrl}/teacher/subjects/transfer-invites/${inviteId}/accept`,
+      null,
+    );
+  }
+
+  rejectTransfer(inviteId: number): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiBaseUrl}/teacher/subjects/transfer-invites/${inviteId}/reject`,
+      null,
+    );
   }
 }

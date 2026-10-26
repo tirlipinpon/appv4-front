@@ -76,6 +76,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Proposer de déplacer ou partager une matière avec un collègue */
+        post: operations["transferTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects/{id}/reactivate": {
         parameters: {
             query?: never;
@@ -104,6 +121,40 @@ export interface paths {
         put?: never;
         /** Désactiver une matière du professeur connecté */
         post: operations["deactivateTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/transfer-invites/{inviteId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuser une demande de transfert */
+        post: operations["rejectTeacherSubjectTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/transfer-invites/{inviteId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accepter une demande de transfert */
+        post: operations["acceptTeacherSubjectTransfer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -421,6 +472,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/{id}/colleagues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les collègues à qui proposer un transfert */
+        get: operations["listTeacherSubjectColleagues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/transfer-invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les demandes de transfert reçues */
+        get: operations["listTeacherSubjectTransferInvites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/students": {
         parameters: {
             query?: never;
@@ -657,6 +742,7 @@ export interface components {
             id?: number;
             name?: string;
             active?: boolean;
+            sharedWith?: string[];
         };
         TeacherSchoolInput: {
             /** Format: int64 */
@@ -763,6 +849,18 @@ export interface components {
             schoolId?: number;
             grade?: string;
             name?: string;
+        };
+        TransferTeacherSubjectRequest: {
+            /**
+             * Format: int64
+             * @description Identifiant du collègue choisi dans la liste
+             */
+            colleagueUserId?: number;
+            /**
+             * @description move ou share
+             * @enum {string}
+             */
+            mode?: "move" | "share";
         };
         AddChildSubjectRequest: {
             /** Format: int64 */
@@ -879,6 +977,30 @@ export interface components {
         };
         TeacherSubjectsResponse: {
             schools?: components["schemas"]["TeacherSubjectSchool"][];
+        };
+        TeacherSubjectColleagueItem: {
+            /** Format: int64 */
+            userId?: number;
+            displayName?: string;
+        };
+        TeacherSubjectColleaguesResponse: {
+            colleagues?: components["schemas"]["TeacherSubjectColleagueItem"][];
+        };
+        TeacherTransferInviteItem: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            subjectId?: number;
+            subjectName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            mode?: string;
+            fromDisplayName?: string;
+        };
+        TeacherTransferInvitesResponse: {
+            invites?: components["schemas"]["TeacherTransferInviteItem"][];
         };
         TeacherStudentGrade: {
             grade?: string;
@@ -1007,7 +1129,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Retirée de la page. La ligne reste en base */
+            /** @description Accès retiré. Cachée seulement s'il ne reste personne */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1249,6 +1371,57 @@ export interface operations {
             };
         };
     };
+    transferTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Demande créée ; l'accès ne change qu'après acceptation */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Mode, collègue ou demande déjà en attente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     reactivateTeacherSubject: {
         parameters: {
             query?: never;
@@ -1298,7 +1471,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Reste dans sa liste, plus proposée dans le reste de l'application */
+            /** @description Reste dans les listes, plus proposée dans le reste de l'application */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1315,6 +1488,91 @@ export interface operations {
                 };
             };
             /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    rejectTeacherSubjectTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inviteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demande refusée, accès inchangé */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Demande introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    acceptTeacherSubjectTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inviteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accès mis à jour (même matière, pas une copie) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Demande plus valable */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Demande introuvable */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1914,6 +2172,75 @@ export interface operations {
             };
             /** @description Demande inconnue */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjectColleagues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Professeurs acceptés avec la même classe, triés par nom */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectColleaguesResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjectTransferInvites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demandes en attente avec le détail matière et mode */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherTransferInvitesResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -15,6 +15,29 @@
           <p class="error" role="alert">{{ error() }}</p>
         }
 
+        @if (invites().length > 0) {
+          <section class="invites" aria-label="Demandes de transfert">
+            <h2 class="invites-title">Demandes reçues</h2>
+            @for (invite of invites(); track invite.id) {
+              <article class="invite">
+                <p class="confirm" role="status">{{ inviteText(invite) }}</p>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="saving()"
+                  (click)="acceptInvite(invite.id)"
+                >
+                  Accepter
+                </button>
+                <button mat-button type="button" [disabled]="saving()" (click)="rejectInvite(invite.id)">
+                  Refuser
+                </button>
+              </article>
+            }
+          </section>
+        }
+
         @if (ready() && schools().length === 0) {
           <p class="hint">Il n'y a pas encore de classe.</p>
         }
@@ -81,8 +104,78 @@
                           >
                             Confirmer le retrait
                           </button>
+                        } @else if (pending()?.id === subject.id && pending()?.kind === 'transfer') {
+                          @if (transferConfirming()) {
+                            <p class="confirm" role="alert">{{ transferConfirmText(school, grade, subject) }}</p>
+                            <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                              Annuler
+                            </button>
+                            <button
+                              mat-flat-button
+                              type="button"
+                              [disabled]="saving()"
+                              (click)="confirmTransfer(subject.id)"
+                            >
+                              Envoyer la demande
+                            </button>
+                          } @else {
+                            <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
+                            <div class="transfer">
+                              <button
+                                mat-button
+                                type="button"
+                                [disabled]="saving()"
+                                [class.selected]="transferMode() === 'move'"
+                                (click)="setTransferMode('move')"
+                              >
+                                Déplacer
+                              </button>
+                              <button
+                                mat-button
+                                type="button"
+                                [disabled]="saving()"
+                                [class.selected]="transferMode() === 'share'"
+                                (click)="setTransferMode('share')"
+                              >
+                                Partager
+                              </button>
+                              @if (transferColleagues().length === 0) {
+                                <p class="hint">Aucun collègue avec cette classe.</p>
+                              } @else {
+                                <ul class="colleagues">
+                                  @for (colleague of transferColleagues(); track colleague.userId) {
+                                    <li>
+                                      <button
+                                        mat-button
+                                        type="button"
+                                        [disabled]="saving()"
+                                        [class.selected]="transferColleagueId() === colleague.userId"
+                                        (click)="setTransferColleague(colleague.userId!)"
+                                      >
+                                        {{ colleague.displayName }}
+                                      </button>
+                                    </li>
+                                  }
+                                </ul>
+                              }
+                              <button
+                                mat-flat-button
+                                type="button"
+                                [disabled]="saving() || transferColleagues().length === 0"
+                                (click)="prepareTransferConfirm(subject.id)"
+                              >
+                                Continuer
+                              </button>
+                              <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                                Annuler
+                              </button>
+                            </div>
+                          }
                         } @else {
                           <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
+                          @if (sharedLabel(subject); as shared) {
+                            <p class="hint shared">{{ shared }}</p>
+                          }
                           @if (!subject.active) {
                             <p class="hint">Visible ici, plus proposée dans le reste de l'application.</p>
                           }
@@ -100,6 +193,9 @@
                           }
                           <button mat-button type="button" [disabled]="saving()" (click)="askRemove(subject)">
                             Retirer
+                          </button>
+                          <button mat-button type="button" [disabled]="saving()" (click)="askTransfer(subject)">
+                            Transférer
                           </button>
                         }
                         @if (subjectError(subject.id); as subjectMessage) {
