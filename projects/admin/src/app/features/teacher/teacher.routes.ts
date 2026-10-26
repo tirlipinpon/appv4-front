@@ -5,7 +5,8 @@ import { SpaceRoles } from '../../core/auth/space-roles';
 import { TeacherSpacePage } from './teacher-space.page';
 
 /** Espace professeur : le jeton doit dire teacher (SCRUM-128).
- * Le profil, les écoles et les matières ne se chargent qu'à l'ouverture de leur page.
+ * Le profil, les écoles, les élèves et les matières ne se chargent qu'à l'ouverture de leur page.
+ * /teacher/eleves est en lecture seule (SCRUM-160).
  */
 export const TEACHER_ROUTES: Routes = [
   {
@@ -16,6 +17,11 @@ export const TEACHER_ROUTES: Routes = [
   {
     path: 'ecoles',
     loadComponent: () => import('./teacher-schools.page').then((m) => m.TeacherSchoolsPage),
+    canActivate: [spaceGuard(SpaceRoles.teacher)],
+  },
+  {
+    path: 'eleves',
+    loadComponent: () => import('./teacher-students.page').then((m) => m.TeacherStudentsPage),
     canActivate: [spaceGuard(SpaceRoles.teacher)],
   },
   {

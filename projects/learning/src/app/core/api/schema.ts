@@ -76,6 +76,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Réactiver une matière du professeur connecté */
+        post: operations["reactivateTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Désactiver une matière du professeur connecté */
+        post: operations["deactivateTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les enfants et leurs matières */
+        get: operations["listParentSubjects"];
+        put?: never;
+        /** Ajouter une matière à un enfant */
+        post: operations["addParentChildSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/children": {
         parameters: {
             query?: never;
@@ -369,6 +421,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les élèves des classes du professeur */
+        get: operations["listTeacherStudents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/students/{id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la photo d'un élève d'une classe du professeur */
+        get: operations["getTeacherStudentPhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/hello": {
         parameters: {
             query?: never;
@@ -539,6 +625,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/subjects/{childId}/{subjectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Retirer une matière de la liste d'un enfant */
+        delete: operations["removeParentChildSubject"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -546,62 +649,14 @@ export interface components {
         RenameTeacherSubjectRequest: {
             name?: string;
         };
+        AuthErrorBody: {
+            message?: string;
+        };
         TeacherSubjectItem: {
             /** Format: int64 */
             id?: number;
             name?: string;
             active?: boolean;
-        };
-        ChildSubjectOffer: {
-            /** Format: int64 */
-            subjectId?: number;
-            name?: string;
-            teacherName?: string;
-            /** Format: int64 */
-            schoolId?: number;
-            schoolName?: string;
-            grade?: string;
-            scolaire?: boolean;
-        };
-        ChildSubjectsResponse: {
-            /** Format: int64 */
-            childId?: number;
-            firstName?: string;
-            lastName?: string;
-            /** Format: int64 */
-            schoolId?: number;
-            schoolName?: string;
-            grade?: string;
-            chosen?: components["schemas"]["ChildSubjectOffer"][];
-            proposed?: components["schemas"]["ChildSubjectOffer"][];
-        };
-        ParentSubjectsResponse: {
-            children?: components["schemas"]["ChildSubjectsResponse"][];
-        };
-        AddChildSubjectRequest: {
-            /** Format: int64 */
-            childId?: number;
-            /** Format: int64 */
-            subjectId?: number;
-        };
-        CreateTeacherSubjectRequest: {
-            /** Format: int64 */
-            schoolId?: number;
-            grade?: string;
-            name?: string;
-        };
-        TeacherSubjectGrade: {
-            grade?: string;
-            subjects?: components["schemas"]["TeacherSubjectItem"][];
-        };
-        TeacherSubjectSchool: {
-            /** Format: int64 */
-            schoolId?: number;
-            schoolName?: string;
-            grades?: components["schemas"]["TeacherSubjectGrade"][];
-        };
-        TeacherSubjectsResponse: {
-            schools?: components["schemas"]["TeacherSubjectSchool"][];
         };
         TeacherSchoolInput: {
             /** Format: int64 */
@@ -612,9 +667,6 @@ export interface components {
         UpdateTeacherProfileRequest: {
             displayName?: string;
             schools?: components["schemas"]["TeacherSchoolInput"][];
-        };
-        AuthErrorBody: {
-            message?: string;
         };
         TeacherAssignedSchool: {
             /** Format: int64 */
@@ -693,12 +745,56 @@ export interface components {
             active?: boolean;
             /** @description Phrases de lien, par exemple « Noah est le frère de Léa ». Vide s'il n'y en a pas. */
             linkPhrases?: string[];
-            /** @description Matières visibles de la même école et de la même année */
+            /**
+             * Format: int32
+             * @description Matières visibles de la même école et de la même année
+             */
             schoolSubjectCount?: number;
-            /** @description Autres matières visibles, hors de sa classe */
+            /**
+             * Format: int32
+             * @description Autres matières visibles, hors de sa classe
+             */
             extraSubjectCount?: number;
             /** @description L'autre enfant du lien, pour afficher sa photo ou son avatar, et le mot court. */
             links?: components["schemas"]["ParentChildLink"][];
+        };
+        CreateTeacherSubjectRequest: {
+            /** Format: int64 */
+            schoolId?: number;
+            grade?: string;
+            name?: string;
+        };
+        AddChildSubjectRequest: {
+            /** Format: int64 */
+            childId?: number;
+            /** Format: int64 */
+            subjectId?: number;
+        };
+        ChildSubjectOffer: {
+            /** Format: int64 */
+            subjectId?: number;
+            name?: string;
+            teacherName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            scolaire?: boolean;
+        };
+        ChildSubjectsResponse: {
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
+            lastName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            chosen?: components["schemas"]["ChildSubjectOffer"][];
+            proposed?: components["schemas"]["ChildSubjectOffer"][];
+        };
+        ParentSubjectsResponse: {
+            children?: components["schemas"]["ChildSubjectsResponse"][];
         };
         SwitchRoleRequest: {
             role: string;
@@ -770,6 +866,46 @@ export interface components {
             reviewedAt?: string;
             /** Format: date-time */
             revokedAt?: string;
+        };
+        TeacherSubjectGrade: {
+            grade?: string;
+            subjects?: components["schemas"]["TeacherSubjectItem"][];
+        };
+        TeacherSubjectSchool: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grades?: components["schemas"]["TeacherSubjectGrade"][];
+        };
+        TeacherSubjectsResponse: {
+            schools?: components["schemas"]["TeacherSubjectSchool"][];
+        };
+        TeacherStudentGrade: {
+            grade?: string;
+            countLabel?: string;
+            emptyMessage?: string;
+            students?: components["schemas"]["TeacherStudentLine"][];
+        };
+        TeacherStudentLine: {
+            /** Format: int64 */
+            id?: number;
+            firstName?: string;
+            lastName?: string;
+            /** Format: int32 */
+            age?: number;
+            avatarCode?: string;
+            hasPhoto?: boolean;
+        };
+        TeacherStudentSchool: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            curriculumLabel?: string;
+            grades?: components["schemas"]["TeacherStudentGrade"][];
+        };
+        TeacherStudentsResponse: {
+            noClassMessage?: string;
+            schools?: components["schemas"]["TeacherStudentSchool"][];
         };
         HelloMessageResponse: {
             text?: string;
@@ -871,7 +1007,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Matière retirée. L'année du profil reste cochée */
+            /** @description Retirée de la page. La ligne reste en base */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -889,77 +1025,6 @@ export interface operations {
             };
             /** @description Matière introuvable pour ce professeur */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuthErrorBody"];
-                };
-            };
-        };
-    };
-    listTeacherSubjects: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Écoles du profil, années cochées, matières triées par nom */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TeacherSubjectsResponse"];
-                };
-            };
-            /** @description Le jeton n'est pas dans l'espace professeur */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuthErrorBody"];
-                };
-            };
-        };
-    };
-    createTeacherSubject: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTeacherSubjectRequest"];
-            };
-        };
-        responses: {
-            /** @description Matière créée */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TeacherSubjectItem"];
-                };
-            };
-            /** @description Nom vide, trop long, déjà pris dans la classe, ou classe absente du profil */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuthErrorBody"];
-                };
-            };
-            /** @description Le jeton n'est pas dans l'espace professeur */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1101,6 +1166,224 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Écoles du profil, années cochées, matières triées par nom */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    createTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Matière créée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectItem"];
+                };
+            };
+            /** @description Nom vide, trop long, déjà pris dans la classe, ou classe absente du profil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    reactivateTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description De nouveau proposée dans le reste de l'application */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deactivateTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reste dans sa liste, plus proposée dans le reste de l'application */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listParentSubjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chaque enfant, avec les matières déjà choisies et celles proposées */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentSubjectsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    addParentChildSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddChildSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Listes après l'ajout */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentSubjectsResponse"];
+                };
+            };
+            /** @description Matière introuvable, plus visible, ou déjà dans la liste */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
             };
             /** @description Enfant introuvable pour ce parent */
             404: {
@@ -1640,6 +1923,75 @@ export interface operations {
             };
         };
     };
+    listTeacherStudents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Écoles du profil, années cochées, élèves triés par nom */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherStudentsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getTeacherStudentPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Image de l'élève */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Élève hors des classes du professeur, ou fiche sans photo */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     getTeacherHello: {
         parameters: {
             query?: never;
@@ -1882,6 +2234,38 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["HelloMessageResponse"];
+                };
+            };
+        };
+    };
+    removeParentChildSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                childId: number;
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Listes après le retrait. La matière du professeur reste */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentSubjectsResponse"];
+                };
+            };
+            /** @description Enfant introuvable, ou matière absente de sa liste */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
         };

@@ -208,3 +208,46 @@
 .error {
   color: #b3261e;
 }
+
+.suggestions {
+  list-style: none;
+  margin: -0.35rem 0 0.75rem;
+  padding: 0.25rem 0;
+  background: white;
+  border: 1px solid #d0d7e2;
+  border-radius: 8px;
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.suggestions button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.suggestions button:hover,
+.suggestions button:focus-visible {
+  background: #e8eef8;
+}
+
+.crop {
+  margin: 0.5rem 0 0.75rem;
+  max-width: 100%;
+  --cropper-overlay-color: #ffffff;
+  --cropper-outline-color: rgba(26, 61, 124, 0.45);
+  --cropper-border: 2px solid #1a3d7c;
+}
+
+.photo-preview {
+  display: block;
+  width: 8rem;
+  height: 8rem;
+  object-fit: cover;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+}
