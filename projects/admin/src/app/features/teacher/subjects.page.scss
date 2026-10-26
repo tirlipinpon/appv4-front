@@ -79,6 +79,27 @@
   margin-top: 0.75rem;
 }
 
+.shared {
+  flex: 1 0 100%;
+}
+
+.transfer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  width: 100%;
+}
+
+.transfer-field {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+}
+
+button.selected {
+  text-decoration: underline;
+}
+
 .add-field,
 .rename-field {
   flex: 1;

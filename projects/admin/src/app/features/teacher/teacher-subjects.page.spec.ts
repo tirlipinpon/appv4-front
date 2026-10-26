@@ -18,8 +18,11 @@ const loaded: TeacherSubjectsResponse = {
       schoolId: 1,
       schoolName: 'École française',
       grades: [
-        { grade: 'CE1', subjects: [{ id: 2, name: 'Lecture', active: true }] },
-        { grade: 'CE2', subjects: [{ id: 3, name: 'Mathématiques', active: true }] },
+        { grade: 'CE1', subjects: [{ id: 2, name: 'Lecture', active: true, sharedWith: [] }] },
+        {
+          grade: 'CE2',
+          subjects: [{ id: 3, name: 'Mathématiques', active: true, sharedWith: ['Camille'] }],
+        },
       ],
     },
     {
@@ -75,6 +78,7 @@ describe('TeacherSubjectsPage', () => {
     expect(fixture.nativeElement.textContent).toContain('École française');
     expect(fixture.nativeElement.textContent).toContain('Aucune matière');
     expect(fixture.nativeElement.textContent).toContain('Lecture');
+    expect(fixture.nativeElement.textContent).toContain('Partagée avec Camille');
 
     page.onDraft(1, 'CE1', '   ');
     page.add(1, 'CE1');
@@ -93,7 +97,7 @@ describe('TeacherSubjectsPage', () => {
     const post = http.expectOne(subjectsUrl);
     expect(post.request.method).toBe('POST');
     expect(post.request.body).toEqual({ schoolId: 1, grade: 'CE1', name: 'Français' });
-    post.flush({ id: 8, name: 'Français' });
+    post.flush({ id: 8, name: 'Français', active: true, sharedWith: [] });
     http.expectOne(subjectsUrl).flush(loaded);
     fixture.detectChanges();
 
@@ -119,31 +123,31 @@ describe('TeacherSubjectsPage', () => {
 
   it('renomme sans changer de classe', () => {
     boot(loaded);
-    page.startRename({ id: 2, name: 'Lecture', active: true });
+    page.startRename({ id: 2, name: 'Lecture', active: true, sharedWith: [] });
     page.onRenameDraft('  Français  ');
     page.saveRename(2);
 
     const put = http.expectOne(`${subjectsUrl}/2`);
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).toEqual({ name: 'Français' });
-    put.flush({ id: 2, name: 'Français' });
+    put.flush({ id: 2, name: 'Français', active: true, sharedWith: [] });
     http.expectOne(subjectsUrl).flush(loaded);
   });
 
-  it('retire une matière seulement après confirmation', () => {
+  it('retire une matière partagée avec le bon message', () => {
     boot(loaded);
-    page.askRemove({ id: 3, name: 'Mathématiques', active: true });
+    page.askRemove({ id: 3, name: 'Mathématiques', active: true, sharedWith: ['Camille'] });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      'Retirer Mathématiques du CE2 de École française ? Elle disparaît de cette page et reste enregistrée.',
+      'Retirer Mathématiques de ta liste ? Camille la garde.',
     );
     page.cancelPending();
     fixture.detectChanges();
     http.expectNone(`${subjectsUrl}/3`);
     expect(fixture.nativeElement.textContent).toContain('Mathématiques');
 
-    page.askRemove({ id: 3, name: 'Mathématiques', active: true });
+    page.askRemove({ id: 3, name: 'Mathématiques', active: true, sharedWith: ['Camille'] });
     page.confirmRemove(3);
     const del = http.expectOne(`${subjectsUrl}/3`);
     expect(del.request.method).toBe('DELETE');
@@ -151,9 +155,44 @@ describe('TeacherSubjectsPage', () => {
     http.expectOne(subjectsUrl).flush(loaded);
   });
 
+  it('partage une matière après confirmation', () => {
+    boot(loaded);
+    page.askTransfer({ id: 2, name: 'Lecture', active: true, sharedWith: [] });
+    page.setTransferMode('share');
+    page.onTransferEmail('  camille@example.com ');
+    page.prepareTransferConfirm(2);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Partager Lecture (École française, CE1) avec cet email ?',
+    );
+
+    page.confirmTransfer(2);
+    const post = http.expectOne(`${subjectsUrl}/2/transfer`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual({ email: 'camille@example.com', mode: 'share' });
+    post.flush(null);
+    http.expectOne(subjectsUrl).flush(loaded);
+  });
+
+  it('refuse un transfert sans email ni mode', () => {
+    boot(loaded);
+    page.askTransfer({ id: 2, name: 'Lecture', active: true, sharedWith: [] });
+    page.prepareTransferConfirm(2);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Choisis de déplacer ou de partager.');
+    http.expectNone(`${subjectsUrl}/2/transfer`);
+
+    page.setTransferMode('move');
+    page.prepareTransferConfirm(2);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain("Indique l'email du professeur.");
+    http.expectNone(`${subjectsUrl}/2/transfer`);
+  });
+
   it('désactive une matière sans la retirer de la liste', () => {
     boot(loaded);
-    page.askDisable({ id: 2, name: 'Lecture', active: true });
+    page.askDisable({ id: 2, name: 'Lecture', active: true, sharedWith: [] });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain(
       "Désactiver Lecture ? Elle reste dans cette liste, elle n'est plus proposée dans le reste de l'application.",
@@ -169,8 +208,8 @@ describe('TeacherSubjectsPage', () => {
           schoolId: 1,
           schoolName: 'École française',
           grades: [
-            { grade: 'CE1', subjects: [{ id: 2, name: 'Lecture', active: false }] },
-            { grade: 'CE2', subjects: [{ id: 3, name: 'Mathématiques', active: true }] },
+            { grade: 'CE1', subjects: [{ id: 2, name: 'Lecture', active: false, sharedWith: [] }] },
+            { grade: 'CE2', subjects: [{ id: 3, name: 'Mathématiques', active: true, sharedWith: [] }] },
           ],
         },
       ],

@@ -76,6 +76,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Déplacer ou partager une matière avec un collègue */
+        post: operations["transferTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects/{id}/reactivate": {
         parameters: {
             query?: never;
@@ -657,6 +674,7 @@ export interface components {
             id?: number;
             name?: string;
             active?: boolean;
+            sharedWith?: string[];
         };
         TeacherSchoolInput: {
             /** Format: int64 */
@@ -763,6 +781,15 @@ export interface components {
             schoolId?: number;
             grade?: string;
             name?: string;
+        };
+        TransferTeacherSubjectRequest: {
+            /** @description Email du collègue, espaces retirés, casse ignorée */
+            email?: string;
+            /**
+             * @description move ou share
+             * @enum {string}
+             */
+            mode?: "move" | "share";
         };
         AddChildSubjectRequest: {
             /** Format: int64 */
@@ -1007,7 +1034,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Retirée de la page. La ligne reste en base */
+            /** @description Accès retiré. Cachée seulement s'il ne reste personne */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -1249,6 +1276,57 @@ export interface operations {
             };
         };
     };
+    transferTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Même matière, accès mis à jour (pas une copie) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Email, mode, collègue ou classe invalides */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     reactivateTeacherSubject: {
         parameters: {
             query?: never;
@@ -1298,7 +1376,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Reste dans sa liste, plus proposée dans le reste de l'application */
+            /** @description Reste dans les listes, plus proposée dans le reste de l'application */
             204: {
                 headers: {
                     [name: string]: unknown;
