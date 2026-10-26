@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { forkJoin, Observable } from 'rxjs';
+import { Observable, catchError, of } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -394,13 +394,9 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   private reload(initial = false): void {
-    forkJoin({
-      subjects: this.api.load(),
-      invites: this.api.transferInvites(),
-    }).subscribe({
-      next: ({ subjects, invites }) => {
+    this.api.load().subscribe({
+      next: (subjects) => {
         this.apply(subjects);
-        this.invites.set(invites.invites ?? []);
         this.saving.set(false);
         this.renamingId.set(null);
         this.renameDraft.set('');
@@ -408,6 +404,10 @@ export class TeacherSubjectsPage implements OnInit {
         if (initial) {
           this.loading.set(false);
         }
+        this.api
+          .transferInvites()
+          .pipe(catchError(() => of({ invites: [] })))
+          .subscribe((body) => this.invites.set(body.invites ?? []));
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
