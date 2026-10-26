@@ -95,6 +95,7 @@ describe('SpaceHeader', () => {
       'Accueil',
       'Profil',
       'Écoles',
+      'Élèves',
       'Matières',
     ]);
     expect(links[0].getAttribute('aria-current')).toBeNull();
