@@ -5,9 +5,101 @@
     <mat-card class="card">
       <mat-card-header>
         <mat-card-title>Matières</mat-card-title>
+        <mat-card-subtitle>Chaque enfant, avec les cours de sa classe et les autres</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <p class="hint">Aucune matière pour l'instant.</p>
+        @if (loading()) {
+          <p>Chargement…</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+        @if (!loading() && children().length === 0) {
+          <p class="hint">Aucun enfant pour l'instant.</p>
+        }
+
+        @for (child of children(); track child.childId) {
+          <section class="block">
+            <h2>{{ child.firstName }} {{ child.lastName }}</h2>
+            <p class="hint">{{ child.schoolName || 'École non renseignée' }} · {{ child.grade }}</p>
+            @if (catalogEmpty(child)) {
+              <p class="hint">Aucun cours n'est proposable.</p>
+            }
+            @if (!hasClass(child)) {
+              <p class="hint">Il n'y a pas d'école ou d'année sur cet enfant.</p>
+            }
+
+            <h3>Déjà dans sa liste</h3>
+            @if (hasClass(child)) {
+              <h3>De sa classe</h3>
+              @if (chosen(child, true).length === 0) {
+                <p class="hint">Aucune matière</p>
+              }
+              @for (offer of chosen(child, true); track offer.subjectId) {
+                <article class="line">
+                  <p class="name">
+                    {{ offer.name }}
+                    <span class="meta">Scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }}</span>
+                  </p>
+                  @if (pendingFor(child.childId, offer.subjectId)) {
+                    <p class="confirm" role="alert">{{ confirmText(child, offer) }}</p>
+                    <button mat-button type="button" [disabled]="saving()" (click)="cancelRemove()">Annuler</button>
+                    <button mat-flat-button color="warn" type="button" [disabled]="saving()" (click)="confirmRemove(child.childId, offer.subjectId)">
+                      Confirmer le retrait
+                    </button>
+                  } @else {
+                    <button mat-button type="button" [disabled]="saving()" (click)="askRemove(child.childId, offer.subjectId)">Retirer</button>
+                  }
+                </article>
+              }
+            }
+            <h3>Autres cours</h3>
+            @if (chosen(child, false).length === 0) {
+              <p class="hint">Aucune matière</p>
+            }
+            @for (offer of chosen(child, false); track offer.subjectId) {
+              <article class="line">
+                <p class="name">
+                  {{ offer.name }}
+                  <span class="meta">Extra-scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }}</span>
+                </p>
+                @if (pendingFor(child.childId, offer.subjectId)) {
+                  <p class="confirm" role="alert">{{ confirmText(child, offer) }}</p>
+                  <button mat-button type="button" [disabled]="saving()" (click)="cancelRemove()">Annuler</button>
+                  <button mat-flat-button color="warn" type="button" [disabled]="saving()" (click)="confirmRemove(child.childId, offer.subjectId)">
+                    Confirmer le retrait
+                  </button>
+                } @else {
+                  <button mat-button type="button" [disabled]="saving()" (click)="askRemove(child.childId, offer.subjectId)">Retirer</button>
+                }
+              </article>
+            }
+
+            <h3>À ajouter</h3>
+            @for (offer of proposed(child, false); track offer.subjectId) {
+              <article class="line">
+                <p class="name">
+                  {{ offer.name }}
+                  <span class="meta">Extra-scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }}</span>
+                </p>
+                <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="add(child.childId, offer.subjectId)">
+                  Ajouter
+                </button>
+              </article>
+            }
+            @for (offer of proposed(child, true); track offer.subjectId) {
+              <article class="line">
+                <p class="name">
+                  {{ offer.name }}
+                  <span class="meta">Scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }}</span>
+                </p>
+                <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="add(child.childId, offer.subjectId)">
+                  Ajouter
+                </button>
+              </article>
+            }
+          </section>
+        }
       </mat-card-content>
     </mat-card>
   </main>

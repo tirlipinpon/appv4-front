@@ -21,3 +21,67 @@
   margin: 0.5rem 0 0;
   color: #5f6368;
 }
+
+.error,
+.field-error,
+.confirm {
+  color: #b3261e;
+  margin: 0.35rem 0 0;
+}
+
+.school {
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem 1rem;
+  margin-top: 1rem;
+}
+
+.school-name {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.grade {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e6e8ee;
+}
+
+.grade-name {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.subjects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.subject {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.name.inactive {
+  color: #5f6368;
+  font-weight: 500;
+}
+
+.add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.add-field,
+.rename-field {
+  flex: 1;
+  min-width: 12rem;
+  margin-bottom: -0.75rem;
+}

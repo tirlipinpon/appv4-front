@@ -5,9 +5,138 @@
     <mat-card class="card">
       <mat-card-header>
         <mat-card-title>Matières</mat-card-title>
+        <mat-card-subtitle>Un nom par classe</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        <p class="hint">Aucune matière pour l'instant.</p>
+        @if (loading()) {
+          <p>Chargement…</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        @if (ready() && schools().length === 0) {
+          <p class="hint">Il n'y a pas encore de classe.</p>
+        }
+
+        @for (school of schools(); track school.schoolId) {
+          <section class="school">
+            <h2 class="school-name">{{ school.schoolName }}</h2>
+            @for (grade of school.grades; track grade.grade) {
+              <article class="grade">
+                <h3 class="grade-name">{{ grade.grade }}</h3>
+                @if (grade.subjects.length === 0) {
+                  <p class="hint">Aucune matière</p>
+                } @else {
+                  <ul class="subjects">
+                    @for (subject of grade.subjects; track subject.id) {
+                      <li class="subject">
+                        @if (renamingId() === subject.id) {
+                          <mat-form-field appearance="outline" class="rename-field">
+                            <mat-label>Nouveau nom</mat-label>
+                            <input
+                              matInput
+                              [value]="renameDraft()"
+                              [disabled]="saving()"
+                              (input)="onRenameDraft(inputValue($event))"
+                            />
+                          </mat-form-field>
+                          <button
+                            mat-flat-button
+                            type="button"
+                            [disabled]="saving()"
+                            (click)="saveRename(subject.id)"
+                          >
+                            Enregistrer
+                          </button>
+                          <button mat-button type="button" [disabled]="saving()" (click)="cancelRename()">
+                            Annuler
+                          </button>
+                        } @else if (pending()?.id === subject.id && pending()?.kind === 'disable') {
+                          <p class="confirm" role="alert">
+                            Désactiver {{ subject.name }} ? Elle reste dans cette liste, elle n'est plus proposée dans le reste de l'application.
+                          </p>
+                          <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                            Annuler
+                          </button>
+                          <button
+                            mat-flat-button
+                            type="button"
+                            [disabled]="saving()"
+                            (click)="confirmDisable(subject.id)"
+                          >
+                            Confirmer la désactivation
+                          </button>
+                        } @else if (pending()?.id === subject.id && pending()?.kind === 'remove') {
+                          <p class="confirm" role="alert">{{ confirmText(school, grade, subject) }}</p>
+                          <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                            Annuler
+                          </button>
+                          <button
+                            mat-flat-button
+                            color="warn"
+                            type="button"
+                            [disabled]="saving()"
+                            (click)="confirmRemove(subject.id)"
+                          >
+                            Confirmer le retrait
+                          </button>
+                        } @else {
+                          <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
+                          @if (!subject.active) {
+                            <p class="hint">Visible ici, plus proposée dans le reste de l'application.</p>
+                          }
+                          <button mat-button type="button" [disabled]="saving()" (click)="startRename(subject)">
+                            Renommer
+                          </button>
+                          @if (subject.active) {
+                            <button mat-button type="button" [disabled]="saving()" (click)="askDisable(subject)">
+                              Désactiver
+                            </button>
+                          } @else {
+                            <button mat-button type="button" [disabled]="saving()" (click)="reactivate(subject.id)">
+                              Réactiver
+                            </button>
+                          }
+                          <button mat-button type="button" [disabled]="saving()" (click)="askRemove(subject)">
+                            Retirer
+                          </button>
+                        }
+                        @if (subjectError(subject.id); as subjectMessage) {
+                          <p class="field-error" role="alert">{{ subjectMessage }}</p>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+
+                <div class="add">
+                  <mat-form-field appearance="outline" class="add-field">
+                    <mat-label>Nouvelle matière</mat-label>
+                    <input
+                      matInput
+                      [value]="draft(school.schoolId, grade.grade)"
+                      [disabled]="saving()"
+                      (input)="onDraft(school.schoolId, grade.grade, inputValue($event))"
+                    />
+                  </mat-form-field>
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="button"
+                    [disabled]="saving()"
+                    (click)="add(school.schoolId, grade.grade)"
+                  >
+                    Ajouter
+                  </button>
+                </div>
+                @if (gradeError(school.schoolId, grade.grade); as gradeMessage) {
+                  <p class="field-error" role="alert">{{ gradeMessage }}</p>
+                }
+              </article>
+            }
+          </section>
+        }
       </mat-card-content>
     </mat-card>
   </main>
