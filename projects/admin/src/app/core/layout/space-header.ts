@@ -52,6 +52,7 @@ export class SpaceHeader {
           { label: 'Accueil', path: '/teacher' },
           { label: 'Profil', path: '/teacher/profil' },
           { label: 'Écoles', path: '/teacher/ecoles' },
+          { label: 'Élèves', path: '/teacher/eleves' },
           { label: 'Matières', path: '/teacher/matieres' },
         ],
       };

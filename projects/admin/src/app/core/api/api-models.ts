@@ -36,3 +36,7 @@ export type ResetPasswordRequest = components['schemas']['ResetPasswordRequest']
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];
 export type FacebookLoginRequest = components['schemas']['FacebookLoginRequest'];
 export type AppleLoginRequest = components['schemas']['AppleLoginRequest'];
+export type TeacherStudentsResponse = components['schemas']['TeacherStudentsResponse'];
+export type TeacherStudentSchool = components['schemas']['TeacherStudentSchool'];
+export type TeacherStudentGrade = components['schemas']['TeacherStudentGrade'];
+export type TeacherStudentLine = components['schemas']['TeacherStudentLine'];

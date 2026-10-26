@@ -333,6 +333,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les élèves des classes du professeur */
+        get: operations["listTeacherStudents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/students/{id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la photo d'un élève d'une classe du professeur */
+        get: operations["getTeacherStudentPhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/hello": {
         parameters: {
             query?: never;
@@ -670,6 +704,33 @@ export interface components {
             reviewedAt?: string;
             /** Format: date-time */
             revokedAt?: string;
+        };
+        TeacherStudentGrade: {
+            grade?: string;
+            countLabel?: string;
+            emptyMessage?: string;
+            students?: components["schemas"]["TeacherStudentLine"][];
+        };
+        TeacherStudentLine: {
+            /** Format: int64 */
+            id?: number;
+            firstName?: string;
+            lastName?: string;
+            /** Format: int32 */
+            age?: number;
+            avatarCode?: string;
+            hasPhoto?: boolean;
+        };
+        TeacherStudentSchool: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            curriculumLabel?: string;
+            grades?: components["schemas"]["TeacherStudentGrade"][];
+        };
+        TeacherStudentsResponse: {
+            noClassMessage?: string;
+            schools?: components["schemas"]["TeacherStudentSchool"][];
         };
         HelloMessageResponse: {
             text?: string;
@@ -1368,6 +1429,75 @@ export interface operations {
                 };
             };
             /** @description Demande inconnue */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherStudents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Écoles du profil, années cochées, élèves triés par nom */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherStudentsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getTeacherStudentPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Image de l'élève */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Élève hors des classes du professeur, ou fiche sans photo */
             404: {
                 headers: {
                     [name: string]: unknown;
