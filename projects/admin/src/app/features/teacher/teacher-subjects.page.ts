@@ -1,12 +1,16 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { Observable } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
-import type { TeacherSubjectsResponse } from '../../core/api/api-models';
+import type {
+  TeacherSubjectColleagueItem,
+  TeacherSubjectsResponse,
+  TeacherTransferInviteItem,
+} from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { TeacherSubjectsService } from './data-access/teacher-subjects.service';
@@ -33,17 +37,24 @@ type TransferMode = 'move' | 'share';
 
 type Pending =
   | { id: number; kind: 'remove' | 'disable' }
-  | { id: number; kind: 'transfer'; mode: TransferMode | null; email: string; confirm: boolean };
+  | {
+      id: number;
+      kind: 'transfer';
+      mode: TransferMode | null;
+      colleagueUserId: number | null;
+      colleagues: TeacherSubjectColleagueItem[];
+      confirm: boolean;
+    };
 
 const NAME_REQUIRED = 'Le nom est obligatoire.';
 const NAME_TOO_LONG = 'Le nom dépasse 100 caractères.';
 const NAME_MAX = 100;
-const EMAIL_REQUIRED = "Indique l'email du professeur.";
 const MODE_REQUIRED = 'Choisis de déplacer ou de partager.';
+const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
 
 /**
- * Matières du professeur : créer, renommer, désactiver, retirer, déplacer ou partager.
- * Les exercices et les formes de questions ne sont pas sur cette page.
+ * Matières du professeur : créer, renommer, désactiver, retirer, proposer un transfert.
+ * Le collègue valide via l'alerte en haut de page.
  */
 @Component({
   selector: 'app-teacher-subjects-page',
@@ -56,6 +67,7 @@ export class TeacherSubjectsPage implements OnInit {
   private readonly api = inject(TeacherSubjectsService);
 
   readonly schools = signal<SchoolBlock[]>([]);
+  readonly invites = signal<TeacherTransferInviteItem[]>([]);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly ready = signal(false);
@@ -68,13 +80,7 @@ export class TeacherSubjectsPage implements OnInit {
   readonly pending = signal<Pending | null>(null);
 
   ngOnInit(): void {
-    this.api.load().subscribe({
-      next: (body) => this.apply(body),
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.error.set(httpErrorMessage(err, 'Matières indisponibles.'));
-      },
-    });
+    this.reload(true);
   }
 
   draft(schoolId: number, grade: string): string {
@@ -98,8 +104,7 @@ export class TeacherSubjectsPage implements OnInit {
 
   confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
     if (subject.sharedWith.length > 0) {
-      const keepers = subject.sharedWith.join(', ');
-      return `Retirer ${subject.name} de ta liste ? ${keepers} la garde.`;
+      return `Retirer ${subject.name} de ta liste ? ${subject.sharedWith.join(', ')} la garde.`;
     }
     const place = school.schoolName ? `${grade.grade} de ${school.schoolName}` : grade.grade;
     return `Retirer ${subject.name} du ${place} ? Elle disparaît de cette page et reste enregistrée.`;
@@ -110,18 +115,15 @@ export class TeacherSubjectsPage implements OnInit {
     if (!current || current.kind !== 'transfer' || current.mode == null) {
       return '';
     }
+    const colleague = current.colleagues.find((row) => row.userId === current.colleagueUserId);
+    const who = colleague?.displayName || 'ce collègue';
     const place = school.schoolName
       ? `${subject.name} (${school.schoolName}, ${grade.grade})`
       : `${subject.name} (${grade.grade})`;
     if (current.mode === 'move') {
-      return `Déplacer ${place} vers cet email ? Elle quittera ta liste. Le collègue pourra la renommer, la désactiver, la réactiver et la retirer.`;
+      return `Proposer de déplacer ${place} vers ${who} ? Elle quittera ta liste s'il accepte.`;
     }
-    return `Partager ${place} avec cet email ? Vous pourrez tous les deux la renommer, la désactiver, la réactiver et la retirer.`;
-  }
-
-  transferEmail(): string {
-    const current = this.pending();
-    return current?.kind === 'transfer' ? current.email : '';
+    return `Proposer de partager ${place} avec ${who} ? Vous pourrez tous les deux agir s'il accepte.`;
   }
 
   transferMode(): TransferMode | null {
@@ -129,9 +131,28 @@ export class TeacherSubjectsPage implements OnInit {
     return current?.kind === 'transfer' ? current.mode : null;
   }
 
+  transferColleagueId(): number | null {
+    const current = this.pending();
+    return current?.kind === 'transfer' ? current.colleagueUserId : null;
+  }
+
+  transferColleagues(): TeacherSubjectColleagueItem[] {
+    const current = this.pending();
+    return current?.kind === 'transfer' ? current.colleagues : [];
+  }
+
   transferConfirming(): boolean {
     const current = this.pending();
     return current?.kind === 'transfer' ? current.confirm : false;
+  }
+
+  inviteText(invite: TeacherTransferInviteItem): string {
+    const place = invite.schoolName
+      ? `${invite.subjectName} (${invite.schoolName}, ${invite.grade})`
+      : `${invite.subjectName} (${invite.grade})`;
+    const action = invite.mode === 'move' ? 'déplacer' : 'partager';
+    const from = invite.fromDisplayName || 'Un collègue';
+    return `${from} propose de ${action} ${place}.`;
   }
 
   inputValue(event: Event): string {
@@ -225,8 +246,31 @@ export class TeacherSubjectsPage implements OnInit {
 
   askTransfer(subject: SubjectRow): void {
     this.renamingId.set(null);
-    this.pending.set({ id: subject.id, kind: 'transfer', mode: null, email: '', confirm: false });
     this.clearSubjectError(subject.id);
+    this.pending.set({
+      id: subject.id,
+      kind: 'transfer',
+      mode: null,
+      colleagueUserId: null,
+      colleagues: [],
+      confirm: false,
+    });
+    this.api.colleagues(subject.id).subscribe({
+      next: (body) => {
+        const current = this.pending();
+        if (!current || current.kind !== 'transfer' || current.id !== subject.id) {
+          return;
+        }
+        this.pending.set({
+          ...current,
+          colleagues: (body.colleagues ?? []).filter((row) => row.userId != null) as TeacherSubjectColleagueItem[],
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.pending.set(null);
+        this.setSubjectError(subject.id, httpErrorMessage(err, 'Collègues indisponibles.'));
+      },
+    });
   }
 
   setTransferMode(mode: TransferMode): void {
@@ -238,12 +282,12 @@ export class TeacherSubjectsPage implements OnInit {
     this.clearSubjectError(current.id);
   }
 
-  onTransferEmail(value: string): void {
+  setTransferColleague(userId: number): void {
     const current = this.pending();
     if (!current || current.kind !== 'transfer') {
       return;
     }
-    this.pending.set({ ...current, email: value, confirm: false });
+    this.pending.set({ ...current, colleagueUserId: userId, confirm: false });
     this.clearSubjectError(current.id);
   }
 
@@ -256,8 +300,8 @@ export class TeacherSubjectsPage implements OnInit {
       this.setSubjectError(subjectId, MODE_REQUIRED);
       return;
     }
-    if (!current.email.trim()) {
-      this.setSubjectError(subjectId, EMAIL_REQUIRED);
+    if (current.colleagueUserId == null) {
+      this.setSubjectError(subjectId, COLLEAGUE_REQUIRED);
       return;
     }
     this.clearSubjectError(subjectId);
@@ -282,25 +326,59 @@ export class TeacherSubjectsPage implements OnInit {
 
   confirmTransfer(subjectId: number): void {
     const current = this.pending();
-    if (!current || current.kind !== 'transfer' || current.mode == null || this.saving()) {
+    if (
+      !current ||
+      current.kind !== 'transfer' ||
+      current.mode == null ||
+      current.colleagueUserId == null ||
+      this.saving()
+    ) {
       return;
     }
     this.error.set(null);
     this.saving.set(true);
-    this.api.transfer(subjectId, { email: current.email.trim(), mode: current.mode }).subscribe({
+    this.api
+      .transfer(subjectId, { colleagueUserId: current.colleagueUserId, mode: current.mode })
+      .subscribe({
+        next: () => this.reload(),
+        error: (err: HttpErrorResponse) => {
+          this.saving.set(false);
+          this.setSubjectError(subjectId, httpErrorMessage(err, 'Transfert impossible.'));
+        },
+      });
+  }
+
+  acceptInvite(inviteId: number | undefined): void {
+    if (inviteId == null || this.saving()) {
+      return;
+    }
+    this.error.set(null);
+    this.saving.set(true);
+    this.api.acceptTransfer(inviteId).subscribe({
       next: () => this.reload(),
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
-        this.setSubjectError(subjectId, httpErrorMessage(err, 'Transfert impossible.'));
+        this.error.set(httpErrorMessage(err, 'Acceptation impossible.'));
       },
     });
   }
 
-  private postState(
-    subjectId: number,
-    call: () => Observable<void>,
-    fallback: string,
-  ): void {
+  rejectInvite(inviteId: number | undefined): void {
+    if (inviteId == null || this.saving()) {
+      return;
+    }
+    this.error.set(null);
+    this.saving.set(true);
+    this.api.rejectTransfer(inviteId).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.error.set(httpErrorMessage(err, 'Refus impossible.'));
+      },
+    });
+  }
+
+  private postState(subjectId: number, call: () => Observable<void>, fallback: string): void {
     if (this.saving()) {
       return;
     }
@@ -315,17 +393,25 @@ export class TeacherSubjectsPage implements OnInit {
     });
   }
 
-  private reload(): void {
-    this.api.load().subscribe({
-      next: (body) => {
-        this.apply(body);
+  private reload(initial = false): void {
+    forkJoin({
+      subjects: this.api.load(),
+      invites: this.api.transferInvites(),
+    }).subscribe({
+      next: ({ subjects, invites }) => {
+        this.apply(subjects);
+        this.invites.set(invites.invites ?? []);
         this.saving.set(false);
         this.renamingId.set(null);
         this.renameDraft.set('');
         this.pending.set(null);
+        if (initial) {
+          this.loading.set(false);
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
+        this.loading.set(false);
         this.error.set(httpErrorMessage(err, 'Matières indisponibles.'));
       },
     });
@@ -363,7 +449,6 @@ export class TeacherSubjectsPage implements OnInit {
       });
     }
     this.schools.set(schools);
-    this.loading.set(false);
     this.ready.set(true);
   }
 

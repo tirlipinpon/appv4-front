@@ -79,6 +79,27 @@
   margin-top: 0.75rem;
 }
 
+.invites {
+  margin: 0.75rem 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.invites-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.invite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.5rem;
+}
+
 .shared {
   flex: 1 0 100%;
 }
@@ -91,13 +112,19 @@
   width: 100%;
 }
 
-.transfer-field {
-  flex: 1 1 12rem;
-  min-width: 10rem;
+.colleagues {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  width: 100%;
 }
 
 button.selected {
   text-decoration: underline;
+  font-weight: 600;
 }
 
 .add-field,

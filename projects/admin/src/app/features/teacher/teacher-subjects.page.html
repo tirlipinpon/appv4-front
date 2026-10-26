@@ -15,6 +15,29 @@
           <p class="error" role="alert">{{ error() }}</p>
         }
 
+        @if (invites().length > 0) {
+          <section class="invites" aria-label="Demandes de transfert">
+            <h2 class="invites-title">Demandes reçues</h2>
+            @for (invite of invites(); track invite.id) {
+              <article class="invite">
+                <p class="confirm" role="status">{{ inviteText(invite) }}</p>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="saving()"
+                  (click)="acceptInvite(invite.id)"
+                >
+                  Accepter
+                </button>
+                <button mat-button type="button" [disabled]="saving()" (click)="rejectInvite(invite.id)">
+                  Refuser
+                </button>
+              </article>
+            }
+          </section>
+        }
+
         @if (ready() && schools().length === 0) {
           <p class="hint">Il n'y a pas encore de classe.</p>
         }
@@ -93,7 +116,7 @@
                               [disabled]="saving()"
                               (click)="confirmTransfer(subject.id)"
                             >
-                              Confirmer
+                              Envoyer la demande
                             </button>
                           } @else {
                             <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
@@ -116,20 +139,29 @@
                               >
                                 Partager
                               </button>
-                              <mat-form-field appearance="outline" class="transfer-field">
-                                <mat-label>Email du collègue</mat-label>
-                                <input
-                                  matInput
-                                  type="email"
-                                  [value]="transferEmail()"
-                                  [disabled]="saving()"
-                                  (input)="onTransferEmail(inputValue($event))"
-                                />
-                              </mat-form-field>
+                              @if (transferColleagues().length === 0) {
+                                <p class="hint">Aucun collègue avec cette classe.</p>
+                              } @else {
+                                <ul class="colleagues">
+                                  @for (colleague of transferColleagues(); track colleague.userId) {
+                                    <li>
+                                      <button
+                                        mat-button
+                                        type="button"
+                                        [disabled]="saving()"
+                                        [class.selected]="transferColleagueId() === colleague.userId"
+                                        (click)="setTransferColleague(colleague.userId!)"
+                                      >
+                                        {{ colleague.displayName }}
+                                      </button>
+                                    </li>
+                                  }
+                                </ul>
+                              }
                               <button
                                 mat-flat-button
                                 type="button"
-                                [disabled]="saving()"
+                                [disabled]="saving() || transferColleagues().length === 0"
                                 (click)="prepareTransferConfirm(subject.id)"
                               >
                                 Continuer
