@@ -40,6 +40,11 @@ export class TeacherSubjectsService {
     );
   }
 
+  /** Demande au créateur de partager une matière déjà existante (même id après acceptation). */
+  requestShare(body: CreateTeacherSubjectRequest): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/share-requests`, body);
+  }
+
   rename(id: number, body: RenameTeacherSubjectRequest): Observable<TeacherSubjectItem> {
     return this.http.put<TeacherSubjectItem>(`${environment.apiBaseUrl}/teacher/subjects/${id}`, body);
   }

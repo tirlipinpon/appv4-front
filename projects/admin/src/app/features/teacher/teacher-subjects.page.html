@@ -292,6 +292,22 @@
                       Réactiver
                     </button>
                   }
+                  @if (canAskShare(school.schoolId, grade.grade)) {
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      type="button"
+                      [disabled]="saving()"
+                      (click)="requestShare(school.schoolId, grade.grade)"
+                    >
+                      Demander le partage
+                    </button>
+                  }
+                }
+                @if (shareAsked(school.schoolId, grade.grade)) {
+                  <p class="hint" role="status">
+                    Demande envoyée. Le professeur qui a créé la matière peut accepter de la partager.
+                  </p>
                 }
               </article>
             }

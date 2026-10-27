@@ -162,6 +162,66 @@ describe('TeacherSubjectsPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Calcul');
   });
 
+  it('propose de demander le partage quand le nom existe déjà', () => {
+    boot(loaded);
+
+    page.onDraft(2, '3e primaire', 'Calcul');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { message: 'Une matière de ce nom existe déjà. Tu peux demander à Anne de la partager.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('demander à Anne de la partager');
+    expect(page.canAskShare(2, '3e primaire')).toBe(true);
+
+    page.requestShare(2, '3e primaire');
+    const ask = http.expectOne(`${subjectsUrl}/share-requests`);
+    expect(ask.request.method).toBe('POST');
+    expect(ask.request.body).toEqual({ schoolId: 2, grade: '3e primaire', name: 'Calcul' });
+    ask.flush(null);
+    fixture.detectChanges();
+
+    expect(page.canAskShare(2, '3e primaire')).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('Demande envoyée.');
+  });
+
+  it('propose aussi le partage quand le nom ressemble à une matière existante', () => {
+    boot(loaded);
+
+    page.onDraft(2, '3e primaire', 'Maths');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { message: 'Ce nom ressemble à Mathématiques. Tu peux demander à Anne de la partager.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+
+    expect(page.canAskShare(2, '3e primaire')).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Ce nom ressemble à Mathématiques');
+    expect(fixture.nativeElement.textContent).not.toContain('Réactiver');
+  });
+
+  it('explique une demande de partage reçue', () => {
+    boot(loaded, [
+      {
+        id: 8,
+        subjectId: 2,
+        subjectName: 'Lecture',
+        schoolId: 1,
+        schoolName: 'École française',
+        grade: 'CE1',
+        mode: 'ask',
+        fromDisplayName: 'Camille',
+      },
+    ]);
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Camille demande à voir aussi Lecture (École française, CE1). Si tu acceptes, vous la partagerez.',
+    );
+  });
+
   it('propose un partage via la liste des collègues', () => {
     boot(loaded);
     page.askTransfer({

@@ -5,7 +5,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
  * (dernier détenteur vs partagée). APIs mockées — pas besoin du back.
  */
 
-type Mode = 'move' | 'share';
+type Mode = 'move' | 'share' | 'ask';
 
 interface SharedHolder {
   userId: number;
@@ -63,6 +63,40 @@ test('partage : demande envoyée puis acceptée par le collègue', async ({ page
   await page.getByRole('button', { name: 'Accepter' }).click();
   await expect(page.getByText('Demandes reçues')).toHaveCount(0);
   expect(state.subjects[0].sharedWith).toEqual([{ userId: 1, displayName: 'Anne' }]);
+});
+
+test('nom déjà pris : le professeur demande au créateur de partager', async ({ page }) => {
+  const state = createState();
+  await mockTeacherApis(page, state);
+
+  await openMatieres(page);
+  await page.getByLabel('Nouvelle matière').fill('Calcul');
+  await page.getByRole('button', { name: 'Ajouter' }).click();
+  await expect(page.getByText('Tu peux demander à Anne de la partager.')).toBeVisible();
+  await page.getByRole('button', { name: 'Demander le partage' }).click();
+  await expect(page.getByText('Demande envoyée.')).toBeVisible();
+  expect(state.shareRequests).toEqual([{ schoolId: 1, grade: '3e primaire', name: 'Calcul' }]);
+
+  state.invites = [
+    {
+      id: 4,
+      subjectId: 9,
+      subjectName: 'Calcul',
+      schoolId: 1,
+      schoolName: 'École Nouvelle',
+      grade: '3e primaire',
+      mode: 'ask',
+      fromDisplayName: 'Camille',
+    },
+  ];
+  await page.reload();
+  await expect(
+    page.getByText(
+      'Camille demande à voir aussi Calcul (École Nouvelle, 3e primaire). Si tu acceptes, vous la partagerez.',
+    ),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Accepter' }).click();
+  await expect(page.getByText('Partagée avec Camille')).toBeVisible();
 });
 
 test('déplacement : demande envoyée puis acceptée par le destinataire', async ({ page }) => {
@@ -202,6 +236,7 @@ interface MockState {
   colleagues: { userId: number; displayName: string }[];
   invites: InviteState[];
   pendingTransfers: { subjectId: number; colleagueUserId: number; mode: Mode }[];
+  shareRequests: { schoolId: number; grade: string; name: string }[];
   nextInviteId: number;
 }
 
@@ -219,6 +254,7 @@ function createState(partial?: {
         : [{ userId: 10, displayName: 'Camille' }],
     invites: [],
     pendingTransfers: [],
+    shareRequests: [],
     nextInviteId: 1,
   };
 }
@@ -234,6 +270,10 @@ async function openMatieres(page: Page): Promise<void> {
 async function mockTeacherApis(page: Page, state: MockState): Promise<void> {
   await page.route('**/api/int/auth/spaces', async (route) => {
     await json(route, { roles: ['teacher'], teacherRequest: 'approved' });
+  });
+
+  await page.route('**/api/int/auth/me', async (route) => {
+    await json(route, { email: 'anne@example.com', displayName: 'Anne' });
   });
 
   await page.route('**/api/int/teacher/subjects/transfer-invites/**', async (route) => {
@@ -294,6 +334,16 @@ async function mockTeacherApis(page: Page, state: MockState): Promise<void> {
   });
 
   await page.route('**/api/int/teacher/subjects', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'Une matière de ce nom existe déjà. Tu peux demander à Anne de la partager.',
+        }),
+      });
+      return;
+    }
     if (route.request().method() !== 'GET') {
       await route.fallback();
       return;
@@ -308,6 +358,13 @@ async function mockTeacherApis(page: Page, state: MockState): Promise<void> {
       ],
     });
   });
+
+  await page.route('**/api/int/teacher/subjects/share-requests', async (route) => {
+    state.shareRequests.push(
+      route.request().postDataJSON() as { schoolId: number; grade: string; name: string },
+    );
+    await route.fulfill({ status: 204, body: '' });
+  });
 }
 
 function applyAccept(state: MockState, invite: InviteState): void {
@@ -319,12 +376,12 @@ function applyAccept(state: MockState, invite: InviteState): void {
       id: invite.subjectId,
       name: invite.subjectName,
       active: true,
-      ownedByMe: invite.mode === 'move',
-      sharedWith: invite.mode === 'share' ? [fromHolder] : [],
+      ownedByMe: invite.mode !== 'share',
+      sharedWith: invite.mode === 'move' ? [] : [fromHolder],
     });
     return;
   }
-  if (invite.mode === 'share') {
+  if (invite.mode === 'share' || invite.mode === 'ask') {
     if (!subject.sharedWith.some((row) => row.displayName === invite.fromDisplayName)) {
       subject.sharedWith = [...subject.sharedWith, fromHolder];
     }
