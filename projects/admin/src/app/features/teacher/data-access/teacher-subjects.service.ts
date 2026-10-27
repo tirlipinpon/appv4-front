@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 
 import type {
   CreateTeacherSubjectRequest,
+  DeactivateTeacherSubjectRequest,
   RenameTeacherSubjectRequest,
+  TeacherDeactivateNoticesResponse,
   TeacherSubjectColleaguesResponse,
   TeacherSubjectItem,
   TeacherSubjectsResponse,
@@ -16,6 +18,7 @@ import { environment } from '../../../../environments/environment';
 /**
  * Matières du professeur (SCRUM-161, SCRUM-172, SCRUM-189).
  * Transfert : liste de collègues + demande à valider, pas d'email libre.
+ * Désactivation : personnelle ; le créateur peut cibler des co-profs.
  */
 @Injectable({ providedIn: 'root' })
 export class TeacherSubjectsService {
@@ -37,8 +40,8 @@ export class TeacherSubjectsService {
     return this.http.delete<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}`);
   }
 
-  deactivate(id: number): Observable<void> {
-    return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/deactivate`, null);
+  deactivate(id: number, body: DeactivateTeacherSubjectRequest = {}): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/deactivate`, body);
   }
 
   reactivate(id: number): Observable<void> {
@@ -71,6 +74,19 @@ export class TeacherSubjectsService {
   rejectTransfer(inviteId: number): Observable<void> {
     return this.http.post<void>(
       `${environment.apiBaseUrl}/teacher/subjects/transfer-invites/${inviteId}/reject`,
+      null,
+    );
+  }
+
+  deactivateNotices(): Observable<TeacherDeactivateNoticesResponse> {
+    return this.http.get<TeacherDeactivateNoticesResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/deactivate-notices`,
+    );
+  }
+
+  dismissDeactivateNotice(noticeId: number): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiBaseUrl}/teacher/subjects/deactivate-notices/${noticeId}/dismiss`,
       null,
     );
   }

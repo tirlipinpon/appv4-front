@@ -7,7 +7,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
 import type {
+  TeacherDeactivateNoticeItem,
   TeacherSubjectColleagueItem,
+  TeacherSubjectSharedHolder,
   TeacherSubjectsResponse,
   TeacherTransferInviteItem,
 } from '../../core/api/api-models';
@@ -19,7 +21,8 @@ interface SubjectRow {
   id: number;
   name: string;
   active: boolean;
-  sharedWith: string[];
+  ownedByMe: boolean;
+  sharedWith: TeacherSubjectSharedHolder[];
 }
 
 interface GradeBlock {
@@ -36,7 +39,21 @@ interface SchoolBlock {
 type TransferMode = 'move' | 'share';
 
 type Pending =
-  | { id: number; kind: 'remove' | 'disable' }
+  | {
+      id: number;
+      kind: 'disable';
+      /** Créateur + matière partagée : choisir aussi des co-profs. */
+      chooseOthers: boolean;
+      alsoUserIds: number[];
+      holders: TeacherSubjectSharedHolder[];
+    }
+  | {
+      id: number;
+      kind: 'remove';
+      /** Vrai si ce prof est le seul accès : retrait = plus personne ne voit la matière. */
+      sole: boolean;
+      colleagues: TeacherSubjectColleagueItem[];
+    }
   | {
       id: number;
       kind: 'transfer';
@@ -68,6 +85,7 @@ export class TeacherSubjectsPage implements OnInit {
 
   readonly schools = signal<SchoolBlock[]>([]);
   readonly invites = signal<TeacherTransferInviteItem[]>([]);
+  readonly deactivateNotices = signal<TeacherDeactivateNoticeItem[]>([]);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly ready = signal(false);
@@ -95,19 +113,40 @@ export class TeacherSubjectsPage implements OnInit {
     return this.subjectErrors()[subjectId] ?? null;
   }
 
+  sharedNames(subject: SubjectRow): string[] {
+    return subject.sharedWith
+      .map((holder) => holder.displayName)
+      .filter((name): name is string => !!name);
+  }
+
   sharedLabel(subject: SubjectRow): string | null {
-    if (subject.sharedWith.length === 0) {
+    const names = this.sharedNames(subject);
+    if (names.length === 0) {
       return null;
     }
-    return `Partagée avec ${subject.sharedWith.join(', ')}`;
+    return `Partagée avec ${names.join(', ')}`;
   }
 
   confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
-    if (subject.sharedWith.length > 0) {
-      return `Retirer ${subject.name} de ta liste ? ${subject.sharedWith.join(', ')} la garde.`;
+    const names = this.sharedNames(subject);
+    if (names.length > 0) {
+      return `Retirer ${subject.name} de ta liste ? ${names.join(', ')} la garde.`;
     }
     const place = school.schoolName ? `${grade.grade} de ${school.schoolName}` : grade.grade;
-    return `Retirer ${subject.name} du ${place} ? Elle disparaît de cette page et reste enregistrée.`;
+    return (
+      `Retirer ${subject.name} du ${place} ? Tu es le seul dessus : ` +
+      `plus aucun professeur ne la verra. Elle reste enregistrée.`
+    );
+  }
+
+  removeIsSole(): boolean {
+    const current = this.pending();
+    return current?.kind === 'remove' ? current.sole : false;
+  }
+
+  removeColleagues(): TeacherSubjectColleagueItem[] {
+    const current = this.pending();
+    return current?.kind === 'remove' ? current.colleagues : [];
   }
 
   transferConfirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
@@ -234,14 +273,90 @@ export class TeacherSubjectsPage implements OnInit {
 
   askDisable(subject: SubjectRow): void {
     this.renamingId.set(null);
-    this.pending.set({ id: subject.id, kind: 'disable' });
     this.clearSubjectError(subject.id);
+    const chooseOthers = subject.ownedByMe && subject.sharedWith.length > 0;
+    this.pending.set({
+      id: subject.id,
+      kind: 'disable',
+      chooseOthers,
+      alsoUserIds: [],
+      holders: chooseOthers ? [...subject.sharedWith] : [],
+    });
+  }
+
+  disableChoosingOthers(): boolean {
+    const current = this.pending();
+    return current?.kind === 'disable' ? current.chooseOthers : false;
+  }
+
+  disableHolders(): TeacherSubjectSharedHolder[] {
+    const current = this.pending();
+    return current?.kind === 'disable' ? current.holders : [];
+  }
+
+  disableAlsoSelected(userId: number | undefined): boolean {
+    if (userId == null) {
+      return false;
+    }
+    const current = this.pending();
+    return current?.kind === 'disable' ? current.alsoUserIds.includes(userId) : false;
+  }
+
+  toggleDisableAlso(userId: number): void {
+    const current = this.pending();
+    if (!current || current.kind !== 'disable' || !current.chooseOthers) {
+      return;
+    }
+    const next = current.alsoUserIds.includes(userId)
+      ? current.alsoUserIds.filter((id) => id !== userId)
+      : [...current.alsoUserIds, userId];
+    this.pending.set({ ...current, alsoUserIds: next });
+    this.clearSubjectError(current.id);
   }
 
   askRemove(subject: SubjectRow): void {
     this.renamingId.set(null);
-    this.pending.set({ id: subject.id, kind: 'remove' });
     this.clearSubjectError(subject.id);
+    const sole = subject.sharedWith.length === 0;
+    this.pending.set({ id: subject.id, kind: 'remove', sole, colleagues: [] });
+    if (!sole) {
+      return;
+    }
+    this.api.colleagues(subject.id).subscribe({
+      next: (body) => {
+        const current = this.pending();
+        if (!current || current.kind !== 'remove' || current.id !== subject.id) {
+          return;
+        }
+        this.pending.set({
+          ...current,
+          colleagues: colleaguesOf(body.colleagues),
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.setSubjectError(subject.id, httpErrorMessage(err, 'Collègues indisponibles.'));
+      },
+    });
+  }
+
+  /**
+   * Depuis le retrait « dernier détenteur » : ouvre le transfert en mode déplacer
+   * avec la liste déjà chargée (pas de retrait tant que le collègue n'a pas accepté).
+   */
+  chooseMoveInstead(subject: SubjectRow): void {
+    const current = this.pending();
+    if (!current || current.kind !== 'remove' || !current.sole || current.id !== subject.id) {
+      return;
+    }
+    this.clearSubjectError(subject.id);
+    this.pending.set({
+      id: subject.id,
+      kind: 'transfer',
+      mode: 'move',
+      colleagueUserId: null,
+      colleagues: current.colleagues,
+      confirm: false,
+    });
   }
 
   askTransfer(subject: SubjectRow): void {
@@ -263,7 +378,7 @@ export class TeacherSubjectsPage implements OnInit {
         }
         this.pending.set({
           ...current,
-          colleagues: (body.colleagues ?? []).filter((row) => row.userId != null) as TeacherSubjectColleagueItem[],
+          colleagues: colleaguesOf(body.colleagues),
         });
       },
       error: (err: HttpErrorResponse) => {
@@ -313,7 +428,14 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   confirmDisable(subjectId: number): void {
-    this.postState(subjectId, () => this.api.deactivate(subjectId), 'Désactivation impossible.');
+    const current = this.pending();
+    const alsoUserIds =
+      current?.kind === 'disable' && current.id === subjectId ? current.alsoUserIds : [];
+    this.postState(
+      subjectId,
+      () => this.api.deactivate(subjectId, { alsoUserIds }),
+      'Désactivation impossible.',
+    );
   }
 
   reactivate(subjectId: number): void {
@@ -378,6 +500,21 @@ export class TeacherSubjectsPage implements OnInit {
     });
   }
 
+  dismissDeactivateNotice(noticeId: number | undefined): void {
+    if (noticeId == null || this.saving()) {
+      return;
+    }
+    this.error.set(null);
+    this.saving.set(true);
+    this.api.dismissDeactivateNotice(noticeId).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.error.set(httpErrorMessage(err, 'Fermeture impossible.'));
+      },
+    });
+  }
+
   private postState(subjectId: number, call: () => Observable<void>, fallback: string): void {
     if (this.saving()) {
       return;
@@ -408,6 +545,10 @@ export class TeacherSubjectsPage implements OnInit {
           .transferInvites()
           .pipe(catchError(() => of({ invites: [] })))
           .subscribe((body) => this.invites.set(body.invites ?? []));
+        this.api
+          .deactivateNotices()
+          .pipe(catchError(() => of({ notices: [] })))
+          .subscribe((body) => this.deactivateNotices.set(body.notices ?? []));
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
@@ -437,7 +578,8 @@ export class TeacherSubjectsPage implements OnInit {
             id: subject.id,
             name: subject.name,
             active: subject.active !== false,
-            sharedWith: [...(subject.sharedWith ?? [])],
+            ownedByMe: subject.ownedByMe === true,
+            sharedWith: holdersOf(subject.sharedWith),
           });
         }
         grades.push({ grade: grade.grade, subjects });
@@ -498,4 +640,16 @@ function nameProblem(raw: string): string | null {
     return NAME_TOO_LONG;
   }
   return null;
+}
+
+function colleaguesOf(
+  rows: TeacherSubjectColleagueItem[] | null | undefined,
+): TeacherSubjectColleagueItem[] {
+  return (rows ?? []).filter((row) => row.userId != null) as TeacherSubjectColleagueItem[];
+}
+
+function holdersOf(
+  rows: TeacherSubjectSharedHolder[] | null | undefined,
+): TeacherSubjectSharedHolder[] {
+  return (rows ?? []).filter((row) => row.userId != null) as TeacherSubjectSharedHolder[];
 }

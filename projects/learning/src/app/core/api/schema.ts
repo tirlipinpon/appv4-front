@@ -119,7 +119,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Désactiver une matière du professeur connecté */
+        /** Désactiver une matière pour soi, et éventuellement des co-profs si créateur */
         post: operations["deactivateTeacherSubject"];
         delete?: never;
         options?: never;
@@ -155,6 +155,23 @@ export interface paths {
         put?: never;
         /** Accepter une demande de transfert */
         post: operations["acceptTeacherSubjectTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/deactivate-notices/{noticeId}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fermer une alerte de désactivation */
+        post: operations["dismissTeacherSubjectDeactivateNotice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -506,6 +523,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/deactivate-notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les alertes de désactivation reçues */
+        get: operations["listTeacherSubjectDeactivateNotices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/students": {
         parameters: {
             query?: never;
@@ -742,7 +776,13 @@ export interface components {
             id?: number;
             name?: string;
             active?: boolean;
-            sharedWith?: string[];
+            ownedByMe?: boolean;
+            sharedWith?: components["schemas"]["TeacherSubjectSharedHolder"][];
+        };
+        TeacherSubjectSharedHolder: {
+            /** Format: int64 */
+            userId?: number;
+            displayName?: string;
         };
         TeacherSchoolInput: {
             /** Format: int64 */
@@ -861,6 +901,10 @@ export interface components {
              * @enum {string}
              */
             mode?: "move" | "share";
+        };
+        DeactivateTeacherSubjectRequest: {
+            /** @description Co-profs à désactiver aussi (créateur uniquement) */
+            alsoUserIds?: number[];
         };
         AddChildSubjectRequest: {
             /** Format: int64 */
@@ -1001,6 +1045,17 @@ export interface components {
         };
         TeacherTransferInvitesResponse: {
             invites?: components["schemas"]["TeacherTransferInviteItem"][];
+        };
+        TeacherDeactivateNoticeItem: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            subjectId?: number;
+            subjectName?: string;
+            message?: string;
+        };
+        TeacherDeactivateNoticesResponse: {
+            notices?: components["schemas"]["TeacherDeactivateNoticeItem"][];
         };
         TeacherStudentGrade: {
             grade?: string;
@@ -1469,14 +1524,27 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DeactivateTeacherSubjectRequest"];
+            };
+        };
         responses: {
-            /** @description Reste dans les listes, plus proposée dans le reste de l'application */
+            /** @description Accès désactivés ; alerte envoyée aux autres détenteurs si créateur et matière partagée */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description alsoUserIds non autorisé ou collègue sans accès */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
             };
             /** @description Le jeton n'est pas dans l'espace professeur */
             403: {
@@ -1573,6 +1641,44 @@ export interface operations {
                 };
             };
             /** @description Demande introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    dismissTeacherSubjectDeactivateNotice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                noticeId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Alerte dismissée */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Alerte introuvable */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2237,6 +2343,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TeacherTransferInvitesResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjectDeactivateNotices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Alertes non dismissées, message prêt à afficher */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherDeactivateNoticesResponse"];
                 };
             };
             /** @description Le jeton n'est pas dans l'espace professeur */

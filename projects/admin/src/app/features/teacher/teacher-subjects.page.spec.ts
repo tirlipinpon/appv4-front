@@ -9,6 +9,7 @@ import { TeacherSubjectsPage } from './teacher-subjects.page';
 
 const subjectsUrl = 'http://localhost:8080/api/int/teacher/subjects';
 const invitesUrl = 'http://localhost:8080/api/int/teacher/subjects/transfer-invites';
+const noticesUrl = 'http://localhost:8080/api/int/teacher/subjects/deactivate-notices';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
 
 const empty: TeacherSubjectsResponse = { schools: [] };
@@ -19,10 +20,21 @@ const loaded: TeacherSubjectsResponse = {
       schoolId: 1,
       schoolName: 'École française',
       grades: [
-        { grade: 'CE1', subjects: [{ id: 2, name: 'Lecture', active: true, sharedWith: [] }] },
+        {
+          grade: 'CE1',
+          subjects: [{ id: 2, name: 'Lecture', active: true, ownedByMe: true, sharedWith: [] }],
+        },
         {
           grade: 'CE2',
-          subjects: [{ id: 3, name: 'Mathématiques', active: true, sharedWith: ['Camille'] }],
+          subjects: [
+            {
+              id: 3,
+              name: 'Mathématiques',
+              active: true,
+              ownedByMe: true,
+              sharedWith: [{ userId: 10, displayName: 'Camille' }],
+            },
+          ],
         },
       ],
     },
@@ -59,12 +71,19 @@ describe('TeacherSubjectsPage', () => {
     http.verify();
   });
 
-  function boot(body: TeacherSubjectsResponse, invites: unknown[] = []): void {
+  function boot(body: TeacherSubjectsResponse, invites: unknown[] = [], notices: unknown[] = []): void {
     fixture.detectChanges();
     http.expectOne(subjectsUrl).flush(body);
     http.expectOne(invitesUrl).flush({ invites });
+    http.expectOne(noticesUrl).flush({ notices });
     http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
     fixture.detectChanges();
+  }
+
+  function expectReload(body: TeacherSubjectsResponse = loaded): void {
+    http.expectOne(subjectsUrl).flush(body);
+    http.expectOne(invitesUrl).flush({ invites: [] });
+    http.expectOne(noticesUrl).flush({ notices: [] });
   }
 
   it('dit qu’il n’y a pas encore de classe', () => {
@@ -93,9 +112,8 @@ describe('TeacherSubjectsPage', () => {
     const post = http.expectOne(subjectsUrl);
     expect(post.request.method).toBe('POST');
     expect(post.request.body).toEqual({ schoolId: 1, grade: 'CE1', name: 'Français' });
-    post.flush({ id: 8, name: 'Français', active: true, sharedWith: [] });
-    http.expectOne(subjectsUrl).flush(loaded);
-    http.expectOne(invitesUrl).flush({ invites: [] });
+    post.flush({ id: 8, name: 'Français', active: true, ownedByMe: true, sharedWith: [] });
+    expectReload();
     fixture.detectChanges();
 
     expect(page.draft(1, 'CE1')).toBe('');
@@ -103,7 +121,13 @@ describe('TeacherSubjectsPage', () => {
 
   it('propose un partage via la liste des collègues', () => {
     boot(loaded);
-    page.askTransfer({ id: 2, name: 'Lecture', active: true, sharedWith: [] });
+    page.askTransfer({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: true,
+      sharedWith: [],
+    });
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
       colleagues: [{ userId: 10, displayName: 'Camille' }],
     });
@@ -119,8 +143,7 @@ describe('TeacherSubjectsPage', () => {
     const post = http.expectOne(`${subjectsUrl}/2/transfer`);
     expect(post.request.body).toEqual({ colleagueUserId: 10, mode: 'share' });
     post.flush(null);
-    http.expectOne(subjectsUrl).flush(loaded);
-    http.expectOne(invitesUrl).flush({ invites: [] });
+    expectReload();
   });
 
   it('affiche une alerte et accepte une demande', () => {
@@ -142,23 +165,115 @@ describe('TeacherSubjectsPage', () => {
     const post = http.expectOne(`${invitesUrl}/7/accept`);
     expect(post.request.method).toBe('POST');
     post.flush(null);
-    http.expectOne(subjectsUrl).flush(loaded);
-    http.expectOne(invitesUrl).flush({ invites: [] });
+    expectReload();
+  });
+
+  it('créateur choisit un co-prof à désactiver aussi', () => {
+    boot(loaded);
+    page.askDisable({
+      id: 3,
+      name: 'Mathématiques',
+      active: true,
+      ownedByMe: true,
+      sharedWith: [{ userId: 10, displayName: 'Camille' }],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Tu peux aussi la désactiver');
+    page.toggleDisableAlso(10);
+    page.confirmDisable(3);
+    const post = http.expectOne(`${subjectsUrl}/3/deactivate`);
+    expect(post.request.body).toEqual({ alsoUserIds: [10] });
+    post.flush(null);
+    expectReload();
+  });
+
+  it('affiche une alerte de désactivation et la ferme', () => {
+    boot(loaded, [], [
+      {
+        id: 9,
+        subjectId: 3,
+        subjectName: 'Mathématiques',
+        message: 'Anne a désactivé Mathématiques pour soi.',
+      },
+    ]);
+
+    expect(fixture.nativeElement.textContent).toContain('Anne a désactivé Mathématiques pour soi.');
+    page.dismissDeactivateNotice(9);
+    const post = http.expectOne(`${noticesUrl}/9/dismiss`);
+    expect(post.request.method).toBe('POST');
+    post.flush(null);
+    expectReload();
   });
 
   it('retire une matière partagée avec le bon message', () => {
     boot(loaded);
-    page.askRemove({ id: 3, name: 'Mathématiques', active: true, sharedWith: ['Camille'] });
+    page.askRemove({
+      id: 3,
+      name: 'Mathématiques',
+      active: true,
+      ownedByMe: true,
+      sharedWith: [{ userId: 10, displayName: 'Camille' }],
+    });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
       'Retirer Mathématiques de ta liste ? Camille la garde.',
     );
+    expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
+    http.expectNone(`${subjectsUrl}/3/colleagues`);
     page.confirmRemove(3);
     const del = http.expectOne(`${subjectsUrl}/3`);
     expect(del.request.method).toBe('DELETE');
     del.flush(null);
-    http.expectOne(subjectsUrl).flush(loaded);
-    http.expectOne(invitesUrl).flush({ invites: [] });
+    expectReload();
+  });
+
+  it('prévient le dernier détenteur et propose de déplacer', () => {
+    boot(loaded);
+    page.askRemove({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: true,
+      sharedWith: [],
+    });
+    http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
+      colleagues: [{ userId: 10, displayName: 'Camille' }],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('plus aucun professeur ne la verra');
+    expect(fixture.nativeElement.textContent).toContain('Déplacer vers un collègue');
+
+    page.chooseMoveInstead({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: true,
+      sharedWith: [],
+    });
+    fixture.detectChanges();
+    expect(page.transferMode()).toBe('move');
+    expect(page.transferColleagues().map((row) => row.displayName)).toEqual(['Camille']);
+  });
+
+  it('retire quand même si dernier détenteur sans collègue', () => {
+    boot(loaded);
+    page.askRemove({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: true,
+      sharedWith: [],
+    });
+    http.expectOne(`${subjectsUrl}/2/colleagues`).flush({ colleagues: [] });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Aucun collègue avec cette classe.');
+    expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
+    page.confirmRemove(2);
+    http.expectOne(`${subjectsUrl}/2`).flush(null);
+    expectReload();
   });
 });
