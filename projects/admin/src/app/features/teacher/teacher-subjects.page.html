@@ -38,6 +38,26 @@
           </section>
         }
 
+        @if (deactivateNotices().length > 0) {
+          <section class="invites" aria-label="Alertes de désactivation">
+            <h2 class="invites-title">Alertes</h2>
+            @for (notice of deactivateNotices(); track notice.id) {
+              <article class="invite">
+                <p class="confirm" role="status">{{ notice.message }}</p>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="saving()"
+                  (click)="dismissDeactivateNotice(notice.id)"
+                >
+                  OK
+                </button>
+              </article>
+            }
+          </section>
+        }
+
         @if (ready() && schools().length === 0) {
           <p class="hint">Il n'y a pas encore de classe.</p>
         }
@@ -77,8 +97,26 @@
                           </button>
                         } @else if (pending()?.id === subject.id && pending()?.kind === 'disable') {
                           <p class="confirm" role="alert">
-                            Désactiver {{ subject.name }} ? Elle reste dans cette liste, elle n'est plus proposée dans le reste de l'application.
+                            Désactiver {{ subject.name }} pour toi ? Elle reste dans cette liste, elle n'est plus proposée pour toi ailleurs.
                           </p>
+                          @if (disableChoosingOthers()) {
+                            <p class="hint">Tu peux aussi la désactiver pour des collègues qui la partagent :</p>
+                            <ul class="colleagues">
+                              @for (holder of disableHolders(); track holder.userId) {
+                                <li>
+                                  <button
+                                    mat-button
+                                    type="button"
+                                    [disabled]="saving()"
+                                    [class.selected]="disableAlsoSelected(holder.userId)"
+                                    (click)="toggleDisableAlso(holder.userId!)"
+                                  >
+                                    {{ holder.displayName }}
+                                  </button>
+                                </li>
+                              }
+                            </ul>
+                          }
                           <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
                             Annuler
                           </button>
@@ -92,6 +130,21 @@
                           </button>
                         } @else if (pending()?.id === subject.id && pending()?.kind === 'remove') {
                           <p class="confirm" role="alert">{{ confirmText(school, grade, subject) }}</p>
+                          @if (removeIsSole()) {
+                            @if (removeColleagues().length === 0) {
+                              <p class="hint">Aucun collègue avec cette classe.</p>
+                            } @else {
+                              <button
+                                mat-flat-button
+                                color="primary"
+                                type="button"
+                                [disabled]="saving()"
+                                (click)="chooseMoveInstead(subject)"
+                              >
+                                Déplacer vers un collègue
+                              </button>
+                            }
+                          }
                           <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
                             Annuler
                           </button>
@@ -228,6 +281,17 @@
                 </div>
                 @if (gradeError(school.schoolId, grade.grade); as gradeMessage) {
                   <p class="field-error" role="alert">{{ gradeMessage }}</p>
+                  @if (canRestore(school.schoolId, grade.grade)) {
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      type="button"
+                      [disabled]="saving()"
+                      (click)="restore(school.schoolId, grade.grade)"
+                    >
+                      Réactiver
+                    </button>
+                  }
                 }
               </article>
             }

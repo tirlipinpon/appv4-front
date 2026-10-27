@@ -9,6 +9,7 @@ import { TeacherProfilePage } from './teacher-profile.page';
 
 const profileUrl = 'http://localhost:8080/api/int/teacher/profile';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
+const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
 const loaded: TeacherProfileResponse = {
   email: 'prof@example.com',
@@ -42,6 +43,7 @@ describe('TeacherProfilePage', () => {
     fixture.detectChanges();
     http.expectOne(profileUrl).flush(loaded);
     http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Ancien' });
     fixture.detectChanges();
   });
 
@@ -82,6 +84,9 @@ describe('TeacherProfilePage', () => {
     fixture.detectChanges();
 
     expect(page.displayName()).toBe('Version envoyee');
+    expect(fixture.nativeElement.querySelector('mat-toolbar span')?.textContent?.trim()).toBe(
+      'Version envoyee',
+    );
     expect(fixture.nativeElement.querySelector('.ok')?.textContent).toContain('Enregistré');
     expect(page.saving()).toBeFalse();
   });
