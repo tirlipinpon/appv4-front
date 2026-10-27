@@ -161,6 +161,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/share-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demander au créateur de partager une matière déjà existante */
+        post: operations["requestTeacherSubjectShare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects/restore": {
         parameters: {
             query?: never;
@@ -1444,7 +1461,7 @@ export interface operations {
                     "*/*": components["schemas"]["TeacherSubjectItem"];
                 };
             };
-            /** @description Nom vide, trop long, déjà pris, matière retirée à réactiver, ou classe absente du profil */
+            /** @description Nom vide, trop long, déjà pris, demande de partage possible, matière retirée à réactiver, ou classe absente du profil */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1680,6 +1697,46 @@ export interface operations {
             };
             /** @description Demande introuvable */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    requestTeacherSubjectShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Demande créée ; l'accès ne change qu'après acceptation du créateur */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nom invalide, classe absente, matière introuvable, déjà détenue, ou demande en attente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
