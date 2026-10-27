@@ -67,8 +67,7 @@ const NAME_REQUIRED = 'Le nom est obligatoire.';
 const NAME_TOO_LONG = 'Le nom dépasse 100 caractères.';
 /** Même phrase que le back : TeacherSubjectService.REMOVED_RESTORABLE. */
 const REMOVED_RESTORABLE = 'Cette matière a été retirée. Tu peux la réactiver.';
-/** Même découpage que TeacherSubjectService.nameCanAsk. */
-const NAME_CAN_ASK_PREFIX = 'Une matière de ce nom existe déjà. Tu peux demander à ';
+/** Fin de phrase commune : nom identique ou nom très proche. */
 const NAME_CAN_ASK_SUFFIX = ' de la partager.';
 const NAME_MAX = 100;
 const MODE_REQUIRED = 'Choisis de déplacer ou de partager.';
@@ -248,12 +247,15 @@ export class TeacherSubjectsPage implements OnInit {
     return this.gradeError(schoolId, grade) === REMOVED_RESTORABLE;
   }
 
-  /** Vrai quand un collègue a déjà créé ce nom et qu'on peut lui demander de partager. */
+  /**
+   * Vrai quand on peut demander le partage : nom identique, ou nom très proche
+   * d'une matière encore visible.
+   */
   canAskShare(schoolId: number, grade: string): boolean {
     const message = this.gradeError(schoolId, grade);
     return (
       message != null &&
-      message.startsWith(NAME_CAN_ASK_PREFIX) &&
+      message.includes('Tu peux demander à ') &&
       message.endsWith(NAME_CAN_ASK_SUFFIX)
     );
   }

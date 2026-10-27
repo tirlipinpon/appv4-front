@@ -187,6 +187,22 @@ describe('TeacherSubjectsPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Demande envoyée.');
   });
 
+  it('propose aussi le partage quand le nom ressemble à une matière existante', () => {
+    boot(loaded);
+
+    page.onDraft(2, '3e primaire', 'Maths');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { message: 'Ce nom ressemble à Mathématiques. Tu peux demander à Anne de la partager.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+
+    expect(page.canAskShare(2, '3e primaire')).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Ce nom ressemble à Mathématiques');
+    expect(fixture.nativeElement.textContent).not.toContain('Réactiver');
+  });
+
   it('explique une demande de partage reçue', () => {
     boot(loaded, [
       {
