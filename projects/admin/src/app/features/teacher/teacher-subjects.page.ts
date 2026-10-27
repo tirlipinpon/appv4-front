@@ -67,6 +67,9 @@ const NAME_REQUIRED = 'Le nom est obligatoire.';
 const NAME_TOO_LONG = 'Le nom dépasse 100 caractères.';
 /** Même phrase que le back : TeacherSubjectService.REMOVED_RESTORABLE. */
 const REMOVED_RESTORABLE = 'Cette matière a été retirée. Tu peux la réactiver.';
+/** Même découpage que TeacherSubjectService.nameCanAsk. */
+const NAME_CAN_ASK_PREFIX = 'Une matière de ce nom existe déjà. Tu peux demander à ';
+const NAME_CAN_ASK_SUFFIX = ' de la partager.';
 const NAME_MAX = 100;
 const MODE_REQUIRED = 'Choisis de déplacer ou de partager.';
 const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
@@ -98,6 +101,8 @@ export class TeacherSubjectsPage implements OnInit {
   readonly renamingId = signal<number | null>(null);
   readonly renameDraft = signal('');
   readonly pending = signal<Pending | null>(null);
+  /** Classe pour laquelle une demande de partage vient d'être envoyée. */
+  readonly shareAskedKey = signal<string | null>(null);
 
   ngOnInit(): void {
     this.reload(true);
@@ -191,8 +196,11 @@ export class TeacherSubjectsPage implements OnInit {
     const place = invite.schoolName
       ? `${invite.subjectName} (${invite.schoolName}, ${invite.grade})`
       : `${invite.subjectName} (${invite.grade})`;
-    const action = invite.mode === 'move' ? 'déplacer' : 'partager';
     const from = invite.fromDisplayName || 'Un collègue';
+    if (invite.mode === 'ask') {
+      return `${from} demande à voir aussi ${place}. Si tu acceptes, vous la partagerez.`;
+    }
+    const action = invite.mode === 'move' ? 'déplacer' : 'partager';
     return `${from} propose de ${action} ${place}.`;
   }
 
@@ -205,6 +213,9 @@ export class TeacherSubjectsPage implements OnInit {
     const key = this.gradeKey(schoolId, grade);
     this.drafts.update((current) => ({ ...current, [key]: value }));
     this.clearGradeError(schoolId, grade);
+    if (this.shareAskedKey() === key) {
+      this.shareAskedKey.set(null);
+    }
   }
 
   add(schoolId: number, grade: string): void {
@@ -235,6 +246,46 @@ export class TeacherSubjectsPage implements OnInit {
   /** Vrai quand l'ajout a été refusé parce que la matière a été retirée. */
   canRestore(schoolId: number, grade: string): boolean {
     return this.gradeError(schoolId, grade) === REMOVED_RESTORABLE;
+  }
+
+  /** Vrai quand un collègue a déjà créé ce nom et qu'on peut lui demander de partager. */
+  canAskShare(schoolId: number, grade: string): boolean {
+    const message = this.gradeError(schoolId, grade);
+    return (
+      message != null &&
+      message.startsWith(NAME_CAN_ASK_PREFIX) &&
+      message.endsWith(NAME_CAN_ASK_SUFFIX)
+    );
+  }
+
+  shareAsked(schoolId: number, grade: string): boolean {
+    return this.shareAskedKey() === this.gradeKey(schoolId, grade);
+  }
+
+  requestShare(schoolId: number, grade: string): void {
+    if (this.saving()) {
+      return;
+    }
+    const raw = this.draft(schoolId, grade);
+    const problem = nameProblem(raw);
+    if (problem) {
+      this.setGradeError(schoolId, grade, problem);
+      return;
+    }
+    this.error.set(null);
+    this.saving.set(true);
+    this.api.requestShare({ schoolId, grade, name: raw.trim() }).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.clearGradeError(schoolId, grade);
+        this.shareAskedKey.set(this.gradeKey(schoolId, grade));
+      },
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.shareAskedKey.set(null);
+        this.setGradeError(schoolId, grade, httpErrorMessage(err, 'Demande impossible.'));
+      },
+    });
   }
 
   restore(schoolId: number, grade: string): void {
