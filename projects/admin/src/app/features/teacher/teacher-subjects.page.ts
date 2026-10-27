@@ -65,6 +65,8 @@ type Pending =
 
 const NAME_REQUIRED = 'Le nom est obligatoire.';
 const NAME_TOO_LONG = 'Le nom dépasse 100 caractères.';
+/** Même phrase que le back : TeacherSubjectService.REMOVED_RESTORABLE. */
+const REMOVED_RESTORABLE = 'Cette matière a été retirée. Tu peux la réactiver.';
 const NAME_MAX = 100;
 const MODE_REQUIRED = 'Choisis de déplacer ou de partager.';
 const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
@@ -226,6 +228,36 @@ export class TeacherSubjectsPage implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
         this.setGradeError(schoolId, grade, httpErrorMessage(err, 'Ajout impossible.'));
+      },
+    });
+  }
+
+  /** Vrai quand l'ajout a été refusé parce que la matière a été retirée. */
+  canRestore(schoolId: number, grade: string): boolean {
+    return this.gradeError(schoolId, grade) === REMOVED_RESTORABLE;
+  }
+
+  restore(schoolId: number, grade: string): void {
+    if (this.saving()) {
+      return;
+    }
+    const raw = this.draft(schoolId, grade);
+    const problem = nameProblem(raw);
+    if (problem) {
+      this.setGradeError(schoolId, grade, problem);
+      return;
+    }
+    this.clearGradeError(schoolId, grade);
+    this.error.set(null);
+    this.saving.set(true);
+    this.api.restore({ schoolId, grade, name: raw.trim() }).subscribe({
+      next: () => {
+        this.onDraft(schoolId, grade, '');
+        this.reload();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.setGradeError(schoolId, grade, httpErrorMessage(err, 'Réactivation impossible.'));
       },
     });
   }

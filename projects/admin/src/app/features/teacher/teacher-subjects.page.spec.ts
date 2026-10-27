@@ -11,6 +11,7 @@ const subjectsUrl = 'http://localhost:8080/api/int/teacher/subjects';
 const invitesUrl = 'http://localhost:8080/api/int/teacher/subjects/transfer-invites';
 const noticesUrl = 'http://localhost:8080/api/int/teacher/subjects/deactivate-notices';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
+const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
 const empty: TeacherSubjectsResponse = { schools: [] };
 
@@ -77,6 +78,7 @@ describe('TeacherSubjectsPage', () => {
     http.expectOne(invitesUrl).flush({ invites });
     http.expectOne(noticesUrl).flush({ notices });
     http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
     fixture.detectChanges();
   }
 
@@ -117,6 +119,47 @@ describe('TeacherSubjectsPage', () => {
     fixture.detectChanges();
 
     expect(page.draft(1, 'CE1')).toBe('');
+  });
+
+  it('propose de réactiver une matière retirée du même nom', () => {
+    boot(loaded);
+
+    page.onDraft(2, '3e primaire', 'Calcul');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { message: 'Cette matière a été retirée. Tu peux la réactiver.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Cette matière a été retirée. Tu peux la réactiver.',
+    );
+    expect(page.canRestore(2, '3e primaire')).toBe(true);
+
+    page.restore(2, '3e primaire');
+    const restore = http.expectOne(`${subjectsUrl}/restore`);
+    expect(restore.request.method).toBe('POST');
+    expect(restore.request.body).toEqual({ schoolId: 2, grade: '3e primaire', name: 'Calcul' });
+    restore.flush({ id: 9, name: 'Calcul', active: true, ownedByMe: true, sharedWith: [] });
+    expectReload({
+      schools: [
+        {
+          schoolId: 2,
+          schoolName: 'École belge',
+          grades: [
+            {
+              grade: '3e primaire',
+              subjects: [{ id: 9, name: 'Calcul', active: true, ownedByMe: true, sharedWith: [] }],
+            },
+          ],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(page.draft(2, '3e primaire')).toBe('');
+    expect(fixture.nativeElement.textContent).toContain('Calcul');
   });
 
   it('propose un partage via la liste des collègues', () => {

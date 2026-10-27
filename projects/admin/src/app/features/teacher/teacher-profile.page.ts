@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
 import type { TeacherProfileResponse, UpdateTeacherProfileRequest } from '../../core/api/api-models';
+import { ConnectedAccountService } from '../../core/auth/connected-account.service';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { TeacherProfileService } from './data-access/teacher-profile.service';
@@ -34,6 +35,7 @@ type KeptSchool = NonNullable<UpdateTeacherProfileRequest['schools']>[number];
 })
 export class TeacherProfilePage implements OnInit {
   private readonly api = inject(TeacherProfileService);
+  private readonly account = inject(ConnectedAccountService);
 
   readonly email = signal('');
   readonly displayName = signal('');
@@ -90,6 +92,7 @@ export class TeacherProfilePage implements OnInit {
     this.api.save(sent).subscribe({
       next: (profile) => {
         this.saving.set(false);
+        this.rememberSavedName(profile);
         if (!this.samePayload(sent, this.payload())) {
           this.saved.set(false);
           this.pendingNotice.set(PENDING_EDIT);
@@ -130,6 +133,12 @@ export class TeacherProfilePage implements OnInit {
   private markDirty(): void {
     this.saved.set(false);
     this.pendingNotice.set(null);
+  }
+
+  private rememberSavedName(profile: TeacherProfileResponse): void {
+    if (typeof profile.displayName === 'string') {
+      this.account.remember(profile.displayName);
+    }
   }
 
   private apply(profile: TeacherProfileResponse): void {

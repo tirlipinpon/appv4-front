@@ -9,6 +9,7 @@ import { TeacherStudentsPage } from './teacher-students.page';
 
 const studentsUrl = 'http://localhost:8080/api/int/teacher/students';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
+const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
 const empty: TeacherStudentsResponse = {
   noClassMessage: "Aucune classe à afficher tant que le profil n'a pas d'école.",
@@ -84,6 +85,7 @@ describe('TeacherStudentsPage', () => {
     fixture.detectChanges();
     http.expectOne(studentsUrl).flush(body);
     http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
     const photo = http.match(`${studentsUrl}/2/photo`);
     for (const request of photo) {
       request.flush(new Blob(['img'], { type: 'image/png' }));

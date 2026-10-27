@@ -9,6 +9,7 @@ import { ParentSubjectsPage } from './parent-subjects.page';
 
 const url = 'http://localhost:8080/api/int/parent/subjects';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
+const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
 const loaded: ParentSubjectsResponse = {
   children: [
@@ -74,6 +75,7 @@ describe('ParentSubjectsPage', () => {
     fixture.detectChanges();
     http.expectOne(url).flush(body);
     http.expectOne(spacesUrl).flush({ roles: ['parent'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Tony' });
     fixture.detectChanges();
   }
 

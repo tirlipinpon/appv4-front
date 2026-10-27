@@ -16,6 +16,7 @@ export type LoginRequest = components['schemas']['LoginRequest'];
 export type SignupRequest = components['schemas']['SignupRequest'];
 export type SwitchRoleRequest = components['schemas']['SwitchRoleRequest'];
 export type SpaceAccessResponse = Required<components['schemas']['SpaceAccessResponse']>;
+export type ConnectedAccountResponse = Required<components['schemas']['ConnectedAccountResponse']>;
 export type CompleteRolesRequest = components['schemas']['CompleteRolesRequest'];
 export type TeacherRequestItem = components['schemas']['TeacherRequestItem'];
 export type TeacherProfileResponse = components['schemas']['TeacherProfileResponse'];

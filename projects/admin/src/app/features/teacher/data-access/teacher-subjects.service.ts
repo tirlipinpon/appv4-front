@@ -32,6 +32,14 @@ export class TeacherSubjectsService {
     return this.http.post<TeacherSubjectItem>(`${environment.apiBaseUrl}/teacher/subjects`, body);
   }
 
+  /** Ramène la matière retirée du même nom dans cette classe (même id). */
+  restore(body: CreateTeacherSubjectRequest): Observable<TeacherSubjectItem> {
+    return this.http.post<TeacherSubjectItem>(
+      `${environment.apiBaseUrl}/teacher/subjects/restore`,
+      body,
+    );
+  }
+
   rename(id: number, body: RenameTeacherSubjectRequest): Observable<TeacherSubjectItem> {
     return this.http.put<TeacherSubjectItem>(`${environment.apiBaseUrl}/teacher/subjects/${id}`, body);
   }

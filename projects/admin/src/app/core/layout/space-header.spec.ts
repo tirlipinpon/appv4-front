@@ -14,6 +14,7 @@ import { SpaceHeader } from './space-header';
 class BlankPage {}
 
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
+const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
 describe('SpaceHeader', () => {
   let fixture: ComponentFixture<SpaceHeader>;
@@ -44,6 +45,16 @@ describe('SpaceHeader', () => {
   afterEach(() => {
     http.verify();
     sessionStorage.clear();
+  });
+
+  it('affiche le nom du parent ou du professeur connecté', async () => {
+    await show({
+      url: '/teacher/profil',
+      token: { activeRole: SpaceRoles.teacher, roles: [SpaceRoles.teacher] },
+    });
+
+    const title: HTMLElement = fixture.nativeElement.querySelector('mat-toolbar span');
+    expect(title.textContent?.trim()).toBe('Camille');
   });
 
   it('déconnecte et revient à la page de connexion', async () => {
@@ -197,7 +208,9 @@ describe('SpaceHeader', () => {
       fixture.componentRef.setInput('showSpaceActions', false);
     }
     fixture.detectChanges();
+    http.expectOne(accountUrl).flush({ displayName: 'Camille' });
     if (options.showSpaceActions === false) {
+      fixture.detectChanges();
       return;
     }
     const roles =

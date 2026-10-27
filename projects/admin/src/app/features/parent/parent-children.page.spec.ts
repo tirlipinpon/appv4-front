@@ -10,6 +10,7 @@ import { ParentChildrenPage } from './parent-children.page';
 
 const childrenUrl = 'http://localhost:8080/api/int/parent/children';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
+const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
 function child(partial: ParentChildResponse): ParentChildResponse {
   return partial;
@@ -59,6 +60,7 @@ describe('ParentChildrenPage liens', () => {
     fixture.detectChanges();
     http.expectOne(childrenUrl).flush({ children: [lea, noah, camille], schools: [], curricula: [] });
     http.expectOne(spacesUrl).flush({ roles: ['parent'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Tony' });
     fixture.detectChanges();
   });
 

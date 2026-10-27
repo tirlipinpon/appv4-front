@@ -1,6 +1,6 @@
 <div class="banner">
   <mat-toolbar color="primary">
-    <span>appv4 · admin</span>
+    <span>{{ displayName() }}</span>
     @if (showSpaceActions()) {
       <app-role-switch />
     }

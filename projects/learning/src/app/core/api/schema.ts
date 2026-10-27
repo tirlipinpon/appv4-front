@@ -161,6 +161,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Réactiver une matière retirée de la classe */
+        post: operations["restoreTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects/deactivate-notices/{noticeId}/dismiss": {
         parameters: {
             query?: never;
@@ -710,6 +727,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Nom de la personne connectée */
+        get: operations["getConnectedAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/admin/teacher-requests": {
         parameters: {
             query?: never;
@@ -1107,6 +1141,10 @@ export interface components {
             authorizationUrl?: string;
             state?: string;
         };
+        ConnectedAccountResponse: {
+            /** @description Nom du compte connecté (parent, professeur ou admin) */
+            displayName?: string;
+        };
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
             truncated?: boolean;
@@ -1406,7 +1444,7 @@ export interface operations {
                     "*/*": components["schemas"]["TeacherSubjectItem"];
                 };
             };
-            /** @description Nom vide, trop long, déjà pris dans la classe, ou classe absente du profil */
+            /** @description Nom vide, trop long, déjà pris, matière retirée à réactiver, ou classe absente du profil */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1641,6 +1679,57 @@ export interface operations {
                 };
             };
             /** @description Demande introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    restoreTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Même matière, de nouveau dans la liste du professeur */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectItem"];
+                };
+            };
+            /** @description Nom invalide, classe absente, matière encore affichée, ou rien à réactiver */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Aucune matière retirée de ce nom dans cette classe */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2645,6 +2734,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthorizeUrlResponse"];
+                };
+            };
+        };
+    };
+    getConnectedAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nom à afficher dans l'en-tête */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectedAccountResponse"];
+                };
+            };
+            /** @description Compte introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
         };

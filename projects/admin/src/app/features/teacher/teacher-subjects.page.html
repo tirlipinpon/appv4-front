@@ -281,6 +281,17 @@
                 </div>
                 @if (gradeError(school.schoolId, grade.grade); as gradeMessage) {
                   <p class="field-error" role="alert">{{ gradeMessage }}</p>
+                  @if (canRestore(school.schoolId, grade.grade)) {
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      type="button"
+                      [disabled]="saving()"
+                      (click)="restore(school.schoolId, grade.grade)"
+                    >
+                      Réactiver
+                    </button>
+                  }
                 }
               </article>
             }
