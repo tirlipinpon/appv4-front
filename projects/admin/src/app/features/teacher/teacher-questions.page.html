@@ -1,0 +1,45 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content">
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Questions</mat-card-title>
+        <mat-card-subtitle>Les questions de tes matières</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (loading()) {
+          <p>Chargement…</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        @if (ready() && schools().length === 0) {
+          <p class="hint">Il n'y a pas encore de classe.</p>
+        }
+
+        @for (school of schools(); track school.schoolId) {
+          <section class="school">
+            <h2 class="school-name">{{ school.schoolName }}</h2>
+            @for (grade of school.grades; track grade.grade) {
+              <article class="grade">
+                <h3 class="grade-name">{{ grade.grade }}</h3>
+                @if (grade.subjects.length === 0) {
+                  <p class="hint">Aucune matière</p>
+                } @else {
+                  @for (subject of grade.subjects; track subject.id) {
+                    <section class="subject">
+                      <h4 class="subject-name">{{ subject.name }}</h4>
+                      <app-subject-questions [subjectId]="subject.id" />
+                    </section>
+                  }
+                }
+              </article>
+            }
+          </section>
+        }
+      </mat-card-content>
+    </mat-card>
+  </main>
+</div>

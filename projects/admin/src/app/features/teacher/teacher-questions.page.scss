@@ -1,0 +1,56 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f7fb;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem 3rem;
+}
+
+.card {
+  width: min(100%, 40rem);
+  height: fit-content;
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  color: #5f6368;
+}
+
+.error {
+  color: #b3261e;
+  margin: 0.35rem 0 0;
+}
+
+.school {
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem 1rem;
+  margin-top: 1rem;
+}
+
+.school-name {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.grade {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e6e8ee;
+}
+
+.grade-name,
+.subject-name {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.subject {
+  margin-top: 0.75rem;
+}
