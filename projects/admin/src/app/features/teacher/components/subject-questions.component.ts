@@ -24,20 +24,27 @@ interface SavedChoice {
   correct: boolean;
 }
 
+interface PairDraft {
+  questionSide: string;
+  answerSide: string;
+}
+
 interface SavedQuestion {
   id: number;
   prompt: string;
   formCode: string;
   formLabel: string;
   choices: SavedChoice[];
+  pairs: PairDraft[];
 }
 
-/** Seule forme dont le formulaire est écrit. Le libellé vient de l'API. */
+/** Formes dont le formulaire est écrit. Le libellé vient de l'API. */
 const QCM = 'qcm';
+const MEMORY = 'memory';
 
 /**
- * Préparer un choix multiple dans une matière (SCRUM-174).
- * La liste des formes est celle de l'API. Le formulaire s'ouvre pour le code qcm.
+ * Préparer un choix multiple ou un Memory dans une matière (SCRUM-174, SCRUM-175).
+ * La liste des formes est celle de l'API. L'élève ne joue pas ici.
  */
 @Component({
   selector: 'app-subject-questions',
@@ -59,6 +66,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly questions = signal<SavedQuestion[]>([]);
   readonly prompt = signal('');
   readonly choices = signal<ChoiceDraft[]>(emptyChoices());
+  readonly pairs = signal<PairDraft[]>(emptyPairs());
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
   readonly editingId = signal<number | null>(null);
 
@@ -85,6 +93,9 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   selectForm(code: string): void {
+    if (this.editingId() != null && code !== this.selectedCode()) {
+      this.cancelEdit();
+    }
     this.selectedCode.set(code);
     this.error.set(null);
   }
@@ -109,11 +120,28 @@ export class SubjectQuestionsComponent implements OnInit {
     this.choices.update((rows) => [...rows, { label: '', correct: false }]);
   }
 
+  setPairSide(index: number, side: 'questionSide' | 'answerSide', value: string): void {
+    this.pairs.update((rows) => rows.map((row, i) => (i === index ? { ...row, [side]: value } : row)));
+  }
+
+  addPair(): void {
+    this.pairs.update((rows) => [...rows, { questionSide: '', answerSide: '' }]);
+  }
+
   beginEdit(question: SavedQuestion): void {
     this.editingId.set(question.id);
     this.selectedCode.set(question.formCode);
     this.prompt.set(question.prompt);
-    this.choices.set(question.choices.map((choice) => ({ label: choice.label, correct: choice.correct })));
+    this.choices.set(
+      question.choices.length
+        ? question.choices.map((choice) => ({ label: choice.label, correct: choice.correct }))
+        : emptyChoices(),
+    );
+    this.pairs.set(
+      question.pairs.length
+        ? question.pairs.map((pair) => ({ questionSide: pair.questionSide, answerSide: pair.answerSide }))
+        : emptyPairs(),
+    );
     this.error.set(null);
   }
 
@@ -121,22 +149,33 @@ export class SubjectQuestionsComponent implements OnInit {
     this.editingId.set(null);
     this.prompt.set('');
     this.choices.set(emptyChoices());
+    this.pairs.set(emptyPairs());
     this.error.set(null);
   }
 
   save(): void {
     const code = this.selectedCode();
     const editingId = this.editingId();
-    if (code !== QCM || this.saving()) {
+    if ((code !== QCM && code !== MEMORY) || this.saving()) {
       return;
     }
     this.saving.set(true);
     this.error.set(null);
-    const body = {
-      formCode: code,
-      prompt: this.prompt(),
-      choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
-    };
+    const body =
+      code === MEMORY
+        ? {
+            formCode: code,
+            prompt: this.prompt(),
+            pairs: this.pairs().map((pair) => ({
+              questionSide: pair.questionSide,
+              answerSide: pair.answerSide,
+            })),
+          }
+        : {
+            formCode: code,
+            prompt: this.prompt(),
+            choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
+          };
     const request =
       editingId == null
         ? this.api.create(this.subjectId, body)
@@ -171,6 +210,13 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 }
 
+function emptyPairs(): PairDraft[] {
+  return [
+    { questionSide: '', answerSide: '' },
+    { questionSide: '', answerSide: '' },
+  ];
+}
+
 function emptyChoices(): ChoiceDraft[] {
   return [
     { label: '', correct: false },
@@ -185,11 +231,18 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     }
     return [{ label: choice.label, correct: !!choice.correct }];
   });
+  const pairs = (question.pairs ?? []).flatMap((pair) => {
+    if (!pair.questionSide || !pair.answerSide) {
+      return [];
+    }
+    return [{ questionSide: pair.questionSide, answerSide: pair.answerSide }];
+  });
   return {
     id: question.id ?? 0,
     prompt: question.prompt ?? '',
     formCode: question.formCode ?? '',
     formLabel: question.formLabel ?? '',
     choices,
+    pairs,
   };
 }

@@ -152,6 +152,56 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Tu modifies cette question.');
   });
 
+  it('posts a memory question with its pairs', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [
+        { code: 'qcm', label: 'Choix multiples', sortOrder: 1 },
+        { code: 'memory', label: 'Memory', sortOrder: 2 },
+      ],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    buttonNamed('Memory')?.click();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPairSide(0, 'questionSide', '2 + 2');
+    page.setPairSide(0, 'answerSide', '4');
+    page.setPairSide(1, 'questionSide', '3 + 3');
+    page.setPairSide(1, 'answerSide', '6');
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      formCode: 'memory',
+      prompt: '',
+      pairs: [
+        { questionSide: '2 + 2', answerSide: '4' },
+        { questionSide: '3 + 3', answerSide: '6' },
+      ],
+    });
+    req.flush({
+      id: 8,
+      formCode: 'memory',
+      formLabel: 'Memory',
+      prompt: '',
+      choices: [],
+      pairs: [
+        { id: 1, questionSide: '2 + 2', answerSide: '4' },
+        { id: 2, questionSide: '3 + 3', answerSide: '6' },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('2 + 2 — 4');
+    expect(fixture.nativeElement.textContent).toContain('3 + 3 — 6');
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),

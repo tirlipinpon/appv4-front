@@ -872,10 +872,15 @@ export interface components {
             formCode?: string;
             prompt?: string;
             choices?: components["schemas"]["TeacherQuestionChoiceInput"][];
+            pairs?: components["schemas"]["TeacherQuestionPairInput"][];
         };
         TeacherQuestionChoiceInput: {
             label?: string;
             correct?: boolean;
+        };
+        TeacherQuestionPairInput: {
+            questionSide?: string;
+            answerSide?: string;
         };
         AuthErrorBody: {
             message?: string;
@@ -886,6 +891,12 @@ export interface components {
             label?: string;
             correct?: boolean;
         };
+        TeacherQuestionPairItem: {
+            /** Format: int64 */
+            id?: number;
+            questionSide?: string;
+            answerSide?: string;
+        };
         TeacherSubjectQuestionItem: {
             /** Format: int64 */
             id?: number;
@@ -893,6 +904,7 @@ export interface components {
             formLabel?: string;
             prompt?: string;
             choices?: components["schemas"]["TeacherQuestionChoiceItem"][];
+            pairs?: components["schemas"]["TeacherQuestionPairItem"][];
         };
         RenameTeacherSubjectRequest: {
             name?: string;
