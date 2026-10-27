@@ -70,6 +70,7 @@ export class SpaceHeader implements OnInit {
           { label: 'Écoles', path: '/teacher/ecoles' },
           { label: 'Élèves', path: '/teacher/eleves' },
           { label: 'Matières', path: '/teacher/matieres' },
+          { label: 'Questions', path: '/teacher/questions' },
         ],
       };
     }

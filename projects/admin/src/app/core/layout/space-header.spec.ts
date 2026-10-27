@@ -108,6 +108,7 @@ describe('SpaceHeader', () => {
       'Écoles',
       'Élèves',
       'Matières',
+      'Questions',
     ]);
     expect(links[0].getAttribute('aria-current')).toBeNull();
     expect(links[1].getAttribute('aria-current')).toBe('page');

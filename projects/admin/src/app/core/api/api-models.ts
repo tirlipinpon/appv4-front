@@ -52,6 +52,16 @@ export type DeactivateTeacherSubjectRequest = components['schemas']['DeactivateT
 export type TransferTeacherSubjectRequest = components['schemas']['TransferTeacherSubjectRequest'];
 export type TeacherSubjectColleaguesResponse = components['schemas']['TeacherSubjectColleaguesResponse'];
 export type TeacherSubjectColleagueItem = components['schemas']['TeacherSubjectColleagueItem'];
+export type TeacherQuestionFormsResponse = Required<components['schemas']['TeacherQuestionFormsResponse']>;
+export type TeacherQuestionFormItem = Required<components['schemas']['TeacherQuestionFormItem']>;
+export type TeacherSubjectQuestionsResponse = Required<
+  components['schemas']['TeacherSubjectQuestionsResponse']
+>;
+export type TeacherSubjectQuestionItem = Required<components['schemas']['TeacherSubjectQuestionItem']>;
+export type TeacherQuestionChoiceItem = Required<components['schemas']['TeacherQuestionChoiceItem']>;
+export type CreateTeacherSubjectQuestionRequest =
+  components['schemas']['CreateTeacherSubjectQuestionRequest'];
+export type TeacherQuestionChoiceInput = components['schemas']['TeacherQuestionChoiceInput'];
 export type TeacherTransferInvitesResponse = components['schemas']['TeacherTransferInvitesResponse'];
 export type TeacherTransferInviteItem = components['schemas']['TeacherTransferInviteItem'];
 export type TeacherDeactivateNoticesResponse = components['schemas']['TeacherDeactivateNoticesResponse'];
