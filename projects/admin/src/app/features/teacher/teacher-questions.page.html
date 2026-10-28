@@ -31,7 +31,7 @@
                   @for (subject of grade.subjects; track subject.id) {
                     <section class="subject">
                       <h4 class="subject-name">{{ subject.name }}</h4>
-                      <app-subject-questions [subjectId]="subject.id" />
+                      <app-subject-questions [subjectId]="subject.id" [destinations]="destinations()" />
                     </section>
                   }
                 }

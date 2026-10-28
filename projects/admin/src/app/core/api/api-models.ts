@@ -61,6 +61,8 @@ export type TeacherSubjectQuestionItem = Required<components['schemas']['Teacher
 export type TeacherQuestionChoiceItem = Required<components['schemas']['TeacherQuestionChoiceItem']>;
 export type CreateTeacherSubjectQuestionRequest =
   components['schemas']['CreateTeacherSubjectQuestionRequest'];
+export type CloneTeacherSubjectQuestionsRequest =
+  components['schemas']['CloneTeacherSubjectQuestionsRequest'];
 export type TeacherQuestionChoiceInput = components['schemas']['TeacherQuestionChoiceInput'];
 export type TeacherTransferInvitesResponse = components['schemas']['TeacherTransferInvitesResponse'];
 export type TeacherTransferInviteItem = components['schemas']['TeacherTransferInviteItem'];

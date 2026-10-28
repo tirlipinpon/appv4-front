@@ -1,13 +1,21 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, Input, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 
 import type { components } from '../../../core/api/schema';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherQuestionsService } from '../data-access/teacher-questions.service';
+
+/** Matière proposée comme destination d'une copie. */
+export interface QuestionDestination {
+  id: number;
+  label: string;
+}
 
 interface FormChoice {
   code: string;
@@ -75,18 +83,28 @@ const HOLE = '___';
  * Préparer un choix multiple, un Memory, un Ordre ou un Vrai ou faux
  * (SCRUM-174, SCRUM-175, SCRUM-176, SCRUM-177).
  * La liste des formes est celle de l'API. L'élève ne joue pas ici.
+ * Il peut copier une ou plusieurs questions vers une de ses matières.
  */
 @Component({
   selector: 'app-subject-questions',
-  imports: [MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule],
+  imports: [MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   templateUrl: './subject-questions.component.html',
   styleUrl: './subject-questions.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SubjectQuestionsComponent implements OnInit {
   private readonly api = inject(TeacherQuestionsService);
+  private readonly destroyRef = inject(DestroyRef);
+  private loadSeq = 0;
 
   @Input({ required: true }) subjectId!: number;
+
+  readonly destinationChoices = signal<QuestionDestination[]>([]);
+
+  @Input()
+  set destinations(value: QuestionDestination[] | null) {
+    this.destinationChoices.set(value ?? []);
+  }
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -105,8 +123,16 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly decoys = signal<GapWordDraft[]>(emptyDecoys());
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
   readonly editingId = signal<number | null>(null);
+  readonly selectedIds = signal<number[]>([]);
+  readonly targetId = signal<number | null>(null);
+  readonly notice = signal<string | null>(null);
 
   ngOnInit(): void {
+    this.api.copiedToSubject$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((subjectId) => {
+      if (subjectId === this.subjectId) {
+        this.loadQuestions();
+      }
+    });
     this.api.forms().subscribe({
       next: (body) => {
         const forms = (body.forms ?? []).flatMap((form) => {
@@ -278,6 +304,56 @@ export class SubjectQuestionsComponent implements OnInit {
     this.error.set(null);
   }
 
+  toggleSelected(id: number, checked: boolean): void {
+    this.selectedIds.update((ids) => (checked ? [...ids, id] : ids.filter((current) => current !== id)));
+  }
+
+  isSelected(id: number): boolean {
+    return this.selectedIds().includes(id);
+  }
+
+  setTarget(value: number): void {
+    this.targetId.set(value);
+  }
+
+  destinationLabel(destination: QuestionDestination): string {
+    return destination.id === this.subjectId ? `${destination.label} (cette matière)` : destination.label;
+  }
+
+  copySelected(): void {
+    const target = this.targetId();
+    if (target == null || this.saving()) {
+      return;
+    }
+    const selected = new Set(this.selectedIds());
+    const questionIds = this.questions()
+      .filter((question) => selected.has(question.id))
+      .map((question) => question.id);
+    if (questionIds.length === 0) {
+      return;
+    }
+    this.saving.set(true);
+    this.error.set(null);
+    this.notice.set(null);
+    this.api.clone(this.subjectId, { targetSubjectId: target, questionIds }).subscribe({
+      next: (body) => {
+        this.saving.set(false);
+        this.selectedIds.set([]);
+        const copies = (body.questions ?? []).map((question) => toSaved(question));
+        if (target === this.subjectId) {
+          this.questions.update((rows) => [...rows, ...copies]);
+        } else {
+          this.api.noteCopied(target);
+        }
+        this.notice.set(copies.length > 1 ? 'Questions copiées.' : 'Question copiée.');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.error.set(httpErrorMessage(err, 'Copie impossible.'));
+      },
+    });
+  }
+
   cancelEdit(): void {
     this.editingId.set(null);
     this.prompt.set('');
@@ -371,12 +447,19 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   private loadQuestions(): void {
+    const seq = ++this.loadSeq;
     this.api.list(this.subjectId).subscribe({
       next: (body) => {
+        if (seq !== this.loadSeq) {
+          return;
+        }
         this.questions.set((body.questions ?? []).map((question) => toSaved(question)));
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
+        if (seq !== this.loadSeq) {
+          return;
+        }
         this.loading.set(false);
         this.error.set(httpErrorMessage(err, 'Questions indisponibles.'));
       },

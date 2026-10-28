@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import type {
+  CloneTeacherSubjectQuestionsRequest,
   CreateTeacherSubjectQuestionRequest,
   TeacherQuestionFormsResponse,
   TeacherSubjectQuestionItem,
@@ -17,6 +18,14 @@ import { environment } from '../../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class TeacherQuestionsService {
   private readonly http = inject(HttpClient);
+  private readonly copiedSubject = new Subject<number>();
+
+  /** La matière qui vient de recevoir des copies, pour recharger sa liste. */
+  readonly copiedToSubject$ = this.copiedSubject.asObservable();
+
+  noteCopied(subjectId: number): void {
+    this.copiedSubject.next(subjectId);
+  }
 
   forms(): Observable<TeacherQuestionFormsResponse> {
     return this.http.get<TeacherQuestionFormsResponse>(`${environment.apiBaseUrl}/teacher/question-forms`);
@@ -42,6 +51,16 @@ export class TeacherQuestionsService {
   ): Observable<TeacherSubjectQuestionItem> {
     return this.http.put<TeacherSubjectQuestionItem>(
       `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/${questionId}`,
+      body,
+    );
+  }
+
+  clone(
+    subjectId: number,
+    body: CloneTeacherSubjectQuestionsRequest,
+  ): Observable<TeacherSubjectQuestionsResponse> {
+    return this.http.post<TeacherSubjectQuestionsResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/clone`,
       body,
     );
   }

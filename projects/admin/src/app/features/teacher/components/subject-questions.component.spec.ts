@@ -498,6 +498,122 @@ describe('SubjectQuestionsComponent', () => {
     );
   }
 
+  it('copies the selected questions onto another subject', () => {
+    fixture.componentInstance.destinations = [
+      { id: 4, label: 'École — CE1 — Maths' },
+      { id: 9, label: 'École — CE2 — Histoire' },
+    ];
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+        {
+          id: 8,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '3 + 3',
+          choices: [{ id: 2, label: '6', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(buttonNamed('Copier')?.disabled).toBe(true);
+    expect(fixture.componentInstance.destinationLabel({ id: 9, label: 'École — CE2 — Histoire' })).toBe(
+      'École — CE2 — Histoire',
+    );
+
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.componentInstance.toggleSelected(8, true);
+    fixture.componentInstance.setTarget(9);
+    fixture.detectChanges();
+    expect(buttonNamed('Copier')?.disabled).toBe(false);
+
+    buttonNamed('Copier')?.click();
+
+    const req = http.expectOne(`${questionsUrl}/clone`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ targetSubjectId: 9, questionIds: [7, 8] });
+    req.flush({
+      questions: [
+        {
+          id: 21,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: 'copie seule',
+          choices: [{ id: 3, label: '4', correct: true }],
+        },
+        {
+          id: 22,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: 'autre copie',
+          choices: [{ id: 4, label: '6', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Questions copiées.');
+    expect(fixture.nativeElement.textContent).not.toContain('copie seule');
+    expect(fixture.nativeElement.textContent).toContain('2 + 2');
+  });
+
+  it('appends a copy kept on the same subject', () => {
+    fixture.componentInstance.destinations = [{ id: 4, label: 'École — CE1 — Maths' }];
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.destinationLabel({ id: 4, label: 'École — CE1 — Maths' })).toBe(
+      'École — CE1 — Maths (cette matière)',
+    );
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.componentInstance.setTarget(4);
+    fixture.detectChanges();
+    buttonNamed('Copier')?.click();
+
+    const req = http.expectOne(`${questionsUrl}/clone`);
+    expect(req.request.body).toEqual({ targetSubjectId: 4, questionIds: [7] });
+    req.flush({
+      questions: [
+        {
+          id: 21,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 3, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Question copiée.');
+    expect(fixture.nativeElement.textContent.match(/2 \+ 2/g)?.length).toBe(2);
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),
