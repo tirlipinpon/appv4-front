@@ -251,6 +251,62 @@ describe('SubjectQuestionsComponent', () => {
     expect(labels).toEqual(['Lundi', 'Mardi']);
   });
 
+  it('posts true or false phrases and shows each side', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'vrai_faux', label: 'Vrai ou faux', sortOrder: 4 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    buttonNamed('Vrai ou faux')?.click();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Dis si chaque phrase est vraie.');
+    page.setStatementLabel(0, '2 + 2 = 4');
+    page.setStatementSide(0, true);
+    page.setStatementLabel(1, '3 + 3 = 5');
+    page.setStatementSide(1, false);
+    fixture.detectChanges();
+
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes('Enregistrer'),
+    );
+    save[save.length - 1]?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      formCode: 'vrai_faux',
+      prompt: 'Dis si chaque phrase est vraie.',
+      statements: [
+        { label: '2 + 2 = 4', truthful: true },
+        { label: '3 + 3 = 5', truthful: false },
+      ],
+    });
+    req.flush({
+      id: 10,
+      formCode: 'vrai_faux',
+      formLabel: 'Vrai ou faux',
+      prompt: 'Dis si chaque phrase est vraie.',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [
+        { id: 1, label: '2 + 2 = 4', truthful: true },
+        { id: 2, label: '3 + 3 = 5', truthful: false },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Dis si chaque phrase est vraie.');
+    expect(fixture.nativeElement.textContent).toContain('2 + 2 = 4');
+    expect(fixture.nativeElement.textContent).toContain('Vrai');
+    expect(fixture.nativeElement.textContent).toContain('3 + 3 = 5');
+    expect(fixture.nativeElement.textContent).toContain('Faux');
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),

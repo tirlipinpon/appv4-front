@@ -29,6 +29,15 @@
                   <li>{{ item.label }}</li>
                 }
               </ol>
+            } @else if (question.formCode === 'vrai_faux') {
+              <ul class="answers">
+                @for (statement of question.statements; track $index) {
+                  <li>
+                    {{ statement.label }}
+                    <span class="mark">{{ statement.truthful ? 'Vrai' : 'Faux' }}</span>
+                  </li>
+                }
+              </ul>
             } @else {
               <ul class="answers">
                 @for (choice of question.choices; track $index) {
@@ -184,6 +193,61 @@
             </mat-form-field>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addItem()">Ajouter un élément</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'vrai_faux') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          @for (statement of statements(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Phrase</mat-label>
+                <input
+                  matInput
+                  [value]="statement.label"
+                  [disabled]="saving()"
+                  (input)="setStatementLabel($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <button
+                mat-button
+                type="button"
+                [disabled]="saving()"
+                [class.selected]="statement.truthful === true"
+                (click)="setStatementSide($index, true)"
+              >
+                Vrai
+              </button>
+              <button
+                mat-button
+                type="button"
+                [disabled]="saving()"
+                [class.selected]="statement.truthful === false"
+                (click)="setStatementSide($index, false)"
+              >
+                Faux
+              </button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addStatement()">Ajouter une phrase</button>
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
