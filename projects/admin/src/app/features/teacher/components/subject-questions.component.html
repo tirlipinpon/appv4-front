@@ -23,6 +23,12 @@
                   <li>{{ pair.questionSide }} — {{ pair.answerSide }}</li>
                 }
               </ul>
+            } @else if (question.formCode === 'order') {
+              <ol class="answers ordered">
+                @for (item of question.items; track $index) {
+                  <li>{{ item.label }}</li>
+                }
+              </ol>
             } @else {
               <ul class="answers">
                 @for (choice of question.choices; track $index) {
@@ -143,6 +149,41 @@
             </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addPair()">Ajouter une paire</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'order') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          @for (item of items(); track $index) {
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Élément</mat-label>
+              <input
+                matInput
+                [value]="item.label"
+                [disabled]="saving()"
+                (input)="setItemLabel($index, inputValue($event))"
+              />
+            </mat-form-field>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addItem()">Ajouter un élément</button>
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }

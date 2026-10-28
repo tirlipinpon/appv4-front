@@ -12,7 +12,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Corriger un choix multiple déjà enregistré */
+        /** Corriger une question déjà enregistrée */
         put: operations["updateTeacherSubjectQuestion"];
         post?: never;
         delete?: never;
@@ -103,7 +103,7 @@ export interface paths {
         /** Lister les questions d'une matière */
         get: operations["listTeacherSubjectQuestions"];
         put?: never;
-        /** Ajouter un choix multiple à une matière */
+        /** Ajouter une question à une matière */
         post: operations["createTeacherSubjectQuestion"];
         delete?: never;
         options?: never;
@@ -873,10 +873,14 @@ export interface components {
             prompt?: string;
             choices?: components["schemas"]["TeacherQuestionChoiceInput"][];
             pairs?: components["schemas"]["TeacherQuestionPairInput"][];
+            items?: components["schemas"]["TeacherQuestionItemInput"][];
         };
         TeacherQuestionChoiceInput: {
             label?: string;
             correct?: boolean;
+        };
+        TeacherQuestionItemInput: {
+            label?: string;
         };
         TeacherQuestionPairInput: {
             questionSide?: string;
@@ -890,6 +894,11 @@ export interface components {
             id?: number;
             label?: string;
             correct?: boolean;
+        };
+        TeacherQuestionItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
         };
         TeacherQuestionPairItem: {
             /** Format: int64 */
@@ -905,6 +914,7 @@ export interface components {
             prompt?: string;
             choices?: components["schemas"]["TeacherQuestionChoiceItem"][];
             pairs?: components["schemas"]["TeacherQuestionPairItem"][];
+            items?: components["schemas"]["TeacherQuestionItem"][];
         };
         RenameTeacherSubjectRequest: {
             name?: string;
@@ -1299,7 +1309,7 @@ export interface operations {
                     "*/*": components["schemas"]["TeacherSubjectQuestionItem"];
                 };
             };
-            /** @description Forme inconnue ou différente, énoncé vide, moins de deux propositions, ou aucune bonne réponse */
+            /** @description Forme inconnue ou différente, énoncé invalide, ou contenu insuffisant pour cette forme */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1698,7 +1708,7 @@ export interface operations {
                     "*/*": components["schemas"]["TeacherSubjectQuestionItem"];
                 };
             };
-            /** @description Forme inconnue, énoncé vide, moins de deux propositions, ou aucune bonne réponse */
+            /** @description Forme inconnue, énoncé invalide, ou contenu insuffisant pour cette forme */
             400: {
                 headers: {
                     [name: string]: unknown;

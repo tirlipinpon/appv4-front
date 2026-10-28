@@ -202,6 +202,55 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('3 + 3 — 6');
   });
 
+  it('posts an ordered list and shows the items in that order', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [
+        { code: 'qcm', label: 'Choix multiples', sortOrder: 1 },
+        { code: 'memory', label: 'Memory', sortOrder: 2 },
+        { code: 'order', label: 'Ordre', sortOrder: 3 },
+      ],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    buttonNamed('Ordre')?.click();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setItemLabel(0, 'Lundi');
+    page.setItemLabel(1, 'Mardi');
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      formCode: 'order',
+      prompt: '',
+      items: [{ label: 'Lundi' }, { label: 'Mardi' }],
+    });
+    req.flush({
+      id: 9,
+      formCode: 'order',
+      formLabel: 'Ordre',
+      prompt: '',
+      choices: [],
+      pairs: [],
+      items: [
+        { id: 1, label: 'Lundi' },
+        { id: 2, label: 'Mardi' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const labels = Array.from(fixture.nativeElement.querySelectorAll('ol.ordered li') as NodeListOf<HTMLElement>).map(
+      (item) => item.textContent?.trim(),
+    );
+    expect(labels).toEqual(['Lundi', 'Mardi']);
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),
