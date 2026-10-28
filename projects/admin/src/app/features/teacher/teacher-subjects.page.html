@@ -133,7 +133,7 @@
                           <button
                             mat-flat-button
                             type="button"
-                            [disabled]="saving() || followers() == null"
+                            [disabled]="saving() || followers() === null"
                             (click)="confirmDisable(subject.id)"
                           >
                             Confirmer la désactivation
@@ -172,7 +172,7 @@
                             mat-flat-button
                             color="warn"
                             type="button"
-                            [disabled]="saving() || followers() == null"
+                            [disabled]="saving() || followers() === null"
                             (click)="confirmRemove(subject.id)"
                           >
                             Confirmer le retrait
