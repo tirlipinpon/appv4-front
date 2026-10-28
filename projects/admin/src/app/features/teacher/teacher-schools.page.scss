@@ -52,3 +52,29 @@
   gap: 0.35rem;
   margin-top: 0.75rem;
 }
+
+.impact {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #f0c36d;
+  border-radius: 8px;
+  background: #fff8eb;
+}
+
+.impact-school,
+.impact-grade,
+.count {
+  margin: 0 0 0.35rem;
+}
+
+.names,
+.subjects {
+  margin: 0 0 0.5rem;
+  padding-left: 1.2rem;
+}
+
+.impact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

@@ -3,13 +3,14 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatCheckboxChange, MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 
 import type {
   TeacherAvailableSchool,
   TeacherProfileResponse,
+  TeacherRemovalPreviewResponse,
   UpdateTeacherProfileRequest,
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
@@ -21,7 +22,26 @@ interface SchoolBlock {
   country: string | null;
   schoolId: number | null;
   grades: string[];
+  savedSchoolId: number | null;
+  savedGrades: string[];
 }
+
+interface RemovalImpact {
+  blockKey: number;
+  kind: 'grade' | 'school';
+  grade: string | null;
+  confirmed: boolean;
+  loading: boolean;
+  error: string | null;
+  view: TeacherRemovalPreviewResponse | null;
+  pending: PendingRemoval;
+}
+
+type PendingRemoval =
+  | { type: 'uncheck-grade'; grade: string }
+  | { type: 'remove-school' }
+  | { type: 'replace-school'; schoolId: number }
+  | { type: 'replace-country'; country: string };
 
 const SCHOOL_REQUIRED = 'Choisis une école dans la liste, ou retire-la.';
 const SCHOOL_UNKNOWN = "Cette école n'est pas proposable.";
@@ -66,6 +86,9 @@ export class TeacherSchoolsPage implements OnInit {
   readonly error = signal<string | null>(null);
   readonly blockErrors = signal<Readonly<Record<number, string>>>({});
   readonly pendingNotice = signal<string | null>(null);
+  readonly impacts = signal<RemovalImpact[]>([]);
+
+  readonly awaitingChoice = computed(() => this.impacts().some((item) => !item.confirmed));
 
   readonly catalogEmpty = computed(
     () => this.availableSchools().length === 0 && this.blocks().length === 0,
@@ -108,35 +131,138 @@ export class TeacherSchoolsPage implements OnInit {
     this.markDirty();
     this.blocks.update((list) => [
       ...list,
-      { key: this.nextKey++, country: null, schoolId: null, grades: [] },
+      {
+        key: this.nextKey++,
+        country: null,
+        schoolId: null,
+        grades: [],
+        savedSchoolId: null,
+        savedGrades: [],
+      },
     ]);
   }
 
   removeSchool(key: number): void {
+    const block = this.block(key);
+    if (!block || this.blocked(key)) {
+      return;
+    }
+    if (this.onSavedSchool(block)) {
+      this.openImpact(block, 'school', null, { type: 'remove-school' });
+      return;
+    }
     this.markDirty();
     this.clearBlockError(key);
-    this.blocks.update((list) => list.filter((block) => block.key !== key));
+    this.blocks.update((list) => list.filter((item) => item.key !== key));
+    this.dropImpacts(key);
   }
 
-  onCountry(key: number, country: string): void {
-    this.markDirty();
-    this.clearBlockError(key);
-    this.patch(key, { country, schoolId: null, grades: [] });
+  onCountryChange(key: number, event: MatSelectChange): void {
+    const country = String(event.value ?? '');
+    const block = this.block(key);
+    if (!block || country === block.country) {
+      return;
+    }
+    if (this.blocked(key) || this.onSavedSchool(block)) {
+      if (!this.blocked(key) && this.onSavedSchool(block)) {
+        this.openImpact(block, 'school', null, { type: 'replace-country', country });
+      }
+      event.source.value = block.country;
+      return;
+    }
+    this.applyCountry(key, country);
   }
 
-  onSchool(key: number, schoolId: number): void {
-    this.markDirty();
-    this.clearBlockError(key);
-    this.patch(key, { schoolId, grades: [] });
+  onSchoolChange(key: number, event: MatSelectChange): void {
+    const schoolId = Number(event.value);
+    const block = this.block(key);
+    if (!block || schoolId === block.schoolId) {
+      return;
+    }
+    if (this.blocked(key) || this.onSavedSchool(block)) {
+      if (!this.blocked(key) && this.onSavedSchool(block)) {
+        this.openImpact(block, 'school', null, { type: 'replace-school', schoolId });
+      }
+      event.source.value = block.schoolId;
+      return;
+    }
+    this.applySchool(key, schoolId);
   }
 
-  toggleGrade(key: number, grade: string, checked: boolean): void {
-    this.markDirty();
-    this.clearBlockError(key);
-    const block = this.blocks().find((item) => item.key === key);
+  onGradeChange(key: number, grade: string, event: MatCheckboxChange): void {
+    if (!event.checked && this.holdGrade(key, grade)) {
+      event.source.checked = true;
+      return;
+    }
+    this.toggleGrade(key, grade, event.checked);
+  }
+
+  keep(impact: RemovalImpact): void {
+    if (impact.confirmed) {
+      return;
+    }
+    this.impacts.update((list) => list.filter((item) => !this.sameImpact(item, impact)));
+  }
+
+  confirmRemoval(impact: RemovalImpact): void {
+    if (!impact.view || impact.confirmed || impact.loading) {
+      return;
+    }
+    const block = this.block(impact.blockKey);
     if (!block) {
       return;
     }
+    this.markDirty();
+    const pending = impact.pending;
+    if (pending.type === 'uncheck-grade') {
+      this.patch(block.key, {
+        grades: block.grades.filter((grade) => grade !== pending.grade),
+      });
+      this.impacts.update((list) =>
+        list.map((item) => (this.sameImpact(item, impact) ? { ...item, confirmed: true } : item)),
+      );
+      return;
+    }
+    if (pending.type === 'remove-school') {
+      this.clearBlockError(block.key);
+      this.blocks.update((list) => list.filter((item) => item.key !== block.key));
+      this.dropImpacts(block.key);
+      return;
+    }
+    if (pending.type === 'replace-school') {
+      this.applySchool(block.key, pending.schoolId);
+      this.dropImpacts(block.key);
+      return;
+    }
+    this.applyCountry(block.key, pending.country);
+    this.dropImpacts(block.key);
+  }
+
+  impactsFor(key: number): RemovalImpact[] {
+    return this.impacts().filter((item) => item.blockKey === key);
+  }
+
+  blocked(key: number): boolean {
+    return this.impacts().some((item) => item.blockKey === key && !item.confirmed);
+  }
+
+  toggleGrade(key: number, grade: string, checked: boolean): void {
+    const block = this.block(key);
+    if (!block) {
+      return;
+    }
+    if (checked) {
+      if (block.grades.includes(grade)) {
+        return;
+      }
+      this.impacts.update((list) =>
+        list.filter((item) => !(item.blockKey === key && item.kind === 'grade' && item.grade === grade)),
+      );
+    } else if (!block.grades.includes(grade)) {
+      return;
+    }
+    this.markDirty();
+    this.clearBlockError(key);
     const grades = checked ? [...block.grades, grade] : block.grades.filter((item) => item !== grade);
     this.patch(key, { grades });
   }
@@ -170,7 +296,7 @@ export class TeacherSchoolsPage implements OnInit {
   }
 
   save(): void {
-    if (!this.ready() || this.saving()) {
+    if (!this.ready() || this.saving() || this.awaitingChoice()) {
       return;
     }
     if (!this.validate()) {
@@ -273,12 +399,15 @@ export class TeacherSchoolsPage implements OnInit {
   private apply(profile: TeacherProfileResponse): void {
     this.displayName.set(profile.displayName ?? '');
     this.availableSchools.set(profile.availableSchools ?? []);
+    this.impacts.set([]);
     this.blocks.set(
       (profile.schools ?? []).map((school) => ({
         key: this.nextKey++,
         country: school.country ?? null,
         schoolId: school.schoolId ?? null,
         grades: [...(school.grades ?? [])],
+        savedSchoolId: school.schoolId ?? null,
+        savedGrades: [...(school.grades ?? [])],
       })),
     );
   }
@@ -291,5 +420,96 @@ export class TeacherSchoolsPage implements OnInit {
 
   private message(err: HttpErrorResponse, fallback: string): string {
     return httpErrorMessage(err, fallback);
+  }
+
+  private block(key: number): SchoolBlock | undefined {
+    return this.blocks().find((item) => item.key === key);
+  }
+
+  private onSavedSchool(block: SchoolBlock): boolean {
+    return block.savedSchoolId != null && block.schoolId === block.savedSchoolId;
+  }
+
+  private holdGrade(key: number, grade: string): boolean {
+    const block = this.block(key);
+    if (!block || this.blocked(key)) {
+      return this.blocked(key);
+    }
+    const saved =
+      this.onSavedSchool(block) && block.savedGrades.includes(grade) && block.grades.includes(grade);
+    if (!saved) {
+      return false;
+    }
+    if (this.impacts().some((item) => item.blockKey === key && item.kind === 'grade' && item.grade === grade)) {
+      return true;
+    }
+    this.openImpact(block, 'grade', grade, { type: 'uncheck-grade', grade });
+    return true;
+  }
+
+  private openImpact(
+    block: SchoolBlock,
+    kind: RemovalImpact['kind'],
+    grade: string | null,
+    pending: PendingRemoval,
+  ): void {
+    if (block.savedSchoolId == null || this.blocked(block.key)) {
+      return;
+    }
+    const schoolId = block.savedSchoolId;
+    const impact: RemovalImpact = {
+      blockKey: block.key,
+      kind,
+      grade,
+      confirmed: false,
+      loading: true,
+      error: null,
+      view: null,
+      pending,
+    };
+    this.impacts.update((list) => [...list, impact]);
+    this.api.preview(schoolId, grade ?? undefined).subscribe({
+      next: (view) => this.fillImpact(block.key, kind, grade, { loading: false, view, error: null }),
+      error: (err: HttpErrorResponse) =>
+        this.fillImpact(block.key, kind, grade, {
+          loading: false,
+          error: this.message(err, 'Aperçu indisponible.'),
+        }),
+    });
+  }
+
+  private fillImpact(
+    blockKey: number,
+    kind: RemovalImpact['kind'],
+    grade: string | null,
+    patch: Partial<RemovalImpact>,
+  ): void {
+    this.impacts.update((list) =>
+      list.map((item) =>
+        item.blockKey === blockKey && item.kind === kind && item.grade === grade && !item.confirmed
+          ? { ...item, ...patch }
+          : item,
+      ),
+    );
+  }
+
+  private dropImpacts(key: number): void {
+    this.impacts.update((list) => list.filter((item) => item.blockKey !== key));
+  }
+
+  private sameImpact(item: RemovalImpact, impact: RemovalImpact): boolean {
+    return item.blockKey === impact.blockKey && item.kind === impact.kind && item.grade === impact.grade;
+  }
+
+  private applyCountry(key: number, country: string): void {
+    this.markDirty();
+    this.clearBlockError(key);
+    this.patch(key, { country, schoolId: null, grades: [] });
+  }
+
+  private applySchool(key: number, schoolId: number): void {
+    this.markDirty();
+    this.clearBlockError(key);
+    this.patch(key, { schoolId, grades: [] });
   }
 }

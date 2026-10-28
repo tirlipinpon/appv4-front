@@ -711,6 +711,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/profile/removal-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voir les élèves et les matières avant de retirer une année ou une école */
+        get: operations["getTeacherRemovalPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/hello": {
         parameters: {
             query?: never;
@@ -1351,6 +1368,39 @@ export interface components {
         };
         TeacherQuestionFormsResponse: {
             forms?: components["schemas"]["TeacherQuestionFormItem"][];
+        };
+        TeacherRemovalPreviewResponse: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            /** Format: int32 */
+            studentCount?: number;
+            studentCountLabel?: string;
+            emptyStudentsLabel?: string;
+            students?: components["schemas"]["TeacherRemovalStudent"][];
+            /** Format: int32 */
+            subjectCount?: number;
+            subjectCountLabel?: string;
+            emptySubjectsLabel?: string;
+            subjects?: components["schemas"]["TeacherRemovalSubject"][];
+        };
+        TeacherRemovalStudent: {
+            /** Format: int64 */
+            id?: number;
+            firstName?: string;
+            lastName?: string;
+            grade?: string;
+        };
+        TeacherRemovalSubject: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            grade?: string;
+            /** Format: int32 */
+            followerCount?: number;
+            followerWarning?: string;
+            followerNames?: string[];
         };
         HelloMessageResponse: {
             text?: string;
@@ -3130,6 +3180,47 @@ export interface operations {
             };
             /** @description Le jeton n'est pas dans l'espace professeur */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getTeacherRemovalPreview: {
+        parameters: {
+            query: {
+                schoolId: number;
+                grade?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Élèves de la classe, matières et suiveurs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherRemovalPreviewResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description École absente du profil, ou année non cochée */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
