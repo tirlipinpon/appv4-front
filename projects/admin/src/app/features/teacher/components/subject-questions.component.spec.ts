@@ -420,6 +420,84 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('voiture');
   });
 
+  it('removes an extra row and the hole that matches it', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [
+        { code: 'qcm', label: 'Choix multiples', sortOrder: 1 },
+        { code: 'memory', label: 'Memory', sortOrder: 2 },
+        { code: 'order', label: 'Ordre', sortOrder: 3 },
+        { code: 'vrai_faux', label: 'Vrai ou faux', sortOrder: 4 },
+        { code: 'liens', label: 'Liens', sortOrder: 5 },
+        { code: 'case_vide', label: 'Case vide', sortOrder: 6 },
+      ],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    buttonNamed('Choix multiples')?.click();
+    fixture.detectChanges();
+    page.addChoice();
+    fixture.detectChanges();
+    buttonsNamed('Enlever')[2]?.click();
+    fixture.detectChanges();
+    expect(page.choices().length).toBe(2);
+
+    buttonNamed('Memory')?.click();
+    fixture.detectChanges();
+    page.addPair();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.pairs().length).toBe(2);
+
+    buttonNamed('Ordre')?.click();
+    fixture.detectChanges();
+    page.addItem();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.items().length).toBe(2);
+
+    buttonNamed('Vrai ou faux')?.click();
+    fixture.detectChanges();
+    page.addStatement();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.statements().length).toBe(2);
+
+    buttonNamed('Liens')?.click();
+    fixture.detectChanges();
+    page.addLink();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.links().length).toBe(2);
+
+    buttonNamed('Case vide')?.click();
+    fixture.detectChanges();
+    page.setSentence('Le ___ mange une ___.');
+    page.setAnswer(0, 'chat');
+    page.setAnswer(1, 'pomme');
+    page.setDecoy(0, 'poire');
+    page.addDecoy();
+    page.setDecoy(1, 'voiture');
+    fixture.detectChanges();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    buttonsNamed('Enlever').at(-1)?.click();
+    fixture.detectChanges();
+
+    expect(page.sentence()).toBe('Le mange une ___.');
+    expect(page.answers()).toEqual([{ label: 'pomme' }]);
+    expect(page.decoys()).toEqual([{ label: 'poire' }]);
+    expect(fixture.nativeElement.textContent).toContain('Énoncé');
+  });
+
+  function buttonsNamed(label: string): HTMLButtonElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes(label),
+    );
+  }
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),

@@ -156,6 +156,10 @@ export class SubjectQuestionsComponent implements OnInit {
     this.choices.update((rows) => [...rows, { label: '', correct: false }]);
   }
 
+  removeChoice(index: number): void {
+    this.choices.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
   setPairSide(index: number, side: 'questionSide' | 'answerSide', value: string): void {
     this.pairs.update((rows) => rows.map((row, i) => (i === index ? { ...row, [side]: value } : row)));
   }
@@ -164,12 +168,20 @@ export class SubjectQuestionsComponent implements OnInit {
     this.pairs.update((rows) => [...rows, { questionSide: '', answerSide: '' }]);
   }
 
+  removePair(index: number): void {
+    this.pairs.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
   setItemLabel(index: number, value: string): void {
     this.items.update((rows) => rows.map((row, i) => (i === index ? { label: value } : row)));
   }
 
   addItem(): void {
     this.items.update((rows) => [...rows, { label: '' }]);
+  }
+
+  removeItem(index: number): void {
+    this.items.update((rows) => rows.filter((_, i) => i !== index));
   }
 
   setStatementLabel(index: number, value: string): void {
@@ -186,12 +198,20 @@ export class SubjectQuestionsComponent implements OnInit {
     this.statements.update((rows) => [...rows, { label: '', truthful: null }]);
   }
 
+  removeStatement(index: number): void {
+    this.statements.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
   setLinkSide(index: number, side: 'leftLabel' | 'rightLabel', value: string): void {
     this.links.update((rows) => rows.map((row, i) => (i === index ? { ...row, [side]: value } : row)));
   }
 
   addLink(): void {
     this.links.update((rows) => [...rows, { leftLabel: '', rightLabel: '' }]);
+  }
+
+  removeLink(index: number): void {
+    this.links.update((rows) => rows.filter((_, i) => i !== index));
   }
 
   setSentence(value: string): void {
@@ -210,12 +230,21 @@ export class SubjectQuestionsComponent implements OnInit {
     this.answers.update((rows) => rows.map((row, i) => (i === index ? { label: value } : row)));
   }
 
+  removeAnswer(index: number): void {
+    this.sentence.set(withoutHole(this.sentence(), index));
+    this.answers.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
   setDecoy(index: number, value: string): void {
     this.decoys.update((rows) => rows.map((row, i) => (i === index ? { label: value } : row)));
   }
 
   addDecoy(): void {
     this.decoys.update((rows) => [...rows, { label: '' }]);
+  }
+
+  removeDecoy(index: number): void {
+    this.decoys.update((rows) => rows.filter((_, i) => i !== index));
   }
 
   beginEdit(question: SavedQuestion): void {
@@ -353,6 +382,30 @@ export class SubjectQuestionsComponent implements OnInit {
       },
     });
   }
+}
+
+function withoutHole(sentence: string, index: number): string {
+  let count = 0;
+  let from = 0;
+  while (from <= sentence.length - HOLE.length) {
+    const at = sentence.indexOf(HOLE, from);
+    if (at < 0) {
+      break;
+    }
+    if (count === index) {
+      let start = at;
+      let end = at + HOLE.length;
+      if (start > 0 && sentence.charAt(start - 1) === ' ') {
+        start -= 1;
+      } else if (end < sentence.length && sentence.charAt(end) === ' ') {
+        end += 1;
+      }
+      return sentence.slice(0, start) + sentence.slice(end);
+    }
+    count += 1;
+    from = at + HOLE.length;
+  }
+  return sentence;
 }
 
 function holeCount(sentence: string): number {
