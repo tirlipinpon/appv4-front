@@ -155,4 +155,45 @@ describe('TeacherQuestionsPage', () => {
     expect(text).toContain('Quelle date ?');
     expect(text).not.toContain('Combien font 2 + 2 ?');
   });
+
+  it('ne propose pas une matière suivie seulement par un collègue', () => {
+    fixture.detectChanges();
+    http.expectOne(subjectsUrl).flush({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE2',
+              subjects: [
+                { id: 3, name: 'Mathématiques', active: true, ownedByMe: true, followedByMe: true, sharedWith: [] },
+                {
+                  id: 9,
+                  name: 'Histoire',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: false,
+                  sharedWith: [{ userId: 10, displayName: 'Camille' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Mathématiques');
+    expect(text).not.toContain('Histoire');
+    expect(text).not.toContain('Camille');
+  });
 });
