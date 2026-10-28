@@ -82,7 +82,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lister les matières du professeur connecté */
+        /** Lister les matières de ses classes, y compris celles déjà suivies par un collègue */
         get: operations["listTeacherSubjects"];
         put?: never;
         /** Créer une matière dans une classe du professeur */
@@ -1014,6 +1014,8 @@ export interface components {
             name?: string;
             active?: boolean;
             ownedByMe?: boolean;
+            /** @description Faux si la matière est déjà dans la classe mais que ce professeur ne la suit pas. sharedWith nomme alors les professeurs qui la suivent. */
+            followedByMe?: boolean;
             sharedWith?: components["schemas"]["TeacherSubjectSharedHolder"][];
         };
         TeacherSubjectSharedHolder: {
@@ -1688,7 +1690,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Écoles du profil, années cochées, matières triées par nom */
+            /** @description Écoles du profil, années cochées, matières triées par nom. followedByMe faux : visible, mais ce professeur ne la suit pas */
             200: {
                 headers: {
                     [name: string]: unknown;

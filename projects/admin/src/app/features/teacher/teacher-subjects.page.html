@@ -244,6 +244,27 @@
                               </button>
                             </div>
                           }
+                        } @else if (!subject.followedByMe) {
+                          <span class="name">{{ subject.name }}</span>
+                          @if (sharedLabel(subject); as shared) {
+                            <p class="hint shared">{{ shared }}</p>
+                          }
+                          @if (!subject.ownedByMe && !shareAskedFor(subject.id)) {
+                            <button
+                              mat-flat-button
+                              color="primary"
+                              type="button"
+                              [disabled]="saving()"
+                              (click)="requestShareOf(school.schoolId, grade.grade, subject)"
+                            >
+                              Demander le partage
+                            </button>
+                          }
+                          @if (shareAskedFor(subject.id)) {
+                            <p class="hint" role="status">
+                              Demande envoyée. Le professeur qui a créé la matière peut accepter de la partager.
+                            </p>
+                          }
                         } @else {
                           <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
                           @if (sharedLabel(subject); as shared) {

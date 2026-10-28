@@ -23,6 +23,8 @@ interface SubjectRow {
   name: string;
   active: boolean;
   ownedByMe: boolean;
+  /** Faux : la matière est déjà dans la classe, ce professeur ne la suit pas. */
+  followedByMe: boolean;
   sharedWith: TeacherSubjectSharedHolder[];
 }
 
@@ -76,6 +78,8 @@ const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
 
 /**
  * Matières du professeur : créer, renommer, désactiver, retirer, proposer un transfert.
+ * Dans une année déjà cochée, il voit aussi les matières suivies par un collègue,
+ * et le nom de ce collègue. Il ne peut pas les modifier : il peut demander le partage.
  * Le collègue valide via l'alerte en haut de page.
  */
 @Component({
@@ -107,6 +111,8 @@ export class TeacherSubjectsPage implements OnInit {
   private followSeq = 0;
   /** Classe pour laquelle une demande de partage vient d'être envoyée. */
   readonly shareAskedKey = signal<string | null>(null);
+  /** Matière déjà listée pour laquelle une demande de partage vient d'être envoyée. */
+  readonly shareAskedSubjectId = signal<number | null>(null);
 
   ngOnInit(): void {
     this.reload(true);
@@ -135,7 +141,8 @@ export class TeacherSubjectsPage implements OnInit {
     if (names.length === 0) {
       return null;
     }
-    return `Partagée avec ${names.join(', ')}`;
+    const verb = subject.followedByMe ? 'Partagée avec' : 'Suivie par';
+    return `${verb} ${names.join(', ')}`;
   }
 
   confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
@@ -267,6 +274,34 @@ export class TeacherSubjectsPage implements OnInit {
 
   shareAsked(schoolId: number, grade: string): boolean {
     return this.shareAskedKey() === this.gradeKey(schoolId, grade);
+  }
+
+  shareAskedFor(subjectId: number): boolean {
+    return this.shareAskedSubjectId() === subjectId;
+  }
+
+  /**
+   * Demande le partage d'une matière déjà affichée, suivie par un collègue.
+   * Le nom envoyé est celui du back : pas une saisie locale.
+   */
+  requestShareOf(schoolId: number, grade: string, subject: SubjectRow): void {
+    if (this.saving() || subject.followedByMe || subject.ownedByMe) {
+      return;
+    }
+    this.error.set(null);
+    this.saving.set(true);
+    this.api.requestShare({ schoolId, grade, name: subject.name }).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.clearSubjectError(subject.id);
+        this.shareAskedSubjectId.set(subject.id);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.shareAskedSubjectId.set(null);
+        this.setSubjectError(subject.id, httpErrorMessage(err, 'Demande impossible.'));
+      },
+    });
   }
 
   requestShare(schoolId: number, grade: string): void {
@@ -707,6 +742,7 @@ export class TeacherSubjectsPage implements OnInit {
             name: subject.name,
             active: subject.active !== false,
             ownedByMe: subject.ownedByMe === true,
+            followedByMe: subject.followedByMe !== false,
             sharedWith: holdersOf(subject.sharedWith),
           });
         }

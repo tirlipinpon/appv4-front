@@ -25,8 +25,8 @@ interface SchoolBlock {
 }
 
 /**
- * Questions des matières du professeur (SCRUM-174).
- * La page matières ne prépare plus les énoncés : ils se lisent et s'ajoutent ici.
+ * Questions des matières que le professeur suit (SCRUM-174).
+ * Une matière déjà dans la classe, suivie par un collègue, n'est pas proposée ici.
  * Une seule matière est ouverte : les autres restent des choix, pas des éditeurs empilés.
  */
 @Component({
@@ -83,7 +83,7 @@ export class TeacherQuestionsPage implements OnInit {
         const subjects: SubjectRow[] = [];
         const place = [school.schoolName ?? '', grade.grade].filter((part) => part).join(' — ');
         for (const subject of grade.subjects ?? []) {
-          if (subject.id == null || !subject.name) {
+          if (subject.id == null || !subject.name || subject.followedByMe === false) {
             continue;
           }
           subjects.push({ id: subject.id, name: subject.name, place });
