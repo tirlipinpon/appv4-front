@@ -8,6 +8,7 @@ import type { ParentSubjectsResponse } from '../../core/api/api-models';
 import { ParentSubjectsPage } from './parent-subjects.page';
 
 const url = 'http://localhost:8080/api/int/parent/subjects';
+const childrenUrl = 'http://localhost:8080/api/int/parent/children';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
 const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
@@ -74,6 +75,9 @@ describe('ParentSubjectsPage', () => {
   function boot(body: ParentSubjectsResponse): void {
     fixture.detectChanges();
     http.expectOne(url).flush(body);
+    http.expectOne(childrenUrl).flush({
+      children: [{ id: 3, firstName: 'Léa', lastName: 'Martin', sex: 'FILLE', age: 8, avatarCode: 'fox' }],
+    });
     http.expectOne(spacesUrl).flush({ roles: ['parent'], teacherRequest: 'none' });
     http.expectOne(accountUrl).flush({ displayName: 'Tony' });
     fixture.detectChanges();
@@ -83,6 +87,9 @@ describe('ParentSubjectsPage', () => {
     boot(loaded);
 
     expect(fixture.nativeElement.textContent).toContain('Léa Martin');
+    expect(fixture.nativeElement.textContent).toContain('🦊');
+    expect(fixture.nativeElement.textContent).toContain('Fille');
+    expect(fixture.nativeElement.textContent).toContain('8 ans');
     expect(fixture.nativeElement.textContent).toContain('Scolaire');
     expect(fixture.nativeElement.textContent).toContain('Extra-scolaire');
 

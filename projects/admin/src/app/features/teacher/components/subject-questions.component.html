@@ -106,7 +106,7 @@
             mat-flat-button
             color="primary"
             type="button"
-            [disabled]="saving() || selectedIds().length === 0 || targetId() == null"
+            [disabled]="saving() || selectedIds().length === 0 || targetId() === null"
             (click)="copySelected()"
           >
             Copier
