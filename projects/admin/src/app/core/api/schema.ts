@@ -111,6 +111,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/{subjectId}/questions/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Supprimer une ou plusieurs questions */
+        post: operations["deleteTeacherSubjectQuestions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects/{subjectId}/questions/clone": {
         parameters: {
             query?: never;
@@ -569,6 +586,23 @@ export interface paths {
         put?: never;
         /** Accepter une demande professeur */
         post: operations["approveTeacherRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{subjectId}/followers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voir quels enfants suivent ce cours */
+        get: operations["listTeacherSubjectFollowers"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1093,6 +1127,12 @@ export interface components {
             grade?: string;
             name?: string;
         };
+        DeleteTeacherSubjectQuestionsRequest: {
+            questionIds?: number[];
+        };
+        DeleteTeacherSubjectQuestionsResponse: {
+            deletedIds?: number[];
+        };
         CloneTeacherSubjectQuestionsRequest: {
             /** Format: int64 */
             targetSubjectId?: number;
@@ -1232,6 +1272,12 @@ export interface components {
         };
         TeacherSubjectsResponse: {
             schools?: components["schemas"]["TeacherSubjectSchool"][];
+        };
+        TeacherSubjectFollowersResponse: {
+            /** Format: int32 */
+            childCount?: number;
+            warning?: string;
+            names?: string[];
         };
         TeacherSubjectColleagueItem: {
             /** Format: int64 */
@@ -1787,6 +1833,59 @@ export interface operations {
                 };
             };
             /** @description Matière absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deleteTeacherSubjectQuestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteTeacherSubjectQuestionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Questions retirées de la matière */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DeleteTeacherSubjectQuestionsResponse"];
+                };
+            };
+            /** @description Aucune question choisie */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière ou question absente pour ce professeur */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2792,6 +2891,46 @@ export interface operations {
                 };
             };
             /** @description Demande inconnue */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjectFollowers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nombre d'enfants et leurs noms, avant une suppression */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectFollowersResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière absente pour ce professeur */
             404: {
                 headers: {
                     [name: string]: unknown;

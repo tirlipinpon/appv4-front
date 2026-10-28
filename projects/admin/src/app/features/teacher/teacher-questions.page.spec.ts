@@ -89,4 +89,70 @@ describe('TeacherQuestionsPage', () => {
     expect(text).toContain('Copier');
     expect(text).not.toContain('Transférer');
   });
+
+  it('ouvre une seule matière à la fois', () => {
+    fixture.detectChanges();
+    http.expectOne(subjectsUrl).flush({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE2',
+              subjects: [
+                { id: 3, name: 'Mathématiques', active: true, ownedByMe: true, sharedWith: [] },
+                { id: 9, name: 'Histoire', active: true, ownedByMe: true, sharedWith: [] },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: 'Combien font 2 + 2 ?',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const histoire = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (button) => button.textContent?.includes('Histoire'),
+    );
+    expect(histoire).toBeTruthy();
+    histoire?.click();
+    fixture.detectChanges();
+
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne('http://localhost:8080/api/int/teacher/subjects/9/questions').flush({
+      questions: [
+        {
+          id: 8,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: 'Quelle date ?',
+          choices: [{ id: 2, label: '1789', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Quelle date ?');
+    expect(text).not.toContain('Combien font 2 + 2 ?');
+  });
 });

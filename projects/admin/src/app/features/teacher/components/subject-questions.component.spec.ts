@@ -614,6 +614,96 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent.match(/2 \+ 2/g)?.length).toBe(2);
   });
 
+  it('shows who follows the course before deleting the selected questions', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+        {
+          id: 8,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '3 + 3',
+          choices: [{ id: 2, label: '6', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.componentInstance.toggleSelected(8, true);
+    fixture.detectChanges();
+    buttonNamed('Supprimer')?.click();
+
+    const followers = http.expectOne('http://localhost:8080/api/int/teacher/subjects/4/followers');
+    expect(followers.request.method).toBe('GET');
+    followers.flush({
+      childCount: 2,
+      warning: '2 enfants suivent ce cours.',
+      names: ['Léa Martin', 'Nina Bernard'],
+    });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('2 enfants suivent ce cours.');
+    expect(text).toContain('Léa Martin');
+    expect(text).toContain('Nina Bernard');
+    expect(text).toContain('2 + 2');
+
+    buttonNamed('Confirmer la suppression')?.click();
+    const deleted = http.expectOne(`${questionsUrl}/delete`);
+    expect(deleted.request.method).toBe('POST');
+    expect(deleted.request.body).toEqual({ questionIds: [7, 8] });
+    deleted.flush({ deletedIds: [7, 8] });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('2 + 2');
+    expect(fixture.nativeElement.textContent).toContain('Questions supprimées.');
+  });
+
+  it('does not delete when the teacher cancels after seeing the children', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    buttonsNamed('Supprimer')[1]?.click();
+    http.expectOne('http://localhost:8080/api/int/teacher/subjects/4/followers').flush({
+      childCount: 0,
+      warning: 'Aucun enfant ne suit ce cours.',
+      names: [],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Aucun enfant ne suit ce cours.');
+    buttonNamed('Annuler la suppression')?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('2 + 2');
+    expect(fixture.nativeElement.textContent).not.toContain('Aucun enfant ne suit ce cours.');
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),

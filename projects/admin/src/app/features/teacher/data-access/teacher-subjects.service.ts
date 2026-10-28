@@ -8,6 +8,7 @@ import type {
   RenameTeacherSubjectRequest,
   TeacherDeactivateNoticesResponse,
   TeacherSubjectColleaguesResponse,
+  TeacherSubjectFollowersResponse,
   TeacherSubjectItem,
   TeacherSubjectsResponse,
   TeacherTransferInvitesResponse,
@@ -59,6 +60,13 @@ export class TeacherSubjectsService {
 
   reactivate(id: number): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/reactivate`, null);
+  }
+
+  /** Enfants qui suivent encore cette matière : phrase et noms, avant désactivation ou retrait. */
+  followers(id: number): Observable<TeacherSubjectFollowersResponse> {
+    return this.http.get<TeacherSubjectFollowersResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${id}/followers`,
+    );
   }
 
   colleagues(id: number): Observable<TeacherSubjectColleaguesResponse> {
