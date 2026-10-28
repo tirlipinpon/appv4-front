@@ -307,6 +307,60 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Faux');
   });
 
+  it('posts linked words and shows each answer', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'liens', label: 'Liens', sortOrder: 5 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    buttonNamed('Liens')?.click();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Relie chaque mot.');
+    page.setLinkSide(0, 'leftLabel', 'Pomme');
+    page.setLinkSide(0, 'rightLabel', 'Fruit');
+    page.setLinkSide(1, 'leftLabel', 'Chien');
+    page.setLinkSide(1, 'rightLabel', 'Animal');
+    fixture.detectChanges();
+
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes('Enregistrer'),
+    );
+    save[save.length - 1]?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'liens',
+      prompt: 'Relie chaque mot.',
+      links: [
+        { leftLabel: 'Pomme', rightLabel: 'Fruit' },
+        { leftLabel: 'Chien', rightLabel: 'Animal' },
+      ],
+    });
+    req.flush({
+      id: 11,
+      formCode: 'liens',
+      formLabel: 'Liens',
+      prompt: 'Relie chaque mot.',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [
+        { id: 1, leftLabel: 'Pomme', rightLabel: 'Fruit' },
+        { id: 2, leftLabel: 'Chien', rightLabel: 'Animal' },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Relie chaque mot.');
+    expect(fixture.nativeElement.textContent).toContain('Pomme — Fruit');
+    expect(fixture.nativeElement.textContent).toContain('Chien — Animal');
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),
