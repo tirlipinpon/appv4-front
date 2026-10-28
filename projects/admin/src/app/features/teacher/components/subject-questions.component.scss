@@ -65,7 +65,9 @@ li.editing .prompt {
 
 .forms,
 .choice,
-.editor {
+.editor,
+.copy,
+.question-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;

@@ -71,12 +71,51 @@
                 }
               </ul>
             }
-            <button mat-button type="button" [disabled]="saving()" (click)="beginEdit(question)">
-              Modifier
-            </button>
+            <div class="question-actions">
+              @if (destinationChoices().length) {
+                <mat-checkbox
+                  [checked]="isSelected(question.id)"
+                  [disabled]="saving()"
+                  (change)="toggleSelected(question.id, $event.checked)"
+                >
+                  Sélectionner
+                </mat-checkbox>
+              }
+              <button mat-button type="button" [disabled]="saving()" (click)="beginEdit(question)">
+                Modifier
+              </button>
+            </div>
           </li>
         }
       </ul>
+      @if (destinationChoices().length) {
+        <div class="copy">
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Matière</mat-label>
+            <mat-select
+              [value]="targetId()"
+              [disabled]="saving()"
+              (selectionChange)="setTarget($event.value)"
+            >
+              @for (destination of destinationChoices(); track destination.id) {
+                <mat-option [value]="destination.id">{{ destinationLabel(destination) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="saving() || selectedIds().length === 0 || targetId() === null"
+            (click)="copySelected()"
+          >
+            Copier
+          </button>
+        </div>
+      }
+      @if (notice(); as message) {
+        <p class="hint">{{ message }}</p>
+      }
     }
 
     @if (forms().length === 0) {
@@ -128,6 +167,7 @@
               >
                 Bonne réponse
               </mat-checkbox>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeChoice($index)">Enlever</button>
             </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addChoice()">
@@ -176,6 +216,7 @@
                   (input)="setPairSide($index, 'answerSide', inputValue($event))"
                 />
               </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removePair($index)">Enlever</button>
             </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addPair()">Ajouter une paire</button>
@@ -203,15 +244,18 @@
             />
           </mat-form-field>
           @for (item of items(); track $index) {
-            <mat-form-field appearance="outline" class="field">
-              <mat-label>Élément</mat-label>
-              <input
-                matInput
-                [value]="item.label"
-                [disabled]="saving()"
-                (input)="setItemLabel($index, inputValue($event))"
-              />
-            </mat-form-field>
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Élément</mat-label>
+                <input
+                  matInput
+                  [value]="item.label"
+                  [disabled]="saving()"
+                  (input)="setItemLabel($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeItem($index)">Enlever</button>
+            </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addItem()">Ajouter un élément</button>
           @if (editingId()) {
@@ -266,6 +310,7 @@
               >
                 Faux
               </button>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeStatement($index)">Enlever</button>
             </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addStatement()">Ajouter une phrase</button>
@@ -312,6 +357,7 @@
                   (input)="setLinkSide($index, 'rightLabel', inputValue($event))"
                 />
               </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeLink($index)">Enlever</button>
             </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addLink()">Ajouter un lien</button>
@@ -349,26 +395,32 @@
           </mat-form-field>
           <p class="hint">Écris ___ à la place de chaque trou.</p>
           @for (answer of answers(); track $index) {
-            <mat-form-field appearance="outline" class="field">
-              <mat-label>Mot juste</mat-label>
-              <input
-                matInput
-                [value]="answer.label"
-                [disabled]="saving()"
-                (input)="setAnswer($index, inputValue($event))"
-              />
-            </mat-form-field>
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Mot juste</mat-label>
+                <input
+                  matInput
+                  [value]="answer.label"
+                  [disabled]="saving()"
+                  (input)="setAnswer($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeAnswer($index)">Enlever</button>
+            </div>
           }
           @for (decoy of decoys(); track $index) {
-            <mat-form-field appearance="outline" class="field">
-              <mat-label>Leurre</mat-label>
-              <input
-                matInput
-                [value]="decoy.label"
-                [disabled]="saving()"
-                (input)="setDecoy($index, inputValue($event))"
-              />
-            </mat-form-field>
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Leurre</mat-label>
+                <input
+                  matInput
+                  [value]="decoy.label"
+                  [disabled]="saving()"
+                  (input)="setDecoy($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeDecoy($index)">Enlever</button>
+            </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addDecoy()">Ajouter un leurre</button>
           @if (editingId()) {

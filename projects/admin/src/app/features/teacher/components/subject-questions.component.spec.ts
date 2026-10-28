@@ -420,6 +420,200 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('voiture');
   });
 
+  it('removes an extra row and the hole that matches it', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [
+        { code: 'qcm', label: 'Choix multiples', sortOrder: 1 },
+        { code: 'memory', label: 'Memory', sortOrder: 2 },
+        { code: 'order', label: 'Ordre', sortOrder: 3 },
+        { code: 'vrai_faux', label: 'Vrai ou faux', sortOrder: 4 },
+        { code: 'liens', label: 'Liens', sortOrder: 5 },
+        { code: 'case_vide', label: 'Case vide', sortOrder: 6 },
+      ],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    buttonNamed('Choix multiples')?.click();
+    fixture.detectChanges();
+    page.addChoice();
+    fixture.detectChanges();
+    buttonsNamed('Enlever')[2]?.click();
+    fixture.detectChanges();
+    expect(page.choices().length).toBe(2);
+
+    buttonNamed('Memory')?.click();
+    fixture.detectChanges();
+    page.addPair();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.pairs().length).toBe(2);
+
+    buttonNamed('Ordre')?.click();
+    fixture.detectChanges();
+    page.addItem();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.items().length).toBe(2);
+
+    buttonNamed('Vrai ou faux')?.click();
+    fixture.detectChanges();
+    page.addStatement();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.statements().length).toBe(2);
+
+    buttonNamed('Liens')?.click();
+    fixture.detectChanges();
+    page.addLink();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.links().length).toBe(2);
+
+    buttonNamed('Case vide')?.click();
+    fixture.detectChanges();
+    page.setSentence('Le ___ mange une ___.');
+    page.setAnswer(0, 'chat');
+    page.setAnswer(1, 'pomme');
+    page.setDecoy(0, 'poire');
+    page.addDecoy();
+    page.setDecoy(1, 'voiture');
+    fixture.detectChanges();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    buttonsNamed('Enlever').at(-1)?.click();
+    fixture.detectChanges();
+
+    expect(page.sentence()).toBe('Le mange une ___.');
+    expect(page.answers()).toEqual([{ label: 'pomme' }]);
+    expect(page.decoys()).toEqual([{ label: 'poire' }]);
+    expect(fixture.nativeElement.textContent).toContain('Énoncé');
+  });
+
+  function buttonsNamed(label: string): HTMLButtonElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes(label),
+    );
+  }
+
+  it('copies the selected questions onto another subject', () => {
+    fixture.componentInstance.destinations = [
+      { id: 4, label: 'École — CE1 — Maths' },
+      { id: 9, label: 'École — CE2 — Histoire' },
+    ];
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+        {
+          id: 8,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '3 + 3',
+          choices: [{ id: 2, label: '6', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(buttonNamed('Copier')?.disabled).toBe(true);
+    expect(fixture.componentInstance.destinationLabel({ id: 9, label: 'École — CE2 — Histoire' })).toBe(
+      'École — CE2 — Histoire',
+    );
+
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.componentInstance.toggleSelected(8, true);
+    fixture.componentInstance.setTarget(9);
+    fixture.detectChanges();
+    expect(buttonNamed('Copier')?.disabled).toBe(false);
+
+    buttonNamed('Copier')?.click();
+
+    const req = http.expectOne(`${questionsUrl}/clone`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ targetSubjectId: 9, questionIds: [7, 8] });
+    req.flush({
+      questions: [
+        {
+          id: 21,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: 'copie seule',
+          choices: [{ id: 3, label: '4', correct: true }],
+        },
+        {
+          id: 22,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: 'autre copie',
+          choices: [{ id: 4, label: '6', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Questions copiées.');
+    expect(fixture.nativeElement.textContent).not.toContain('copie seule');
+    expect(fixture.nativeElement.textContent).toContain('2 + 2');
+  });
+
+  it('appends a copy kept on the same subject', () => {
+    fixture.componentInstance.destinations = [{ id: 4, label: 'École — CE1 — Maths' }];
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.destinationLabel({ id: 4, label: 'École — CE1 — Maths' })).toBe(
+      'École — CE1 — Maths (cette matière)',
+    );
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.componentInstance.setTarget(4);
+    fixture.detectChanges();
+    buttonNamed('Copier')?.click();
+
+    const req = http.expectOne(`${questionsUrl}/clone`);
+    expect(req.request.body).toEqual({ targetSubjectId: 4, questionIds: [7] });
+    req.flush({
+      questions: [
+        {
+          id: 21,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 3, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Question copiée.');
+    expect(fixture.nativeElement.textContent.match(/2 \+ 2/g)?.length).toBe(2);
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),

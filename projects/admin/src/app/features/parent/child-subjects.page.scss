@@ -6,36 +6,71 @@
 }
 
 .content {
-  flex: 1;
+  padding: 1.5rem 1rem 3rem;
   display: flex;
   justify-content: center;
-  padding: 2rem 1rem 3rem;
 }
 
-.card {
-  width: min(100%, 46rem);
-  height: fit-content;
+.panel {
+  width: min(100%, 40rem);
 }
 
-.back {
-  margin: 0 0 1rem;
+.heading h1 {
+  margin: 0;
+  font-size: 1.4rem;
 }
 
-.back a {
-  color: #1a73e8;
+.list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.block {
-  margin-top: 1.25rem;
+.child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: white;
+  border-radius: 8px;
+  padding: 0.75rem 1rem 1rem;
 }
 
-.block h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.15rem;
+.identity {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
 }
 
-.block h3 {
-  margin: 0.75rem 0 0.35rem;
+.portrait {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: #e8eef8;
+  font-size: 1.6rem;
+  flex: none;
+}
+
+.badge {
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+  color: #5f6368;
+}
+
+.child p {
+  margin: 0.15rem 0 0;
+  color: #5f6368;
+}
+
+.child h2,
+.child h3 {
+  margin: 0.85rem 0 0.15rem;
   font-size: 1rem;
 }
 
@@ -43,19 +78,32 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 0.35rem 0.75rem;
-  margin-top: 0.5rem;
+  margin-top: 0.45rem;
+  background: #f5f7fb;
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
 }
 
 .name {
   margin: 0;
   font-weight: 600;
+  color: #1a1a1a;
 }
 
 .meta {
   display: block;
+  margin-top: 0.15rem;
   font-weight: 400;
   color: #5f6368;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
 }
 
 .hint {

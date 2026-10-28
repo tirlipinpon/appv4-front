@@ -85,6 +85,8 @@ describe('TeacherQuestionsPage', () => {
     expect(text).toContain('4');
     expect(text).toContain('Bonne réponse');
     expect(text).toContain('Énoncé');
+    expect(text).toContain('Sélectionner');
+    expect(text).toContain('Copier');
     expect(text).not.toContain('Transférer');
   });
 });
