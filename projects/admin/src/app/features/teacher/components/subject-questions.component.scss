@@ -42,6 +42,11 @@ li.editing .prompt {
   padding: 0;
 }
 
+.answers.ordered {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
 .answers li {
   margin: 0.1rem 0;
   color: #3c4043;
