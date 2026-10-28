@@ -29,6 +29,21 @@
                   <li>{{ item.label }}</li>
                 }
               </ol>
+            } @else if (question.formCode === 'case_vide') {
+              <p>{{ question.sentence }}</p>
+              <ul class="answers">
+                @for (answer of question.answers; track $index) {
+                  <li>{{ answer.label }}</li>
+                }
+              </ul>
+              @if (question.decoys.length) {
+                <p class="hint">Leurres</p>
+                <ul class="answers">
+                  @for (decoy of question.decoys; track $index) {
+                    <li>{{ decoy.label }}</li>
+                  }
+                </ul>
+              }
             } @else if (question.formCode === 'liens') {
               <ul class="answers">
                 @for (link of question.links; track $index) {
@@ -300,6 +315,62 @@
             </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addLink()">Ajouter un lien</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'case_vide') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Phrase</mat-label>
+            <input
+              matInput
+              [value]="sentence()"
+              [disabled]="saving()"
+              (input)="setSentence(inputValue($event))"
+            />
+          </mat-form-field>
+          <p class="hint">Écris ___ à la place de chaque trou.</p>
+          @for (answer of answers(); track $index) {
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Mot juste</mat-label>
+              <input
+                matInput
+                [value]="answer.label"
+                [disabled]="saving()"
+                (input)="setAnswer($index, inputValue($event))"
+              />
+            </mat-form-field>
+          }
+          @for (decoy of decoys(); track $index) {
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Leurre</mat-label>
+              <input
+                matInput
+                [value]="decoy.label"
+                [disabled]="saving()"
+                (input)="setDecoy($index, inputValue($event))"
+              />
+            </mat-form-field>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addDecoy()">Ajouter un leurre</button>
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }

@@ -876,10 +876,16 @@ export interface components {
             items?: components["schemas"]["TeacherQuestionItemInput"][];
             statements?: components["schemas"]["TeacherQuestionStatementInput"][];
             links?: components["schemas"]["TeacherQuestionLinkInput"][];
+            sentence?: string;
+            answers?: components["schemas"]["TeacherQuestionGapWordInput"][];
+            decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
         };
         TeacherQuestionChoiceInput: {
             label?: string;
             correct?: boolean;
+        };
+        TeacherQuestionGapWordInput: {
+            label?: string;
         };
         TeacherQuestionItemInput: {
             label?: string;
@@ -904,6 +910,11 @@ export interface components {
             id?: number;
             label?: string;
             correct?: boolean;
+        };
+        TeacherQuestionGapWordItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
         };
         TeacherQuestionItem: {
             /** Format: int64 */
@@ -939,6 +950,9 @@ export interface components {
             items?: components["schemas"]["TeacherQuestionItem"][];
             statements?: components["schemas"]["TeacherQuestionStatementItem"][];
             links?: components["schemas"]["TeacherQuestionLinkItem"][];
+            sentence?: string;
+            answers?: components["schemas"]["TeacherQuestionGapWordItem"][];
+            decoys?: components["schemas"]["TeacherQuestionGapWordItem"][];
         };
         RenameTeacherSubjectRequest: {
             name?: string;

@@ -43,6 +43,10 @@ interface LinkDraft {
   rightLabel: string;
 }
 
+interface GapWordDraft {
+  label: string;
+}
+
 interface SavedQuestion {
   id: number;
   prompt: string;
@@ -53,6 +57,9 @@ interface SavedQuestion {
   items: ItemDraft[];
   statements: StatementDraft[];
   links: LinkDraft[];
+  sentence: string;
+  answers: GapWordDraft[];
+  decoys: GapWordDraft[];
 }
 
 /** Formes dont le formulaire est écrit. Le libellé vient de l'API. */
@@ -61,6 +68,8 @@ const MEMORY = 'memory';
 const ORDER = 'order';
 const TRUE_FALSE = 'vrai_faux';
 const LINKS = 'liens';
+const CASE_VIDE = 'case_vide';
+const HOLE = '___';
 
 /**
  * Préparer un choix multiple, un Memory, un Ordre ou un Vrai ou faux
@@ -91,6 +100,9 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly items = signal<ItemDraft[]>(emptyItems());
   readonly statements = signal<StatementDraft[]>(emptyStatements());
   readonly links = signal<LinkDraft[]>(emptyLinks());
+  readonly sentence = signal('');
+  readonly answers = signal<GapWordDraft[]>([]);
+  readonly decoys = signal<GapWordDraft[]>(emptyDecoys());
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
   readonly editingId = signal<number | null>(null);
 
@@ -182,6 +194,30 @@ export class SubjectQuestionsComponent implements OnInit {
     this.links.update((rows) => [...rows, { leftLabel: '', rightLabel: '' }]);
   }
 
+  setSentence(value: string): void {
+    this.sentence.set(value);
+    const holes = holeCount(value);
+    this.answers.update((rows) => {
+      const next = rows.slice(0, holes);
+      while (next.length < holes) {
+        next.push({ label: '' });
+      }
+      return next;
+    });
+  }
+
+  setAnswer(index: number, value: string): void {
+    this.answers.update((rows) => rows.map((row, i) => (i === index ? { label: value } : row)));
+  }
+
+  setDecoy(index: number, value: string): void {
+    this.decoys.update((rows) => rows.map((row, i) => (i === index ? { label: value } : row)));
+  }
+
+  addDecoy(): void {
+    this.decoys.update((rows) => [...rows, { label: '' }]);
+  }
+
   beginEdit(question: SavedQuestion): void {
     this.editingId.set(question.id);
     this.selectedCode.set(question.formCode);
@@ -207,6 +243,9 @@ export class SubjectQuestionsComponent implements OnInit {
         ? question.links.map((row) => ({ leftLabel: row.leftLabel, rightLabel: row.rightLabel }))
         : emptyLinks(),
     );
+    this.sentence.set(question.sentence);
+    this.answers.set(question.answers.map((row) => ({ label: row.label })));
+    this.decoys.set(question.decoys.length ? question.decoys.map((row) => ({ label: row.label })) : emptyDecoys());
     this.error.set(null);
   }
 
@@ -218,13 +257,19 @@ export class SubjectQuestionsComponent implements OnInit {
     this.items.set(emptyItems());
     this.statements.set(emptyStatements());
     this.links.set(emptyLinks());
+    this.sentence.set('');
+    this.answers.set([]);
+    this.decoys.set(emptyDecoys());
     this.error.set(null);
   }
 
   save(): void {
     const code = this.selectedCode();
     const editingId = this.editingId();
-    if ((code !== QCM && code !== MEMORY && code !== ORDER && code !== TRUE_FALSE && code !== LINKS) || this.saving()) {
+    if (
+      (code !== QCM && code !== MEMORY && code !== ORDER && code !== TRUE_FALSE && code !== LINKS && code !== CASE_VIDE) ||
+      this.saving()
+    ) {
       return;
     }
     this.saving.set(true);
@@ -263,7 +308,15 @@ export class SubjectQuestionsComponent implements OnInit {
                     rightLabel: row.rightLabel,
                   })),
                 }
-              : {
+              : code === CASE_VIDE
+                ? {
+                    formCode: code,
+                    prompt: this.prompt(),
+                    sentence: this.sentence(),
+                    answers: this.answers().map((row) => ({ label: row.label })),
+                    decoys: this.decoys().map((row) => ({ label: row.label })),
+                  }
+                : {
                 formCode: code,
                 prompt: this.prompt(),
                 choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
@@ -300,6 +353,24 @@ export class SubjectQuestionsComponent implements OnInit {
       },
     });
   }
+}
+
+function holeCount(sentence: string): number {
+  let count = 0;
+  let from = 0;
+  while (from <= sentence.length - HOLE.length) {
+    const at = sentence.indexOf(HOLE, from);
+    if (at < 0) {
+      break;
+    }
+    count += 1;
+    from = at + HOLE.length;
+  }
+  return count;
+}
+
+function emptyDecoys(): GapWordDraft[] {
+  return [{ label: '' }];
 }
 
 function emptyLinks(): LinkDraft[] {
@@ -365,6 +436,8 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     }
     return [{ leftLabel: row.leftLabel, rightLabel: row.rightLabel }];
   });
+  const answers = (question.answers ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
+  const decoys = (question.decoys ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
   return {
     id: question.id ?? 0,
     prompt: question.prompt ?? '',
@@ -375,5 +448,8 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     items,
     statements,
     links,
+    sentence: question.sentence ?? '',
+    answers,
+    decoys,
   };
 }
