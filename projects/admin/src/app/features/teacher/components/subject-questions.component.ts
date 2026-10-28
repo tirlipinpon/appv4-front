@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
+import type { TeacherSubjectFollowersResponse } from '../../../core/api/api-models';
 import type { components } from '../../../core/api/schema';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherQuestionsService } from '../data-access/teacher-questions.service';
@@ -84,6 +85,8 @@ const HOLE = '___';
  * (SCRUM-174, SCRUM-175, SCRUM-176, SCRUM-177).
  * La liste des formes est celle de l'API. L'élève ne joue pas ici.
  * Il peut copier une ou plusieurs questions vers une de ses matières.
+ * Il peut aussi en supprimer une ou plusieurs, après avoir vu combien
+ * d'enfants suivent le cours et leurs noms.
  */
 @Component({
   selector: 'app-subject-questions',
@@ -126,6 +129,11 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly selectedIds = signal<number[]>([]);
   readonly targetId = signal<number | null>(null);
   readonly notice = signal<string | null>(null);
+  /** Questions en attente de confirmation. Vide = pas d'avertissement affiché. */
+  readonly pendingIds = signal<number[]>([]);
+  readonly followersLoading = signal(false);
+  readonly followers = signal<TeacherSubjectFollowersResponse | null>(null);
+  private followSeq = 0;
 
   ngOnInit(): void {
     this.api.copiedToSubject$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((subjectId) => {
@@ -318,6 +326,87 @@ export class SubjectQuestionsComponent implements OnInit {
 
   destinationLabel(destination: QuestionDestination): string {
     return destination.id === this.subjectId ? `${destination.label} (cette matière)` : destination.label;
+  }
+
+  askDelete(ids: number[]): void {
+    if (this.saving() || ids.length === 0) {
+      return;
+    }
+    const seq = ++this.followSeq;
+    this.pendingIds.set(ids);
+    this.followers.set(null);
+    this.followersLoading.set(true);
+    this.error.set(null);
+    this.notice.set(null);
+    this.api
+      .followers(this.subjectId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => {
+          if (seq !== this.followSeq) {
+            return;
+          }
+          this.followersLoading.set(false);
+          this.followers.set(body);
+        },
+        error: (err: HttpErrorResponse) => {
+          if (seq !== this.followSeq) {
+            return;
+          }
+          this.followersLoading.set(false);
+          this.pendingIds.set([]);
+          this.error.set(httpErrorMessage(err, 'Impossible de savoir qui suit ce cours.'));
+        },
+      });
+  }
+
+  askDeleteSelected(): void {
+    const selected = new Set(this.selectedIds());
+    const questionIds = this.questions()
+      .filter((question) => selected.has(question.id))
+      .map((question) => question.id);
+    this.askDelete(questionIds);
+  }
+
+  cancelDelete(): void {
+    this.followSeq += 1;
+    this.pendingIds.set([]);
+    this.followers.set(null);
+    this.followersLoading.set(false);
+  }
+
+  confirmDelete(): void {
+    const ids = this.pendingIds();
+    if (ids.length === 0 || this.followers() == null || this.saving()) {
+      return;
+    }
+    this.saving.set(true);
+    this.error.set(null);
+    this.api
+      .deleteQuestions(this.subjectId, { questionIds: ids })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => {
+          const removed = new Set(body.deletedIds);
+          this.questions.update((rows) => rows.filter((question) => !removed.has(question.id)));
+          this.selectedIds.update((current) => current.filter((id) => !removed.has(id)));
+          const editing = this.editingId();
+          this.saving.set(false);
+          this.cancelDelete();
+          if (editing != null && removed.has(editing)) {
+            this.cancelEdit();
+          }
+          if (removed.size > 1) {
+            this.notice.set('Questions supprimées.');
+          } else if (removed.size === 1) {
+            this.notice.set('Question supprimée.');
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.saving.set(false);
+          this.error.set(httpErrorMessage(err, 'Suppression impossible.'));
+        },
+      });
   }
 
   copySelected(): void {

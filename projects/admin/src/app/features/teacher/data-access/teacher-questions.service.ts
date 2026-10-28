@@ -5,7 +5,10 @@ import { Observable, Subject } from 'rxjs';
 import type {
   CloneTeacherSubjectQuestionsRequest,
   CreateTeacherSubjectQuestionRequest,
+  DeleteTeacherSubjectQuestionsRequest,
+  DeleteTeacherSubjectQuestionsResponse,
   TeacherQuestionFormsResponse,
+  TeacherSubjectFollowersResponse,
   TeacherSubjectQuestionItem,
   TeacherSubjectQuestionsResponse,
 } from '../../../core/api/api-models';
@@ -61,6 +64,23 @@ export class TeacherQuestionsService {
   ): Observable<TeacherSubjectQuestionsResponse> {
     return this.http.post<TeacherSubjectQuestionsResponse>(
       `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/clone`,
+      body,
+    );
+  }
+
+  /** Enfants qui suivent encore ce cours : nombre, phrase, et noms. */
+  followers(subjectId: number): Observable<TeacherSubjectFollowersResponse> {
+    return this.http.get<TeacherSubjectFollowersResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/followers`,
+    );
+  }
+
+  deleteQuestions(
+    subjectId: number,
+    body: DeleteTeacherSubjectQuestionsRequest,
+  ): Observable<DeleteTeacherSubjectQuestionsResponse> {
+    return this.http.post<DeleteTeacherSubjectQuestionsResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/delete`,
       body,
     );
   }

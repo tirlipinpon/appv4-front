@@ -63,6 +63,14 @@ export type CreateTeacherSubjectQuestionRequest =
   components['schemas']['CreateTeacherSubjectQuestionRequest'];
 export type CloneTeacherSubjectQuestionsRequest =
   components['schemas']['CloneTeacherSubjectQuestionsRequest'];
+export type TeacherSubjectFollowersResponse = Required<
+  components['schemas']['TeacherSubjectFollowersResponse']
+>;
+export type DeleteTeacherSubjectQuestionsRequest =
+  components['schemas']['DeleteTeacherSubjectQuestionsRequest'];
+export type DeleteTeacherSubjectQuestionsResponse = Required<
+  components['schemas']['DeleteTeacherSubjectQuestionsResponse']
+>;
 export type TeacherQuestionChoiceInput = components['schemas']['TeacherQuestionChoiceInput'];
 export type TeacherTransferInvitesResponse = components['schemas']['TeacherTransferInvitesResponse'];
 export type TeacherTransferInviteItem = components['schemas']['TeacherTransferInviteItem'];

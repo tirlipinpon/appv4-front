@@ -97,6 +97,18 @@ li.editing .prompt {
   border-radius: 8px;
 }
 
+.warning {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #fff4e5;
+  border-radius: 8px;
+}
+
+.names {
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 1.2rem;
+}
+
 .forms,
 .choice,
 .editor,
