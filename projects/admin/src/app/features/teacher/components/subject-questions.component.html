@@ -29,6 +29,12 @@
                   <li>{{ item.label }}</li>
                 }
               </ol>
+            } @else if (question.formCode === 'liens') {
+              <ul class="answers">
+                @for (link of question.links; track $index) {
+                  <li>{{ link.leftLabel }} — {{ link.rightLabel }}</li>
+                }
+              </ul>
             } @else if (question.formCode === 'vrai_faux') {
               <ul class="answers">
                 @for (statement of question.statements; track $index) {
@@ -248,6 +254,52 @@
             </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addStatement()">Ajouter une phrase</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'liens') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          @for (link of links(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Mot</mat-label>
+                <input
+                  matInput
+                  [value]="link.leftLabel"
+                  [disabled]="saving()"
+                  (input)="setLinkSide($index, 'leftLabel', inputValue($event))"
+                />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Réponse</mat-label>
+                <input
+                  matInput
+                  [value]="link.rightLabel"
+                  [disabled]="saving()"
+                  (input)="setLinkSide($index, 'rightLabel', inputValue($event))"
+                />
+              </mat-form-field>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addLink()">Ajouter un lien</button>
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }

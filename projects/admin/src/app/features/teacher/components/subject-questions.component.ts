@@ -38,6 +38,11 @@ interface StatementDraft {
   truthful: boolean | null;
 }
 
+interface LinkDraft {
+  leftLabel: string;
+  rightLabel: string;
+}
+
 interface SavedQuestion {
   id: number;
   prompt: string;
@@ -47,6 +52,7 @@ interface SavedQuestion {
   pairs: PairDraft[];
   items: ItemDraft[];
   statements: StatementDraft[];
+  links: LinkDraft[];
 }
 
 /** Formes dont le formulaire est écrit. Le libellé vient de l'API. */
@@ -54,6 +60,7 @@ const QCM = 'qcm';
 const MEMORY = 'memory';
 const ORDER = 'order';
 const TRUE_FALSE = 'vrai_faux';
+const LINKS = 'liens';
 
 /**
  * Préparer un choix multiple, un Memory, un Ordre ou un Vrai ou faux
@@ -83,6 +90,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly pairs = signal<PairDraft[]>(emptyPairs());
   readonly items = signal<ItemDraft[]>(emptyItems());
   readonly statements = signal<StatementDraft[]>(emptyStatements());
+  readonly links = signal<LinkDraft[]>(emptyLinks());
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
   readonly editingId = signal<number | null>(null);
 
@@ -166,6 +174,14 @@ export class SubjectQuestionsComponent implements OnInit {
     this.statements.update((rows) => [...rows, { label: '', truthful: null }]);
   }
 
+  setLinkSide(index: number, side: 'leftLabel' | 'rightLabel', value: string): void {
+    this.links.update((rows) => rows.map((row, i) => (i === index ? { ...row, [side]: value } : row)));
+  }
+
+  addLink(): void {
+    this.links.update((rows) => [...rows, { leftLabel: '', rightLabel: '' }]);
+  }
+
   beginEdit(question: SavedQuestion): void {
     this.editingId.set(question.id);
     this.selectedCode.set(question.formCode);
@@ -186,6 +202,11 @@ export class SubjectQuestionsComponent implements OnInit {
         ? question.statements.map((row) => ({ label: row.label, truthful: row.truthful }))
         : emptyStatements(),
     );
+    this.links.set(
+      question.links.length
+        ? question.links.map((row) => ({ leftLabel: row.leftLabel, rightLabel: row.rightLabel }))
+        : emptyLinks(),
+    );
     this.error.set(null);
   }
 
@@ -196,13 +217,14 @@ export class SubjectQuestionsComponent implements OnInit {
     this.pairs.set(emptyPairs());
     this.items.set(emptyItems());
     this.statements.set(emptyStatements());
+    this.links.set(emptyLinks());
     this.error.set(null);
   }
 
   save(): void {
     const code = this.selectedCode();
     const editingId = this.editingId();
-    if ((code !== QCM && code !== MEMORY && code !== ORDER && code !== TRUE_FALSE) || this.saving()) {
+    if ((code !== QCM && code !== MEMORY && code !== ORDER && code !== TRUE_FALSE && code !== LINKS) || this.saving()) {
       return;
     }
     this.saving.set(true);
@@ -232,7 +254,16 @@ export class SubjectQuestionsComponent implements OnInit {
                   ...(row.truthful == null ? {} : { truthful: row.truthful }),
                 })),
               }
-            : {
+            : code === LINKS
+              ? {
+                  formCode: code,
+                  prompt: this.prompt(),
+                  links: this.links().map((row) => ({
+                    leftLabel: row.leftLabel,
+                    rightLabel: row.rightLabel,
+                  })),
+                }
+              : {
                 formCode: code,
                 prompt: this.prompt(),
                 choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
@@ -269,6 +300,13 @@ export class SubjectQuestionsComponent implements OnInit {
       },
     });
   }
+}
+
+function emptyLinks(): LinkDraft[] {
+  return [
+    { leftLabel: '', rightLabel: '' },
+    { leftLabel: '', rightLabel: '' },
+  ];
 }
 
 function emptyStatements(): StatementDraft[] {
@@ -321,6 +359,12 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     }
     return [{ label: row.label, truthful: row.truthful }];
   });
+  const links = (question.links ?? []).flatMap((row) => {
+    if (!row.leftLabel || !row.rightLabel) {
+      return [];
+    }
+    return [{ leftLabel: row.leftLabel, rightLabel: row.rightLabel }];
+  });
   return {
     id: question.id ?? 0,
     prompt: question.prompt ?? '',
@@ -330,5 +374,6 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     pairs,
     items,
     statements,
+    links,
   };
 }

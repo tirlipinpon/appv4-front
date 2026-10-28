@@ -875,6 +875,7 @@ export interface components {
             pairs?: components["schemas"]["TeacherQuestionPairInput"][];
             items?: components["schemas"]["TeacherQuestionItemInput"][];
             statements?: components["schemas"]["TeacherQuestionStatementInput"][];
+            links?: components["schemas"]["TeacherQuestionLinkInput"][];
         };
         TeacherQuestionChoiceInput: {
             label?: string;
@@ -882,6 +883,10 @@ export interface components {
         };
         TeacherQuestionItemInput: {
             label?: string;
+        };
+        TeacherQuestionLinkInput: {
+            leftLabel?: string;
+            rightLabel?: string;
         };
         TeacherQuestionPairInput: {
             questionSide?: string;
@@ -905,6 +910,12 @@ export interface components {
             id?: number;
             label?: string;
         };
+        TeacherQuestionLinkItem: {
+            /** Format: int64 */
+            id?: number;
+            leftLabel?: string;
+            rightLabel?: string;
+        };
         TeacherQuestionPairItem: {
             /** Format: int64 */
             id?: number;
@@ -927,6 +938,7 @@ export interface components {
             pairs?: components["schemas"]["TeacherQuestionPairItem"][];
             items?: components["schemas"]["TeacherQuestionItem"][];
             statements?: components["schemas"]["TeacherQuestionStatementItem"][];
+            links?: components["schemas"]["TeacherQuestionLinkItem"][];
         };
         RenameTeacherSubjectRequest: {
             name?: string;
