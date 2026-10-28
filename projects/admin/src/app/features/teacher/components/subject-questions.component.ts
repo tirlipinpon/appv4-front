@@ -33,6 +33,11 @@ interface ItemDraft {
   label: string;
 }
 
+interface StatementDraft {
+  label: string;
+  truthful: boolean | null;
+}
+
 interface SavedQuestion {
   id: number;
   prompt: string;
@@ -41,15 +46,18 @@ interface SavedQuestion {
   choices: SavedChoice[];
   pairs: PairDraft[];
   items: ItemDraft[];
+  statements: StatementDraft[];
 }
 
 /** Formes dont le formulaire est écrit. Le libellé vient de l'API. */
 const QCM = 'qcm';
 const MEMORY = 'memory';
 const ORDER = 'order';
+const TRUE_FALSE = 'vrai_faux';
 
 /**
- * Préparer un choix multiple, un Memory ou un Ordre dans une matière (SCRUM-174, SCRUM-175, SCRUM-176).
+ * Préparer un choix multiple, un Memory, un Ordre ou un Vrai ou faux
+ * (SCRUM-174, SCRUM-175, SCRUM-176, SCRUM-177).
  * La liste des formes est celle de l'API. L'élève ne joue pas ici.
  */
 @Component({
@@ -74,6 +82,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly choices = signal<ChoiceDraft[]>(emptyChoices());
   readonly pairs = signal<PairDraft[]>(emptyPairs());
   readonly items = signal<ItemDraft[]>(emptyItems());
+  readonly statements = signal<StatementDraft[]>(emptyStatements());
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
   readonly editingId = signal<number | null>(null);
 
@@ -143,6 +152,20 @@ export class SubjectQuestionsComponent implements OnInit {
     this.items.update((rows) => [...rows, { label: '' }]);
   }
 
+  setStatementLabel(index: number, value: string): void {
+    this.statements.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+  }
+
+  setStatementSide(index: number, truthful: boolean): void {
+    this.statements.update((rows) =>
+      rows.map((row, i) => (i === index ? { ...row, truthful: row.truthful === truthful ? null : truthful } : row)),
+    );
+  }
+
+  addStatement(): void {
+    this.statements.update((rows) => [...rows, { label: '', truthful: null }]);
+  }
+
   beginEdit(question: SavedQuestion): void {
     this.editingId.set(question.id);
     this.selectedCode.set(question.formCode);
@@ -158,6 +181,11 @@ export class SubjectQuestionsComponent implements OnInit {
         : emptyPairs(),
     );
     this.items.set(question.items.length ? question.items.map((item) => ({ label: item.label })) : emptyItems());
+    this.statements.set(
+      question.statements.length
+        ? question.statements.map((row) => ({ label: row.label, truthful: row.truthful }))
+        : emptyStatements(),
+    );
     this.error.set(null);
   }
 
@@ -167,13 +195,14 @@ export class SubjectQuestionsComponent implements OnInit {
     this.choices.set(emptyChoices());
     this.pairs.set(emptyPairs());
     this.items.set(emptyItems());
+    this.statements.set(emptyStatements());
     this.error.set(null);
   }
 
   save(): void {
     const code = this.selectedCode();
     const editingId = this.editingId();
-    if ((code !== QCM && code !== MEMORY && code !== ORDER) || this.saving()) {
+    if ((code !== QCM && code !== MEMORY && code !== ORDER && code !== TRUE_FALSE) || this.saving()) {
       return;
     }
     this.saving.set(true);
@@ -194,11 +223,20 @@ export class SubjectQuestionsComponent implements OnInit {
               prompt: this.prompt(),
               items: this.items().map((item) => ({ label: item.label })),
             }
-          : {
-              formCode: code,
-              prompt: this.prompt(),
-              choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
-            };
+          : code === TRUE_FALSE
+            ? {
+                formCode: code,
+                prompt: this.prompt(),
+                statements: this.statements().map((row) => ({
+                  label: row.label,
+                  ...(row.truthful == null ? {} : { truthful: row.truthful }),
+                })),
+              }
+            : {
+                formCode: code,
+                prompt: this.prompt(),
+                choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
+              };
     const request =
       editingId == null
         ? this.api.create(this.subjectId, body)
@@ -231,6 +269,13 @@ export class SubjectQuestionsComponent implements OnInit {
       },
     });
   }
+}
+
+function emptyStatements(): StatementDraft[] {
+  return [
+    { label: '', truthful: null },
+    { label: '', truthful: null },
+  ];
 }
 
 function emptyItems(): ItemDraft[] {
@@ -270,6 +315,12 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     }
     return [{ label: item.label }];
   });
+  const statements = (question.statements ?? []).flatMap((row) => {
+    if (!row.label || row.truthful == null) {
+      return [];
+    }
+    return [{ label: row.label, truthful: row.truthful }];
+  });
   return {
     id: question.id ?? 0,
     prompt: question.prompt ?? '',
@@ -278,5 +329,6 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     choices,
     pairs,
     items,
+    statements,
   };
 }
