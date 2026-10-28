@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import type {
   TeacherDeactivateNoticeItem,
   TeacherSubjectColleagueItem,
+  TeacherSubjectFollowersResponse,
   TeacherSubjectSharedHolder,
   TeacherSubjectsResponse,
   TeacherTransferInviteItem,
@@ -100,6 +101,10 @@ export class TeacherSubjectsPage implements OnInit {
   readonly renamingId = signal<number | null>(null);
   readonly renameDraft = signal('');
   readonly pending = signal<Pending | null>(null);
+  /** Enfants du cours, affichés en plus du message déjà là pour désactiver ou retirer. */
+  readonly followers = signal<TeacherSubjectFollowersResponse | null>(null);
+  readonly followersLoading = signal(false);
+  private followSeq = 0;
   /** Classe pour laquelle une demande de partage vient d'être envoyée. */
   readonly shareAskedKey = signal<string | null>(null);
 
@@ -367,6 +372,7 @@ export class TeacherSubjectsPage implements OnInit {
       alsoUserIds: [],
       holders: chooseOthers ? [...subject.sharedWith] : [],
     });
+    this.loadFollowers(subject.id);
   }
 
   disableChoosingOthers(): boolean {
@@ -404,6 +410,7 @@ export class TeacherSubjectsPage implements OnInit {
     this.clearSubjectError(subject.id);
     const sole = subject.sharedWith.length === 0;
     this.pending.set({ id: subject.id, kind: 'remove', sole, colleagues: [] });
+    this.loadFollowers(subject.id);
     if (!sole) {
       return;
     }
@@ -434,6 +441,7 @@ export class TeacherSubjectsPage implements OnInit {
       return;
     }
     this.clearSubjectError(subject.id);
+    this.clearFollowers();
     this.pending.set({
       id: subject.id,
       kind: 'transfer',
@@ -509,7 +517,42 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   cancelPending(): void {
+    this.clearFollowers();
     this.pending.set(null);
+  }
+
+  private loadFollowers(subjectId: number): void {
+    const seq = ++this.followSeq;
+    this.followers.set(null);
+    this.followersLoading.set(true);
+    this.api.followers(subjectId).subscribe({
+      next: (body) => {
+        if (seq !== this.followSeq) {
+          return;
+        }
+        const current = this.pending();
+        this.followersLoading.set(false);
+        const shown = current?.kind === 'disable' || current?.kind === 'remove';
+        if (!current || current.id !== subjectId || !shown) {
+          return;
+        }
+        this.followers.set(body);
+      },
+      error: (err: HttpErrorResponse) => {
+        if (seq !== this.followSeq) {
+          return;
+        }
+        this.followersLoading.set(false);
+        this.pending.set(null);
+        this.setSubjectError(subjectId, httpErrorMessage(err, 'Impossible de savoir qui suit ce cours.'));
+      },
+    });
+  }
+
+  private clearFollowers(): void {
+    this.followSeq += 1;
+    this.followers.set(null);
+    this.followersLoading.set(false);
   }
 
   confirmDisable(subjectId: number): void {

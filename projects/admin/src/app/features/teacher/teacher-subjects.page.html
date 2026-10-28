@@ -99,6 +99,16 @@
                           <p class="confirm" role="alert">
                             Désactiver {{ subject.name }} pour toi ? Elle reste dans cette liste, elle n'est plus proposée pour toi ailleurs.
                           </p>
+                          @if (followersLoading()) {
+                            <p class="hint">Chargement…</p>
+                          } @else if (followers(); as people) {
+                            <p class="confirm">{{ people.warning }}</p>
+                            <ul class="follower-names">
+                              @for (name of people.names; track $index) {
+                                <li>{{ name }}</li>
+                              }
+                            </ul>
+                          }
                           @if (disableChoosingOthers()) {
                             <p class="hint">Tu peux aussi la désactiver pour des collègues qui la partagent :</p>
                             <ul class="colleagues">
@@ -123,13 +133,23 @@
                           <button
                             mat-flat-button
                             type="button"
-                            [disabled]="saving()"
+                            [disabled]="saving() || followers() == null"
                             (click)="confirmDisable(subject.id)"
                           >
                             Confirmer la désactivation
                           </button>
                         } @else if (pending()?.id === subject.id && pending()?.kind === 'remove') {
                           <p class="confirm" role="alert">{{ confirmText(school, grade, subject) }}</p>
+                          @if (followersLoading()) {
+                            <p class="hint">Chargement…</p>
+                          } @else if (followers(); as people) {
+                            <p class="confirm">{{ people.warning }}</p>
+                            <ul class="follower-names">
+                              @for (name of people.names; track $index) {
+                                <li>{{ name }}</li>
+                              }
+                            </ul>
+                          }
                           @if (removeIsSole()) {
                             @if (removeColleagues().length === 0) {
                               <p class="hint">Aucun collègue avec cette classe.</p>
@@ -152,7 +172,7 @@
                             mat-flat-button
                             color="warn"
                             type="button"
-                            [disabled]="saving()"
+                            [disabled]="saving() || followers() == null"
                             (click)="confirmRemove(subject.id)"
                           >
                             Confirmer le retrait

@@ -82,6 +82,19 @@ describe('TeacherSubjectsPage', () => {
     fixture.detectChanges();
   }
 
+  function flushFollowers(
+    subjectId: number,
+    body: { childCount: number; warning: string; names: string[] } = {
+      childCount: 2,
+      warning: '2 enfants suivent ce cours.',
+      names: ['Léa Martin', 'Tom Bernard'],
+    },
+  ): void {
+    const req = http.expectOne(`${subjectsUrl}/${subjectId}/followers`);
+    expect(req.request.method).toBe('GET');
+    req.flush(body);
+  }
+
   function expectReload(body: TeacherSubjectsResponse = loaded): void {
     http.expectOne(subjectsUrl).flush(body);
     http.expectOne(invitesUrl).flush({ invites: [] });
@@ -280,8 +293,15 @@ describe('TeacherSubjectsPage', () => {
       ownedByMe: true,
       sharedWith: [{ userId: 10, displayName: 'Camille' }],
     });
+    flushFollowers(3);
     fixture.detectChanges();
 
+    expect(fixture.nativeElement.textContent).toContain(
+      "Désactiver Mathématiques pour toi ? Elle reste dans cette liste, elle n'est plus proposée pour toi ailleurs.",
+    );
+    expect(fixture.nativeElement.textContent).toContain('2 enfants suivent ce cours.');
+    expect(fixture.nativeElement.textContent).toContain('Léa Martin');
+    expect(fixture.nativeElement.textContent).toContain('Tom Bernard');
     expect(fixture.nativeElement.textContent).toContain('Tu peux aussi la désactiver');
     page.toggleDisableAlso(10);
     page.confirmDisable(3);
@@ -318,11 +338,14 @@ describe('TeacherSubjectsPage', () => {
       ownedByMe: true,
       sharedWith: [{ userId: 10, displayName: 'Camille' }],
     });
+    flushFollowers(3, { childCount: 1, warning: '1 enfant suit ce cours.', names: ['Léa Martin'] });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
       'Retirer Mathématiques de ta liste ? Camille la garde.',
     );
+    expect(fixture.nativeElement.textContent).toContain('1 enfant suit ce cours.');
+    expect(fixture.nativeElement.textContent).toContain('Léa Martin');
     expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
     http.expectNone(`${subjectsUrl}/3/colleagues`);
     page.confirmRemove(3);
@@ -344,6 +367,7 @@ describe('TeacherSubjectsPage', () => {
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
       colleagues: [{ userId: 10, displayName: 'Camille' }],
     });
+    flushFollowers(2);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('plus aucun professeur ne la verra');
@@ -371,7 +395,10 @@ describe('TeacherSubjectsPage', () => {
       sharedWith: [],
     });
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({ colleagues: [] });
+    flushFollowers(2, { childCount: 0, warning: 'Aucun enfant ne suit ce cours.', names: [] });
     fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Aucun enfant ne suit ce cours.');
 
     expect(fixture.nativeElement.textContent).toContain('Aucun collègue avec cette classe.');
     expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
