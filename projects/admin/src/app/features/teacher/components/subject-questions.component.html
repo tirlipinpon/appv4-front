@@ -10,13 +10,39 @@
     @if (questions().length === 0) {
       <p class="hint">Aucune question</p>
     } @else {
+      @if (destinationChoices().length) {
+        <div class="copy">
+          <p class="hint">Coche une ou plusieurs questions, choisis la matière, puis copie.</p>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Matière</mat-label>
+            <mat-select
+              [value]="targetId()"
+              [disabled]="saving()"
+              (selectionChange)="setTarget($event.value)"
+            >
+              @for (destination of destinationChoices(); track destination.id) {
+                <mat-option [value]="destination.id">{{ destinationLabel(destination) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="saving() || selectedIds().length === 0 || targetId() === null"
+            (click)="copySelected()"
+          >
+            Copier
+          </button>
+        </div>
+      }
       <ul class="saved">
         @for (question of questions(); track question.id) {
           <li [class.editing]="editingId() === question.id">
             @if (question.prompt) {
               <p class="prompt">{{ question.prompt }}</p>
             }
-            <p class="hint">{{ question.formLabel }}</p>
+            <p class="kind">{{ question.formLabel }}</p>
             @if (question.formCode === 'memory') {
               <ul class="answers">
                 @for (pair of question.pairs; track $index) {
@@ -88,43 +114,19 @@
           </li>
         }
       </ul>
-      @if (destinationChoices().length) {
-        <div class="copy">
-          <mat-form-field appearance="outline" class="field">
-            <mat-label>Matière</mat-label>
-            <mat-select
-              [value]="targetId()"
-              [disabled]="saving()"
-              (selectionChange)="setTarget($event.value)"
-            >
-              @for (destination of destinationChoices(); track destination.id) {
-                <mat-option [value]="destination.id">{{ destinationLabel(destination) }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <button
-            mat-flat-button
-            color="primary"
-            type="button"
-            [disabled]="saving() || selectedIds().length === 0 || targetId() === null"
-            (click)="copySelected()"
-          >
-            Copier
-          </button>
-        </div>
-      }
       @if (notice(); as message) {
         <p class="hint">{{ message }}</p>
       }
     }
 
+    <h3 class="zone">{{ editingId() ? 'Modifier la question' : 'Nouvelle question' }}</h3>
     @if (forms().length === 0) {
       <p class="hint">Aucune forme de question n'est disponible.</p>
     } @else {
       <div class="forms" role="list">
         @for (form of forms(); track form.code) {
           <button
-            mat-button
+            class="form-chip"
             type="button"
             [disabled]="saving()"
             [class.selected]="selectedCode() === form.code"

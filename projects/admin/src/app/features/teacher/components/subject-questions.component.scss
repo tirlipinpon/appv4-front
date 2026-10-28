@@ -24,12 +24,39 @@
 
 .saved {
   list-style: none;
-  margin: 0;
+  margin: 0.75rem 0 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.saved > li {
+  background: #f5f7fb;
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
 }
 
 .prompt {
+  margin: 0;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.kind,
+.zone {
   margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+}
+
+.kind {
+  color: #1a3d7c;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.zone {
+  margin-top: 1.25rem;
 }
 
 li.editing .prompt {
@@ -63,6 +90,13 @@ li.editing .prompt {
   font-size: 0.85rem;
 }
 
+.copy {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.75rem 0.15rem;
+  background: #f5f7fb;
+  border-radius: 8px;
+}
+
 .forms,
 .choice,
 .editor,
@@ -72,6 +106,26 @@ li.editing .prompt {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem 0.5rem;
+}
+
+button.form-chip {
+  border: 1px solid #d0d7e2;
+  background: white;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.form-chip.selected {
+  border-color: #1a3d7c;
+  background: #e8eef8;
+  font-weight: 600;
+}
+
+button.form-chip:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 .editor,
@@ -84,7 +138,3 @@ li.editing .prompt {
   margin-bottom: -0.75rem;
 }
 
-button.selected {
-  text-decoration: underline;
-  font-weight: 600;
-}

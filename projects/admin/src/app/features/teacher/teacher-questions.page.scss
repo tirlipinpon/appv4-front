@@ -6,19 +6,23 @@
 }
 
 .content {
-  flex: 1;
+  padding: 1.5rem 1rem 3rem;
   display: flex;
   justify-content: center;
-  padding: 2rem 1rem 3rem;
 }
 
-.card {
-  width: min(100%, 40rem);
-  height: fit-content;
+.panel {
+  width: min(100%, 46rem);
 }
 
+.heading h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.lead,
 .hint {
-  margin: 0.5rem 0 0;
+  margin: 0.35rem 0 0;
   color: #5f6368;
 }
 
@@ -27,30 +31,49 @@
   margin: 0.35rem 0 0;
 }
 
-.school {
-  border: 1px solid #dadce0;
+.picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  border: 1px solid #d0d7e2;
+  background: white;
   border-radius: 8px;
-  padding: 0.75rem 1rem 1rem;
-  margin-top: 1rem;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
-.school-name {
-  margin: 0;
-  font-size: 1.15rem;
+.pick-name {
+  font-weight: 600;
 }
 
-.grade {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #e6e8ee;
+.pick-place {
+  color: #5f6368;
+  font-size: 0.85rem;
 }
 
-.grade-name,
-.subject-name {
-  margin: 0 0 0.35rem;
-  font-size: 1rem;
+.pick.selected {
+  border-color: #1a3d7c;
+  background: #e8eef8;
 }
 
 .subject {
-  margin-top: 0.75rem;
+  margin-top: 1rem;
+  background: white;
+  border-radius: 8px;
+  padding: 0.85rem 1rem 1rem;
+}
+
+.subject h2 {
+  margin: 0;
+  font-size: 1.15rem;
 }
