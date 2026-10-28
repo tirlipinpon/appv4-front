@@ -307,6 +307,119 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Faux');
   });
 
+  it('posts linked words and shows each answer', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'liens', label: 'Liens', sortOrder: 5 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    buttonNamed('Liens')?.click();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Relie chaque mot.');
+    page.setLinkSide(0, 'leftLabel', 'Pomme');
+    page.setLinkSide(0, 'rightLabel', 'Fruit');
+    page.setLinkSide(1, 'leftLabel', 'Chien');
+    page.setLinkSide(1, 'rightLabel', 'Animal');
+    fixture.detectChanges();
+
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes('Enregistrer'),
+    );
+    save[save.length - 1]?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'liens',
+      prompt: 'Relie chaque mot.',
+      links: [
+        { leftLabel: 'Pomme', rightLabel: 'Fruit' },
+        { leftLabel: 'Chien', rightLabel: 'Animal' },
+      ],
+    });
+    req.flush({
+      id: 11,
+      formCode: 'liens',
+      formLabel: 'Liens',
+      prompt: 'Relie chaque mot.',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [
+        { id: 1, leftLabel: 'Pomme', rightLabel: 'Fruit' },
+        { id: 2, leftLabel: 'Chien', rightLabel: 'Animal' },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Relie chaque mot.');
+    expect(fixture.nativeElement.textContent).toContain('Pomme — Fruit');
+    expect(fixture.nativeElement.textContent).toContain('Chien — Animal');
+  });
+
+  it('posts a sentence with its answer and its decoys', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'case_vide', label: 'Case vide', sortOrder: 6 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Complète.');
+    page.setSentence('Le chat mange une ___ dans le jardin.');
+    page.setAnswer(0, 'pomme');
+    page.setDecoy(0, 'poire');
+    page.addDecoy();
+    page.setDecoy(1, 'voiture');
+    fixture.detectChanges();
+
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes('Enregistrer'),
+    );
+    save[save.length - 1]?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'case_vide',
+      prompt: 'Complète.',
+      sentence: 'Le chat mange une ___ dans le jardin.',
+      answers: [{ label: 'pomme' }],
+      decoys: [
+        { label: 'poire' },
+        { label: 'voiture' },
+      ],
+    });
+    req.flush({
+      id: 12,
+      formCode: 'case_vide',
+      formLabel: 'Case vide',
+      prompt: 'Complète.',
+      sentence: 'Le chat mange une ___ dans le jardin.',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+      answers: [{ id: 1, label: 'pomme' }],
+      decoys: [
+        { id: 2, label: 'poire' },
+        { id: 3, label: 'voiture' },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Complète.');
+    expect(fixture.nativeElement.textContent).toContain('Le chat mange une ___ dans le jardin.');
+    expect(fixture.nativeElement.textContent).toContain('pomme');
+    expect(fixture.nativeElement.textContent).toContain('poire');
+    expect(fixture.nativeElement.textContent).toContain('voiture');
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),

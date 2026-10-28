@@ -875,13 +875,24 @@ export interface components {
             pairs?: components["schemas"]["TeacherQuestionPairInput"][];
             items?: components["schemas"]["TeacherQuestionItemInput"][];
             statements?: components["schemas"]["TeacherQuestionStatementInput"][];
+            links?: components["schemas"]["TeacherQuestionLinkInput"][];
+            sentence?: string;
+            answers?: components["schemas"]["TeacherQuestionGapWordInput"][];
+            decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
         };
         TeacherQuestionChoiceInput: {
             label?: string;
             correct?: boolean;
         };
+        TeacherQuestionGapWordInput: {
+            label?: string;
+        };
         TeacherQuestionItemInput: {
             label?: string;
+        };
+        TeacherQuestionLinkInput: {
+            leftLabel?: string;
+            rightLabel?: string;
         };
         TeacherQuestionPairInput: {
             questionSide?: string;
@@ -900,10 +911,21 @@ export interface components {
             label?: string;
             correct?: boolean;
         };
+        TeacherQuestionGapWordItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+        };
         TeacherQuestionItem: {
             /** Format: int64 */
             id?: number;
             label?: string;
+        };
+        TeacherQuestionLinkItem: {
+            /** Format: int64 */
+            id?: number;
+            leftLabel?: string;
+            rightLabel?: string;
         };
         TeacherQuestionPairItem: {
             /** Format: int64 */
@@ -927,6 +949,10 @@ export interface components {
             pairs?: components["schemas"]["TeacherQuestionPairItem"][];
             items?: components["schemas"]["TeacherQuestionItem"][];
             statements?: components["schemas"]["TeacherQuestionStatementItem"][];
+            links?: components["schemas"]["TeacherQuestionLinkItem"][];
+            sentence?: string;
+            answers?: components["schemas"]["TeacherQuestionGapWordItem"][];
+            decoys?: components["schemas"]["TeacherQuestionGapWordItem"][];
         };
         RenameTeacherSubjectRequest: {
             name?: string;
