@@ -762,6 +762,106 @@ describe('SubjectQuestionsComponent', () => {
     expect(page.editingId()).toBe(13);
   });
 
+  it('posts a click image with its zones and the rule', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'image_interactive', label: 'Image à cliquer', sortOrder: 8 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.selectForm('image_interactive');
+    page.setPrompt('Trouve le soleil');
+    page.setClickImage('data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAA=');
+    page.setRequireAllCorrect(true);
+    page.setClickZones([
+      {
+        label: 'le soleil',
+        correct: true,
+        shape: 'polygon',
+        points: [
+          { x: 0.1, y: 0.2 },
+          { x: 0.3, y: 0.2 },
+          { x: 0.2, y: 0.4 },
+        ],
+      },
+      {
+        label: 'le nuage',
+        correct: false,
+        shape: 'rect',
+        points: [
+          { x: 0.5, y: 0.55 },
+          { x: 0.8, y: 0.75 },
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'image_interactive',
+      prompt: 'Trouve le soleil',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      requireAllCorrect: true,
+      zones: [
+        {
+          label: 'le soleil',
+          correct: true,
+          shape: 'polygon',
+          points: [
+            { x: 0.1, y: 0.2 },
+            { x: 0.3, y: 0.2 },
+            { x: 0.2, y: 0.4 },
+          ],
+        },
+        {
+          label: 'le nuage',
+          correct: false,
+          shape: 'rect',
+          points: [
+            { x: 0.5, y: 0.55 },
+            { x: 0.8, y: 0.75 },
+          ],
+        },
+      ],
+    });
+    req.flush({
+      id: 14,
+      formCode: 'image_interactive',
+      formLabel: 'Image à cliquer',
+      prompt: 'Trouve le soleil',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      requireAllCorrect: true,
+      zones: [
+        {
+          id: 1,
+          label: 'le soleil',
+          correct: true,
+          shape: 'polygon',
+          points: [
+            { x: 0.1, y: 0.2 },
+            { x: 0.3, y: 0.2 },
+            { x: 0.2, y: 0.4 },
+          ],
+        },
+      ],
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Image à cliquer');
+    expect(fixture.nativeElement.textContent).toContain('le soleil');
+    expect(fixture.nativeElement.querySelector('polygon.correct')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Toutes les zones correctes sont à cliquer.');
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),

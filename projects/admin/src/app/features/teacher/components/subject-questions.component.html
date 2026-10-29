@@ -87,6 +87,19 @@
                   <li>{{ item.label }}</li>
                 }
               </ol>
+            } @else if (question.formCode === 'image_interactive') {
+              <app-click-zone-editor
+                [readonly]="true"
+                [imageDataUrl]="question.imageDataUrl"
+                [zones]="question.zones"
+              />
+              <p class="hint">
+                {{
+                  question.requireAllCorrect
+                    ? 'Toutes les zones correctes sont à cliquer.'
+                    : 'Une partie des zones correctes suffit.'
+                }}
+              </p>
             } @else if (question.formCode === 'texte') {
               <p>{{ question.expectedAnswer }}</p>
             } @else if (question.formCode === 'case_vide') {
@@ -469,6 +482,44 @@
             </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addDecoy()">Ajouter un leurre</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'image_interactive') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <app-click-zone-editor
+            [imageDataUrl]="clickImage()"
+            [zones]="clickZones()"
+            [disabled]="saving()"
+            (imageSelected)="setClickImage($event)"
+            (imageError)="setClickImageError($event)"
+            (zonesChange)="setClickZones($event)"
+          />
+          <mat-checkbox
+            [checked]="requireAllCorrect()"
+            [disabled]="saving()"
+            (change)="setRequireAllCorrect($event.checked)"
+          >
+            Toutes les zones correctes sont à cliquer
+          </mat-checkbox>
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }

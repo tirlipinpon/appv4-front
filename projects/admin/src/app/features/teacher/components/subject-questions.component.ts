@@ -11,6 +11,8 @@ import type { TeacherSubjectFollowersResponse } from '../../../core/api/api-mode
 import type { components } from '../../../core/api/schema';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherQuestionsService } from '../data-access/teacher-questions.service';
+import { ClickZoneEditorComponent } from './click-zone-editor.component';
+import { ClickZone } from './click-zone';
 
 /** Matière proposée comme destination d'une copie. */
 export interface QuestionDestination {
@@ -70,6 +72,9 @@ interface SavedQuestion {
   answers: GapWordDraft[];
   decoys: GapWordDraft[];
   expectedAnswer: string;
+  imageDataUrl: string;
+  requireAllCorrect: boolean;
+  zones: ClickZone[];
 }
 
 /** Formes dont le formulaire est écrit. Le libellé vient de l'API. */
@@ -80,6 +85,7 @@ const TRUE_FALSE = 'vrai_faux';
 const LINKS = 'liens';
 const CASE_VIDE = 'case_vide';
 const TEXTE = 'texte';
+const IMAGE_CLICK = 'image_interactive';
 const HOLE = '___';
 
 /**
@@ -93,7 +99,14 @@ const HOLE = '___';
  */
 @Component({
   selector: 'app-subject-questions',
-  imports: [MatButtonModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [
+    MatButtonModule,
+    MatCheckboxModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    ClickZoneEditorComponent,
+  ],
   templateUrl: './subject-questions.component.html',
   styleUrl: './subject-questions.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -126,6 +139,9 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly links = signal<LinkDraft[]>(emptyLinks());
   readonly sentence = signal('');
   readonly expectedAnswer = signal('');
+  readonly clickImage = signal('');
+  readonly requireAllCorrect = signal(true);
+  readonly clickZones = signal<ClickZone[]>([]);
   readonly answers = signal<GapWordDraft[]>([]);
   readonly decoys = signal<GapWordDraft[]>(emptyDecoys());
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
@@ -184,6 +200,23 @@ export class SubjectQuestionsComponent implements OnInit {
 
   setExpectedAnswer(value: string): void {
     this.expectedAnswer.set(value);
+  }
+
+  setClickImage(dataUrl: string): void {
+    this.clickImage.set(dataUrl);
+    this.error.set(null);
+  }
+
+  setClickImageError(message: string): void {
+    this.error.set(message);
+  }
+
+  setRequireAllCorrect(value: boolean): void {
+    this.requireAllCorrect.set(value);
+  }
+
+  setClickZones(zones: ClickZone[]): void {
+    this.clickZones.set(zones);
   }
 
   setChoiceLabel(index: number, value: string): void {
@@ -316,6 +349,9 @@ export class SubjectQuestionsComponent implements OnInit {
     );
     this.sentence.set(question.sentence);
     this.expectedAnswer.set(question.expectedAnswer);
+    this.clickImage.set(question.imageDataUrl);
+    this.requireAllCorrect.set(question.requireAllCorrect);
+    this.clickZones.set(question.zones.map((zone) => ({ ...zone, points: zone.points.map((point) => ({ ...point })) })));
     this.answers.set(question.answers.map((row) => ({ label: row.label })));
     this.decoys.set(question.decoys.length ? question.decoys.map((row) => ({ label: row.label })) : emptyDecoys());
     this.error.set(null);
@@ -462,6 +498,9 @@ export class SubjectQuestionsComponent implements OnInit {
     this.links.set(emptyLinks());
     this.sentence.set('');
     this.expectedAnswer.set('');
+    this.clickImage.set('');
+    this.requireAllCorrect.set(true);
+    this.clickZones.set([]);
     this.answers.set([]);
     this.decoys.set(emptyDecoys());
     this.error.set(null);
@@ -477,7 +516,8 @@ export class SubjectQuestionsComponent implements OnInit {
         code !== TRUE_FALSE &&
         code !== LINKS &&
         code !== CASE_VIDE &&
-        code !== TEXTE) ||
+        code !== TEXTE &&
+        code !== IMAGE_CLICK) ||
       this.saving()
     ) {
       return;
@@ -532,7 +572,20 @@ export class SubjectQuestionsComponent implements OnInit {
                       prompt: this.prompt(),
                       expectedAnswer: this.expectedAnswer(),
                     }
-                  : {
+                  : code === IMAGE_CLICK
+                    ? {
+                        formCode: code,
+                        prompt: this.prompt(),
+                        imageWebp: webpPayload(this.clickImage()),
+                        requireAllCorrect: this.requireAllCorrect(),
+                        zones: this.clickZones().map((zone) => ({
+                          label: zone.label,
+                          correct: zone.correct,
+                          shape: zone.shape,
+                          points: zone.points.map((point) => ({ x: point.x, y: point.y })),
+                        })),
+                      }
+                    : {
                 formCode: code,
                 prompt: this.prompt(),
                 choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
@@ -699,5 +752,31 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     answers,
     decoys,
     expectedAnswer: question.expectedAnswer ?? '',
+    imageDataUrl: question.imageWebp ? `data:image/webp;base64,${question.imageWebp}` : '',
+    requireAllCorrect: question.requireAllCorrect === true,
+    zones: savedZones(question.zones),
   };
+}
+
+function webpPayload(dataUrl: string): string {
+  const comma = dataUrl.indexOf(',');
+  return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+}
+
+function savedZones(zones: components['schemas']['TeacherSubjectQuestionItem']['zones']): ClickZone[] {
+  return (zones ?? []).flatMap((zone) => {
+    if (!zone.label || zone.correct == null || !zone.points?.length) {
+      return [];
+    }
+    if (zone.shape !== 'polygon' && zone.shape !== 'rect' && zone.shape !== 'ellipse') {
+      return [];
+    }
+    const points = zone.points.flatMap((point) =>
+      point.x == null || point.y == null ? [] : [{ x: point.x, y: point.y }],
+    );
+    if (!points.length) {
+      return [];
+    }
+    return [{ label: zone.label, correct: zone.correct, shape: zone.shape, points }];
+  });
 }
