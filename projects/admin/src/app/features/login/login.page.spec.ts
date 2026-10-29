@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth/auth.service';
 import { LoginPage } from './login.page';
 
@@ -42,7 +43,7 @@ describe('LoginPage', () => {
     const harness = await RouterTestingHarness.create();
     const page = await harness.navigateByUrl('/login', LoginPage);
     page.email.set('ada@exemple.com');
-    page.password.set('Secret1!');
+    page.password.set(environment.devLoginPassword);
     page.googleLoading.set(true);
 
     page.submit();
@@ -55,7 +56,7 @@ describe('LoginPage', () => {
     const harness = await RouterTestingHarness.create();
     const page = await harness.navigateByUrl('/login', LoginPage);
     page.email.set('ada@exemple.com');
-    page.password.set('Secret1!');
+    page.password.set(environment.devLoginPassword);
     page.submit();
     const request = http.expectOne(loginUrl);
 

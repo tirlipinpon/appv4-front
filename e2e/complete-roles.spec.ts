@@ -1,7 +1,9 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
+import { environment } from '../projects/admin/src/environments/environment';
+
 const API = 'http://localhost:8080/api/int';
-const PASSWORD = 'Secret1!';
+const PASSWORD = environment.devLoginPassword;
 
 test('email parent seul arrive sur /parent, et y revient au login suivant', async ({ page }) => {
   const email = uniqueEmail('parent');
