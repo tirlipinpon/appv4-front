@@ -334,24 +334,28 @@
                   (input)="setStatementLabel($index, inputValue($event))"
                 />
               </mat-form-field>
-              <button
-                mat-button
-                type="button"
-                [disabled]="saving()"
-                [class.selected]="statement.truthful === true"
-                (click)="setStatementSide($index, true)"
-              >
-                Vrai
-              </button>
-              <button
-                mat-button
-                type="button"
-                [disabled]="saving()"
-                [class.selected]="statement.truthful === false"
-                (click)="setStatementSide($index, false)"
-              >
-                Faux
-              </button>
+              <div class="sides">
+                <button
+                  class="side vrai"
+                  type="button"
+                  [disabled]="saving()"
+                  [class.selected]="statement.truthful === true"
+                  [attr.aria-pressed]="statement.truthful === true"
+                  (click)="setStatementSide($index, true)"
+                >
+                  Vrai
+                </button>
+                <button
+                  class="side faux"
+                  type="button"
+                  [disabled]="saving()"
+                  [class.selected]="statement.truthful === false"
+                  [attr.aria-pressed]="statement.truthful === false"
+                  (click)="setStatementSide($index, false)"
+                >
+                  Faux
+                </button>
+              </div>
               <button mat-button type="button" [disabled]="saving()" (click)="removeStatement($index)">Enlever</button>
             </div>
           }
