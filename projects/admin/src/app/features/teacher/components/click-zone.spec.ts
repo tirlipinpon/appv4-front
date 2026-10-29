@@ -1,4 +1,4 @@
-import { closesDraft, dropDraftPoint, moveHandle, relativePoint } from './click-zone';
+import { closesDraft, dropDraftPoint, moveHandle, relativePoint, translateZone } from './click-zone';
 
 describe('click zones stay on the image', () => {
   it('maps a click to the same part of the drawing when the box changes size', () => {
@@ -38,6 +38,26 @@ describe('click zones stay on the image', () => {
     expect(closesDraft(draft, { x: 0.21, y: 0.2 })).toBeTrue();
     expect(closesDraft(draft, { x: 0.5, y: 0.2 })).toBeFalse();
     expect(closesDraft(draft.slice(0, 2), { x: 0.2, y: 0.2 })).toBeFalse();
+  });
+
+  it('slides a whole shape and stops it at the edge of the image', () => {
+    const zone = {
+      label: 'tony',
+      correct: true,
+      shape: 'polygon' as const,
+      points: [
+        { x: 0.1, y: 0.2 },
+        { x: 0.4, y: 0.2 },
+        { x: 0.2, y: 0.5 },
+      ],
+    };
+
+    const moved = translateZone(zone, 0.1, 0.1).points;
+    expect(moved[0].x).toBeCloseTo(0.2);
+    expect(moved[0].y).toBeCloseTo(0.3);
+    expect(moved[1].x).toBeCloseTo(0.5);
+    expect(moved[2].y).toBeCloseTo(0.6);
+    expect(translateZone(zone, -1, 0).points[0].x).toBeCloseTo(0);
   });
 
   it('drops one draft point and leaves the others', () => {

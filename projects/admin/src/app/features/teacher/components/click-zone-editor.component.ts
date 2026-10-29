@@ -21,6 +21,7 @@ import {
   rectangleBox,
   relativePoint,
   removePoint,
+  translateZone,
 } from './click-zone';
 
 /**
@@ -53,7 +54,15 @@ export class ClickZoneEditorComponent {
   readonly adding = signal(false);
 
   private readonly surface = viewChild<ElementRef<SVGSVGElement>>('surface');
+  private readonly zoneList = viewChild<ElementRef<HTMLUListElement>>('zoneList');
   private drag: { zone: number; handle: number; pointer: number } | null = null;
+  private shapeDrag: {
+    zone: number;
+    pointer: number;
+    origin: ClickZone;
+    start: ClickPoint;
+    moved: boolean;
+  } | null = null;
   private press: { x: number; y: number; pointer: number } | null = null;
 
   inputValue(event: Event): string {
@@ -83,8 +92,58 @@ export class ClickZoneEditorComponent {
     }
   }
 
-  onSurfaceDown(event: PointerEvent): void {
+  onShapeDown(event: PointerEvent, zoneIndex: number): void {
     if (this.readonly() || this.disabled() || this.drag) {
+      return;
+    }
+    const point = this.eventPoint(event);
+    const zone = this.zones()[zoneIndex];
+    if (!point || !zone) {
+      return;
+    }
+    event.stopPropagation();
+    event.preventDefault();
+    try {
+      (event.currentTarget as Element).setPointerCapture(event.pointerId);
+    } catch {
+      // La sélection reste valable même si le navigateur refuse la capture.
+    }
+    this.shapeDrag = { zone: zoneIndex, pointer: event.pointerId, origin: zone, start: point, moved: false };
+    this.selectZone(zoneIndex);
+    this.press = null;
+  }
+
+  onShapeMove(event: PointerEvent): void {
+    const drag = this.shapeDrag;
+    if (!drag || event.pointerId !== drag.pointer) {
+      return;
+    }
+    const point = this.eventPoint(event);
+    if (!point) {
+      return;
+    }
+    const dx = point.x - drag.start.x;
+    const dy = point.y - drag.start.y;
+    if (Math.hypot(dx, dy) > 0.01) {
+      drag.moved = true;
+    }
+    const moved = translateZone(drag.origin, dx, dy);
+    this.zonesChange.emit(this.zones().map((row, index) => (index === drag.zone ? moved : row)));
+  }
+
+  onShapeUp(event: PointerEvent): void {
+    const drag = this.shapeDrag;
+    if (drag?.pointer !== event.pointerId) {
+      return;
+    }
+    this.shapeDrag = null;
+    if (!drag.moved) {
+      this.revealSelected();
+    }
+  }
+
+  onSurfaceDown(event: PointerEvent): void {
+    if (this.readonly() || this.disabled() || this.drag || this.shapeDrag) {
       return;
     }
     this.surface()?.nativeElement.setPointerCapture(event.pointerId);
@@ -256,6 +315,12 @@ export class ClickZoneEditorComponent {
     const zoneIndex = this.selected();
     const zone = zoneIndex == null ? undefined : this.zones()[zoneIndex];
     return !!zone && zone.shape === 'polygon' && zone.points.length > 3 && this.selectedHandle() != null;
+  }
+
+  private revealSelected(): void {
+    queueMicrotask(() => {
+      this.zoneList()?.nativeElement.querySelector('li.selected')?.scrollIntoView({ block: 'nearest' });
+    });
   }
 
   private emitZone(zone: ClickZone): void {

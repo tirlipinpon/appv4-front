@@ -104,6 +104,28 @@ export function handles(zone: ClickZone): ClickPoint[] {
   return zone.points;
 }
 
+/** Déplace toute la forme, sans la déformer, en la gardant sur l'image. */
+export function translateZone(zone: ClickZone, dx: number, dy: number): ClickZone {
+  if (zone.shape === 'ellipse') {
+    const box = ellipseBox(zone.points);
+    return {
+      ...zone,
+      points: fitEllipse(
+        { x: box.cx + dx, y: box.cy + dy },
+        { x: box.cx + box.rx + dx, y: box.cy + box.ry + dy },
+      ),
+    };
+  }
+  const shift = boundedShift(zone.points, dx, dy);
+  return {
+    ...zone,
+    points: zone.points.map((point) => ({
+      x: point.x + shift.dx,
+      y: point.y + shift.dy,
+    })),
+  };
+}
+
 export function moveHandle(zone: ClickZone, handle: number, raw: ClickPoint): ClickZone {
   const point = { x: clamp01(raw.x), y: clamp01(raw.y) };
   if (zone.shape === 'polygon') {
@@ -267,6 +289,33 @@ function span(zone: ClickZone): { x: number; y: number; width: number; height: n
   const x = Math.min(...xs);
   const y = Math.min(...ys);
   return wideEnough(x, y, Math.max(...xs) - x, Math.max(...ys) - y);
+}
+
+function boundedShift(points: ClickPoint[], dx: number, dy: number): { dx: number; dy: number } {
+  if (points.length === 0) {
+    return { dx: 0, dy: 0 };
+  }
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  let nextDx = dx;
+  let nextDy = dy;
+  if (minX + nextDx < 0) {
+    nextDx = -minX;
+  }
+  if (maxX + nextDx > 1) {
+    nextDx = 1 - maxX;
+  }
+  if (minY + nextDy < 0) {
+    nextDy = -minY;
+  }
+  if (maxY + nextDy > 1) {
+    nextDy = 1 - maxY;
+  }
+  return { dx: nextDx, dy: nextDy };
 }
 
 function wideEnough(x: number, y: number, width: number, height: number): { x: number; y: number; width: number; height: number } {

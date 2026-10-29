@@ -47,6 +47,20 @@ ellipse {
   pointer-events: none;
 }
 
+svg.editing polygon,
+svg.editing rect:not(.hit),
+svg.editing ellipse {
+  pointer-events: all;
+  cursor: move;
+}
+
+svg.editing polygon.selected,
+svg.editing rect.selected,
+svg.editing ellipse.selected {
+  stroke: #1a3d7c;
+  stroke-width: 0.014;
+}
+
 polygon.correct,
 rect.correct,
 ellipse.correct {
@@ -61,8 +75,9 @@ ellipse.wrong {
   stroke: #d1242f;
 }
 
-.selected {
-  stroke-width: 0.01;
+.zone-list li.selected {
+  outline: 2px solid #1a3d7c;
+  background: #e4ecf8;
 }
 
 polyline.draft {
@@ -120,8 +135,12 @@ circle.active {
   border-radius: 8px;
 }
 
-.zone-list li.selected {
-  outline: 2px solid #1a3d7c;
+
+button.pick.selected {
+  border-color: #1a3d7c;
+  background: #1a3d7c;
+  color: #fff;
+  font-weight: 700;
 }
 
 button.pick,
