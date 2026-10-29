@@ -438,4 +438,49 @@ describe('TeacherSubjectsPage', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Demande envoyée.');
   });
+
+  it('réserve Renommer au créateur, même quand un collègue suit aussi la matière', () => {
+    boot({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE1',
+              subjects: [
+                {
+                  id: 2,
+                  name: 'Lecture',
+                  active: true,
+                  ownedByMe: true,
+                  followedByMe: true,
+                  sharedWith: [{ userId: 10, displayName: 'Camille' }],
+                },
+                {
+                  id: 4,
+                  name: 'Mathématiques',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: true,
+                  sharedWith: [{ userId: 9, displayName: 'Anne' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const rows = Array.from(fixture.nativeElement.querySelectorAll('.subject') as NodeListOf<HTMLElement>);
+    const lecture = rows.find((row) => row.textContent?.includes('Lecture'));
+    const maths = rows.find((row) => row.textContent?.includes('Mathématiques'));
+    expect(lecture?.textContent).toContain('Renommer');
+    expect(lecture?.textContent).toContain('Retirer');
+    expect(lecture?.textContent).toContain('Transférer');
+    expect(maths?.textContent).toContain('Partagée avec Anne');
+    expect(maths?.textContent).not.toContain('Renommer');
+    expect(maths?.textContent).toContain('Retirer');
+    expect(maths?.textContent).toContain('Transférer');
+  });
 });

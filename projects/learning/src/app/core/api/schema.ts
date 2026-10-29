@@ -29,7 +29,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Renommer une matière du professeur connecté */
+        /** Renommer une matière créée par le professeur connecté */
         put: operations["renameTeacherSubject"];
         post?: never;
         /** Retirer une matière du professeur connecté */
@@ -1567,7 +1567,7 @@ export interface operations {
                     "*/*": components["schemas"]["TeacherSubjectItem"];
                 };
             };
-            /** @description Nom vide, trop long, ou déjà pris dans la même classe */
+            /** @description Nom vide, trop long, déjà pris dans la même classe, ou ce professeur n'est pas le créateur */
             400: {
                 headers: {
                     [name: string]: unknown;

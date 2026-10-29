@@ -348,6 +348,9 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   startRename(subject: SubjectRow): void {
+    if (!subject.ownedByMe) {
+      return;
+    }
     this.pending.set(null);
     this.renamingId.set(subject.id);
     this.renameDraft.set(subject.name);

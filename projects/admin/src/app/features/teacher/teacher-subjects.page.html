@@ -239,9 +239,11 @@
                             <p class="hint">Visible ici, plus proposée dans le reste de l'application.</p>
                           }
                           <div class="actions">
-                            <button mat-button type="button" [disabled]="saving()" (click)="startRename(subject)">
-                              Renommer
-                            </button>
+                            @if (subject.ownedByMe) {
+                              <button mat-button type="button" [disabled]="saving()" (click)="startRename(subject)">
+                                Renommer
+                              </button>
+                            }
                             <button mat-button type="button" [disabled]="saving()" (click)="askRemove(subject)">
                               Retirer
                             </button>
