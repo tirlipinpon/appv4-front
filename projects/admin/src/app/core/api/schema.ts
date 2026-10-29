@@ -969,6 +969,7 @@ export interface components {
             imageWebp?: string;
             requireAllCorrect?: boolean;
             zones?: components["schemas"]["TeacherQuestionZoneInput"][];
+            pieces?: components["schemas"]["TeacherQuestionPieceInput"][];
         };
         TeacherQuestionChoiceInput: {
             label?: string;
@@ -987,6 +988,11 @@ export interface components {
         TeacherQuestionPairInput: {
             questionSide?: string;
             answerSide?: string;
+        };
+        TeacherQuestionPieceInput: {
+            label?: string;
+            shape?: string;
+            points?: components["schemas"]["TeacherQuestionPointInput"][];
         };
         TeacherQuestionPointInput: {
             /** Format: double */
@@ -1035,6 +1041,13 @@ export interface components {
             questionSide?: string;
             answerSide?: string;
         };
+        TeacherQuestionPieceItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+            shape?: string;
+            points?: components["schemas"]["TeacherQuestionPointItem"][];
+        };
         TeacherQuestionPointItem: {
             /** Format: double */
             x?: number;
@@ -1073,6 +1086,7 @@ export interface components {
             imageWebp?: string;
             requireAllCorrect?: boolean;
             zones?: components["schemas"]["TeacherQuestionZoneItem"][];
+            pieces?: components["schemas"]["TeacherQuestionPieceItem"][];
         };
         RenameTeacherSubjectRequest: {
             name?: string;

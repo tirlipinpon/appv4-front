@@ -86,6 +86,7 @@ const LINKS = 'liens';
 const CASE_VIDE = 'case_vide';
 const TEXTE = 'texte';
 const IMAGE_CLICK = 'image_interactive';
+const PUZZLE = 'puzzle';
 const HOLE = '___';
 
 /**
@@ -93,6 +94,8 @@ const HOLE = '___';
  * (SCRUM-174, SCRUM-175, SCRUM-176, SCRUM-177).
  * La liste des formes est celle de l'API. L'élève ne joue pas ici.
  * La réponse libre (SCRUM-198) demande l'énoncé et la réponse attendue.
+ * Le puzzle (SCRUM-183) reprend l'éditeur de l'image à cliquer : les pièces
+ * sont découpées dans l'image, sans vert ni rouge.
  * Il peut copier une ou plusieurs questions vers une de ses matières.
  * Il peut aussi en supprimer une ou plusieurs, après avoir vu combien
  * d'enfants suivent le cours et leurs noms.
@@ -517,7 +520,8 @@ export class SubjectQuestionsComponent implements OnInit {
         code !== LINKS &&
         code !== CASE_VIDE &&
         code !== TEXTE &&
-        code !== IMAGE_CLICK) ||
+        code !== IMAGE_CLICK &&
+        code !== PUZZLE) ||
       this.saving()
     ) {
       return;
@@ -585,7 +589,18 @@ export class SubjectQuestionsComponent implements OnInit {
                           points: zone.points.map((point) => ({ x: point.x, y: point.y })),
                         })),
                       }
-                    : {
+                    : code === PUZZLE
+                      ? {
+                          formCode: code,
+                          prompt: this.prompt(),
+                          imageWebp: webpPayload(this.clickImage()),
+                          pieces: this.clickZones().map((zone) => ({
+                            label: zone.label,
+                            shape: zone.shape,
+                            points: zone.points.map((point) => ({ x: point.x, y: point.y })),
+                          })),
+                        }
+                      : {
                 formCode: code,
                 prompt: this.prompt(),
                 choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
@@ -754,13 +769,31 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     expectedAnswer: question.expectedAnswer ?? '',
     imageDataUrl: question.imageWebp ? `data:image/webp;base64,${question.imageWebp}` : '',
     requireAllCorrect: question.requireAllCorrect === true,
-    zones: savedZones(question.zones),
+    zones: question.formCode === 'puzzle' ? savedPieces(question.pieces) : savedZones(question.zones),
   };
 }
 
 function webpPayload(dataUrl: string): string {
   const comma = dataUrl.indexOf(',');
   return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+}
+
+function savedPieces(pieces: components['schemas']['TeacherSubjectQuestionItem']['pieces']): ClickZone[] {
+  return (pieces ?? []).flatMap((piece) => {
+    if (!piece.label || !piece.points?.length) {
+      return [];
+    }
+    if (piece.shape !== 'polygon' && piece.shape !== 'rect' && piece.shape !== 'ellipse') {
+      return [];
+    }
+    const points = piece.points.flatMap((point) =>
+      point.x == null || point.y == null ? [] : [{ x: point.x, y: point.y }],
+    );
+    if (!points.length) {
+      return [];
+    }
+    return [{ label: piece.label, correct: true, shape: piece.shape, points }];
+  });
 }
 
 function savedZones(zones: components['schemas']['TeacherSubjectQuestionItem']['zones']): ClickZone[] {

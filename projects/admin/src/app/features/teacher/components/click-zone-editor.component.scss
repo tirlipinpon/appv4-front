@@ -75,6 +75,13 @@ ellipse.wrong {
   stroke: #d1242f;
 }
 
+polygon.piece,
+rect.piece,
+ellipse.piece {
+  fill: rgb(26 61 124 / 18%);
+  stroke: #1a3d7c;
+}
+
 .zone-list li.selected {
   outline: 2px solid #1a3d7c;
   background: #e4ecf8;
@@ -175,4 +182,34 @@ button.side.faux.selected {
 .hint {
   margin: 0.35rem 0 0;
   color: #5f6368;
+}
+
+.pieces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pieces li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+
+.pieces img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+}
+
+.pieces span {
+  font-size: 0.85rem;
 }

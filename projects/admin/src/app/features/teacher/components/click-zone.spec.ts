@@ -1,4 +1,4 @@
-import { closesDraft, dropDraftPoint, moveHandle, relativePoint, translateZone } from './click-zone';
+import { closesDraft, dropDraftPoint, moveHandle, pieceFrame, relativePoint, translateZone } from './click-zone';
 
 describe('click zones stay on the image', () => {
   it('maps a click to the same part of the drawing when the box changes size', () => {
@@ -68,5 +68,22 @@ describe('click zones stay on the image', () => {
 
     expect(dropDraftPoint(points, 0)).toEqual([{ x: 0.4, y: 0.5 }]);
     expect(dropDraftPoint(points, 5)).toEqual(points);
+  });
+
+  it('keeps a piece on the same fraction of the image', () => {
+    const frame = pieceFrame({
+      label: 'ciel',
+      correct: true,
+      shape: 'rect',
+      points: [
+        { x: 0.1, y: 0.2 },
+        { x: 0.5, y: 0.6 },
+      ],
+    });
+
+    expect(frame.x).toBeCloseTo(0.1);
+    expect(frame.y).toBeCloseTo(0.2);
+    expect(frame.width).toBeCloseTo(0.4);
+    expect(frame.height).toBeCloseTo(0.4);
   });
 });

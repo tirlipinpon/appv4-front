@@ -862,6 +862,109 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Toutes les zones correctes sont à cliquer.');
   });
 
+  it('posts a puzzle with named pieces and no correct side', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'puzzle', label: 'Puzzle', sortOrder: 10 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.selectForm('puzzle');
+    page.setPrompt('Reconstitue le dessin');
+    page.setClickImage('data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAA=');
+    page.setClickZones([
+      {
+        label: 'le ciel',
+        correct: true,
+        shape: 'rect',
+        points: [
+          { x: 0, y: 0 },
+          { x: 1, y: 0.5 },
+        ],
+      },
+      {
+        label: 'le sol',
+        correct: false,
+        shape: 'ellipse',
+        points: [
+          { x: 0.5, y: 0.75 },
+          { x: 0.7, y: 0.9 },
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Correcte');
+    expect(fixture.nativeElement.textContent).not.toContain('Incorrecte');
+    expect(fixture.nativeElement.querySelector('polygon.correct, rect.correct, ellipse.correct')).toBeNull();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'puzzle',
+      prompt: 'Reconstitue le dessin',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      pieces: [
+        {
+          label: 'le ciel',
+          shape: 'rect',
+          points: [
+            { x: 0, y: 0 },
+            { x: 1, y: 0.5 },
+          ],
+        },
+        {
+          label: 'le sol',
+          shape: 'ellipse',
+          points: [
+            { x: 0.5, y: 0.75 },
+            { x: 0.7, y: 0.9 },
+          ],
+        },
+      ],
+    });
+    req.flush({
+      id: 15,
+      formCode: 'puzzle',
+      formLabel: 'Puzzle',
+      prompt: 'Reconstitue le dessin',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      pieces: [
+        {
+          id: 1,
+          label: 'le ciel',
+          shape: 'rect',
+          points: [
+            { x: 0, y: 0 },
+            { x: 1, y: 0.5 },
+          ],
+        },
+        {
+          id: 2,
+          label: 'le sol',
+          shape: 'ellipse',
+          points: [
+            { x: 0.5, y: 0.75 },
+            { x: 0.7, y: 0.9 },
+          ],
+        },
+      ],
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Puzzle');
+    expect(fixture.nativeElement.textContent).toContain('le ciel');
+    expect(fixture.nativeElement.querySelector('polygon.correct, rect.correct, ellipse.correct')).toBeNull();
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),

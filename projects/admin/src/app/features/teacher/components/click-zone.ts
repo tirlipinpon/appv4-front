@@ -318,6 +318,26 @@ function boundedShift(points: ClickPoint[], dx: number, dy: number): { dx: numbe
   return { dx: nextDx, dy: nextDy };
 }
 
+export function pieceFrame(zone: ClickZone): { x: number; y: number; width: number; height: number } {
+  if (zone.shape === 'rect') {
+    return rectangleBox(zone.points);
+  }
+  if (zone.shape === 'ellipse') {
+    const box = ellipseBox(zone.points);
+    return { x: box.cx - box.rx, y: box.cy - box.ry, width: box.rx * 2, height: box.ry * 2 };
+  }
+  const xs = zone.points.map((point) => point.x);
+  const ys = zone.points.map((point) => point.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return {
+    x,
+    y,
+    width: Math.max(MIN_SPAN, Math.max(...xs) - x),
+    height: Math.max(MIN_SPAN, Math.max(...ys) - y),
+  };
+}
+
 function wideEnough(x: number, y: number, width: number, height: number): { x: number; y: number; width: number; height: number } {
   const nextWidth = width < MIN_SPAN ? 0.5 : width;
   const nextHeight = height < MIN_SPAN ? 0.5 : height;

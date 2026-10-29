@@ -100,6 +100,13 @@
                     : 'Une partie des zones correctes suffit.'
                 }}
               </p>
+            } @else if (question.formCode === 'puzzle') {
+              <app-click-zone-editor
+                [readonly]="true"
+                variant="puzzle"
+                [imageDataUrl]="question.imageDataUrl"
+                [zones]="question.zones"
+              />
             } @else if (question.formCode === 'texte') {
               <p>{{ question.expectedAnswer }}</p>
             } @else if (question.formCode === 'case_vide') {
@@ -520,6 +527,38 @@
           >
             Toutes les zones correctes sont à cliquer
           </mat-checkbox>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'puzzle') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <app-click-zone-editor
+            variant="puzzle"
+            [imageDataUrl]="clickImage()"
+            [zones]="clickZones()"
+            [disabled]="saving()"
+            (imageSelected)="setClickImage($event)"
+            (imageError)="setClickImageError($event)"
+            (zonesChange)="setClickZones($event)"
+          />
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }

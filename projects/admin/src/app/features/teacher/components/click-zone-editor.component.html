@@ -26,9 +26,10 @@
         @if (zone.shape === 'polygon') {
           <polygon
             [attr.points]="polygonAttribute(zone.points)"
-            [attr.aria-label]="zone.label || 'Zone ' + (zoneIndex + 1)"
-            [class.correct]="zone.correct"
-            [class.wrong]="!zone.correct"
+            [attr.aria-label]="shapeName(zone, zoneIndex)"
+            [class.correct]="variant() === 'click' && zone.correct"
+            [class.wrong]="variant() === 'click' && !zone.correct"
+            [class.piece]="variant() === 'puzzle'"
             [class.selected]="zoneIndex === selected()"
             (pointerdown)="onShapeDown($event, zoneIndex)"
             (pointermove)="onShapeMove($event)"
@@ -40,9 +41,10 @@
             [attr.y]="rectangleBox(zone.points).y"
             [attr.width]="rectangleBox(zone.points).width"
             [attr.height]="rectangleBox(zone.points).height"
-            [attr.aria-label]="zone.label || 'Zone ' + (zoneIndex + 1)"
-            [class.correct]="zone.correct"
-            [class.wrong]="!zone.correct"
+            [attr.aria-label]="shapeName(zone, zoneIndex)"
+            [class.correct]="variant() === 'click' && zone.correct"
+            [class.wrong]="variant() === 'click' && !zone.correct"
+            [class.piece]="variant() === 'puzzle'"
             [class.selected]="zoneIndex === selected()"
             (pointerdown)="onShapeDown($event, zoneIndex)"
             (pointermove)="onShapeMove($event)"
@@ -54,9 +56,10 @@
             [attr.cy]="ellipseBox(zone.points).cy"
             [attr.rx]="ellipseBox(zone.points).rx"
             [attr.ry]="ellipseBox(zone.points).ry"
-            [attr.aria-label]="zone.label || 'Zone ' + (zoneIndex + 1)"
-            [class.correct]="zone.correct"
-            [class.wrong]="!zone.correct"
+            [attr.aria-label]="shapeName(zone, zoneIndex)"
+            [class.correct]="variant() === 'click' && zone.correct"
+            [class.wrong]="variant() === 'click' && !zone.correct"
+            [class.piece]="variant() === 'puzzle'"
             [class.selected]="zoneIndex === selected()"
             (pointerdown)="onShapeDown($event, zoneIndex)"
             (pointermove)="onShapeMove($event)"
@@ -98,7 +101,7 @@
 @if (!readonly()) {
   <div class="tools">
     <button mat-button type="button" [disabled]="disabled() || draft().length < 3" (click)="finishDraft()">
-      Terminer la zone
+      {{ variant() === 'puzzle' ? 'Terminer la pièce' : 'Terminer la zone' }}
     </button>
     <button mat-button type="button" [disabled]="disabled()" (click)="addRectangle()">Rectangle</button>
     <button mat-button type="button" [disabled]="disabled()" (click)="addEllipse()">Ellipse</button>
@@ -113,9 +116,14 @@
   @if (imageDataUrl() && !draft().length) {
     <p class="hint">Clique une forme pour la choisir et la déplacer. Clique le fond pour poser des points.</p>
   } @else if (draft().length && draft().length < 3) {
-    <p class="hint">Encore {{ 3 - draft().length }} point{{ draft().length === 2 ? '' : 's' }} pour fermer la zone.</p>
+    <p class="hint">
+      Encore {{ 3 - draft().length }} point{{ draft().length === 2 ? '' : 's' }} pour fermer
+      {{ variant() === 'puzzle' ? 'la pièce' : 'la zone' }}.
+    </p>
   } @else if (draft().length >= 3) {
-    <p class="hint">Terminer la zone, ou reclique le premier point pour la fermer.</p>
+    <p class="hint">
+      {{ variant() === 'puzzle' ? 'Terminer la pièce' : 'Terminer la zone' }}, ou reclique le premier point pour la fermer.
+    </p>
   }
 
   <ul #zoneList class="zone-list">
@@ -139,24 +147,26 @@
             (input)="rename($index, inputValue($event))"
           />
         </mat-form-field>
-        <button
-          type="button"
-          class="side vrai"
-          [class.selected]="zone.correct"
-          [disabled]="disabled()"
-          (click)="mark($index, true)"
-        >
-          Correcte
-        </button>
-        <button
-          type="button"
-          class="side faux"
-          [class.selected]="!zone.correct"
-          [disabled]="disabled()"
-          (click)="mark($index, false)"
-        >
-          Incorrecte
-        </button>
+        @if (variant() === 'click') {
+          <button
+            type="button"
+            class="side vrai"
+            [class.selected]="zone.correct"
+            [disabled]="disabled()"
+            (click)="mark($index, true)"
+          >
+            Correcte
+          </button>
+          <button
+            type="button"
+            class="side faux"
+            [class.selected]="!zone.correct"
+            [disabled]="disabled()"
+            (click)="mark($index, false)"
+          >
+            Incorrecte
+          </button>
+        }
         <mat-form-field appearance="outline" class="shape">
           <mat-label>Forme</mat-label>
           <mat-select
@@ -170,6 +180,19 @@
           </mat-select>
         </mat-form-field>
         <button mat-button type="button" [disabled]="disabled()" (click)="removeZone($index)">Supprimer</button>
+      </li>
+    }
+  </ul>
+}
+
+@if (variant() === 'puzzle' && zones().length) {
+  <ul class="pieces">
+    @for (zone of zones(); track $index; let pieceIndex = $index) {
+      <li [style.width.%]="pieceWidth(zone)">
+        @if (pieceUrls()[pieceIndex]; as url) {
+          <img [src]="url" alt="" [attr.aria-label]="shapeName(zone, pieceIndex)" />
+        }
+        <span>{{ zone.label || 'Pièce ' + (pieceIndex + 1) }}</span>
       </li>
     }
   </ul>

@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  effect,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -21,8 +30,10 @@ import {
   rectangleBox,
   relativePoint,
   removePoint,
+  pieceFrame,
   translateZone,
 } from './click-zone';
+import { cutPiece } from './puzzle-piece';
 
 /**
  * Dessin des zones sur l'image (SCRUM-181).
@@ -41,6 +52,8 @@ export class ClickZoneEditorComponent {
   readonly zones = input<ClickZone[]>([]);
   readonly disabled = input(false);
   readonly readonly = input(false);
+  /** click : vert et rouge. puzzle : mêmes formes, sans côté juste ou faux. */
+  readonly variant = input<'click' | 'puzzle'>('click');
 
   readonly imageSelected = output<string>();
   readonly zonesChange = output<ClickZone[]>();
@@ -52,6 +65,10 @@ export class ClickZoneEditorComponent {
   readonly selected = signal<number | null>(null);
   readonly selectedHandle = signal<number | null>(null);
   readonly adding = signal(false);
+  /** Vignettes découpées dans les pixels de l'image, dans le même ordre que les pièces. */
+  readonly pieceUrls = signal<string[]>([]);
+
+  private paintToken = 0;
 
   private readonly surface = viewChild<ElementRef<SVGSVGElement>>('surface');
   private readonly zoneList = viewChild<ElementRef<HTMLUListElement>>('zoneList');
@@ -65,6 +82,25 @@ export class ClickZoneEditorComponent {
   } | null = null;
   private press: { x: number; y: number; pointer: number } | null = null;
 
+  constructor() {
+    effect((onCleanup) => {
+      const url = this.imageDataUrl();
+      const zones = this.zones();
+      const puzzle = this.variant() === 'puzzle';
+      if (!puzzle || !url || zones.length === 0) {
+        this.pieceUrls.set([]);
+        return;
+      }
+      const token = ++this.paintToken;
+      const snapshot = zones.map((zone) => ({
+        ...zone,
+        points: zone.points.map((point) => ({ ...point })),
+      }));
+      const timer = setTimeout(() => this.paintPieces(url, snapshot, token), 40);
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
+
   inputValue(event: Event): string {
     return (event.target as HTMLInputElement).value;
   }
@@ -73,6 +109,31 @@ export class ClickZoneEditorComponent {
   rectangleBox = rectangleBox;
   ellipseBox = ellipseBox;
   handles = handles;
+  pieceFrame = pieceFrame;
+
+  pieceWidth(zone: ClickZone): number {
+    return this.pieceFrame(zone).width * 100;
+  }
+
+  private paintPieces(url: string, zones: ClickZone[], token: number): void {
+    const image = new Image();
+    image.onload = () => {
+      if (token !== this.paintToken) {
+        return;
+      }
+      this.pieceUrls.set(
+        zones.map((zone) => cutPiece(image, image.naturalWidth, image.naturalHeight, zone)),
+      );
+    };
+    image.src = url;
+  }
+
+  shapeName(zone: ClickZone, index: number): string {
+    if (zone.label) {
+      return zone.label;
+    }
+    return this.variant() === 'puzzle' ? `Pièce ${index + 1}` : `Zone ${index + 1}`;
+  }
 
   async onFile(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
