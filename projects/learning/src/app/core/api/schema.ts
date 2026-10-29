@@ -48,8 +48,26 @@ export interface paths {
         };
         /** Lire le profil du professeur connecté */
         get: operations["getTeacherProfile"];
-        /** Enregistrer le nom et les écoles du professeur */
+        /** Enregistrer le nom, le contact et les écoles du professeur */
         put: operations["updateTeacherProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la fiche du parent connecté */
+        get: operations["getParentProfile"];
+        /** Enregistrer la fiche du parent connecté */
+        put: operations["updateParentProfile"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1051,6 +1069,13 @@ export interface components {
         UpdateTeacherProfileRequest: {
             displayName?: string;
             schools?: components["schemas"]["TeacherSchoolInput"][];
+            contactEmail?: string;
+            phone?: string;
+            avatarCode?: string;
+        };
+        AvatarChoice: {
+            code?: string;
+            label?: string;
         };
         TeacherAssignedSchool: {
             /** Format: int64 */
@@ -1075,9 +1100,27 @@ export interface components {
         TeacherProfileResponse: {
             email?: string;
             displayName?: string;
+            contactEmail?: string;
+            phone?: string;
+            avatarCode?: string;
+            avatarChoices?: components["schemas"]["AvatarChoice"][];
             schools?: components["schemas"]["TeacherAssignedSchool"][];
             availableSchools?: components["schemas"]["TeacherAvailableSchool"][];
             curricula?: components["schemas"]["TeacherCurriculumOption"][];
+        };
+        UpdateParentProfileRequest: {
+            displayName?: string;
+            contactEmail?: string;
+            phone?: string;
+            avatarCode?: string;
+        };
+        ParentProfileResponse: {
+            email?: string;
+            displayName?: string;
+            contactEmail?: string;
+            phone?: string;
+            avatarCode?: string;
+            avatarChoices?: components["schemas"]["AvatarChoice"][];
         };
         CreateParentChildRequest: {
             firstName?: string;
@@ -1430,6 +1473,8 @@ export interface components {
         ConnectedAccountResponse: {
             /** @description Nom du compte connecté (parent, professeur ou admin) */
             displayName?: string;
+            /** @description Code d'avatar, absent s'il n'y en a pas */
+            avatarCode?: string;
         };
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
@@ -1598,7 +1643,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Email, nom, écoles déjà choisies et écoles proposables */
+            /** @description Email, nom, contact, avatar, écoles déjà choisies et écoles proposables */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1650,6 +1695,77 @@ export interface operations {
                 };
             };
             /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getParentProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mail de connexion, nom, contact, téléphone, avatar et choix */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentProfileResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    updateParentProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateParentProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Fiche enregistrée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentProfileResponse"];
+                };
+            };
+            /** @description Nom, mail de contact, téléphone ou avatar refusé */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
             403: {
                 headers: {
                     [name: string]: unknown;

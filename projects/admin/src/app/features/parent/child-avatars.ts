@@ -11,3 +11,11 @@ export const CHILD_AVATARS = [
 export function avatarEmoji(code: string | null | undefined): string {
   return CHILD_AVATARS.find((avatar) => avatar.code === code)?.emoji ?? '🙂';
 }
+
+/** Dessin du bandeau. Rien si le code est vide ou inconnu : pas de visage de secours. */
+export function knownAvatarEmoji(code: string | null | undefined): string | null {
+  if (!code) {
+    return null;
+  }
+  return CHILD_AVATARS.find((avatar) => avatar.code === code)?.emoji ?? null;
+}
