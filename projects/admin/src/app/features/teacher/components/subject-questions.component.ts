@@ -69,6 +69,7 @@ interface SavedQuestion {
   sentence: string;
   answers: GapWordDraft[];
   decoys: GapWordDraft[];
+  expectedAnswer: string;
 }
 
 /** Formes dont le formulaire est écrit. Le libellé vient de l'API. */
@@ -78,12 +79,14 @@ const ORDER = 'order';
 const TRUE_FALSE = 'vrai_faux';
 const LINKS = 'liens';
 const CASE_VIDE = 'case_vide';
+const TEXTE = 'texte';
 const HOLE = '___';
 
 /**
  * Préparer un choix multiple, un Memory, un Ordre ou un Vrai ou faux
  * (SCRUM-174, SCRUM-175, SCRUM-176, SCRUM-177).
  * La liste des formes est celle de l'API. L'élève ne joue pas ici.
+ * La réponse libre (SCRUM-198) demande l'énoncé et la réponse attendue.
  * Il peut copier une ou plusieurs questions vers une de ses matières.
  * Il peut aussi en supprimer une ou plusieurs, après avoir vu combien
  * d'enfants suivent le cours et leurs noms.
@@ -122,6 +125,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly statements = signal<StatementDraft[]>(emptyStatements());
   readonly links = signal<LinkDraft[]>(emptyLinks());
   readonly sentence = signal('');
+  readonly expectedAnswer = signal('');
   readonly answers = signal<GapWordDraft[]>([]);
   readonly decoys = signal<GapWordDraft[]>(emptyDecoys());
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
@@ -176,6 +180,10 @@ export class SubjectQuestionsComponent implements OnInit {
 
   setPrompt(value: string): void {
     this.prompt.set(value);
+  }
+
+  setExpectedAnswer(value: string): void {
+    this.expectedAnswer.set(value);
   }
 
   setChoiceLabel(index: number, value: string): void {
@@ -307,6 +315,7 @@ export class SubjectQuestionsComponent implements OnInit {
         : emptyLinks(),
     );
     this.sentence.set(question.sentence);
+    this.expectedAnswer.set(question.expectedAnswer);
     this.answers.set(question.answers.map((row) => ({ label: row.label })));
     this.decoys.set(question.decoys.length ? question.decoys.map((row) => ({ label: row.label })) : emptyDecoys());
     this.error.set(null);
@@ -452,6 +461,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.statements.set(emptyStatements());
     this.links.set(emptyLinks());
     this.sentence.set('');
+    this.expectedAnswer.set('');
     this.answers.set([]);
     this.decoys.set(emptyDecoys());
     this.error.set(null);
@@ -461,7 +471,13 @@ export class SubjectQuestionsComponent implements OnInit {
     const code = this.selectedCode();
     const editingId = this.editingId();
     if (
-      (code !== QCM && code !== MEMORY && code !== ORDER && code !== TRUE_FALSE && code !== LINKS && code !== CASE_VIDE) ||
+      (code !== QCM &&
+        code !== MEMORY &&
+        code !== ORDER &&
+        code !== TRUE_FALSE &&
+        code !== LINKS &&
+        code !== CASE_VIDE &&
+        code !== TEXTE) ||
       this.saving()
     ) {
       return;
@@ -510,7 +526,13 @@ export class SubjectQuestionsComponent implements OnInit {
                     answers: this.answers().map((row) => ({ label: row.label })),
                     decoys: this.decoys().map((row) => ({ label: row.label })),
                   }
-                : {
+                : code === TEXTE
+                  ? {
+                      formCode: code,
+                      prompt: this.prompt(),
+                      expectedAnswer: this.expectedAnswer(),
+                    }
+                  : {
                 formCode: code,
                 prompt: this.prompt(),
                 choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
@@ -676,5 +698,6 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     sentence: question.sentence ?? '',
     answers,
     decoys,
+    expectedAnswer: question.expectedAnswer ?? '',
   };
 }

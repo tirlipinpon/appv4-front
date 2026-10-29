@@ -704,6 +704,52 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Aucun enfant ne suit ce cours.');
   });
 
+  it('posts a free text prompt and its expected answer', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'texte', label: 'Réponse libre', sortOrder: 11 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Capitale de la France');
+    page.setExpectedAnswer('Paris');
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      expectedAnswer: 'Paris',
+    });
+    req.flush({
+      id: 13,
+      formCode: 'texte',
+      formLabel: 'Réponse libre',
+      prompt: 'Capitale de la France',
+      expectedAnswer: 'Paris',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Réponse libre');
+    expect(fixture.nativeElement.textContent).toContain('Capitale de la France');
+    expect(fixture.nativeElement.textContent).toContain('Paris');
+
+    buttonNamed('Modifier')?.click();
+    fixture.detectChanges();
+    expect(page.prompt()).toBe('Capitale de la France');
+    expect(page.expectedAnswer()).toBe('Paris');
+    expect(page.editingId()).toBe(13);
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),

@@ -52,13 +52,6 @@ type Pending =
     }
   | {
       id: number;
-      kind: 'remove';
-      /** Vrai si ce prof est le seul accès : retrait = plus personne ne voit la matière. */
-      sole: boolean;
-      colleagues: TeacherSubjectColleagueItem[];
-    }
-  | {
-      id: number;
       kind: 'transfer';
       mode: TransferMode | null;
       colleagueUserId: number | null;
@@ -77,7 +70,7 @@ const MODE_REQUIRED = 'Choisis de déplacer ou de partager.';
 const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
 
 /**
- * Matières du professeur : créer, renommer, désactiver, retirer, proposer un transfert.
+ * Matières du professeur : créer, renommer, désactiver, proposer un transfert.
  * Dans une année déjà cochée, il voit aussi les matières suivies par un collègue,
  * et le nom de ce collègue. Il ne peut pas les modifier : il peut demander le partage.
  * Le collègue valide via l'alerte en haut de page.
@@ -105,7 +98,7 @@ export class TeacherSubjectsPage implements OnInit {
   readonly renamingId = signal<number | null>(null);
   readonly renameDraft = signal('');
   readonly pending = signal<Pending | null>(null);
-  /** Enfants du cours, affichés en plus du message déjà là pour désactiver ou retirer. */
+  /** Enfants du cours, affichés en plus du message déjà là pour désactiver. */
   readonly followers = signal<TeacherSubjectFollowersResponse | null>(null);
   readonly followersLoading = signal(false);
   private followSeq = 0;
@@ -143,28 +136,6 @@ export class TeacherSubjectsPage implements OnInit {
     }
     const verb = subject.followedByMe ? 'Partagée avec' : 'Suivie par';
     return `${verb} ${names.join(', ')}`;
-  }
-
-  confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
-    const names = this.sharedNames(subject);
-    if (names.length > 0) {
-      return `Retirer ${subject.name} de ta liste ? ${names.join(', ')} la garde.`;
-    }
-    const place = school.schoolName ? `${grade.grade} de ${school.schoolName}` : grade.grade;
-    return (
-      `Retirer ${subject.name} du ${place} ? Tu es le seul dessus : ` +
-      `plus aucun professeur ne la verra. Elle reste enregistrée.`
-    );
-  }
-
-  removeIsSole(): boolean {
-    const current = this.pending();
-    return current?.kind === 'remove' ? current.sole : false;
-  }
-
-  removeColleagues(): TeacherSubjectColleagueItem[] {
-    const current = this.pending();
-    return current?.kind === 'remove' ? current.colleagues : [];
   }
 
   transferConfirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
@@ -440,53 +411,6 @@ export class TeacherSubjectsPage implements OnInit {
     this.clearSubjectError(current.id);
   }
 
-  askRemove(subject: SubjectRow): void {
-    this.renamingId.set(null);
-    this.clearSubjectError(subject.id);
-    const sole = subject.sharedWith.length === 0;
-    this.pending.set({ id: subject.id, kind: 'remove', sole, colleagues: [] });
-    this.loadFollowers(subject.id);
-    if (!sole) {
-      return;
-    }
-    this.api.colleagues(subject.id).subscribe({
-      next: (body) => {
-        const current = this.pending();
-        if (!current || current.kind !== 'remove' || current.id !== subject.id) {
-          return;
-        }
-        this.pending.set({
-          ...current,
-          colleagues: colleaguesOf(body.colleagues),
-        });
-      },
-      error: (err: HttpErrorResponse) => {
-        this.setSubjectError(subject.id, httpErrorMessage(err, 'Collègues indisponibles.'));
-      },
-    });
-  }
-
-  /**
-   * Depuis le retrait « dernier détenteur » : ouvre le transfert en mode déplacer
-   * avec la liste déjà chargée (pas de retrait tant que le collègue n'a pas accepté).
-   */
-  chooseMoveInstead(subject: SubjectRow): void {
-    const current = this.pending();
-    if (!current || current.kind !== 'remove' || !current.sole || current.id !== subject.id) {
-      return;
-    }
-    this.clearSubjectError(subject.id);
-    this.clearFollowers();
-    this.pending.set({
-      id: subject.id,
-      kind: 'transfer',
-      mode: 'move',
-      colleagueUserId: null,
-      colleagues: current.colleagues,
-      confirm: false,
-    });
-  }
-
   askTransfer(subject: SubjectRow): void {
     this.renamingId.set(null);
     this.clearSubjectError(subject.id);
@@ -567,7 +491,7 @@ export class TeacherSubjectsPage implements OnInit {
         }
         const current = this.pending();
         this.followersLoading.set(false);
-        const shown = current?.kind === 'disable' || current?.kind === 'remove';
+        const shown = current?.kind === 'disable';
         if (!current || current.id !== subjectId || !shown) {
           return;
         }
@@ -603,10 +527,6 @@ export class TeacherSubjectsPage implements OnInit {
 
   reactivate(subjectId: number): void {
     this.postState(subjectId, () => this.api.reactivate(subjectId), 'Réactivation impossible.');
-  }
-
-  confirmRemove(subjectId: number): void {
-    this.postState(subjectId, () => this.api.remove(subjectId), 'Retrait impossible.');
   }
 
   confirmTransfer(subjectId: number): void {

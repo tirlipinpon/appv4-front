@@ -331,88 +331,6 @@ describe('TeacherSubjectsPage', () => {
     expectReload();
   });
 
-  it('retire une matière partagée avec le bon message', () => {
-    boot(loaded);
-    page.askRemove({
-      id: 3,
-      name: 'Mathématiques',
-      active: true,
-      ownedByMe: true,
-      followedByMe: true,
-      sharedWith: [{ userId: 10, displayName: 'Camille' }],
-    });
-    flushFollowers(3, { childCount: 1, warning: '1 enfant suit ce cours.', names: ['Léa Martin'] });
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain(
-      'Retirer Mathématiques de ta liste ? Camille la garde.',
-    );
-    expect(fixture.nativeElement.textContent).toContain('1 enfant suit ce cours.');
-    expect(fixture.nativeElement.textContent).toContain('Léa Martin');
-    expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
-    http.expectNone(`${subjectsUrl}/3/colleagues`);
-    page.confirmRemove(3);
-    const del = http.expectOne(`${subjectsUrl}/3`);
-    expect(del.request.method).toBe('DELETE');
-    del.flush(null);
-    expectReload();
-  });
-
-  it('prévient le dernier détenteur et propose de déplacer', () => {
-    boot(loaded);
-    page.askRemove({
-      id: 2,
-      name: 'Lecture',
-      active: true,
-      ownedByMe: true,
-      followedByMe: true,
-      sharedWith: [],
-    });
-    http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
-      colleagues: [{ userId: 10, displayName: 'Camille' }],
-    });
-    flushFollowers(2);
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('plus aucun professeur ne la verra');
-    expect(fixture.nativeElement.textContent).toContain('Déplacer vers un collègue');
-
-    page.chooseMoveInstead({
-      id: 2,
-      name: 'Lecture',
-      active: true,
-      ownedByMe: true,
-      followedByMe: true,
-      sharedWith: [],
-    });
-    fixture.detectChanges();
-    expect(page.transferMode()).toBe('move');
-    expect(page.transferColleagues().map((row) => row.displayName)).toEqual(['Camille']);
-  });
-
-  it('retire quand même si dernier détenteur sans collègue', () => {
-    boot(loaded);
-    page.askRemove({
-      id: 2,
-      name: 'Lecture',
-      active: true,
-      ownedByMe: true,
-      followedByMe: true,
-      sharedWith: [],
-    });
-    http.expectOne(`${subjectsUrl}/2/colleagues`).flush({ colleagues: [] });
-    flushFollowers(2, { childCount: 0, warning: 'Aucun enfant ne suit ce cours.', names: [] });
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('Aucun enfant ne suit ce cours.');
-
-    expect(fixture.nativeElement.textContent).toContain('Aucun collègue avec cette classe.');
-    expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
-    page.confirmRemove(2);
-    http.expectOne(`${subjectsUrl}/2`).flush(null);
-    expectReload();
-  });
-
   it('affiche une matière déjà suivie par un collègue sans les actions de la sienne', () => {
     boot({
       schools: [
@@ -452,7 +370,6 @@ describe('TeacherSubjectsPage', () => {
     expect(lecture?.textContent).toContain('Renommer');
     expect(maths?.textContent).toContain('Suivie par Camille');
     expect(maths?.textContent).not.toContain('Renommer');
-    expect(maths?.textContent).not.toContain('Retirer');
     expect(maths?.textContent).not.toContain('Transférer');
     expect(maths?.textContent).toContain('Demander le partage');
 
