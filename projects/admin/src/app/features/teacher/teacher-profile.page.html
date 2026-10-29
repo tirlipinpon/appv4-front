@@ -5,7 +5,7 @@
     <mat-card class="card">
       <mat-card-header>
         <mat-card-title>Profil</mat-card-title>
-        <mat-card-subtitle>Nom affiché</mat-card-subtitle>
+        <mat-card-subtitle>Nom, contact et avatar</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         @if (loading()) {
@@ -44,6 +44,49 @@
           @if (nameError()) {
             <p class="field-error" role="alert">{{ nameError() }}</p>
           }
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Mail de contact</mat-label>
+            <input
+              matInput
+              type="email"
+              name="contactEmail"
+              autocomplete="email"
+              [ngModel]="contactEmail()"
+              (ngModelChange)="onContact($event)"
+              [attr.disabled]="saving() ? '' : null"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Téléphone</mat-label>
+            <input
+              matInput
+              type="tel"
+              name="phone"
+              autocomplete="tel"
+              [ngModel]="phone()"
+              (ngModelChange)="onPhone($event)"
+              [attr.disabled]="saving() ? '' : null"
+            />
+          </mat-form-field>
+
+          <p class="label">Avatar</p>
+          <div class="avatars" role="radiogroup" aria-label="Avatar">
+            <button type="button" [class.is-on]="!avatarCode()" [disabled]="saving()" (click)="onAvatar('')">
+              Aucun
+            </button>
+            @for (choice of avatarChoices(); track choice.code) {
+              <button
+                type="button"
+                [class.is-on]="avatarCode() === choice.code"
+                [disabled]="saving()"
+                (click)="onAvatar(choice.code ?? '')"
+              >
+                {{ choice.label }}
+              </button>
+            }
+          </div>
         }
       </mat-card-content>
       @if (ready()) {

@@ -15,22 +15,33 @@ export class ConnectedAccountService {
   private generation = 0;
 
   readonly displayName = signal('');
+  readonly avatarCode = signal<string | null>(null);
 
   load(): Observable<void> {
     const ticket = ++this.generation;
     return this.http.get<ConnectedAccountResponse>(`${environment.apiBaseUrl}/auth/me`).pipe(
       tap((body) => {
-        if (ticket === this.generation && typeof body.displayName === 'string') {
+        if (ticket !== this.generation) {
+          return;
+        }
+        if (typeof body.displayName === 'string') {
           this.displayName.set(body.displayName);
         }
+        this.avatarCode.set(body.avatarCode?.trim() ? body.avatarCode.trim() : null);
       }),
       map(() => undefined),
     );
   }
 
-  /** Le profil vient d'enregistrer ce nom : le bandeau le prend sans second appel. */
-  remember(name: string): void {
+  /**
+   * Le profil vient d'enregistrer ce nom. Le bandeau le prend sans second appel.
+   * Sans avatar en argument, le dessin déjà affiché reste.
+   */
+  remember(name: string, avatarCode?: string | null): void {
     this.generation += 1;
     this.displayName.set(name);
+    if (avatarCode !== undefined) {
+      this.avatarCode.set(avatarCode?.trim() ? avatarCode.trim() : null);
+    }
   }
 }

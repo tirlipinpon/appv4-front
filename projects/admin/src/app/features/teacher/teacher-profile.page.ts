@@ -6,7 +6,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
-import type { TeacherProfileResponse, UpdateTeacherProfileRequest } from '../../core/api/api-models';
+import type {
+  AvatarChoice,
+  TeacherProfileResponse,
+  UpdateTeacherProfileRequest,
+} from '../../core/api/api-models';
 import { ConnectedAccountService } from '../../core/auth/connected-account.service';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
@@ -22,9 +26,9 @@ const PENDING_EDIT =
 type KeptSchool = NonNullable<UpdateTeacherProfileRequest['schools']>[number];
 
 /**
- * Nom du professeur (SCRUM-159).
- * Les écoles se règlent sur leur page. L'enregistrement du nom les renvoie telles quelles,
- * parce que l'API remplace le nom et les écoles ensemble.
+ * Fiche du professeur (SCRUM-159, SCRUM-200).
+ * Les écoles se règlent sur leur page. Ici on renvoie le nom, le mail de contact,
+ * le téléphone, l'avatar, et les écoles déjà connues.
  */
 @Component({
   selector: 'app-teacher-profile-page',
@@ -39,6 +43,10 @@ export class TeacherProfilePage implements OnInit {
 
   readonly email = signal('');
   readonly displayName = signal('');
+  readonly contactEmail = signal('');
+  readonly phone = signal('');
+  readonly avatarCode = signal('');
+  readonly avatarChoices = signal<AvatarChoice[]>([]);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly ready = signal(false);
@@ -67,6 +75,21 @@ export class TeacherProfilePage implements OnInit {
     this.markDirty();
     this.nameError.set(null);
     this.displayName.set(value);
+  }
+
+  onContact(value: string): void {
+    this.markDirty();
+    this.contactEmail.set(value);
+  }
+
+  onPhone(value: string): void {
+    this.markDirty();
+    this.phone.set(value);
+  }
+
+  onAvatar(code: string): void {
+    this.markDirty();
+    this.avatarCode.set(code);
   }
 
   /**
@@ -123,6 +146,9 @@ export class TeacherProfilePage implements OnInit {
     return {
       displayName: this.displayName().trim(),
       schools: this.keptSchools(),
+      contactEmail: this.contactEmail().trim(),
+      phone: this.phone().trim(),
+      avatarCode: this.avatarCode().trim(),
     };
   }
 
@@ -137,13 +163,18 @@ export class TeacherProfilePage implements OnInit {
 
   private rememberSavedName(profile: TeacherProfileResponse): void {
     if (typeof profile.displayName === 'string') {
-      this.account.remember(profile.displayName);
+      const code = profile.avatarCode?.trim() ? profile.avatarCode.trim() : null;
+      this.account.remember(profile.displayName, code);
     }
   }
 
   private apply(profile: TeacherProfileResponse): void {
     this.email.set(profile.email ?? '');
     this.displayName.set(profile.displayName ?? '');
+    this.contactEmail.set(profile.contactEmail ?? '');
+    this.phone.set(profile.phone ?? '');
+    this.avatarCode.set(profile.avatarCode ?? '');
+    this.avatarChoices.set(profile.avatarChoices ?? []);
     this.keptSchools.set(
       (profile.schools ?? []).map((school) => ({
         schoolId: school.schoolId,

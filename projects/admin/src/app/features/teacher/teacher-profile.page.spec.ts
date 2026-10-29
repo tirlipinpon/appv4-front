@@ -65,6 +65,9 @@ describe('TeacherProfilePage', () => {
     expect(put.request.body).toEqual({
       displayName: 'Version envoyee',
       schools: [{ schoolId: 1, grades: ['1e primaire'] }],
+      contactEmail: '',
+      phone: '',
+      avatarCode: '',
     });
 
     page.onName('Modification pendant sauvegarde');
@@ -84,7 +87,7 @@ describe('TeacherProfilePage', () => {
     fixture.detectChanges();
 
     expect(page.displayName()).toBe('Version envoyee');
-    expect(fixture.nativeElement.querySelector('mat-toolbar span')?.textContent?.trim()).toBe(
+    expect(fixture.nativeElement.querySelector('.who')?.textContent?.trim()).toBe(
       'Version envoyee',
     );
     expect(fixture.nativeElement.querySelector('.ok')?.textContent).toContain('Enregistré');

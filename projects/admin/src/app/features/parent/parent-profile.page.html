@@ -1,0 +1,101 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content">
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Profil</mat-card-title>
+        <mat-card-subtitle>Nom, contact et avatar</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (loading()) {
+          <p>Chargement…</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+        @if (saved()) {
+          <p class="ok" role="status">Enregistré.</p>
+        }
+        @if (pendingNotice()) {
+          <p class="hint" role="status">{{ pendingNotice() }}</p>
+        }
+
+        @if (ready()) {
+          <p class="email">
+            <span class="label">Email</span>
+            {{ email() }}
+          </p>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Nom affiché</mat-label>
+            <input
+              matInput
+              type="text"
+              name="displayName"
+              autocomplete="name"
+              [ngModel]="displayName()"
+              (ngModelChange)="onName($event)"
+              [attr.disabled]="saving() ? '' : null"
+              [attr.maxlength]="255"
+              required
+            />
+          </mat-form-field>
+          @if (nameError()) {
+            <p class="field-error" role="alert">{{ nameError() }}</p>
+          }
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Mail de contact</mat-label>
+            <input
+              matInput
+              type="email"
+              name="contactEmail"
+              autocomplete="email"
+              [ngModel]="contactEmail()"
+              (ngModelChange)="onContact($event)"
+              [attr.disabled]="saving() ? '' : null"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Téléphone</mat-label>
+            <input
+              matInput
+              type="tel"
+              name="phone"
+              autocomplete="tel"
+              [ngModel]="phone()"
+              (ngModelChange)="onPhone($event)"
+              [attr.disabled]="saving() ? '' : null"
+            />
+          </mat-form-field>
+
+          <p class="label">Avatar</p>
+          <div class="avatars" role="radiogroup" aria-label="Avatar">
+            <button type="button" [class.is-on]="!avatarCode()" [disabled]="saving()" (click)="onAvatar('')">
+              Aucun
+            </button>
+            @for (choice of avatarChoices(); track choice.code) {
+              <button
+                type="button"
+                [class.is-on]="avatarCode() === choice.code"
+                [disabled]="saving()"
+                (click)="onAvatar(choice.code ?? '')"
+              >
+                {{ choice.label }}
+              </button>
+            }
+          </div>
+        }
+      </mat-card-content>
+      @if (ready()) {
+        <mat-card-actions align="end">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
+        </mat-card-actions>
+      }
+    </mat-card>
+  </main>
+</div>

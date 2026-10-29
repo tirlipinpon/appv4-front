@@ -285,9 +285,9 @@ describe('TeacherSubjectsPage', () => {
     expectReload();
   });
 
-  it('créateur choisit un co-prof à désactiver aussi', () => {
+  it('retire une matière partagée avec le bon message', () => {
     boot(loaded);
-    page.askDisable({
+    page.askRemove({
       id: 3,
       name: 'Mathématiques',
       active: true,
@@ -295,21 +295,74 @@ describe('TeacherSubjectsPage', () => {
       followedByMe: true,
       sharedWith: [{ userId: 10, displayName: 'Camille' }],
     });
-    flushFollowers(3);
+    flushFollowers(3, { childCount: 1, warning: '1 enfant suit ce cours.', names: ['Léa Martin'] });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      "Désactiver Mathématiques pour toi ? Elle reste dans cette liste, elle n'est plus proposée pour toi ailleurs.",
+      'Retirer Mathématiques de ta liste ? Camille la garde.',
     );
-    expect(fixture.nativeElement.textContent).toContain('2 enfants suivent ce cours.');
+    expect(fixture.nativeElement.textContent).toContain('1 enfant suit ce cours.');
     expect(fixture.nativeElement.textContent).toContain('Léa Martin');
-    expect(fixture.nativeElement.textContent).toContain('Tom Bernard');
-    expect(fixture.nativeElement.textContent).toContain('Tu peux aussi la désactiver');
-    page.toggleDisableAlso(10);
-    page.confirmDisable(3);
-    const post = http.expectOne(`${subjectsUrl}/3/deactivate`);
-    expect(post.request.body).toEqual({ alsoUserIds: [10] });
-    post.flush(null);
+    expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
+    http.expectNone(`${subjectsUrl}/3/colleagues`);
+    page.confirmRemove(3);
+    const del = http.expectOne(`${subjectsUrl}/3`);
+    expect(del.request.method).toBe('DELETE');
+    del.flush(null);
+    expectReload();
+  });
+
+  it('prévient le dernier détenteur et propose de déplacer', () => {
+    boot(loaded);
+    page.askRemove({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: true,
+      followedByMe: true,
+      sharedWith: [],
+    });
+    http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
+      colleagues: [{ userId: 10, displayName: 'Camille' }],
+    });
+    flushFollowers(2);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('plus aucun professeur ne la verra');
+    expect(fixture.nativeElement.textContent).toContain('Déplacer vers un collègue');
+
+    page.chooseMoveInstead({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: true,
+      followedByMe: true,
+      sharedWith: [],
+    });
+    fixture.detectChanges();
+    expect(page.transferMode()).toBe('move');
+    expect(page.transferColleagues().map((row) => row.displayName)).toEqual(['Camille']);
+  });
+
+  it('retire quand même si dernier détenteur sans collègue', () => {
+    boot(loaded);
+    page.askRemove({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: true,
+      followedByMe: true,
+      sharedWith: [],
+    });
+    http.expectOne(`${subjectsUrl}/2/colleagues`).flush({ colleagues: [] });
+    flushFollowers(2, { childCount: 0, warning: 'Aucun enfant ne suit ce cours.', names: [] });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Aucun enfant ne suit ce cours.');
+    expect(fixture.nativeElement.textContent).toContain('Aucun collègue avec cette classe.');
+    expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
+    page.confirmRemove(2);
+    http.expectOne(`${subjectsUrl}/2`).flush(null);
     expectReload();
   });
 
@@ -368,8 +421,11 @@ describe('TeacherSubjectsPage', () => {
     const lecture = rows.find((row) => row.textContent?.includes('Lecture'));
     const maths = rows.find((row) => row.textContent?.includes('Mathématiques'));
     expect(lecture?.textContent).toContain('Renommer');
+    expect(lecture?.textContent).toContain('Retirer');
+    expect(lecture?.textContent).not.toContain('Désactiver');
     expect(maths?.textContent).toContain('Suivie par Camille');
     expect(maths?.textContent).not.toContain('Renommer');
+    expect(maths?.textContent).not.toContain('Retirer');
     expect(maths?.textContent).not.toContain('Transférer');
     expect(maths?.textContent).toContain('Demander le partage');
 
@@ -378,8 +434,131 @@ describe('TeacherSubjectsPage', () => {
     expect(ask.request.method).toBe('POST');
     expect(ask.request.body).toEqual({ schoolId: 1, grade: 'CE1', name: 'Mathématiques' });
     ask.flush(null);
+    expectReload({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE1',
+              subjects: [
+                {
+                  id: 4,
+                  name: 'Mathématiques',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: false,
+                  sharedWith: [{ userId: 10, displayName: 'Camille' }],
+                  shareAskedTo: [{ userId: 9, displayName: 'Anne' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Demande envoyée.');
+    expect(fixture.nativeElement.textContent).toContain('Demande de partage déjà envoyée à Anne.');
+    expect(fixture.nativeElement.textContent).not.toContain('Demander le partage');
+  });
+
+  it('remplace Demander le partage par les noms déjà sollicités', () => {
+    boot({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE1',
+              subjects: [
+                {
+                  id: 4,
+                  name: 'Mathématiques',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: false,
+                  sharedWith: [{ userId: 10, displayName: 'Camille' }],
+                  shareAskedTo: [
+                    { userId: 9, displayName: 'Anne' },
+                    { userId: 11, displayName: 'luc2' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(fixture.nativeElement.textContent).toContain('Demande de partage déjà envoyée à Anne, luc2.');
+    expect(fixture.nativeElement.textContent).not.toContain('Demander le partage');
+  });
+
+  it('réserve Renommer au créateur, même quand un collègue suit aussi la matière', () => {
+    boot({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE1',
+              subjects: [
+                {
+                  id: 2,
+                  name: 'Lecture',
+                  active: true,
+                  ownedByMe: true,
+                  followedByMe: true,
+                  sharedWith: [{ userId: 10, displayName: 'Camille' }],
+                  owner: { userId: 2, displayName: 'Martin' },
+                },
+                {
+                  id: 4,
+                  name: 'Mathématiques',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: true,
+                  sharedWith: [
+                    { userId: 9, displayName: 'Anne' },
+                    { userId: 11, displayName: 'luc2' },
+                  ],
+                  owner: { userId: 9, displayName: 'Anne' },
+                },
+                {
+                  id: 5,
+                  name: 'Sciences',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: true,
+                  sharedWith: [],
+                  owner: { userId: 12, displayName: 'Luc' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const rows = Array.from(fixture.nativeElement.querySelectorAll('.subject') as NodeListOf<HTMLElement>);
+    const lecture = rows.find((row) => row.textContent?.includes('Lecture'));
+    const maths = rows.find((row) => row.textContent?.includes('Mathématiques'));
+    const sciences = rows.find((row) => row.textContent?.includes('Sciences'));
+    expect(lecture?.textContent).toContain('Renommer');
+    expect(lecture?.textContent).toContain('Retirer');
+    expect(lecture?.textContent).toContain('Transférer');
+    expect(lecture?.querySelector('strong.owner')).toBeNull();
+    expect(maths?.textContent).toContain('Partagée avec');
+    expect(maths?.textContent).toContain('Anne');
+    expect(maths?.textContent).toContain('luc2');
+    expect(Array.from(maths?.querySelectorAll('strong') ?? []).map((node) => node.textContent)).toEqual(['Anne']);
+    expect(maths?.textContent).not.toContain('Renommer');
+    expect(maths?.textContent).toContain('Retirer');
+    expect(maths?.textContent).toContain('Transférer');
+    expect(sciences?.querySelector('strong.owner')?.textContent).toBe('Luc');
   });
 });

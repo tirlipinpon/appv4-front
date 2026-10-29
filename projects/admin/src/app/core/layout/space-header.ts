@@ -12,6 +12,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
+import { knownAvatarEmoji } from '../../features/parent/child-avatars';
 import { AuthService } from '../auth/auth.service';
 import { ConnectedAccountService } from '../auth/connected-account.service';
 import { SpaceRoles } from '../auth/space-roles';
@@ -44,6 +45,7 @@ export class SpaceHeader implements OnInit {
 
   /** Nom du parent ou du professeur connecté. Vide tant que l'API n'a pas répondu. */
   readonly displayName = this.account.displayName;
+  readonly avatarFace = computed(() => knownAvatarEmoji(this.account.avatarCode()));
 
   /** Faux sur la file de modération : pas d'onglets parent ou professeur. */
   readonly showSpaceActions = input(true);
@@ -57,6 +59,7 @@ export class SpaceHeader implements OnInit {
         items: [
           { label: 'Accueil', path: '/parent' },
           { label: 'Enfants', path: '/parent/enfants' },
+          { label: 'Profil', path: '/parent/profil' },
           { label: 'Matières', path: '/parent/matieres' },
         ],
       };

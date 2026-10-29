@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 
 import type {
   CreateTeacherSubjectRequest,
-  DeactivateTeacherSubjectRequest,
   RenameTeacherSubjectRequest,
   TeacherDeactivateNoticesResponse,
   TeacherSubjectColleaguesResponse,
@@ -19,7 +18,7 @@ import { environment } from '../../../../environments/environment';
 /**
  * Matières du professeur (SCRUM-161, SCRUM-172, SCRUM-189).
  * Transfert : liste de collègues + demande à valider, pas d'email libre.
- * Désactivation : personnelle ; le créateur peut cibler des co-profs.
+ * Retrait : la matière quitte sa liste ; le dernier détenteur peut proposer un déplacement.
  */
 @Injectable({ providedIn: 'root' })
 export class TeacherSubjectsService {
@@ -50,15 +49,16 @@ export class TeacherSubjectsService {
     return this.http.put<TeacherSubjectItem>(`${environment.apiBaseUrl}/teacher/subjects/${id}`, body);
   }
 
-  deactivate(id: number, body: DeactivateTeacherSubjectRequest = {}): Observable<void> {
-    return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/deactivate`, body);
+  /** Retire la matière de la liste de ce professeur. */
+  remove(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}`);
   }
 
   reactivate(id: number): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/reactivate`, null);
   }
 
-  /** Enfants qui suivent encore cette matière : phrase et noms, avant désactivation. */
+  /** Enfants qui suivent encore cette matière : phrase et noms, avant retrait. */
   followers(id: number): Observable<TeacherSubjectFollowersResponse> {
     return this.http.get<TeacherSubjectFollowersResponse>(
       `${environment.apiBaseUrl}/teacher/subjects/${id}/followers`,

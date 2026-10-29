@@ -30,6 +30,8 @@ describe('SpaceHeader', () => {
           { path: 'login', component: BlankPage },
           { path: 'parent', component: BlankPage },
           { path: 'parent/enfants', component: BlankPage },
+          { path: 'parent/profil', component: BlankPage },
+          { path: 'parent/matieres', component: BlankPage },
           { path: 'teacher', component: BlankPage },
           { path: 'teacher/profil', component: BlankPage },
           { path: 'teacher-pending', component: BlankPage },
@@ -53,7 +55,7 @@ describe('SpaceHeader', () => {
       token: { activeRole: SpaceRoles.teacher, roles: [SpaceRoles.teacher] },
     });
 
-    const title: HTMLElement = fixture.nativeElement.querySelector('mat-toolbar span');
+    const title: HTMLElement = fixture.nativeElement.querySelector('.who');
     expect(title.textContent?.trim()).toBe('Camille');
   });
 
@@ -156,6 +158,7 @@ describe('SpaceHeader', () => {
     expect(menuLinks().map((link) => link.textContent?.trim())).toEqual([
       'Accueil',
       'Enfants',
+      'Profil',
       'Matières',
     ]);
     expect(menuLinks()[0].getAttribute('aria-current')).toBe('page');
@@ -172,6 +175,7 @@ describe('SpaceHeader', () => {
     expect(menuLinks().map((link) => link.textContent?.trim())).toEqual([
       'Accueil',
       'Enfants',
+      'Profil',
       'Matières',
     ]);
     const action: HTMLButtonElement = fixture.nativeElement.querySelector('.space-action');

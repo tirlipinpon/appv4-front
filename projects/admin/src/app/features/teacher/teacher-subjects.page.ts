@@ -26,6 +26,10 @@ interface SubjectRow {
   /** Faux : la matière est déjà dans la classe, ce professeur ne la suit pas. */
   followedByMe: boolean;
   sharedWith: TeacherSubjectSharedHolder[];
+  /** Destinataires d'une demande de partage encore en attente. */
+  shareAskedTo?: TeacherSubjectSharedHolder[];
+  /** Propriétaire : le professeur qui peut renommer. */
+  owner?: TeacherSubjectSharedHolder;
 }
 
 interface GradeBlock {
@@ -44,11 +48,10 @@ type TransferMode = 'move' | 'share';
 type Pending =
   | {
       id: number;
-      kind: 'disable';
-      /** Créateur + matière partagée : choisir aussi des co-profs. */
-      chooseOthers: boolean;
-      alsoUserIds: number[];
-      holders: TeacherSubjectSharedHolder[];
+      kind: 'remove';
+      /** Vrai si ce prof est le seul accès : retrait = plus personne ne voit la matière. */
+      sole: boolean;
+      colleagues: TeacherSubjectColleagueItem[];
     }
   | {
       id: number;
@@ -70,7 +73,7 @@ const MODE_REQUIRED = 'Choisis de déplacer ou de partager.';
 const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
 
 /**
- * Matières du professeur : créer, renommer, désactiver, proposer un transfert.
+ * Matières du professeur : créer, renommer, retirer, proposer un transfert.
  * Dans une année déjà cochée, il voit aussi les matières suivies par un collègue,
  * et le nom de ce collègue. Il ne peut pas les modifier : il peut demander le partage.
  * Le collègue valide via l'alerte en haut de page.
@@ -104,8 +107,6 @@ export class TeacherSubjectsPage implements OnInit {
   private followSeq = 0;
   /** Classe pour laquelle une demande de partage vient d'être envoyée. */
   readonly shareAskedKey = signal<string | null>(null);
-  /** Matière déjà listée pour laquelle une demande de partage vient d'être envoyée. */
-  readonly shareAskedSubjectId = signal<number | null>(null);
 
   ngOnInit(): void {
     this.reload(true);
@@ -131,11 +132,50 @@ export class TeacherSubjectsPage implements OnInit {
 
   sharedLabel(subject: SubjectRow): string | null {
     const names = this.sharedNames(subject);
-    if (names.length === 0) {
+    if (names.length === 0 || subject.followedByMe) {
       return null;
     }
-    const verb = subject.followedByMe ? 'Partagée avec' : 'Suivie par';
-    return `${verb} ${names.join(', ')}`;
+    return `Suivie par ${names.join(', ')}`;
+  }
+
+  /** Nom du propriétaire, en gras, quand un autre professeur peut renommer. */
+  ownerAside(subject: SubjectRow): string | null {
+    if (!subject.followedByMe || subject.ownedByMe) {
+      return null;
+    }
+    const ownerId = subject.owner?.userId;
+    const name = subject.owner?.displayName;
+    if (!name || ownerId == null) {
+      return null;
+    }
+    const listed = subject.sharedWith.some((holder) => holder.userId === ownerId);
+    return listed ? null : name;
+  }
+
+  owns(subject: SubjectRow, holder: TeacherSubjectSharedHolder): boolean {
+    return subject.owner?.userId != null && holder.userId === subject.owner.userId;
+  }
+
+  confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
+    const names = this.sharedNames(subject);
+    if (names.length > 0) {
+      return `Retirer ${subject.name} de ta liste ? ${names.join(', ')} la garde.`;
+    }
+    const place = school.schoolName ? `${grade.grade} de ${school.schoolName}` : grade.grade;
+    return (
+      `Retirer ${subject.name} du ${place} ? Tu es le seul dessus : ` +
+      `plus aucun professeur ne la verra. Elle reste enregistrée.`
+    );
+  }
+
+  removeIsSole(): boolean {
+    const current = this.pending();
+    return current?.kind === 'remove' ? current.sole : false;
+  }
+
+  removeColleagues(): TeacherSubjectColleagueItem[] {
+    const current = this.pending();
+    return current?.kind === 'remove' ? current.colleagues : [];
   }
 
   transferConfirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
@@ -247,8 +287,18 @@ export class TeacherSubjectsPage implements OnInit {
     return this.shareAskedKey() === this.gradeKey(schoolId, grade);
   }
 
-  shareAskedFor(subjectId: number): boolean {
-    return this.shareAskedSubjectId() === subjectId;
+  shareAskedLabel(subject: SubjectRow): string | null {
+    const asked = subject.shareAskedTo ?? [];
+    const names = asked
+      .map((holder) => holder.displayName)
+      .filter((name): name is string => !!name);
+    if (asked.length === 0) {
+      return null;
+    }
+    if (names.length === 0) {
+      return 'Demande de partage déjà envoyée.';
+    }
+    return `Demande de partage déjà envoyée à ${names.join(', ')}.`;
   }
 
   /**
@@ -256,20 +306,18 @@ export class TeacherSubjectsPage implements OnInit {
    * Le nom envoyé est celui du back : pas une saisie locale.
    */
   requestShareOf(schoolId: number, grade: string, subject: SubjectRow): void {
-    if (this.saving() || subject.followedByMe || subject.ownedByMe) {
+    if (this.saving() || subject.followedByMe || subject.ownedByMe || (subject.shareAskedTo?.length ?? 0) > 0) {
       return;
     }
     this.error.set(null);
     this.saving.set(true);
     this.api.requestShare({ schoolId, grade, name: subject.name }).subscribe({
       next: () => {
-        this.saving.set(false);
         this.clearSubjectError(subject.id);
-        this.shareAskedSubjectId.set(subject.id);
+        this.reload();
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
-        this.shareAskedSubjectId.set(null);
         this.setSubjectError(subject.id, httpErrorMessage(err, 'Demande impossible.'));
       },
     });
@@ -327,6 +375,9 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   startRename(subject: SubjectRow): void {
+    if (!subject.ownedByMe) {
+      return;
+    }
     this.pending.set(null);
     this.renamingId.set(subject.id);
     this.renameDraft.set(subject.name);
@@ -367,48 +418,51 @@ export class TeacherSubjectsPage implements OnInit {
     });
   }
 
-  askDisable(subject: SubjectRow): void {
+  askRemove(subject: SubjectRow): void {
     this.renamingId.set(null);
     this.clearSubjectError(subject.id);
-    const chooseOthers = subject.ownedByMe && subject.sharedWith.length > 0;
-    this.pending.set({
-      id: subject.id,
-      kind: 'disable',
-      chooseOthers,
-      alsoUserIds: [],
-      holders: chooseOthers ? [...subject.sharedWith] : [],
-    });
+    const sole = subject.sharedWith.length === 0;
+    this.pending.set({ id: subject.id, kind: 'remove', sole, colleagues: [] });
     this.loadFollowers(subject.id);
-  }
-
-  disableChoosingOthers(): boolean {
-    const current = this.pending();
-    return current?.kind === 'disable' ? current.chooseOthers : false;
-  }
-
-  disableHolders(): TeacherSubjectSharedHolder[] {
-    const current = this.pending();
-    return current?.kind === 'disable' ? current.holders : [];
-  }
-
-  disableAlsoSelected(userId: number | undefined): boolean {
-    if (userId == null) {
-      return false;
-    }
-    const current = this.pending();
-    return current?.kind === 'disable' ? current.alsoUserIds.includes(userId) : false;
-  }
-
-  toggleDisableAlso(userId: number): void {
-    const current = this.pending();
-    if (!current || current.kind !== 'disable' || !current.chooseOthers) {
+    if (!sole) {
       return;
     }
-    const next = current.alsoUserIds.includes(userId)
-      ? current.alsoUserIds.filter((id) => id !== userId)
-      : [...current.alsoUserIds, userId];
-    this.pending.set({ ...current, alsoUserIds: next });
-    this.clearSubjectError(current.id);
+    this.api.colleagues(subject.id).subscribe({
+      next: (body) => {
+        const current = this.pending();
+        if (!current || current.kind !== 'remove' || current.id !== subject.id) {
+          return;
+        }
+        this.pending.set({
+          ...current,
+          colleagues: colleaguesOf(body.colleagues),
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.setSubjectError(subject.id, httpErrorMessage(err, 'Collègues indisponibles.'));
+      },
+    });
+  }
+
+  /**
+   * Depuis le retrait « dernier détenteur » : ouvre le transfert en mode déplacer
+   * avec la liste déjà chargée (pas de retrait tant que le collègue n'a pas accepté).
+   */
+  chooseMoveInstead(subject: SubjectRow): void {
+    const current = this.pending();
+    if (!current || current.kind !== 'remove' || !current.sole || current.id !== subject.id) {
+      return;
+    }
+    this.clearSubjectError(subject.id);
+    this.clearFollowers();
+    this.pending.set({
+      id: subject.id,
+      kind: 'transfer',
+      mode: 'move',
+      colleagueUserId: null,
+      colleagues: current.colleagues,
+      confirm: false,
+    });
   }
 
   askTransfer(subject: SubjectRow): void {
@@ -491,7 +545,7 @@ export class TeacherSubjectsPage implements OnInit {
         }
         const current = this.pending();
         this.followersLoading.set(false);
-        const shown = current?.kind === 'disable';
+        const shown = current?.kind === 'remove';
         if (!current || current.id !== subjectId || !shown) {
           return;
         }
@@ -514,19 +568,12 @@ export class TeacherSubjectsPage implements OnInit {
     this.followersLoading.set(false);
   }
 
-  confirmDisable(subjectId: number): void {
-    const current = this.pending();
-    const alsoUserIds =
-      current?.kind === 'disable' && current.id === subjectId ? current.alsoUserIds : [];
-    this.postState(
-      subjectId,
-      () => this.api.deactivate(subjectId, { alsoUserIds }),
-      'Désactivation impossible.',
-    );
-  }
-
   reactivate(subjectId: number): void {
     this.postState(subjectId, () => this.api.reactivate(subjectId), 'Réactivation impossible.');
+  }
+
+  confirmRemove(subjectId: number): void {
+    this.postState(subjectId, () => this.api.remove(subjectId), 'Retrait impossible.');
   }
 
   confirmTransfer(subjectId: number): void {
@@ -664,6 +711,8 @@ export class TeacherSubjectsPage implements OnInit {
             ownedByMe: subject.ownedByMe === true,
             followedByMe: subject.followedByMe !== false,
             sharedWith: holdersOf(subject.sharedWith),
+            shareAskedTo: holdersOf(subject.shareAskedTo),
+            owner: subject.owner?.userId != null ? holdersOf([subject.owner])[0] : undefined,
           });
         }
         grades.push({ grade: grade.grade, subjects });

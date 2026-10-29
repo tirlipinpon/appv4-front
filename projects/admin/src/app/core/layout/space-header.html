@@ -1,6 +1,9 @@
 <div class="banner">
   <mat-toolbar color="primary">
-    <span>{{ displayName() }}</span>
+    @if (avatarFace(); as face) {
+      <span class="face" aria-hidden="true">{{ face }}</span>
+    }
+    <span class="who">{{ displayName() }}</span>
     @if (showSpaceActions()) {
       <app-role-switch />
     }
