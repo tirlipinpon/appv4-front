@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { environment } from '../projects/admin/src/environments/environment';
+
 test('un admin arrive sur la file, valide, et voit la demande acceptée', async ({ page }) => {
   const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   const validatedAt = '2026-10-23T18:00:00.000Z';
@@ -97,7 +99,7 @@ test('un parent n ouvre pas la file de modération', async ({ page }) => {
 async function login(page: Page, email: string): Promise<void> {
   await page.goto('/login');
   await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Mot de passe', { exact: true }).fill('Secret1!');
+  await page.getByLabel('Mot de passe', { exact: true }).fill(environment.devLoginPassword);
   await page.getByRole('button', { name: 'Se connecter' }).click();
 }
 

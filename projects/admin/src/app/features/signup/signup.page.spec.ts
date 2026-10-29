@@ -4,6 +4,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { environment } from '../../../environments/environment';
 import { SignupPage } from './signup.page';
 
 const signupUrl = 'http://localhost:8080/api/int/auth/signup';
@@ -37,7 +38,7 @@ describe('SignupPage', () => {
   it('n’envoie pas une adresse manifestement invalide', () => {
     for (const email of ['@', 'a@']) {
       page.email.set(email);
-      page.password.set('Secret1!');
+      page.password.set(environment.devLoginPassword);
       page.submit();
       fixture.detectChanges();
 
@@ -49,7 +50,7 @@ describe('SignupPage', () => {
 
   it('affiche le message générique de collision sans deviner le fournisseur', () => {
     page.email.set('ada@exemple.com');
-    page.password.set('Secret1!');
+    page.password.set(environment.devLoginPassword);
     page.submit();
 
     const request = http.expectOne(signupUrl);
