@@ -210,7 +210,9 @@
                               <p class="hint shared">{{ shared }}</p>
                             }
                           </div>
-                          @if (!subject.ownedByMe && !shareAskedFor(subject.id)) {
+                          @if (shareAskedLabel(subject); as asked) {
+                            <p class="hint" role="status">{{ asked }}</p>
+                          } @else if (!subject.ownedByMe) {
                             <div class="actions">
                               <button
                                 mat-flat-button
@@ -223,16 +225,14 @@
                               </button>
                             </div>
                           }
-                          @if (shareAskedFor(subject.id)) {
-                            <p class="hint" role="status">
-                              Demande envoyée. Le professeur qui a créé la matière peut accepter de la partager.
-                            </p>
-                          }
                         } @else {
                           <div class="headline">
                             <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
-                            @if (sharedLabel(subject); as shared) {
-                              <p class="hint shared">{{ shared }}</p>
+                            @if (ownerAside(subject); as owner) {
+                              <strong class="owner">{{ owner }}</strong>
+                            }
+                            @if (subject.sharedWith.length > 0) {
+                              <p class="hint shared">Partagée avec @for (holder of subject.sharedWith; track holder.userId; let last = $last) {@if (owns(subject, holder)) {<strong>{{ holder.displayName }}</strong>}@else {{{ holder.displayName }}}@if (!last) {, }}</p>
                             }
                           </div>
                           @if (!subject.active) {

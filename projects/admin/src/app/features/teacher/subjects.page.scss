@@ -137,6 +137,11 @@
   margin: 0;
 }
 
+.owner,
+.shared strong {
+  font-weight: 700;
+}
+
 .transfer {
   display: flex;
   flex-wrap: wrap;

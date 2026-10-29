@@ -26,6 +26,10 @@ interface SubjectRow {
   /** Faux : la matière est déjà dans la classe, ce professeur ne la suit pas. */
   followedByMe: boolean;
   sharedWith: TeacherSubjectSharedHolder[];
+  /** Destinataires d'une demande de partage encore en attente. */
+  shareAskedTo?: TeacherSubjectSharedHolder[];
+  /** Propriétaire : le professeur qui peut renommer. */
+  owner?: TeacherSubjectSharedHolder;
 }
 
 interface GradeBlock {
@@ -103,8 +107,6 @@ export class TeacherSubjectsPage implements OnInit {
   private followSeq = 0;
   /** Classe pour laquelle une demande de partage vient d'être envoyée. */
   readonly shareAskedKey = signal<string | null>(null);
-  /** Matière déjà listée pour laquelle une demande de partage vient d'être envoyée. */
-  readonly shareAskedSubjectId = signal<number | null>(null);
 
   ngOnInit(): void {
     this.reload(true);
@@ -130,11 +132,28 @@ export class TeacherSubjectsPage implements OnInit {
 
   sharedLabel(subject: SubjectRow): string | null {
     const names = this.sharedNames(subject);
-    if (names.length === 0) {
+    if (names.length === 0 || subject.followedByMe) {
       return null;
     }
-    const verb = subject.followedByMe ? 'Partagée avec' : 'Suivie par';
-    return `${verb} ${names.join(', ')}`;
+    return `Suivie par ${names.join(', ')}`;
+  }
+
+  /** Nom du propriétaire, en gras, quand un autre professeur peut renommer. */
+  ownerAside(subject: SubjectRow): string | null {
+    if (!subject.followedByMe || subject.ownedByMe) {
+      return null;
+    }
+    const ownerId = subject.owner?.userId;
+    const name = subject.owner?.displayName;
+    if (!name || ownerId == null) {
+      return null;
+    }
+    const listed = subject.sharedWith.some((holder) => holder.userId === ownerId);
+    return listed ? null : name;
+  }
+
+  owns(subject: SubjectRow, holder: TeacherSubjectSharedHolder): boolean {
+    return subject.owner?.userId != null && holder.userId === subject.owner.userId;
   }
 
   confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
@@ -268,8 +287,18 @@ export class TeacherSubjectsPage implements OnInit {
     return this.shareAskedKey() === this.gradeKey(schoolId, grade);
   }
 
-  shareAskedFor(subjectId: number): boolean {
-    return this.shareAskedSubjectId() === subjectId;
+  shareAskedLabel(subject: SubjectRow): string | null {
+    const asked = subject.shareAskedTo ?? [];
+    const names = asked
+      .map((holder) => holder.displayName)
+      .filter((name): name is string => !!name);
+    if (asked.length === 0) {
+      return null;
+    }
+    if (names.length === 0) {
+      return 'Demande de partage déjà envoyée.';
+    }
+    return `Demande de partage déjà envoyée à ${names.join(', ')}.`;
   }
 
   /**
@@ -277,20 +306,18 @@ export class TeacherSubjectsPage implements OnInit {
    * Le nom envoyé est celui du back : pas une saisie locale.
    */
   requestShareOf(schoolId: number, grade: string, subject: SubjectRow): void {
-    if (this.saving() || subject.followedByMe || subject.ownedByMe) {
+    if (this.saving() || subject.followedByMe || subject.ownedByMe || (subject.shareAskedTo?.length ?? 0) > 0) {
       return;
     }
     this.error.set(null);
     this.saving.set(true);
     this.api.requestShare({ schoolId, grade, name: subject.name }).subscribe({
       next: () => {
-        this.saving.set(false);
         this.clearSubjectError(subject.id);
-        this.shareAskedSubjectId.set(subject.id);
+        this.reload();
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
-        this.shareAskedSubjectId.set(null);
         this.setSubjectError(subject.id, httpErrorMessage(err, 'Demande impossible.'));
       },
     });
@@ -684,6 +711,8 @@ export class TeacherSubjectsPage implements OnInit {
             ownedByMe: subject.ownedByMe === true,
             followedByMe: subject.followedByMe !== false,
             sharedWith: holdersOf(subject.sharedWith),
+            shareAskedTo: holdersOf(subject.shareAskedTo),
+            owner: subject.owner?.userId != null ? holdersOf([subject.owner])[0] : undefined,
           });
         }
         grades.push({ grade: grade.grade, subjects });

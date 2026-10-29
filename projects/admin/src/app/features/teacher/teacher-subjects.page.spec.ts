@@ -434,9 +434,67 @@ describe('TeacherSubjectsPage', () => {
     expect(ask.request.method).toBe('POST');
     expect(ask.request.body).toEqual({ schoolId: 1, grade: 'CE1', name: 'Mathématiques' });
     ask.flush(null);
+    expectReload({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE1',
+              subjects: [
+                {
+                  id: 4,
+                  name: 'Mathématiques',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: false,
+                  sharedWith: [{ userId: 10, displayName: 'Camille' }],
+                  shareAskedTo: [{ userId: 9, displayName: 'Anne' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Demande envoyée.');
+    expect(fixture.nativeElement.textContent).toContain('Demande de partage déjà envoyée à Anne.');
+    expect(fixture.nativeElement.textContent).not.toContain('Demander le partage');
+  });
+
+  it('remplace Demander le partage par les noms déjà sollicités', () => {
+    boot({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE1',
+              subjects: [
+                {
+                  id: 4,
+                  name: 'Mathématiques',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: false,
+                  sharedWith: [{ userId: 10, displayName: 'Camille' }],
+                  shareAskedTo: [
+                    { userId: 9, displayName: 'Anne' },
+                    { userId: 11, displayName: 'luc2' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(fixture.nativeElement.textContent).toContain('Demande de partage déjà envoyée à Anne, luc2.');
+    expect(fixture.nativeElement.textContent).not.toContain('Demander le partage');
   });
 
   it('réserve Renommer au créateur, même quand un collègue suit aussi la matière', () => {
@@ -456,6 +514,7 @@ describe('TeacherSubjectsPage', () => {
                   ownedByMe: true,
                   followedByMe: true,
                   sharedWith: [{ userId: 10, displayName: 'Camille' }],
+                  owner: { userId: 2, displayName: 'Martin' },
                 },
                 {
                   id: 4,
@@ -463,7 +522,20 @@ describe('TeacherSubjectsPage', () => {
                   active: true,
                   ownedByMe: false,
                   followedByMe: true,
-                  sharedWith: [{ userId: 9, displayName: 'Anne' }],
+                  sharedWith: [
+                    { userId: 9, displayName: 'Anne' },
+                    { userId: 11, displayName: 'luc2' },
+                  ],
+                  owner: { userId: 9, displayName: 'Anne' },
+                },
+                {
+                  id: 5,
+                  name: 'Sciences',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: true,
+                  sharedWith: [],
+                  owner: { userId: 12, displayName: 'Luc' },
                 },
               ],
             },
@@ -475,12 +547,18 @@ describe('TeacherSubjectsPage', () => {
     const rows = Array.from(fixture.nativeElement.querySelectorAll('.subject') as NodeListOf<HTMLElement>);
     const lecture = rows.find((row) => row.textContent?.includes('Lecture'));
     const maths = rows.find((row) => row.textContent?.includes('Mathématiques'));
+    const sciences = rows.find((row) => row.textContent?.includes('Sciences'));
     expect(lecture?.textContent).toContain('Renommer');
     expect(lecture?.textContent).toContain('Retirer');
     expect(lecture?.textContent).toContain('Transférer');
-    expect(maths?.textContent).toContain('Partagée avec Anne');
+    expect(lecture?.querySelector('strong.owner')).toBeNull();
+    expect(maths?.textContent).toContain('Partagée avec');
+    expect(maths?.textContent).toContain('Anne');
+    expect(maths?.textContent).toContain('luc2');
+    expect(Array.from(maths?.querySelectorAll('strong') ?? []).map((node) => node.textContent)).toEqual(['Anne']);
     expect(maths?.textContent).not.toContain('Renommer');
     expect(maths?.textContent).toContain('Retirer');
     expect(maths?.textContent).toContain('Transférer');
+    expect(sciences?.querySelector('strong.owner')?.textContent).toBe('Luc');
   });
 });

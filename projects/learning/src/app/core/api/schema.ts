@@ -1054,6 +1054,10 @@ export interface components {
             /** @description Faux si la matière est déjà dans la classe mais que ce professeur ne la suit pas. sharedWith nomme alors les professeurs qui la suivent. */
             followedByMe?: boolean;
             sharedWith?: components["schemas"]["TeacherSubjectSharedHolder"][];
+            /** @description Destinataires d'une demande de partage encore en attente, envoyée par ce professeur. Vide s'il n'y en a pas. */
+            shareAskedTo?: components["schemas"]["TeacherSubjectSharedHolder"][];
+            /** @description Propriétaire de la matière : le professeur qui peut la renommer. */
+            owner?: components["schemas"]["TeacherSubjectSharedHolder"];
         };
         TeacherSubjectSharedHolder: {
             /** Format: int64 */
@@ -3122,7 +3126,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Professeurs acceptés avec la même classe, triés par nom */
+            /** @description Professeurs acceptés de la même classe qui n'ont pas encore cette matière, triés par nom */
             200: {
                 headers: {
                     [name: string]: unknown;
