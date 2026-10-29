@@ -50,10 +50,6 @@ export class TeacherSubjectsService {
     return this.http.put<TeacherSubjectItem>(`${environment.apiBaseUrl}/teacher/subjects/${id}`, body);
   }
 
-  remove(id: number): Observable<void> {
-    return this.http.delete<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}`);
-  }
-
   deactivate(id: number, body: DeactivateTeacherSubjectRequest = {}): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/deactivate`, body);
   }
@@ -62,7 +58,7 @@ export class TeacherSubjectsService {
     return this.http.post<void>(`${environment.apiBaseUrl}/teacher/subjects/${id}/reactivate`, null);
   }
 
-  /** Enfants qui suivent encore cette matière : phrase et noms, avant désactivation ou retrait. */
+  /** Enfants qui suivent encore cette matière : phrase et noms, avant désactivation. */
   followers(id: number): Observable<TeacherSubjectFollowersResponse> {
     return this.http.get<TeacherSubjectFollowersResponse>(
       `${environment.apiBaseUrl}/teacher/subjects/${id}/followers`,

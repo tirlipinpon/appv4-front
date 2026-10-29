@@ -84,17 +84,19 @@
                               (input)="onRenameDraft(inputValue($event))"
                             />
                           </mat-form-field>
-                          <button
-                            mat-flat-button
-                            type="button"
-                            [disabled]="saving()"
-                            (click)="saveRename(subject.id)"
-                          >
-                            Enregistrer
-                          </button>
-                          <button mat-button type="button" [disabled]="saving()" (click)="cancelRename()">
-                            Annuler
-                          </button>
+                          <div class="actions">
+                            <button
+                              mat-flat-button
+                              type="button"
+                              [disabled]="saving()"
+                              (click)="saveRename(subject.id)"
+                            >
+                              Enregistrer
+                            </button>
+                            <button mat-button type="button" [disabled]="saving()" (click)="cancelRename()">
+                              Annuler
+                            </button>
+                          </div>
                         } @else if (pending()?.id === subject.id && pending()?.kind === 'disable') {
                           <p class="confirm" role="alert">
                             Désactiver {{ subject.name }} pour toi ? Elle reste dans cette liste, elle n'est plus proposée pour toi ailleurs.
@@ -137,45 +139,6 @@
                             (click)="confirmDisable(subject.id)"
                           >
                             Confirmer la désactivation
-                          </button>
-                        } @else if (pending()?.id === subject.id && pending()?.kind === 'remove') {
-                          <p class="confirm" role="alert">{{ confirmText(school, grade, subject) }}</p>
-                          @if (followersLoading()) {
-                            <p class="hint">Chargement…</p>
-                          } @else if (followers(); as people) {
-                            <p class="confirm">{{ people.warning }}</p>
-                            <ul class="follower-names">
-                              @for (name of people.names; track $index) {
-                                <li>{{ name }}</li>
-                              }
-                            </ul>
-                          }
-                          @if (removeIsSole()) {
-                            @if (removeColleagues().length === 0) {
-                              <p class="hint">Aucun collègue avec cette classe.</p>
-                            } @else {
-                              <button
-                                mat-flat-button
-                                color="primary"
-                                type="button"
-                                [disabled]="saving()"
-                                (click)="chooseMoveInstead(subject)"
-                              >
-                                Déplacer vers un collègue
-                              </button>
-                            }
-                          }
-                          <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
-                            Annuler
-                          </button>
-                          <button
-                            mat-flat-button
-                            color="warn"
-                            type="button"
-                            [disabled]="saving() || followers() === null"
-                            (click)="confirmRemove(subject.id)"
-                          >
-                            Confirmer le retrait
                           </button>
                         } @else if (pending()?.id === subject.id && pending()?.kind === 'transfer') {
                           @if (transferConfirming()) {
@@ -245,20 +208,24 @@
                             </div>
                           }
                         } @else if (!subject.followedByMe) {
-                          <span class="name">{{ subject.name }}</span>
-                          @if (sharedLabel(subject); as shared) {
-                            <p class="hint shared">{{ shared }}</p>
-                          }
+                          <div class="headline">
+                            <span class="name">{{ subject.name }}</span>
+                            @if (sharedLabel(subject); as shared) {
+                              <p class="hint shared">{{ shared }}</p>
+                            }
+                          </div>
                           @if (!subject.ownedByMe && !shareAskedFor(subject.id)) {
-                            <button
-                              mat-flat-button
-                              color="primary"
-                              type="button"
-                              [disabled]="saving()"
-                              (click)="requestShareOf(school.schoolId, grade.grade, subject)"
-                            >
-                              Demander le partage
-                            </button>
+                            <div class="actions">
+                              <button
+                                mat-flat-button
+                                color="primary"
+                                type="button"
+                                [disabled]="saving()"
+                                (click)="requestShareOf(school.schoolId, grade.grade, subject)"
+                              >
+                                Demander le partage
+                              </button>
+                            </div>
                           }
                           @if (shareAskedFor(subject.id)) {
                             <p class="hint" role="status">
@@ -266,31 +233,32 @@
                             </p>
                           }
                         } @else {
-                          <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
-                          @if (sharedLabel(subject); as shared) {
-                            <p class="hint shared">{{ shared }}</p>
-                          }
+                          <div class="headline">
+                            <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
+                            @if (sharedLabel(subject); as shared) {
+                              <p class="hint shared">{{ shared }}</p>
+                            }
+                          </div>
                           @if (!subject.active) {
                             <p class="hint">Visible ici, plus proposée dans le reste de l'application.</p>
                           }
-                          <button mat-button type="button" [disabled]="saving()" (click)="startRename(subject)">
-                            Renommer
-                          </button>
-                          @if (subject.active) {
-                            <button mat-button type="button" [disabled]="saving()" (click)="askDisable(subject)">
-                              Désactiver
+                          <div class="actions">
+                            <button mat-button type="button" [disabled]="saving()" (click)="startRename(subject)">
+                              Renommer
                             </button>
-                          } @else {
-                            <button mat-button type="button" [disabled]="saving()" (click)="reactivate(subject.id)">
-                              Réactiver
+                            @if (subject.active) {
+                              <button mat-button type="button" [disabled]="saving()" (click)="askDisable(subject)">
+                                Désactiver
+                              </button>
+                            } @else {
+                              <button mat-button type="button" [disabled]="saving()" (click)="reactivate(subject.id)">
+                                Réactiver
+                              </button>
+                            }
+                            <button mat-button type="button" [disabled]="saving()" (click)="askTransfer(subject)">
+                              Transférer
                             </button>
-                          }
-                          <button mat-button type="button" [disabled]="saving()" (click)="askRemove(subject)">
-                            Retirer
-                          </button>
-                          <button mat-button type="button" [disabled]="saving()" (click)="askTransfer(subject)">
-                            Transférer
-                          </button>
+                          </div>
                         }
                         @if (subjectError(subject.id); as subjectMessage) {
                           <p class="field-error" role="alert">{{ subjectMessage }}</p>

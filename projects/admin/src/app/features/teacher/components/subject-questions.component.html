@@ -87,6 +87,8 @@
                   <li>{{ item.label }}</li>
                 }
               </ol>
+            } @else if (question.formCode === 'texte') {
+              <p>{{ question.expectedAnswer }}</p>
             } @else if (question.formCode === 'case_vide') {
               <p>{{ question.sentence }}</p>
               <ul class="answers">
@@ -463,6 +465,38 @@
             </div>
           }
           <button mat-button type="button" [disabled]="saving()" (click)="addDecoy()">Ajouter un leurre</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'texte') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Réponse attendue</mat-label>
+            <input
+              matInput
+              [value]="expectedAnswer()"
+              [disabled]="saving()"
+              (input)="setExpectedAnswer(inputValue($event))"
+            />
+          </mat-form-field>
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }

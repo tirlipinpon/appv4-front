@@ -166,71 +166,6 @@ test('transfert sans collègue : message Aucun collègue', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Continuer' })).toBeDisabled();
 });
 
-test('retrait partagé : le collègue garde la matière', async ({ page }) => {
-  const state = createState({
-    subjects: [
-      {
-        id: 3,
-        name: 'Mathématiques',
-        active: true,
-        ownedByMe: true,
-        sharedWith: [{ userId: 10, displayName: 'Camille' }],
-      },
-    ],
-  });
-  await mockTeacherApis(page, state);
-
-  await openMatieres(page);
-  await page.getByRole('button', { name: 'Retirer' }).click();
-  await expect(page.getByText(/Camille la garde/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Déplacer vers un collègue' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Confirmer le retrait' }).click();
-  await expect(page.getByText('Mathématiques')).toHaveCount(0);
-});
-
-test('retrait dernier détenteur avec collègues : proposer déplacer ou confirmer', async ({ page }) => {
-  const state = createState();
-  await mockTeacherApis(page, state);
-
-  await openMatieres(page);
-  await page.getByRole('button', { name: 'Retirer' }).first().click();
-  await expect(page.getByText(/plus aucun professeur ne la verra/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Déplacer vers un collègue' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Déplacer vers un collègue' }).click();
-  await expect(page.getByRole('button', { name: 'Déplacer', exact: true })).toHaveClass(/selected/);
-  await expect(page.getByRole('button', { name: 'Camille' })).toBeVisible();
-  await page.getByRole('button', { name: 'Camille' }).click();
-  await page.getByRole('button', { name: 'Continuer' }).click();
-  await page.getByRole('button', { name: 'Envoyer la demande' }).click();
-  expect(state.pendingTransfers[0]).toMatchObject({ mode: 'move', colleagueUserId: 10 });
-  await expect(page.getByText('Lecture')).toBeVisible();
-});
-
-test('retrait dernier détenteur : confirmer le retrait cache la matière', async ({ page }) => {
-  const state = createState();
-  await mockTeacherApis(page, state);
-
-  await openMatieres(page);
-  await page.getByRole('button', { name: 'Retirer' }).first().click();
-  await page.getByRole('button', { name: 'Confirmer le retrait' }).click();
-  await expect(page.getByText('Lecture')).toHaveCount(0);
-  expect(state.subjects.find((s) => s.id === 2)).toBeUndefined();
-});
-
-test('retrait dernier détenteur sans collègue : pas de bouton déplacer', async ({ page }) => {
-  const state = createState({ colleagues: [] });
-  await mockTeacherApis(page, state);
-
-  await openMatieres(page);
-  await page.getByRole('button', { name: 'Retirer' }).first().click();
-  await expect(page.getByText(/plus aucun professeur ne la verra/)).toBeVisible();
-  await expect(page.getByText('Aucun collègue avec cette classe.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Déplacer vers un collègue' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Confirmer le retrait' }).click();
-  await expect(page.getByText('Lecture')).toHaveCount(0);
-});
-
 interface MockState {
   subjects: SubjectState[];
   colleagues: { userId: number; displayName: string }[];
@@ -320,16 +255,6 @@ async function mockTeacherApis(page: Page, state: MockState): Promise<void> {
       colleagueUserId: body.colleagueUserId,
       mode: body.mode,
     });
-    await route.fulfill({ status: 204, body: '' });
-  });
-
-  await page.route(/\/api\/int\/teacher\/subjects\/\d+$/, async (route) => {
-    if (route.request().method() !== 'DELETE') {
-      await route.fallback();
-      return;
-    }
-    const subjectId = Number(route.request().url().split('/subjects/')[1]);
-    state.subjects = state.subjects.filter((row) => row.id !== subjectId);
     await route.fulfill({ status: 204, body: '' });
   });
 

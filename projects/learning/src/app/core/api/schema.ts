@@ -947,6 +947,7 @@ export interface components {
             sentence?: string;
             answers?: components["schemas"]["TeacherQuestionGapWordInput"][];
             decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
+            expectedAnswer?: string;
         };
         TeacherQuestionChoiceInput: {
             label?: string;
@@ -1021,6 +1022,7 @@ export interface components {
             sentence?: string;
             answers?: components["schemas"]["TeacherQuestionGapWordItem"][];
             decoys?: components["schemas"]["TeacherQuestionGapWordItem"][];
+            expectedAnswer?: string;
         };
         RenameTeacherSubjectRequest: {
             name?: string;
