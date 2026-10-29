@@ -270,6 +270,18 @@ describe('SubjectQuestionsComponent', () => {
     page.setStatementSide(1, false);
     fixture.detectChanges();
 
+    const vraiButtons = Array.from(
+      fixture.nativeElement.querySelectorAll('button.side.vrai') as NodeListOf<HTMLButtonElement>,
+    );
+    const fauxButtons = Array.from(
+      fixture.nativeElement.querySelectorAll('button.side.faux') as NodeListOf<HTMLButtonElement>,
+    );
+    expect(vraiButtons[0]?.classList.contains('selected')).toBeTrue();
+    expect(vraiButtons[0]?.getAttribute('aria-pressed')).toBe('true');
+    expect(fauxButtons[0]?.classList.contains('selected')).toBeFalse();
+    expect(fauxButtons[1]?.classList.contains('selected')).toBeTrue();
+    expect(vraiButtons[1]?.classList.contains('selected')).toBeFalse();
+
     const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
       (button) => button.textContent?.includes('Enregistrer'),
     );
