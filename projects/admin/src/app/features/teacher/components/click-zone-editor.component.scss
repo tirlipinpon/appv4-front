@@ -1,0 +1,159 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+  font-weight: 600;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: 40rem;
+}
+
+.stage img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.stage svg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  pointer-events: all;
+  cursor: crosshair;
+}
+
+rect.hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+polygon,
+rect:not(.hit),
+ellipse {
+  stroke-width: 0.006;
+  pointer-events: none;
+}
+
+polygon.correct,
+rect.correct,
+ellipse.correct {
+  fill: rgb(27 138 62 / 35%);
+  stroke: #1b8a3e;
+}
+
+polygon.wrong,
+rect.wrong,
+ellipse.wrong {
+  fill: rgb(209 36 47 / 35%);
+  stroke: #d1242f;
+}
+
+.selected {
+  stroke-width: 0.01;
+}
+
+polyline.draft {
+  fill: none;
+  stroke: #1a3d7c;
+  stroke-width: 0.005;
+  pointer-events: none;
+}
+
+circle {
+  fill: #fff;
+  stroke: #1a1a1a;
+  stroke-width: 0.004;
+  cursor: grab;
+}
+
+circle.draft-point {
+  fill: #1a3d7c;
+  cursor: pointer;
+}
+
+circle.draft-point.active {
+  fill: #fff;
+  stroke: #1a3d7c;
+  stroke-width: 0.008;
+}
+
+circle.draft-point.origin {
+  stroke: #1a3d7c;
+  stroke-width: 0.008;
+}
+
+circle.active {
+  fill: #1a3d7c;
+}
+
+.tools,
+.zone-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.zone-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.zone-list li {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #f5f7fb;
+  border-radius: 8px;
+}
+
+.zone-list li.selected {
+  outline: 2px solid #1a3d7c;
+}
+
+button.pick,
+button.side {
+  border: 1px solid #d0d7e2;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.side.vrai.selected {
+  border-color: #0d652d;
+  background: #e6f4ea;
+  color: #0d652d;
+  font-weight: 700;
+}
+
+button.side.faux.selected {
+  border-color: #b3261e;
+  background: #fce8e6;
+  color: #b3261e;
+  font-weight: 700;
+}
+
+.name,
+.shape {
+  width: 12rem;
+}
+
+.hint {
+  margin: 0.35rem 0 0;
+  color: #5f6368;
+}

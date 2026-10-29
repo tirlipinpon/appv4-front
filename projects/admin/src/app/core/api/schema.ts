@@ -966,6 +966,9 @@ export interface components {
             answers?: components["schemas"]["TeacherQuestionGapWordInput"][];
             decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
             expectedAnswer?: string;
+            imageWebp?: string;
+            requireAllCorrect?: boolean;
+            zones?: components["schemas"]["TeacherQuestionZoneInput"][];
         };
         TeacherQuestionChoiceInput: {
             label?: string;
@@ -985,9 +988,21 @@ export interface components {
             questionSide?: string;
             answerSide?: string;
         };
+        TeacherQuestionPointInput: {
+            /** Format: double */
+            x?: number;
+            /** Format: double */
+            y?: number;
+        };
         TeacherQuestionStatementInput: {
             label?: string;
             truthful?: boolean;
+        };
+        TeacherQuestionZoneInput: {
+            label?: string;
+            correct?: boolean;
+            shape?: string;
+            points?: components["schemas"]["TeacherQuestionPointInput"][];
         };
         AuthErrorBody: {
             message?: string;
@@ -1020,11 +1035,25 @@ export interface components {
             questionSide?: string;
             answerSide?: string;
         };
+        TeacherQuestionPointItem: {
+            /** Format: double */
+            x?: number;
+            /** Format: double */
+            y?: number;
+        };
         TeacherQuestionStatementItem: {
             /** Format: int64 */
             id?: number;
             label?: string;
             truthful?: boolean;
+        };
+        TeacherQuestionZoneItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+            correct?: boolean;
+            shape?: string;
+            points?: components["schemas"]["TeacherQuestionPointItem"][];
         };
         TeacherSubjectQuestionItem: {
             /** Format: int64 */
@@ -1041,6 +1070,9 @@ export interface components {
             answers?: components["schemas"]["TeacherQuestionGapWordItem"][];
             decoys?: components["schemas"]["TeacherQuestionGapWordItem"][];
             expectedAnswer?: string;
+            imageWebp?: string;
+            requireAllCorrect?: boolean;
+            zones?: components["schemas"]["TeacherQuestionZoneItem"][];
         };
         RenameTeacherSubjectRequest: {
             name?: string;

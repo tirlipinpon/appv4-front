@@ -1,0 +1,157 @@
+@if (!readonly()) {
+  <label class="upload">
+    Image
+    <input
+      type="file"
+      accept="image/jpeg,image/png,image/gif,image/webp"
+      [disabled]="disabled()"
+      (change)="onFile($event)"
+    />
+  </label>
+}
+
+@if (imageDataUrl()) {
+  <div class="stage">
+    <img [src]="imageDataUrl()" alt="" draggable="false" />
+    <svg
+      #surface
+      viewBox="0 0 1 1"
+      preserveAspectRatio="none"
+      (pointerdown)="onSurfaceDown($event)"
+      (pointerup)="onSurfaceUp($event)"
+    >
+      <rect class="hit" x="0" y="0" width="1" height="1" />
+      @for (zone of zones(); track $index; let zoneIndex = $index) {
+        @if (zone.shape === 'polygon') {
+          <polygon
+            [attr.points]="polygonAttribute(zone.points)"
+            [class.correct]="zone.correct"
+            [class.wrong]="!zone.correct"
+            [class.selected]="zoneIndex === selected()"
+          />
+        } @else if (zone.shape === 'rect') {
+          <rect
+            [attr.x]="rectangleBox(zone.points).x"
+            [attr.y]="rectangleBox(zone.points).y"
+            [attr.width]="rectangleBox(zone.points).width"
+            [attr.height]="rectangleBox(zone.points).height"
+            [class.correct]="zone.correct"
+            [class.wrong]="!zone.correct"
+            [class.selected]="zoneIndex === selected()"
+          />
+        } @else {
+          <ellipse
+            [attr.cx]="ellipseBox(zone.points).cx"
+            [attr.cy]="ellipseBox(zone.points).cy"
+            [attr.rx]="ellipseBox(zone.points).rx"
+            [attr.ry]="ellipseBox(zone.points).ry"
+            [class.correct]="zone.correct"
+            [class.wrong]="!zone.correct"
+            [class.selected]="zoneIndex === selected()"
+          />
+        }
+        @if (!readonly()) {
+          @for (handle of handles(zone); track $index; let handleIndex = $index) {
+            <circle
+              [attr.cx]="handle.x"
+              [attr.cy]="handle.y"
+              r="0.015"
+              [class.active]="!draft().length && handleIndex === selectedHandle() && zoneIndex === selected()"
+              (pointerdown)="onHandleDown($event, zoneIndex, handleIndex)"
+              (pointermove)="onHandleMove($event)"
+              (pointerup)="onHandleUp($event)"
+            />
+          }
+        }
+      }
+      @if (draft().length) {
+        <polyline [attr.points]="polygonAttribute(draft())" class="draft" />
+        @for (point of draft(); track $index; let draftIndex = $index) {
+          <circle
+            [attr.cx]="point.x"
+            [attr.cy]="point.y"
+            r="0.012"
+            class="draft-point"
+            [class.active]="draftIndex === (draftHandle() ?? draft().length - 1)"
+            [class.origin]="draftIndex === 0 && draft().length >= 3"
+            (pointerdown)="onDraftDown($event, draftIndex)"
+          />
+        }
+      }
+    </svg>
+  </div>
+}
+
+@if (!readonly()) {
+  <div class="tools">
+    <button mat-button type="button" [disabled]="disabled() || draft().length < 3" (click)="finishDraft()">
+      Terminer la zone
+    </button>
+    <button mat-button type="button" [disabled]="disabled()" (click)="addRectangle()">Rectangle</button>
+    <button mat-button type="button" [disabled]="disabled()" (click)="addEllipse()">Ellipse</button>
+    <button mat-button type="button" [disabled]="disabled() || selected() == null" (click)="startAdding()">
+      Ajouter un point
+    </button>
+    <button mat-button type="button" [disabled]="disabled() || !canDeletePoint()" (click)="deleteSelectedPoint()">
+      Supprimer le point
+    </button>
+  </div>
+
+  @if (imageDataUrl() && !draft().length) {
+    <p class="hint">Clique sur l'image pour poser les points, un par un.</p>
+  } @else if (draft().length && draft().length < 3) {
+    <p class="hint">Encore {{ 3 - draft().length }} point{{ draft().length === 2 ? '' : 's' }} pour fermer la zone.</p>
+  } @else if (draft().length >= 3) {
+    <p class="hint">Terminer la zone, ou reclique le premier point pour la fermer.</p>
+  }
+
+  <ul class="zone-list">
+    @for (zone of zones(); track $index) {
+      <li [class.selected]="$index === selected()">
+        <button type="button" class="pick" [disabled]="disabled()" (click)="selectZone($index)">
+          {{ zone.label || 'Zone ' + ($index + 1) }}
+        </button>
+        <mat-form-field appearance="outline" class="name">
+          <mat-label>Nom</mat-label>
+          <input
+            matInput
+            [value]="zone.label"
+            [disabled]="disabled()"
+            (input)="rename($index, inputValue($event))"
+          />
+        </mat-form-field>
+        <button
+          type="button"
+          class="side vrai"
+          [class.selected]="zone.correct"
+          [disabled]="disabled()"
+          (click)="mark($index, true)"
+        >
+          Correcte
+        </button>
+        <button
+          type="button"
+          class="side faux"
+          [class.selected]="!zone.correct"
+          [disabled]="disabled()"
+          (click)="mark($index, false)"
+        >
+          Incorrecte
+        </button>
+        <mat-form-field appearance="outline" class="shape">
+          <mat-label>Forme</mat-label>
+          <mat-select
+            [value]="zone.shape"
+            [disabled]="disabled()"
+            (selectionChange)="setShape($index, $event.value)"
+          >
+            <mat-option value="polygon">Tracé libre</mat-option>
+            <mat-option value="rect">Rectangle</mat-option>
+            <mat-option value="ellipse">Ellipse</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-button type="button" [disabled]="disabled()" (click)="removeZone($index)">Supprimer</button>
+      </li>
+    }
+  </ul>
+}
