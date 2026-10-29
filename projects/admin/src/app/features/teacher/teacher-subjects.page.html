@@ -97,10 +97,8 @@
                               Annuler
                             </button>
                           </div>
-                        } @else if (pending()?.id === subject.id && pending()?.kind === 'disable') {
-                          <p class="confirm" role="alert">
-                            Désactiver {{ subject.name }} pour toi ? Elle reste dans cette liste, elle n'est plus proposée pour toi ailleurs.
-                          </p>
+                        } @else if (pending()?.id === subject.id && pending()?.kind === 'remove') {
+                          <p class="confirm" role="alert">{{ confirmText(school, grade, subject) }}</p>
                           @if (followersLoading()) {
                             <p class="hint">Chargement…</p>
                           } @else if (followers(); as people) {
@@ -111,34 +109,32 @@
                               }
                             </ul>
                           }
-                          @if (disableChoosingOthers()) {
-                            <p class="hint">Tu peux aussi la désactiver pour des collègues qui la partagent :</p>
-                            <ul class="colleagues">
-                              @for (holder of disableHolders(); track holder.userId) {
-                                <li>
-                                  <button
-                                    mat-button
-                                    type="button"
-                                    [disabled]="saving()"
-                                    [class.selected]="disableAlsoSelected(holder.userId)"
-                                    (click)="toggleDisableAlso(holder.userId!)"
-                                  >
-                                    {{ holder.displayName }}
-                                  </button>
-                                </li>
-                              }
-                            </ul>
+                          @if (removeIsSole()) {
+                            @if (removeColleagues().length === 0) {
+                              <p class="hint">Aucun collègue avec cette classe.</p>
+                            } @else {
+                              <button
+                                mat-flat-button
+                                color="primary"
+                                type="button"
+                                [disabled]="saving()"
+                                (click)="chooseMoveInstead(subject)"
+                              >
+                                Déplacer vers un collègue
+                              </button>
+                            }
                           }
                           <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
                             Annuler
                           </button>
                           <button
                             mat-flat-button
+                            color="warn"
                             type="button"
                             [disabled]="saving() || followers() === null"
-                            (click)="confirmDisable(subject.id)"
+                            (click)="confirmRemove(subject.id)"
                           >
-                            Confirmer la désactivation
+                            Confirmer le retrait
                           </button>
                         } @else if (pending()?.id === subject.id && pending()?.kind === 'transfer') {
                           @if (transferConfirming()) {
@@ -246,11 +242,10 @@
                             <button mat-button type="button" [disabled]="saving()" (click)="startRename(subject)">
                               Renommer
                             </button>
-                            @if (subject.active) {
-                              <button mat-button type="button" [disabled]="saving()" (click)="askDisable(subject)">
-                                Désactiver
-                              </button>
-                            } @else {
+                            <button mat-button type="button" [disabled]="saving()" (click)="askRemove(subject)">
+                              Retirer
+                            </button>
+                            @if (!subject.active) {
                               <button mat-button type="button" [disabled]="saving()" (click)="reactivate(subject.id)">
                                 Réactiver
                               </button>
