@@ -1,4 +1,12 @@
-import { closesDraft, dropDraftPoint, moveHandle, relativePoint, translateZone } from './click-zone';
+import {
+  closesDraft,
+  dropDraftPoint,
+  moveHandle,
+  pieceFrame,
+  relativePoint,
+  translateZone,
+  zoneContains,
+} from './click-zone';
 
 describe('click zones stay on the image', () => {
   it('maps a click to the same part of the drawing when the box changes size', () => {
@@ -68,5 +76,48 @@ describe('click zones stay on the image', () => {
 
     expect(dropDraftPoint(points, 0)).toEqual([{ x: 0.4, y: 0.5 }]);
     expect(dropDraftPoint(points, 5)).toEqual(points);
+  });
+
+  it('keeps a piece on the same fraction of the image', () => {
+    const frame = pieceFrame({
+      label: 'ciel',
+      correct: true,
+      shape: 'rect',
+      points: [
+        { x: 0.1, y: 0.2 },
+        { x: 0.5, y: 0.6 },
+      ],
+    });
+
+    expect(frame.x).toBeCloseTo(0.1);
+    expect(frame.y).toBeCloseTo(0.2);
+    expect(frame.width).toBeCloseTo(0.4);
+    expect(frame.height).toBeCloseTo(0.4);
+  });
+
+  it('finds a click inside a shape and ignores a click outside', () => {
+    const rect = {
+      label: 'nuage',
+      correct: false,
+      shape: 'rect' as const,
+      points: [
+        { x: 0.5, y: 0.5 },
+        { x: 0.8, y: 0.8 },
+      ],
+    };
+    const ellipse = {
+      label: 'soleil',
+      correct: true,
+      shape: 'ellipse' as const,
+      points: [
+        { x: 0.2, y: 0.2 },
+        { x: 0.35, y: 0.35 },
+      ],
+    };
+
+    expect(zoneContains(rect, { x: 0.6, y: 0.6 })).toBe(true);
+    expect(zoneContains(rect, { x: 0.2, y: 0.2 })).toBe(false);
+    expect(zoneContains(ellipse, { x: 0.2, y: 0.2 })).toBe(true);
+    expect(zoneContains(ellipse, { x: 0.9, y: 0.9 })).toBe(false);
   });
 });

@@ -1,4 +1,16 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -21,8 +33,11 @@ import {
   rectangleBox,
   relativePoint,
   removePoint,
+  pieceFrame,
   translateZone,
+  zoneContains,
 } from './click-zone';
+import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage } from './puzzle-piece';
 
 /**
  * Dessin des zones sur l'image (SCRUM-181).
@@ -41,10 +56,15 @@ export class ClickZoneEditorComponent {
   readonly zones = input<ClickZone[]>([]);
   readonly disabled = input(false);
   readonly readonly = input(false);
+  /** click : vert et rouge. puzzle : mêmes formes, sans côté juste ou faux. */
+  readonly variant = input<'click' | 'puzzle'>('click');
+  /** Magnétisme du puzzle, en fraction de la largeur de l'image. */
+  readonly magnet = input(0.08);
 
   readonly imageSelected = output<string>();
   readonly zonesChange = output<ClickZone[]>();
   readonly imageError = output<string>();
+  readonly magnetChange = output<number>();
 
   readonly draft = signal<ClickPoint[]>([]);
   /** Point bleu du tracé en cours que « Supprimer le point » retire. */
@@ -52,7 +72,30 @@ export class ClickZoneEditorComponent {
   readonly selected = signal<number | null>(null);
   readonly selectedHandle = signal<number | null>(null);
   readonly adding = signal(false);
+  /** Vignettes découpées dans les pixels de l'image, dans le même ordre que les pièces. */
+  readonly pieceUrls = signal<string[]>([]);
+  /** En mode jeu, index des formes déjà révélées par un clic. */
+  readonly shown = signal<number[]>([]);
+  /** Coin haut-gauche de chaque pièce posée. Vide = la vignette reste en bas. */
+  readonly placements = signal<(ClickPoint | null)[]>([]);
+  readonly dragIndex = signal<number | null>(null);
+  readonly magnetLive = signal(0.08);
+  readonly magnetPercent = computed(() => Math.round(this.magnetLive() * 100));
+  readonly ghost = signal<{ url: string; left: number; top: number; width: number } | null>(null);
 
+  private readonly destroyRef = inject(DestroyRef);
+  private paintToken = 0;
+  private geometryKey = '';
+  private stopPieceListeners: (() => void) | null = null;
+  private pieceDrag: {
+    index: number;
+    pointer: number;
+    offsetX: number;
+    offsetY: number;
+    width: number;
+  } | null = null;
+
+  private readonly stage = viewChild<ElementRef<HTMLElement>>('stage');
   private readonly surface = viewChild<ElementRef<SVGSVGElement>>('surface');
   private readonly zoneList = viewChild<ElementRef<HTMLUListElement>>('zoneList');
   private drag: { zone: number; handle: number; pointer: number } | null = null;
@@ -65,6 +108,48 @@ export class ClickZoneEditorComponent {
   } | null = null;
   private press: { x: number; y: number; pointer: number } | null = null;
 
+  constructor() {
+    this.destroyRef.onDestroy(() => this.stopPieceListeners?.());
+    effect((onCleanup) => {
+      const url = this.imageDataUrl();
+      const zones = this.zones();
+      const puzzle = this.variant() === 'puzzle';
+      if (!puzzle || !url || zones.length === 0) {
+        this.pieceUrls.set([]);
+        return;
+      }
+      const token = ++this.paintToken;
+      const snapshot = zones.map((zone) => ({
+        ...zone,
+        points: zone.points.map((point) => ({ ...point })),
+      }));
+      const timer = setTimeout(() => this.paintPieces(url, snapshot, token), 40);
+      onCleanup(() => clearTimeout(timer));
+    });
+
+    effect(() => {
+      this.magnetLive.set(clampMagnet(this.magnet()));
+    });
+
+    effect(() => {
+      const key = this.zones()
+        .map((zone) => {
+          const frame = pieceFrame(zone);
+          return `${zone.shape}:${frame.x}:${frame.y}:${frame.width}:${frame.height}`;
+        })
+        .join('|');
+      if (key === this.geometryKey) {
+        return;
+      }
+      this.geometryKey = key;
+      this.stopPieceListeners?.();
+      this.pieceDrag = null;
+      this.dragIndex.set(null);
+      this.ghost.set(null);
+      this.placements.set(this.zones().map(() => null));
+    });
+  }
+
   inputValue(event: Event): string {
     return (event.target as HTMLInputElement).value;
   }
@@ -73,6 +158,171 @@ export class ClickZoneEditorComponent {
   rectangleBox = rectangleBox;
   ellipseBox = ellipseBox;
   handles = handles;
+  pieceFrame = pieceFrame;
+
+  pieceWidth(zone: ClickZone): number {
+    return this.pieceFrame(zone).width * 100;
+  }
+
+  /** En édition les formes restent visibles. En jeu, seulement après un clic dessus. */
+  shapeShown(index: number): boolean {
+    if (this.variant() !== 'click') {
+      return false;
+    }
+    if (!this.readonly()) {
+      return true;
+    }
+    return this.shown().includes(index);
+  }
+
+  inTray(index: number): boolean {
+    return this.dragIndex() !== index && this.placements()[index] == null;
+  }
+
+  placedSpot(index: number): ClickPoint | null {
+    if (this.dragIndex() === index) {
+      return null;
+    }
+    return this.placements()[index] ?? null;
+  }
+
+  setMagnet(raw: string): void {
+    const value = clampMagnet(Number(raw) / 100);
+    this.magnetLive.set(value);
+    this.magnetChange.emit(value);
+  }
+
+  clearPlacements(): void {
+    this.stopPieceListeners?.();
+    this.pieceDrag = null;
+    this.dragIndex.set(null);
+    this.ghost.set(null);
+    this.placements.set(this.zones().map(() => null));
+  }
+
+  onPieceDown(event: PointerEvent, index: number): void {
+    if (this.disabled() || this.variant() !== 'puzzle') {
+      return;
+    }
+    const target = event.currentTarget;
+    const url = this.pieceUrls()[index];
+    if (!(target instanceof HTMLElement) || !url) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.stopPieceListeners?.();
+    const rect = target.getBoundingClientRect();
+    const pointer = event.pointerId;
+    this.pieceDrag = {
+      index,
+      pointer,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      width: rect.width,
+    };
+    this.dragIndex.set(index);
+    this.ghost.set({ url, left: rect.left, top: rect.top, width: rect.width });
+    const move = (next: PointerEvent) => {
+      if (next.pointerId === pointer) {
+        this.onPieceMove(next);
+      }
+    };
+    const up = (next: PointerEvent) => {
+      if (next.pointerId !== pointer) {
+        return;
+      }
+      this.finishPieceDrag(next);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    this.stopPieceListeners = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      this.stopPieceListeners = null;
+    };
+  }
+
+  private onPieceMove(event: PointerEvent): void {
+    const drag = this.pieceDrag;
+    const stage = this.stage()?.nativeElement.getBoundingClientRect();
+    if (!drag || event.pointerId !== drag.pointer || !stage || stage.width <= 0 || stage.height <= 0) {
+      return;
+    }
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+    const home = pieceFrame(this.zones()[drag.index]);
+    const left = event.clientX - drag.offsetX;
+    const top = event.clientY - drag.offsetY;
+    const spot = magnetizedPosition(
+      { x: (left - stage.left) / stage.width, y: (top - stage.top) / stage.height },
+      home,
+      this.magnetLive(),
+      stage,
+    );
+    const url = this.pieceUrls()[drag.index] ?? '';
+    this.ghost.set(
+      spot.snapped
+        ? {
+            url,
+            left: stage.left + home.x * stage.width,
+            top: stage.top + home.y * stage.height,
+            width: home.width * stage.width,
+          }
+        : { url, left, top, width: drag.width },
+    );
+  }
+
+  private finishPieceDrag(event: PointerEvent): void {
+    const drag = this.pieceDrag;
+    if (!drag || event.pointerId !== drag.pointer) {
+      return;
+    }
+    const stage = this.stage()?.nativeElement.getBoundingClientRect();
+    const ghost = this.ghost();
+    const home = pieceFrame(this.zones()[drag.index]);
+    const placed =
+      stage != null && stage.width > 0 && stage.height > 0 && ghost != null
+        ? placeOnImage(
+            { x: (ghost.left - stage.left) / stage.width, y: (ghost.top - stage.top) / stage.height },
+            home,
+            this.magnetLive(),
+            stage,
+          )
+        : null;
+    this.stopPieceListeners?.();
+    this.pieceDrag = null;
+    this.dragIndex.set(null);
+    this.ghost.set(null);
+    this.placements.update((rows) => {
+      const next = this.zones().map((_, index) => rows[index] ?? null);
+      next[drag.index] = placed;
+      return next;
+    });
+  }
+
+  private paintPieces(url: string, zones: ClickZone[], token: number): void {
+    const image = new Image();
+    image.onload = () => {
+      if (token !== this.paintToken) {
+        return;
+      }
+      this.pieceUrls.set(
+        zones.map((zone) => cutPiece(image, image.naturalWidth, image.naturalHeight, zone)),
+      );
+    };
+    image.src = url;
+  }
+
+  shapeName(zone: ClickZone, index: number): string {
+    if (zone.label) {
+      return zone.label;
+    }
+    return this.variant() === 'puzzle' ? `Pièce ${index + 1}` : `Zone ${index + 1}`;
+  }
 
   async onFile(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
@@ -143,17 +393,34 @@ export class ClickZoneEditorComponent {
   }
 
   onSurfaceDown(event: PointerEvent): void {
-    if (this.readonly() || this.disabled() || this.drag || this.shapeDrag) {
+    if (this.disabled() || this.drag || this.shapeDrag) {
       return;
     }
-    this.surface()?.nativeElement.setPointerCapture(event.pointerId);
+    if (this.readonly() && this.variant() !== 'click') {
+      return;
+    }
+    try {
+      this.surface()?.nativeElement.setPointerCapture(event.pointerId);
+    } catch {
+      // Le clic reste valable si le navigateur refuse la capture.
+    }
     this.press = { x: event.clientX, y: event.clientY, pointer: event.pointerId };
   }
 
   onSurfaceUp(event: PointerEvent): void {
     const press = this.press;
     this.press = null;
-    if (!press || press.pointer !== event.pointerId || this.readonly() || this.disabled()) {
+    if (!press || press.pointer !== event.pointerId || this.disabled()) {
+      return;
+    }
+    if (this.readonly()) {
+      if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 4) {
+        return;
+      }
+      const point = this.eventPoint(event);
+      if (point) {
+        this.revealAt(point);
+      }
       return;
     }
     if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 4) {
@@ -332,6 +599,17 @@ export class ClickZoneEditorComponent {
     this.selectedHandle.set(null);
     this.draft.set([]);
     this.draftHandle.set(null);
+  }
+
+  private revealAt(point: ClickPoint): void {
+    const zones = this.zones();
+    for (let index = zones.length - 1; index >= 0; index -= 1) {
+      const zone = zones[index];
+      if (zone && zoneContains(zone, point)) {
+        this.shown.update((ids) => (ids.includes(index) ? ids : [...ids, index]));
+        return;
+      }
+    }
   }
 
   private eventPoint(event: PointerEvent): ClickPoint | null {

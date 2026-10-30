@@ -15,9 +15,10 @@
   position: relative;
   width: 100%;
   max-width: 40rem;
+  background: #e6e1d6;
 }
 
-.stage img {
+.stage > img {
   display: block;
   width: 100%;
   height: auto;
@@ -33,6 +34,10 @@
   touch-action: none;
   pointer-events: all;
   cursor: crosshair;
+}
+
+.stage svg:not(.editing) {
+  cursor: pointer;
 }
 
 rect.hit {
@@ -73,6 +78,34 @@ rect.wrong,
 ellipse.wrong {
   fill: rgb(209 36 47 / 35%);
   stroke: #d1242f;
+}
+
+svg:not(.editing) polygon:not(.correct):not(.wrong):not(.piece),
+svg:not(.editing) rect:not(.hit):not(.correct):not(.wrong):not(.piece),
+svg:not(.editing) ellipse:not(.correct):not(.wrong):not(.piece) {
+  fill: transparent;
+  stroke: none;
+}
+
+polygon.piece,
+rect.piece,
+ellipse.piece {
+  fill: transparent;
+  stroke: none;
+}
+
+svg.editing polygon.piece,
+svg.editing rect.piece,
+svg.editing ellipse.piece {
+  fill: rgb(26 61 124 / 2%);
+  stroke: #1a3d7c;
+  stroke-width: 0.002;
+}
+
+svg.editing polygon.piece.selected,
+svg.editing rect.piece.selected,
+svg.editing ellipse.piece.selected {
+  stroke-width: 0.003;
 }
 
 .zone-list li.selected {
@@ -175,4 +208,73 @@ button.side.faux.selected {
 .hint {
   margin: 0.35rem 0 0;
   color: #5f6368;
+}
+
+.pieces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pieces li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+
+.pieces img {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: grab;
+  touch-action: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+}
+
+.board {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.token {
+  position: absolute;
+  height: auto;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+}
+
+.ghost {
+  position: fixed;
+  z-index: 30;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 35%));
+}
+
+.magnet {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 20rem;
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+
+.magnet input {
+  width: 100%;
+}
+
+.pieces span {
+  font-size: 0.85rem;
 }
