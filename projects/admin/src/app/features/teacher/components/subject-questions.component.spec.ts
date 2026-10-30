@@ -899,6 +899,7 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Correcte');
     expect(fixture.nativeElement.textContent).not.toContain('Incorrecte');
     expect(fixture.nativeElement.querySelector('polygon.correct, rect.correct, ellipse.correct')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Magnétisme');
 
     buttonNamed('Enregistrer')?.click();
 
@@ -907,6 +908,7 @@ describe('SubjectQuestionsComponent', () => {
       formCode: 'puzzle',
       prompt: 'Reconstitue le dessin',
       imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      snapDistance: 0.08,
       pieces: [
         {
           label: 'le ciel',

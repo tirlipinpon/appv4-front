@@ -970,6 +970,8 @@ export interface components {
             requireAllCorrect?: boolean;
             zones?: components["schemas"]["TeacherQuestionZoneInput"][];
             pieces?: components["schemas"]["TeacherQuestionPieceInput"][];
+            /** Format: double */
+            snapDistance?: number;
         };
         TeacherQuestionChoiceInput: {
             label?: string;
@@ -1087,6 +1089,8 @@ export interface components {
             requireAllCorrect?: boolean;
             zones?: components["schemas"]["TeacherQuestionZoneItem"][];
             pieces?: components["schemas"]["TeacherQuestionPieceItem"][];
+            /** Format: double */
+            snapDistance?: number;
         };
         RenameTeacherSubjectRequest: {
             name?: string;

@@ -106,6 +106,7 @@
                 variant="puzzle"
                 [imageDataUrl]="question.imageDataUrl"
                 [zones]="question.zones"
+                [magnet]="question.snapDistance"
               />
             } @else if (question.formCode === 'texte') {
               <p>{{ question.expectedAnswer }}</p>
@@ -555,9 +556,11 @@
             [imageDataUrl]="clickImage()"
             [zones]="clickZones()"
             [disabled]="saving()"
+            [magnet]="puzzleMagnet()"
             (imageSelected)="setClickImage($event)"
             (imageError)="setClickImageError($event)"
             (zonesChange)="setClickZones($event)"
+            (magnetChange)="setPuzzleMagnet($event)"
           />
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>

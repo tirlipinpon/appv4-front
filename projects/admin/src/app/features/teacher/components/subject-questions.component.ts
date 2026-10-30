@@ -13,6 +13,7 @@ import { httpErrorMessage } from '../../../shared/http-error-message/http-error-
 import { TeacherQuestionsService } from '../data-access/teacher-questions.service';
 import { ClickZoneEditorComponent } from './click-zone-editor.component';
 import { ClickZone } from './click-zone';
+import { MAGNET_DEFAULT } from './puzzle-piece';
 
 /** Matière proposée comme destination d'une copie. */
 export interface QuestionDestination {
@@ -75,6 +76,7 @@ interface SavedQuestion {
   imageDataUrl: string;
   requireAllCorrect: boolean;
   zones: ClickZone[];
+  snapDistance: number;
 }
 
 /** Formes dont le formulaire est écrit. Le libellé vient de l'API. */
@@ -95,7 +97,8 @@ const HOLE = '___';
  * La liste des formes est celle de l'API. L'élève ne joue pas ici.
  * La réponse libre (SCRUM-198) demande l'énoncé et la réponse attendue.
  * Le puzzle (SCRUM-183) reprend l'éditeur de l'image à cliquer : les pièces
- * sont découpées dans l'image, sans vert ni rouge.
+ * sont découpées dans l'image, sans vert ni rouge. On peut les reposer
+ * sur leur découpe ; le magnétisme dit à quelle distance elles se collent.
  * Il peut copier une ou plusieurs questions vers une de ses matières.
  * Il peut aussi en supprimer une ou plusieurs, après avoir vu combien
  * d'enfants suivent le cours et leurs noms.
@@ -145,6 +148,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly clickImage = signal('');
   readonly requireAllCorrect = signal(true);
   readonly clickZones = signal<ClickZone[]>([]);
+  readonly puzzleMagnet = signal(MAGNET_DEFAULT);
   readonly answers = signal<GapWordDraft[]>([]);
   readonly decoys = signal<GapWordDraft[]>(emptyDecoys());
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
@@ -216,6 +220,10 @@ export class SubjectQuestionsComponent implements OnInit {
 
   setRequireAllCorrect(value: boolean): void {
     this.requireAllCorrect.set(value);
+  }
+
+  setPuzzleMagnet(value: number): void {
+    this.puzzleMagnet.set(value);
   }
 
   setClickZones(zones: ClickZone[]): void {
@@ -355,6 +363,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.clickImage.set(question.imageDataUrl);
     this.requireAllCorrect.set(question.requireAllCorrect);
     this.clickZones.set(question.zones.map((zone) => ({ ...zone, points: zone.points.map((point) => ({ ...point })) })));
+    this.puzzleMagnet.set(question.snapDistance);
     this.answers.set(question.answers.map((row) => ({ label: row.label })));
     this.decoys.set(question.decoys.length ? question.decoys.map((row) => ({ label: row.label })) : emptyDecoys());
     this.error.set(null);
@@ -504,6 +513,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.clickImage.set('');
     this.requireAllCorrect.set(true);
     this.clickZones.set([]);
+    this.puzzleMagnet.set(MAGNET_DEFAULT);
     this.answers.set([]);
     this.decoys.set(emptyDecoys());
     this.error.set(null);
@@ -594,6 +604,7 @@ export class SubjectQuestionsComponent implements OnInit {
                           formCode: code,
                           prompt: this.prompt(),
                           imageWebp: webpPayload(this.clickImage()),
+                          snapDistance: this.puzzleMagnet(),
                           pieces: this.clickZones().map((zone) => ({
                             label: zone.label,
                             shape: zone.shape,
@@ -770,6 +781,10 @@ function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']):
     imageDataUrl: question.imageWebp ? `data:image/webp;base64,${question.imageWebp}` : '',
     requireAllCorrect: question.requireAllCorrect === true,
     zones: question.formCode === 'puzzle' ? savedPieces(question.pieces) : savedZones(question.zones),
+    snapDistance:
+      question.formCode === 'puzzle' && typeof question.snapDistance === 'number'
+        ? question.snapDistance
+        : MAGNET_DEFAULT,
   };
 }
 

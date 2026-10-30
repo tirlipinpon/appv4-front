@@ -11,8 +11,8 @@
 }
 
 @if (imageDataUrl()) {
-  <div class="stage">
-    <img [src]="imageDataUrl()" alt="" draggable="false" />
+  <div class="stage" #stage>
+    <img [src]="stageImage()" alt="" draggable="false" />
     <svg
       #surface
       viewBox="0 0 1 1"
@@ -95,7 +95,39 @@
         }
       }
     </svg>
+    @if (variant() === 'puzzle') {
+      <div class="board">
+        @for (zone of zones(); track $index; let pieceIndex = $index) {
+          @if (placedSpot(pieceIndex); as spot) {
+            @if (pieceUrls()[pieceIndex]; as url) {
+              <img
+                class="token"
+                [src]="url"
+                alt=""
+                draggable="false"
+                [attr.aria-label]="shapeName(zone, pieceIndex)"
+                [style.left.%]="spot.x * 100"
+                [style.top.%]="spot.y * 100"
+                [style.width.%]="pieceWidth(zone)"
+                (pointerdown)="onPieceDown($event, pieceIndex)"
+              />
+            }
+          }
+        }
+      </div>
+    }
   </div>
+  @if (ghost(); as ghost) {
+    <img
+      class="ghost"
+      [src]="ghost.url"
+      alt=""
+      draggable="false"
+      [style.left.px]="ghost.left"
+      [style.top.px]="ghost.top"
+      [style.width.px]="ghost.width"
+    />
+  }
 }
 
 @if (!readonly()) {
@@ -186,14 +218,37 @@
 }
 
 @if (variant() === 'puzzle' && zones().length) {
+  <p class="hint">Glisse une vignette sur l'image : elle reste où tu la poses. Près de sa découpe, elle se colle.</p>
   <ul class="pieces">
     @for (zone of zones(); track $index; let pieceIndex = $index) {
-      <li [style.width.%]="pieceWidth(zone)">
-        @if (pieceUrls()[pieceIndex]; as url) {
-          <img [src]="url" alt="" [attr.aria-label]="shapeName(zone, pieceIndex)" />
-        }
-        <span>{{ zone.label || 'Pièce ' + (pieceIndex + 1) }}</span>
-      </li>
+      @if (inTray(pieceIndex)) {
+        <li [style.width.%]="pieceWidth(zone)">
+          @if (pieceUrls()[pieceIndex]; as url) {
+            <img
+              [src]="url"
+              alt=""
+              draggable="false"
+              [attr.aria-label]="shapeName(zone, pieceIndex)"
+              (pointerdown)="onPieceDown($event, pieceIndex)"
+            />
+          }
+          <span>{{ zone.label || 'Pièce ' + (pieceIndex + 1) }}</span>
+        </li>
+      }
     }
   </ul>
+  <label class="magnet">
+    Magnétisme {{ magnetPercent() }} %
+    <input
+      type="range"
+      min="0"
+      max="25"
+      step="1"
+      [value]="magnetPercent()"
+      [disabled]="disabled()"
+      (input)="setMagnet(inputValue($event))"
+    />
+  </label>
+  <p class="hint">0 % ne colle qu'au ras du trou. 25 % accroche de plus loin. Enregistre pour garder ce réglage.</p>
+  <button mat-button type="button" (click)="clearPlacements()">Remettre les pièces en bas</button>
 }
