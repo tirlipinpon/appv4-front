@@ -12,6 +12,7 @@ import type { components } from '../../../core/api/schema';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherQuestionsService } from '../data-access/teacher-questions.service';
 import { ClickZoneEditorComponent } from './click-zone-editor.component';
+import { LetterBoxesComponent } from './letter-boxes.component';
 import { ClickZone } from './click-zone';
 import { MAGNET_DEFAULT } from './puzzle-piece';
 
@@ -87,6 +88,7 @@ const TRUE_FALSE = 'vrai_faux';
 const LINKS = 'liens';
 const CASE_VIDE = 'case_vide';
 const TEXTE = 'texte';
+const REPONSE_LIBRE = 'reponse_libre';
 const IMAGE_CLICK = 'image_interactive';
 const PUZZLE = 'puzzle';
 const HOLE = '___';
@@ -96,6 +98,8 @@ const HOLE = '___';
  * (SCRUM-174, SCRUM-175, SCRUM-176, SCRUM-177).
  * La liste des formes est celle de l'API. L'élève ne joue pas ici.
  * La réponse libre (SCRUM-198) demande l'énoncé et la réponse attendue.
+ * La saisie lettre par lettre (SCRUM-182) demande le même couple, puis une case
+ * par lettre. Valider envoie le mot composé : le verdict vient de l'API.
  * Le puzzle (SCRUM-183) reprend l'éditeur de l'image à cliquer : les pièces
  * sont découpées dans l'image, sans vert ni rouge. On peut les reposer
  * sur leur découpe ; le magnétisme dit à quelle distance elles se collent.
@@ -112,6 +116,7 @@ const HOLE = '___';
     MatInputModule,
     MatSelectModule,
     ClickZoneEditorComponent,
+    LetterBoxesComponent,
   ],
   templateUrl: './subject-questions.component.html',
   styleUrl: './subject-questions.component.scss',
@@ -160,6 +165,8 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly pendingIds = signal<number[]>([]);
   readonly followersLoading = signal(false);
   readonly followers = signal<TeacherSubjectFollowersResponse | null>(null);
+  readonly letterMessages = signal<Readonly<Record<number, string>>>({});
+  readonly letterBusyId = signal<number | null>(null);
   private followSeq = 0;
 
   ngOnInit(): void {
@@ -207,6 +214,25 @@ export class SubjectQuestionsComponent implements OnInit {
 
   setExpectedAnswer(value: string): void {
     this.expectedAnswer.set(value);
+  }
+
+  letterMessage(id: number): string {
+    return this.letterMessages()[id] ?? '';
+  }
+
+  tryLetters(question: SavedQuestion, attempt: string): void {
+    this.letterBusyId.set(question.id);
+    this.error.set(null);
+    this.api.tryLetter(this.subjectId, question.id, { attempt }).subscribe({
+      next: (body) => {
+        this.letterBusyId.set(null);
+        this.letterMessages.update((current) => ({ ...current, [question.id]: body.message ?? '' }));
+      },
+      error: (err: HttpErrorResponse) => {
+        this.letterBusyId.set(null);
+        this.error.set(httpErrorMessage(err, 'Vérification impossible.'));
+      },
+    });
   }
 
   setClickImage(dataUrl: string): void {
@@ -530,6 +556,7 @@ export class SubjectQuestionsComponent implements OnInit {
         code !== LINKS &&
         code !== CASE_VIDE &&
         code !== TEXTE &&
+        code !== REPONSE_LIBRE &&
         code !== IMAGE_CLICK &&
         code !== PUZZLE) ||
       this.saving()
@@ -580,7 +607,7 @@ export class SubjectQuestionsComponent implements OnInit {
                     answers: this.answers().map((row) => ({ label: row.label })),
                     decoys: this.decoys().map((row) => ({ label: row.label })),
                   }
-                : code === TEXTE
+                : code === TEXTE || code === REPONSE_LIBRE
                   ? {
                       formCode: code,
                       prompt: this.prompt(),

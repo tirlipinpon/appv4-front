@@ -110,6 +110,14 @@
               />
             } @else if (question.formCode === 'texte') {
               <p>{{ question.expectedAnswer }}</p>
+            } @else if (question.formCode === 'reponse_libre') {
+              <p>{{ question.expectedAnswer }}</p>
+              <app-letter-boxes
+                [count]="question.expectedAnswer.length"
+                [message]="letterMessage(question.id)"
+                [busy]="letterBusyId() === question.id"
+                (submitted)="tryLetters(question, $event)"
+              />
             } @else if (question.formCode === 'case_vide') {
               <p>{{ question.sentence }}</p>
               <ul class="answers">
@@ -571,7 +579,7 @@
         </div>
       }
 
-      @if (selectedCode() === 'texte') {
+      @if (selectedCode() === 'texte' || selectedCode() === 'reponse_libre') {
         <div class="editor">
           @if (editingId()) {
             <p class="hint">Tu modifies cette question.</p>

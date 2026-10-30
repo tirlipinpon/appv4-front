@@ -129,6 +129,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/{subjectId}/questions/{questionId}/attempt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Valider un mot composé lettre par lettre */
+        post: operations["tryTeacherLetterAnswer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects/{subjectId}/questions/delete": {
         parameters: {
             query?: never;
@@ -1245,6 +1262,13 @@ export interface components {
             grade?: string;
             name?: string;
         };
+        LetterAttemptRequest: {
+            attempt?: string;
+        };
+        LetterAttemptResponse: {
+            accepted?: boolean;
+            message?: string;
+        };
         DeleteTeacherSubjectQuestionsRequest: {
             questionIds?: number[];
         };
@@ -2057,6 +2081,60 @@ export interface operations {
                 };
             };
             /** @description Matière absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    tryTeacherLetterAnswer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LetterAttemptRequest"];
+            };
+        };
+        responses: {
+            /** @description Le mot est accepté ou refusé */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LetterAttemptResponse"];
+                };
+            };
+            /** @description La question n'est pas une saisie lettre par lettre */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière ou question absente pour ce professeur */
             404: {
                 headers: {
                     [name: string]: unknown;

@@ -77,6 +77,8 @@ export type DeleteTeacherSubjectQuestionsRequest =
 export type DeleteTeacherSubjectQuestionsResponse = Required<
   components['schemas']['DeleteTeacherSubjectQuestionsResponse']
 >;
+export type LetterAttemptRequest = components['schemas']['LetterAttemptRequest'];
+export type LetterAttemptResponse = components['schemas']['LetterAttemptResponse'];
 export type TeacherQuestionChoiceInput = components['schemas']['TeacherQuestionChoiceInput'];
 export type TeacherTransferInvitesResponse = components['schemas']['TeacherTransferInvitesResponse'];
 export type TeacherTransferInviteItem = components['schemas']['TeacherTransferInviteItem'];
