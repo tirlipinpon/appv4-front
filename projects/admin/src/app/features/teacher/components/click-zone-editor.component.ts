@@ -35,6 +35,7 @@ import {
   removePoint,
   pieceFrame,
   translateZone,
+  zoneContains,
 } from './click-zone';
 import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage } from './puzzle-piece';
 
@@ -73,6 +74,8 @@ export class ClickZoneEditorComponent {
   readonly adding = signal(false);
   /** Vignettes découpées dans les pixels de l'image, dans le même ordre que les pièces. */
   readonly pieceUrls = signal<string[]>([]);
+  /** En mode jeu, index des formes déjà révélées par un clic. */
+  readonly shown = signal<number[]>([]);
   /** Coin haut-gauche de chaque pièce posée. Vide = la vignette reste en bas. */
   readonly placements = signal<(ClickPoint | null)[]>([]);
   readonly dragIndex = signal<number | null>(null);
@@ -159,6 +162,17 @@ export class ClickZoneEditorComponent {
 
   pieceWidth(zone: ClickZone): number {
     return this.pieceFrame(zone).width * 100;
+  }
+
+  /** En édition les formes restent visibles. En jeu, seulement après un clic dessus. */
+  shapeShown(index: number): boolean {
+    if (this.variant() !== 'click') {
+      return false;
+    }
+    if (!this.readonly()) {
+      return true;
+    }
+    return this.shown().includes(index);
   }
 
   inTray(index: number): boolean {
@@ -379,17 +393,34 @@ export class ClickZoneEditorComponent {
   }
 
   onSurfaceDown(event: PointerEvent): void {
-    if (this.readonly() || this.disabled() || this.drag || this.shapeDrag) {
+    if (this.disabled() || this.drag || this.shapeDrag) {
       return;
     }
-    this.surface()?.nativeElement.setPointerCapture(event.pointerId);
+    if (this.readonly() && this.variant() !== 'click') {
+      return;
+    }
+    try {
+      this.surface()?.nativeElement.setPointerCapture(event.pointerId);
+    } catch {
+      // Le clic reste valable si le navigateur refuse la capture.
+    }
     this.press = { x: event.clientX, y: event.clientY, pointer: event.pointerId };
   }
 
   onSurfaceUp(event: PointerEvent): void {
     const press = this.press;
     this.press = null;
-    if (!press || press.pointer !== event.pointerId || this.readonly() || this.disabled()) {
+    if (!press || press.pointer !== event.pointerId || this.disabled()) {
+      return;
+    }
+    if (this.readonly()) {
+      if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 4) {
+        return;
+      }
+      const point = this.eventPoint(event);
+      if (point) {
+        this.revealAt(point);
+      }
       return;
     }
     if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 4) {
@@ -568,6 +599,17 @@ export class ClickZoneEditorComponent {
     this.selectedHandle.set(null);
     this.draft.set([]);
     this.draftHandle.set(null);
+  }
+
+  private revealAt(point: ClickPoint): void {
+    const zones = this.zones();
+    for (let index = zones.length - 1; index >= 0; index -= 1) {
+      const zone = zones[index];
+      if (zone && zoneContains(zone, point)) {
+        this.shown.update((ids) => (ids.includes(index) ? ids : [...ids, index]));
+        return;
+      }
+    }
   }
 
   private eventPoint(event: PointerEvent): ClickPoint | null {

@@ -27,8 +27,8 @@
           <polygon
             [attr.points]="polygonAttribute(zone.points)"
             [attr.aria-label]="shapeName(zone, zoneIndex)"
-            [class.correct]="variant() === 'click' && zone.correct"
-            [class.wrong]="variant() === 'click' && !zone.correct"
+            [class.correct]="shapeShown(zoneIndex) && zone.correct"
+            [class.wrong]="shapeShown(zoneIndex) && !zone.correct"
             [class.piece]="variant() === 'puzzle'"
             [class.selected]="zoneIndex === selected()"
             (pointerdown)="onShapeDown($event, zoneIndex)"
@@ -42,8 +42,8 @@
             [attr.width]="rectangleBox(zone.points).width"
             [attr.height]="rectangleBox(zone.points).height"
             [attr.aria-label]="shapeName(zone, zoneIndex)"
-            [class.correct]="variant() === 'click' && zone.correct"
-            [class.wrong]="variant() === 'click' && !zone.correct"
+            [class.correct]="shapeShown(zoneIndex) && zone.correct"
+            [class.wrong]="shapeShown(zoneIndex) && !zone.correct"
             [class.piece]="variant() === 'puzzle'"
             [class.selected]="zoneIndex === selected()"
             (pointerdown)="onShapeDown($event, zoneIndex)"
@@ -57,8 +57,8 @@
             [attr.rx]="ellipseBox(zone.points).rx"
             [attr.ry]="ellipseBox(zone.points).ry"
             [attr.aria-label]="shapeName(zone, zoneIndex)"
-            [class.correct]="variant() === 'click' && zone.correct"
-            [class.wrong]="variant() === 'click' && !zone.correct"
+            [class.correct]="shapeShown(zoneIndex) && zone.correct"
+            [class.wrong]="shapeShown(zoneIndex) && !zone.correct"
             [class.piece]="variant() === 'puzzle'"
             [class.selected]="zoneIndex === selected()"
             (pointerdown)="onShapeDown($event, zoneIndex)"
@@ -127,6 +127,9 @@
       [style.top.px]="ghost.top"
       [style.width.px]="ghost.width"
     />
+  }
+  @if (readonly() && variant() === 'click' && zones().length) {
+    <p class="hint">Clique l'image : la forme touchée apparaît.</p>
   }
 }
 

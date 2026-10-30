@@ -71,6 +71,36 @@ export function rectangleBox(points: ClickPoint[]): { x: number; y: number; widt
   };
 }
 
+/** Vrai si le point, en proportion de l'image, tombe dans la forme. */
+export function zoneContains(zone: ClickZone, point: ClickPoint): boolean {
+  if (zone.shape === 'rect') {
+    const box = rectangleBox(zone.points);
+    return point.x >= box.x && point.y >= box.y && point.x <= box.x + box.width && point.y <= box.y + box.height;
+  }
+  if (zone.shape === 'ellipse') {
+    const box = ellipseBox(zone.points);
+    const dx = (point.x - box.cx) / box.rx;
+    const dy = (point.y - box.cy) / box.ry;
+    return dx * dx + dy * dy <= 1;
+  }
+  return pointInPolygon(point, zone.points);
+}
+
+function pointInPolygon(point: ClickPoint, polygon: ClickPoint[]): boolean {
+  let inside = false;
+  for (let index = 0, previous = polygon.length - 1; index < polygon.length; previous = index, index += 1) {
+    const current = polygon[index];
+    const before = polygon[previous];
+    const crosses =
+      current.y > point.y !== before.y > point.y &&
+      point.x < ((before.x - current.x) * (point.y - current.y)) / (before.y - current.y) + current.x;
+    if (crosses) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
 export function ellipseBox(points: ClickPoint[]): { cx: number; cy: number; rx: number; ry: number } {
   const center = points[0] ?? { x: 0.5, y: 0.5 };
   const edge = points[1] ?? { x: center.x + 0.2, y: center.y + 0.15 };

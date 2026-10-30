@@ -36,6 +36,10 @@
   cursor: crosshair;
 }
 
+.stage svg:not(.editing) {
+  cursor: pointer;
+}
+
 rect.hit {
   fill: transparent;
   pointer-events: all;
@@ -74,6 +78,13 @@ rect.wrong,
 ellipse.wrong {
   fill: rgb(209 36 47 / 35%);
   stroke: #d1242f;
+}
+
+svg:not(.editing) polygon:not(.correct):not(.wrong):not(.piece),
+svg:not(.editing) rect:not(.hit):not(.correct):not(.wrong):not(.piece),
+svg:not(.editing) ellipse:not(.correct):not(.wrong):not(.piece) {
+  fill: transparent;
+  stroke: none;
 }
 
 polygon.piece,

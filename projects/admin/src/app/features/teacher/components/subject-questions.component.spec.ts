@@ -858,7 +858,7 @@ describe('SubjectQuestionsComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Image à cliquer');
     expect(fixture.nativeElement.textContent).toContain('le soleil');
-    expect(fixture.nativeElement.querySelector('polygon.correct')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('polygon.correct')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Toutes les zones correctes sont à cliquer.');
   });
 
