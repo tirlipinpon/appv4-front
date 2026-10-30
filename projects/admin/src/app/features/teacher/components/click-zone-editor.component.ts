@@ -36,7 +36,7 @@ import {
   pieceFrame,
   translateZone,
 } from './click-zone';
-import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage, punchPieces } from './puzzle-piece';
+import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage } from './puzzle-piece';
 
 /**
  * Dessin des zones sur l'image (SCRUM-181).
@@ -73,11 +73,6 @@ export class ClickZoneEditorComponent {
   readonly adding = signal(false);
   /** Vignettes découpées dans les pixels de l'image, dans le même ordre que les pièces. */
   readonly pieceUrls = signal<string[]>([]);
-  /** Photo affichée : les pièces déjà découpées y sont des trous transparents. */
-  readonly holedUrl = signal('');
-  readonly stageImage = computed(() =>
-    this.variant() === 'puzzle' && this.holedUrl() ? this.holedUrl() : this.imageDataUrl(),
-  );
   /** Coin haut-gauche de chaque pièce posée. Vide = la vignette reste en bas. */
   readonly placements = signal<(ClickPoint | null)[]>([]);
   readonly dragIndex = signal<number | null>(null);
@@ -118,7 +113,6 @@ export class ClickZoneEditorComponent {
       const puzzle = this.variant() === 'puzzle';
       if (!puzzle || !url || zones.length === 0) {
         this.pieceUrls.set([]);
-        this.holedUrl.set('');
         return;
       }
       const token = ++this.paintToken;
@@ -305,7 +299,6 @@ export class ClickZoneEditorComponent {
       this.pieceUrls.set(
         zones.map((zone) => cutPiece(image, image.naturalWidth, image.naturalHeight, zone)),
       );
-      this.holedUrl.set(punchPieces(image, image.naturalWidth, image.naturalHeight, zones));
     };
     image.src = url;
   }

@@ -12,7 +12,7 @@
 
 @if (imageDataUrl()) {
   <div class="stage" #stage>
-    <img [src]="stageImage()" alt="" draggable="false" />
+    <img [src]="imageDataUrl()" alt="" draggable="false" />
     <svg
       #surface
       viewBox="0 0 1 1"
