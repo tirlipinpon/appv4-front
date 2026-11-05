@@ -153,10 +153,16 @@
   } @else if (draft().length && draft().length < 3) {
     <p class="hint">
       Encore {{ 3 - draft().length }} point{{ draft().length === 2 ? '' : 's' }} pour fermer
-      {{ variant() === 'puzzle' ? 'la pièce' : 'la zone' }}.
+      {{ variant() === 'puzzle' ? 'la pièce' : 'la zone' }} (max {{ draftPointsMax }}).
+    </p>
+  } @else if (draft().length === draftPointsMax) {
+    <p class="hint">
+      Maximum {{ draftPointsMax }} points atteint. Termine
+      {{ variant() === 'puzzle' ? 'la pièce' : 'la zone' }} ou retire un point.
     </p>
   } @else if (draft().length >= 3) {
     <p class="hint">
+      {{ draft().length }}/{{ draftPointsMax }} points —
       {{ variant() === 'puzzle' ? 'Terminer la pièce' : 'Terminer la zone' }}, ou reclique le premier point pour la fermer.
     </p>
   }
