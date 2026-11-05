@@ -18,7 +18,7 @@ import type {
 import { SpaceHeader } from '../../core/layout/space-header';
 import { SchoolCatalogService } from '../../core/api/school-catalog.service';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
-import { CHILD_AVATARS, avatarEmoji } from './child-avatars';
+import { CHILD_AVATARS, avatarEmoji } from '../../shared/avatars/account-avatars';
 import {
   AGE_INVALID,
   IMAGE_REQUIRED,

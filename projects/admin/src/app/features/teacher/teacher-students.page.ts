@@ -6,7 +6,7 @@ import type { TeacherStudentsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { TeacherStudentsService } from './data-access/teacher-students.service';
-import { studentAvatar } from './student-avatars';
+import { studentAvatar } from '../../shared/avatars/account-avatars';
 
 interface StudentRow {
   id: number;

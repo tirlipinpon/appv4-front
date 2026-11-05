@@ -12,7 +12,7 @@ import type {
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
-import { avatarEmoji } from './child-avatars';
+import { avatarEmoji } from '../../shared/avatars/account-avatars';
 import { sexLabel } from './child-sex';
 import { ChildSubjectsService } from './data-access/child-subjects.service';
 import { ParentChildrenService } from './data-access/parent-children.service';
