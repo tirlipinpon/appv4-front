@@ -235,28 +235,31 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     this.copyReusableFields(child);
     if (child.hasPhoto) {
       this.preparing.set(true);
-      this.api.photo(child.id).subscribe({
-        next: (blob) => {
-          this.photoContentType.set(blob.type || 'image/jpeg');
-          this.avatarCode.set(null);
-          void this.readPhoto(blob)
-            .then((encoded) => {
-              this.photoBase64.set(encoded);
-              const type = this.photoContentType() || 'image/jpeg';
-              this.photoPreview.set(`data:${type};base64,${encoded}`);
-              this.preparing.set(false);
-              this.formOpen.set(true);
-            })
-            .catch(() => {
-              this.preparing.set(false);
-              this.error.set('Photo indisponible.');
-            });
-        },
-        error: () => {
-          this.preparing.set(false);
-          this.error.set('Photo indisponible.');
-        },
-      });
+      this.api
+        .photo(child.id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (blob) => {
+            this.photoContentType.set(blob.type || 'image/jpeg');
+            this.avatarCode.set(null);
+            void this.readPhoto(blob)
+              .then((encoded) => {
+                this.photoBase64.set(encoded);
+                const type = this.photoContentType() || 'image/jpeg';
+                this.photoPreview.set(`data:${type};base64,${encoded}`);
+                this.preparing.set(false);
+                this.formOpen.set(true);
+              })
+              .catch(() => {
+                this.preparing.set(false);
+                this.error.set('Photo indisponible.');
+              });
+          },
+          error: () => {
+            this.preparing.set(false);
+            this.error.set('Photo indisponible.');
+          },
+        });
       return;
     }
     this.avatarCode.set(child.avatarCode ?? null);
@@ -551,20 +554,23 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   }
 
   private reload(): void {
-    this.api.load().subscribe({
-      next: (page) => {
-        this.children.set(page.children ?? []);
-        this.schools.set(page.schools ?? []);
-        this.curricula.set(page.curricula ?? []);
-        this.loading.set(false);
-        this.loadPhotos(page.children ?? []);
-        this.openFromQuery(page.children ?? []);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.error.set(this.message(err, 'Liste indisponible.'));
-      },
-    });
+    this.api
+      .load()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          this.children.set(page.children ?? []);
+          this.schools.set(page.schools ?? []);
+          this.curricula.set(page.curricula ?? []);
+          this.loading.set(false);
+          this.loadPhotos(page.children ?? []);
+          this.openFromQuery(page.children ?? []);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading.set(false);
+          this.error.set(this.message(err, 'Liste indisponible.'));
+        },
+      });
   }
 
   private loadPhotos(children: ParentChildResponse[]): void {
