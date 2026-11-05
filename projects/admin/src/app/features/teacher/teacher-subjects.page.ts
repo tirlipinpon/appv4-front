@@ -150,7 +150,10 @@ export class TeacherSubjectsPage implements OnInit {
     return `Suivie par ${names.join(', ')}`;
   }
 
-  /** Nom du propriétaire, en gras, quand un autre professeur peut renommer. */
+  /**
+   * Propriétaire hors de sharedWith (souvent sans accès) : libellé explicite.
+   * Évite d'afficher juste un prénom orphelin à côté du nom de matière.
+   */
   ownerAside(subject: SubjectRow): string | null {
     if (!subject.followedByMe || subject.ownedByMe) {
       return null;
@@ -161,7 +164,7 @@ export class TeacherSubjectsPage implements OnInit {
       return null;
     }
     const listed = subject.sharedWith.some((holder) => holder.userId === ownerId);
-    return listed ? null : name;
+    return listed ? null : `Propriétaire sans accès : ${name}`;
   }
 
   owns(subject: SubjectRow, holder: TeacherSubjectSharedHolder): boolean {

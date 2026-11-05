@@ -590,7 +590,7 @@ describe('TeacherSubjectsPage', () => {
     expect(maths?.textContent).not.toContain('Renommer');
     expect(maths?.textContent).toContain('Retirer');
     expect(maths?.textContent).toContain('Transférer');
-    expect(sciences?.querySelector('strong.owner')?.textContent).toBe('Luc');
+    expect(sciences?.querySelector('strong.owner')?.textContent).toBe('Propriétaire sans accès : Luc');
   });
 
   it('ignore les invitations d’un reload plus ancien qui arrivent en retard', () => {
