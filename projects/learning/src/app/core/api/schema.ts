@@ -780,6 +780,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/subjects/{childId}/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search available subjects for a child */
+        get: operations["searchParentChildSubjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/hello": {
         parameters: {
             query?: never;
@@ -1312,21 +1329,6 @@ export interface components {
             grade?: string;
             scolaire?: boolean;
         };
-        ChildSubjectsResponse: {
-            /** Format: int64 */
-            childId?: number;
-            firstName?: string;
-            lastName?: string;
-            /** Format: int64 */
-            schoolId?: number;
-            schoolName?: string;
-            grade?: string;
-            chosen?: components["schemas"]["ChildSubjectOffer"][];
-            proposed?: components["schemas"]["ChildSubjectOffer"][];
-        };
-        ParentSubjectsResponse: {
-            children?: components["schemas"]["ChildSubjectsResponse"][];
-        };
         SwitchRoleRequest: {
             role: string;
         };
@@ -1533,6 +1535,26 @@ export interface components {
         };
         SchoolPage: {
             schools?: components["schemas"]["SchoolOption"][];
+            /** Format: int64 */
+            nextCursor?: number;
+        };
+        ChildSubjectsResponse: {
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
+            lastName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            chosen?: components["schemas"]["ChildSubjectOffer"][];
+            proposed?: components["schemas"]["ChildSubjectOffer"][];
+        };
+        ParentSubjectsResponse: {
+            children?: components["schemas"]["ChildSubjectsResponse"][];
+        };
+        ChildSubjectOfferPage: {
+            offers?: components["schemas"]["ChildSubjectOffer"][];
             /** Format: int64 */
             nextCursor?: number;
         };
@@ -2571,7 +2593,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Chaque enfant, avec les matières déjà choisies et celles proposées */
+            /** @description Chaque enfant et les matières déjà choisies */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2604,13 +2626,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Listes après l'ajout */
+            /** @description Matière ajoutée */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ParentSubjectsResponse"];
+                    "*/*": components["schemas"]["ChildSubjectOffer"];
                 };
             };
             /** @description Matière introuvable, plus visible, ou déjà dans la liste */
@@ -3491,6 +3513,34 @@ export interface operations {
             };
         };
     };
+    searchParentChildSubjects: {
+        parameters: {
+            query?: {
+                query?: string;
+                schoolId?: number;
+                grade?: string;
+                afterId?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                childId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildSubjectOfferPage"];
+                };
+            };
+        };
+    };
     getParentHello: {
         parameters: {
             query?: never;
@@ -3750,13 +3800,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Listes après le retrait. La matière du professeur reste */
+            /** @description Matière retirée de la liste de l'enfant */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ParentSubjectsResponse"];
+                    "*/*": components["schemas"]["ChildSubjectOffer"];
                 };
             };
             /** @description Enfant introuvable, ou matière absente de sa liste */
