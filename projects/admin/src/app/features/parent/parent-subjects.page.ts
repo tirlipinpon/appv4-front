@@ -107,7 +107,10 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
   }
 
   chosen(child: ChildSubjectsResponse, scolaire: boolean): ChildSubjectOffer[] {
-    return this.lines(child.chosen, scolaire);
+    const order = new Intl.Collator('fr', { sensitivity: 'base' });
+    return this.lines(child.chosen, scolaire).sort((left, right) =>
+      order.compare(left.name ?? '', right.name ?? '') || order.compare(left.teacherName ?? '', right.teacherName ?? ''),
+    );
   }
 
   proposed(child: ChildSubjectsResponse, scolaire: boolean): ChildSubjectOffer[] {
