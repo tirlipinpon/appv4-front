@@ -50,6 +50,11 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="full">
+                  <mat-label>Rechercher une école</mat-label>
+                  <input matInput [disabled]="!block.country || saving() || blocked(block.key)"
+                    [value]="schoolQueries()[block.key] ?? ''" (input)="onSchoolSearch(block.key, $event)" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full">
                   <mat-label>École</mat-label>
                   <mat-select
                     [value]="block.schoolId"
@@ -62,6 +67,10 @@
                     }
                   </mat-select>
                 </mat-form-field>
+
+                @if (schoolCursors()[block.key] !== null && schoolCursors()[block.key] !== undefined) {
+                  <button mat-button type="button" (click)="moreSchools(block.key)">Voir plus d'écoles</button>
+                }
 
                 @if (gradesFor(block).length) {
                   <div class="grades">

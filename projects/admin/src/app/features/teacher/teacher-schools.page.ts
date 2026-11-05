@@ -1,10 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxChange, MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 
 import type {
@@ -14,6 +15,7 @@ import type {
   UpdateTeacherProfileRequest,
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
+import { SchoolCatalogService, SchoolOption } from '../../core/api/school-catalog.service';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { TeacherProfileService } from './data-access/teacher-profile.service';
 
@@ -64,6 +66,7 @@ const PENDING_EDIT =
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
+    MatInputModule,
     MatSelectModule,
     MatCheckboxModule,
     SpaceHeader,
@@ -72,12 +75,18 @@ const PENDING_EDIT =
   styleUrl: './teacher-schools.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TeacherSchoolsPage implements OnInit {
+export class TeacherSchoolsPage implements OnInit, OnDestroy {
   private readonly api = inject(TeacherProfileService);
+  private readonly schoolCatalog = inject(SchoolCatalogService);
+  private readonly schoolSearchSequences = new Map<number, number>();
+  private readonly schoolSearchTimers = new Map<number, ReturnType<typeof setTimeout>>();
   private nextKey = 1;
 
   readonly displayName = signal('');
   readonly availableSchools = signal<TeacherAvailableSchool[]>([]);
+  readonly schoolResults = signal<Readonly<Record<number, SchoolOption[]>>>({});
+  readonly schoolQueries = signal<Readonly<Record<number, string>>>({});
+  readonly schoolCursors = signal<Readonly<Record<number, number | null>>>({});
   readonly blocks = signal<SchoolBlock[]>([]);
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -90,25 +99,9 @@ export class TeacherSchoolsPage implements OnInit {
 
   readonly awaitingChoice = computed(() => this.impacts().some((item) => !item.confirmed));
 
-  readonly catalogEmpty = computed(
-    () => this.availableSchools().length === 0 && this.blocks().length === 0,
-  );
-  readonly countries = computed(() => {
-    const seen = new Set<string>();
-    const list: string[] = [];
-    for (const school of this.availableSchools()) {
-      const country = school.country?.trim();
-      if (country && !seen.has(country)) {
-        seen.add(country);
-        list.push(country);
-      }
-    }
-    return list;
-  });
-  readonly canAdd = computed(() => {
-    const available = this.availableSchools().filter((school) => school.id != null);
-    return available.length > 0 && this.blocks().length < available.length;
-  });
+  readonly catalogEmpty = computed(() => false);
+  readonly countries = computed(() => ['Belgique', 'France']);
+  readonly canAdd = computed(() => true);
 
   ngOnInit(): void {
     this.api.load().subscribe({
@@ -122,6 +115,12 @@ export class TeacherSchoolsPage implements OnInit {
         this.error.set(this.message(err, 'Écoles indisponibles.'));
       },
     });
+  }
+
+  ngOnDestroy(): void {
+    for (const timer of this.schoolSearchTimers.values()) clearTimeout(timer);
+    this.schoolSearchTimers.clear();
+    for (const [key, seq] of this.schoolSearchSequences) this.schoolSearchSequences.set(key, seq + 1);
   }
 
   addSchool(): void {
@@ -276,7 +275,10 @@ export class TeacherSchoolsPage implements OnInit {
         .filter((other) => other.key !== block.key && other.schoolId != null)
         .map((other) => other.schoolId),
     );
-    return this.availableSchools().filter((school) => {
+    const selected = this.availableSchools().filter((school) => school.id === block.schoolId);
+    const candidates = [...selected, ...(this.schoolResults()[block.key] ?? [])];
+    return candidates.filter((school, index) => {
+      if (candidates.findIndex((other) => other.id === school.id) !== index) return false;
       if (school.id == null || school.country !== block.country) {
         return false;
       }
@@ -502,14 +504,59 @@ export class TeacherSchoolsPage implements OnInit {
   }
 
   private applyCountry(key: number, country: string): void {
+    const timer = this.schoolSearchTimers.get(key);
+    if (timer) clearTimeout(timer);
+    this.schoolSearchTimers.delete(key);
     this.markDirty();
     this.clearBlockError(key);
     this.patch(key, { country, schoolId: null, grades: [] });
+    this.searchSchools(key, '', 0);
+  }
+
+  onSchoolSearch(key: number, event: Event): void {
+    const query = (event.target as HTMLInputElement).value;
+    const timer = this.schoolSearchTimers.get(key);
+    if (timer) clearTimeout(timer);
+    this.schoolSearchSequences.set(key, (this.schoolSearchSequences.get(key) ?? 0) + 1);
+    this.schoolQueries.update((current) => ({ ...current, [key]: query }));
+    this.schoolResults.update((current) => ({ ...current, [key]: [] }));
+    this.schoolCursors.update((current) => ({ ...current, [key]: null }));
+    this.schoolSearchTimers.set(key, setTimeout(() => {
+      this.schoolSearchTimers.delete(key);
+      this.searchSchools(key, query, 0);
+    }, 300));
+  }
+
+  moreSchools(key: number): void {
+    const cursor = this.schoolCursors()[key];
+    if (cursor != null) this.searchSchools(key, this.schoolQueries()[key] ?? '', cursor);
+  }
+
+  private searchSchools(key: number, query: string, afterId: number): void {
+    const country = this.block(key)?.country;
+    if (!country) return;
+    const seq = (this.schoolSearchSequences.get(key) ?? 0) + 1;
+    this.schoolSearchSequences.set(key, seq);
+    this.schoolQueries.update((current) => ({ ...current, [key]: query }));
+    this.schoolCatalog.search(country, query, afterId).subscribe({
+      next: (page) => {
+        if (this.schoolSearchSequences.get(key) !== seq || !this.block(key)) return;
+        this.schoolResults.update((current) => ({
+          ...current, [key]: afterId ? [...(current[key] ?? []), ...page.schools] : page.schools,
+        }));
+        this.schoolCursors.update((current) => ({ ...current, [key]: page.nextCursor ?? null }));
+      },
+      error: () => {
+        if (this.schoolSearchSequences.get(key) === seq) this.error.set('Recherche des écoles impossible.');
+      },
+    });
   }
 
   private applySchool(key: number, schoolId: number): void {
     this.markDirty();
     this.clearBlockError(key);
+    const selected = (this.schoolResults()[key] ?? []).find((school) => school.id === schoolId);
+    if (selected) this.availableSchools.update((schools) => [...schools.filter((school) => school.id !== schoolId), selected]);
     this.patch(key, { schoolId, grades: [] });
   }
 }

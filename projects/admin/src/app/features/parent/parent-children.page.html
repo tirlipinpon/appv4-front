@@ -234,10 +234,11 @@
                 }
               </ul>
             }
-            @if (country() && schools().every((school) => school.country !== country())) {
-              <p class="hint">Aucune école n'est proposable pour ce pays. L'enfant peut être enregistré sans école.</p>
-            } @else if (country() && schoolId() === null && schoolText().trim().length < 2) {
-              <p class="hint">Tape au moins deux lettres du nom pour voir les écoles. Tu peux aussi laisser l'école vide.</p>
+            @if (schoolNextCursor() !== null) {
+              <button mat-button type="button" (click)="moreSchools()">Voir plus d'écoles</button>
+            }
+            @if (country() && schoolId() === null && schoolText().trim().length < 2) {
+              <p class="hint">Tape au moins deux lettres du nom pour voir les écoles.</p>
             }
 
             <mat-form-field appearance="outline" class="full">
