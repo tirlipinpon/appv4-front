@@ -7,6 +7,13 @@
   }
 
   @if (!loading()) {
+    <nav aria-label="Pages de questions">
+      <button mat-button type="button" [disabled]="pageCursors().length <= 1 || saving() || pendingIds().length > 0"
+        (click)="previousPage()">Précédent</button>
+      <span>Page {{ pageCursors().length }}</span>
+      <button mat-button type="button" [disabled]="nextCursor() === null || saving() || pendingIds().length > 0"
+        (click)="nextPage()">Suivant</button>
+    </nav>
     @if (questions().length === 0) {
       <p class="hint">Aucune question</p>
     } @else {

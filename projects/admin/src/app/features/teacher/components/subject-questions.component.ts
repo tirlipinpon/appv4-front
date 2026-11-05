@@ -137,6 +137,8 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly forms = signal<FormChoice[]>([]);
   readonly selectedCode = signal<string | null>(null);
   readonly questions = signal<SavedQuestion[]>([]);
+  readonly nextCursor = signal<number | null>(null);
+  readonly pageCursors = signal<number[]>([0]);
   readonly prompt = signal('');
   readonly choices = signal<ChoiceDraft[]>(emptyChoices());
   readonly pairs = signal<PairDraft[]>(emptyPairs());
@@ -624,9 +626,17 @@ export class SubjectQuestionsComponent implements OnInit {
       next: (saved) => {
         this.saving.set(false);
         const row = toSaved(saved);
-        this.questions.update((rows) =>
-          editingId == null ? [...rows, row] : rows.map((item) => (item.id === row.id ? row : item)),
-        );
+        const canAppend = this.nextCursor() === null && this.questions().length < 25;
+        this.questions.update((rows) => {
+          if (editingId != null) {
+            return rows.map((item) => (item.id === row.id ? row : item));
+          }
+          return canAppend ? [...rows, row] : rows;
+        });
+        if (editingId == null && !canAppend) {
+          this.notice.set('Question enregistrée. Consulte la dernière page pour la retrouver.');
+          this.loadQuestions();
+        }
         this.cancelEdit();
       },
       error: (err: HttpErrorResponse) => {
@@ -636,14 +646,34 @@ export class SubjectQuestionsComponent implements OnInit {
     });
   }
 
+  nextPage(): void {
+    const cursor = this.nextCursor();
+    if (cursor === null || this.saving() || this.pendingIds().length) return;
+    this.pageCursors.update((pages) => [...pages, cursor]);
+    this.selectedIds.set([]);
+    this.cancelEdit();
+    this.loadQuestions();
+  }
+
+  previousPage(): void {
+    if (this.pageCursors().length <= 1 || this.saving() || this.pendingIds().length) return;
+    this.pageCursors.update((pages) => pages.slice(0, -1));
+    this.selectedIds.set([]);
+    this.cancelEdit();
+    this.loadQuestions();
+  }
+
   private loadQuestions(): void {
     const seq = ++this.loadSeq;
-    this.api.list(this.subjectId).subscribe({
+    this.loading.set(true);
+    const afterId = this.pageCursors().at(-1) ?? 0;
+    this.api.list(this.subjectId, afterId).subscribe({
       next: (body) => {
         if (seq !== this.loadSeq) {
           return;
         }
         this.questions.set((body.questions ?? []).map((question) => toSaved(question)));
+        this.nextCursor.set(body.nextCursor ?? null);
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {

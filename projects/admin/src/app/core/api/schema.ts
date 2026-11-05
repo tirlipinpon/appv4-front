@@ -1259,6 +1259,8 @@ export interface components {
         };
         TeacherSubjectQuestionsResponse: {
             questions?: components["schemas"]["TeacherSubjectQuestionItem"][];
+            /** Format: int64 */
+            nextCursor?: number;
         };
         TransferTeacherSubjectRequest: {
             /**
@@ -1977,7 +1979,10 @@ export interface operations {
     };
     listTeacherSubjectQuestions: {
         parameters: {
-            query?: never;
+            query?: {
+                afterId?: number;
+                limit?: number;
+            };
             header?: never;
             path: {
                 subjectId: number;
