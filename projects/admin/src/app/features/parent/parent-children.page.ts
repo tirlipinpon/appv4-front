@@ -1,5 +1,16 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,6 +30,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
 import { SchoolCatalogService } from '../../core/api/school-catalog.service';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { CHILD_AVATARS, avatarEmoji } from '../../shared/avatars/account-avatars';
+import { PhotoObjectUrlBag } from '../../shared/photos/photo-object-url-bag';
 import {
   AGE_INVALID,
   IMAGE_REQUIRED,
@@ -60,6 +72,8 @@ import { ParentChildrenService } from './data-access/parent-children.service';
 export class ParentChildrenPage implements OnInit, OnDestroy {
   private readonly api = inject(ParentChildrenService);
   private readonly schoolCatalog = inject(SchoolCatalogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly photoBag = new PhotoObjectUrlBag();
   private schoolSearchSeq = 0;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -198,6 +212,8 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.schoolSearchSeq++;
     this.clearSchoolTimer();
+    this.photoBag.destroy();
+    this.photos.set({});
   }
 
   openForm(): void {
@@ -552,17 +568,23 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   }
 
   private loadPhotos(children: ParentChildResponse[]): void {
+    const ticket = this.photoBag.invalidate();
+    this.photos.set({});
     for (const child of children) {
       if (!child.hasPhoto || child.id == null) {
         continue;
       }
       const id = child.id;
-      this.api.photo(id).subscribe({
-        next: (blob) => {
-          const url = URL.createObjectURL(blob);
-          this.photos.update((current) => ({ ...current, [id]: url }));
-        },
-      });
+      this.api
+        .photo(id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (blob) => {
+            if (this.photoBag.putIfCurrent(ticket, id, blob)) {
+              this.photos.set(this.photoBag.snapshot());
+            }
+          },
+        });
     }
   }
 
@@ -776,21 +798,28 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     if (!child.hasPhoto || id == null) {
       return;
     }
-    const known = this.photos()[id];
+    const known = this.photoBag.get(id) ?? this.photos()[id];
     if (known) {
       this.photoPreview.set(known);
       return;
     }
-    this.api.photo(id).subscribe({
-      next: (blob) => {
-        if (this.editingId() !== id || !this.keepPhoto() || this.photoBase64()) {
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        this.photos.update((current) => ({ ...current, [id]: url }));
-        this.photoPreview.set(url);
-      },
-    });
+    const ticket = this.photoBag.ticket();
+    this.api
+      .photo(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          if (this.editingId() !== id || !this.keepPhoto() || this.photoBase64()) {
+            return;
+          }
+          const url = this.photoBag.putIfCurrent(ticket, id, blob);
+          if (!url) {
+            return;
+          }
+          this.photos.set(this.photoBag.snapshot());
+          this.photoPreview.set(url);
+        },
+      });
   }
 
   private clearChosenPhoto(): void {
