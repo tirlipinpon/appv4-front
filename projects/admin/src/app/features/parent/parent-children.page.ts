@@ -16,6 +16,7 @@ import type {
   ParentSchoolOption,
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
+import { SchoolCatalogService } from '../../core/api/school-catalog.service';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { CHILD_AVATARS, avatarEmoji } from './child-avatars';
 import {
@@ -27,7 +28,6 @@ import {
   ageError,
   digitsOnly,
   pinError,
-  suggestSchools,
 } from './child-entry';
 import { linksForSex } from './child-links';
 import { PHOTO_NOT_IMAGE, acceptCroppedWebp, preparePhoto } from './child-photo';
@@ -59,6 +59,8 @@ import { ParentChildrenService } from './data-access/parent-children.service';
 })
 export class ParentChildrenPage implements OnInit, OnDestroy {
   private readonly api = inject(ParentChildrenService);
+  private readonly schoolCatalog = inject(SchoolCatalogService);
+  private schoolSearchSeq = 0;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly photoCropper = viewChild(ImageCropperComponent);
@@ -122,7 +124,8 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
       .filter((country): country is string => !!country),
   );
 
-  readonly schoolSuggestions = computed(() => suggestSchools(this.schools(), this.country(), this.schoolQuery()));
+  readonly schoolSuggestions = signal<ParentSchoolOption[]>([]);
+  readonly schoolNextCursor = signal<number | null>(null);
 
   readonly linkChoices = computed(() => {
     const editing = this.editingId();
@@ -193,6 +196,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.schoolSearchSeq++;
     this.clearSchoolTimer();
   }
 
@@ -381,6 +385,9 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     this.schoolText.set('');
     this.schoolQuery.set('');
     this.clearSchoolTimer();
+    this.schoolSearchSeq++;
+    this.schoolSuggestions.set([]);
+    this.schoolNextCursor.set(null);
   }
 
   onSchoolInput(event: Event): void {
@@ -390,6 +397,9 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   onSchoolText(value: string): void {
     const text = value ?? '';
     this.schoolText.set(text);
+    this.schoolSearchSeq++;
+    this.schoolSuggestions.set([]);
+    this.schoolNextCursor.set(null);
     const selected = this.schools().find((school) => school.id === this.schoolId());
     if (this.schoolId() !== null && (selected?.name ?? '') !== text) {
       this.schoolId.set(null);
@@ -401,6 +411,10 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
 
   onSchoolPicked(school: ParentSchoolOption): void {
     this.schoolId.set(school.id ?? null);
+    this.schools.update((schools) => [...schools.filter((item) => item.id !== school.id), school]);
+    this.schoolSuggestions.set([]);
+    this.schoolNextCursor.set(null);
+    this.schoolSearchSeq++;
     this.schoolText.set(school.name ?? '');
     this.schoolQuery.set('');
     this.clearSchoolTimer();
@@ -719,7 +733,34 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     this.schoolTimer = setTimeout(() => {
       this.schoolTimer = null;
       this.schoolQuery.set(text);
+      this.searchSchools(0);
     }, SCHOOL_PAUSE_MS);
+  }
+
+  moreSchools(): void {
+    const cursor = this.schoolNextCursor();
+    if (cursor !== null) this.searchSchools(cursor);
+  }
+
+  private searchSchools(afterId: number): void {
+    const country = this.country();
+    const query = this.schoolQuery().trim();
+    const seq = ++this.schoolSearchSeq;
+    if (!country || query.length < 2) {
+      this.schoolSuggestions.set([]);
+      this.schoolNextCursor.set(null);
+      return;
+    }
+    this.schoolCatalog.search(country, query, afterId).subscribe({
+      next: (page) => {
+        if (seq !== this.schoolSearchSeq) return;
+        this.schoolSuggestions.update((items) => afterId ? [...items, ...page.schools] : page.schools);
+        this.schoolNextCursor.set(page.nextCursor ?? null);
+      },
+      error: () => {
+        if (seq === this.schoolSearchSeq) this.error.set('Recherche des écoles impossible.');
+      },
+    });
   }
 
   private clearSchoolTimer(): void {

@@ -202,7 +202,14 @@ describe('ParentChildrenPage liens', () => {
     tick(299);
     expect(page.schoolSuggestions()).toEqual([]);
     tick(1);
+    const first = http.expectOne((request) => request.url.endsWith('/schools'));
+    expect(first.request.params.get('query')).toBe('lyc');
+    first.flush({ schools: [schools[0]], nextCursor: 1 });
     expect(page.schoolSuggestions().map((item) => item.id)).toEqual([1]);
+    page.moreSchools();
+    const more = http.expectOne((request) => request.url.endsWith('/schools'));
+    expect(more.request.params.get('afterId')).toBe('1');
+    more.flush({ schools: [], nextCursor: null });
 
     page.onSchoolPicked(schools[0]);
     expect(page.schoolId()).toBe(1);
@@ -219,7 +226,21 @@ describe('ParentChildrenPage liens', () => {
     expect(page.grade()).toBeNull();
     page.onSchoolText('éc');
     tick(300);
+    http.expectOne((request) => request.url.endsWith('/schools')).flush({ schools: [schools[1]], nextCursor: null });
     expect(page.schoolSuggestions().map((item) => item.id)).toEqual([2]);
+  }));
+
+  it('ignore une ancienne recherche terminee apres la nouvelle', fakeAsync(() => {
+    page.onCountry('France');
+    page.onSchoolText('ly');
+    tick(300);
+    const old = http.expectOne((request) => request.url.endsWith('/schools'));
+    page.onSchoolText('lyc');
+    tick(300);
+    const latest = http.expectOne((request) => request.url.endsWith('/schools'));
+    latest.flush({ schools: [schools[0]], nextCursor: null });
+    old.flush({ schools: [schools[1]], nextCursor: null });
+    expect(page.schoolSuggestions().map((school) => school.id)).toEqual([schools[0].id]);
   }));
 
   it('envoie le WebP recadré, et n’ouvre pas le cadre si le fichier est refusé', async () => {

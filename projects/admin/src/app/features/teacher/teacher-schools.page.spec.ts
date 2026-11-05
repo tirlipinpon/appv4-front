@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { MatSelectChange } from '@angular/material/select';
 
@@ -64,6 +64,8 @@ describe('TeacherSchoolsPage', () => {
 
     const block = page.blocks()[0];
     page.onCountryChange(block.key, select('Belgique'));
+    http.expectOne((request) => request.url.endsWith('/schools'))
+      .flush({ schools: loaded.availableSchools, nextCursor: null });
     page.onSchoolChange(block.key, select(1));
     page.save();
     fixture.detectChanges();
@@ -72,10 +74,28 @@ describe('TeacherSchoolsPage', () => {
     http.expectNone(profileUrl);
   });
 
+  it('parcourt les ecoles et conserve la selection hors de la page suivante', () => {
+    page.addSchool();
+    const block = page.blocks()[0];
+    page.onCountryChange(block.key, select('Belgique'));
+    http.expectOne((request) => request.url.endsWith('/schools')).flush({
+      schools: loaded.availableSchools, nextCursor: 1,
+    });
+    page.onSchoolChange(block.key, select(1));
+    page.moreSchools(block.key);
+    const request = http.expectOne((item) => item.url.endsWith('/schools'));
+    expect(request.request.params.get('afterId')).toBe('1');
+    request.flush({ schools: [], nextCursor: null });
+    expect(page.gradesFor(page.blocks()[0])).toContain('1e primaire');
+    expect(page.optionsFor(page.blocks()[0]).some((school) => school.id === 1)).toBeTrue();
+  });
+
   it('enregistre les écoles en renvoyant le nom déjà connu', () => {
     page.addSchool();
     const block = page.blocks()[0];
     page.onCountryChange(block.key, select('Belgique'));
+    http.expectOne((request) => request.url.endsWith('/schools'))
+      .flush({ schools: loaded.availableSchools, nextCursor: null });
     page.onSchoolChange(block.key, select(1));
     page.toggleGrade(block.key, '1e primaire', true);
     page.save();
@@ -99,6 +119,8 @@ describe('TeacherSchoolsPage', () => {
     page.addSchool();
     const block = page.blocks()[0];
     page.onCountryChange(block.key, select('Belgique'));
+    http.expectOne((request) => request.url.endsWith('/schools'))
+      .flush({ schools: loaded.availableSchools, nextCursor: null });
     page.onSchoolChange(block.key, select(1));
     page.removeSchool(block.key);
 
@@ -175,6 +197,15 @@ describe('TeacherSchoolsPage retrait enregistré', () => {
   afterEach(() => {
     http.verify();
   });
+
+  it('conserve une ecole enregistree absente des resultats de recherche', fakeAsync(() => {
+    const block = page.blocks()[0];
+    page.onSchoolSearch(block.key, { target: { value: 'autre' } } as unknown as Event);
+    tick(300);
+    http.expectOne((request) => request.url.endsWith('/schools')).flush({ schools: [], nextCursor: null });
+    expect(page.gradesFor(block)).toContain('1e primaire');
+    expect(page.optionsFor(block).some((school) => school.id === 1)).toBeTrue();
+  }));
 
   it('montre les élèves et la matière avant de décocher une année enregistrée', () => {
     const block = page.blocks()[0];

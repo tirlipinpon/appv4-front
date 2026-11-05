@@ -763,6 +763,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search the school directory */
+        get: operations["searchSchools"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/hello": {
         parameters: {
             query?: never;
@@ -1506,6 +1523,18 @@ export interface components {
         };
         HelloMessageResponse: {
             text?: string;
+        };
+        SchoolOption: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            country?: string;
+            grades?: string[];
+        };
+        SchoolPage: {
+            schools?: components["schemas"]["SchoolOption"][];
+            /** Format: int64 */
+            nextCursor?: number;
         };
         ParentChildrenResponse: {
             children?: components["schemas"]["ParentChildResponse"][];
@@ -3433,6 +3462,31 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    searchSchools: {
+        parameters: {
+            query?: {
+                country?: string;
+                query?: string;
+                afterId?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SchoolPage"];
                 };
             };
         };
