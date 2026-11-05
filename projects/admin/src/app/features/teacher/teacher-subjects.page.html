@@ -18,9 +18,12 @@
         @if (invitesError(); as inviteProblem) {
           <p class="error" role="alert">{{ inviteProblem }}</p>
         }
-        @if (invites().length > 0) {
-          <section class="invites" aria-label="Demandes de transfert">
-            <h2 class="invites-title">Demandes reçues</h2>
+        @if (noticesError(); as noticeProblem) {
+          <p class="error" role="alert">{{ noticeProblem }}</p>
+        }
+        @if (hasInbox()) {
+          <section class="invites" aria-label="À traiter">
+            <h2 class="invites-title">À traiter</h2>
             @for (invite of invites(); track invite.id) {
               <article class="invite">
                 <p class="confirm" role="status">{{ inviteText(invite) }}</p>
@@ -38,15 +41,6 @@
                 </button>
               </article>
             }
-          </section>
-        }
-
-        @if (noticesError(); as noticeProblem) {
-          <p class="error" role="alert">{{ noticeProblem }}</p>
-        }
-        @if (deactivateNotices().length > 0) {
-          <section class="invites" aria-label="Alertes de désactivation">
-            <h2 class="invites-title">Alertes</h2>
             @for (notice of deactivateNotices(); track notice.id) {
               <article class="invite">
                 <p class="confirm" role="status">{{ notice.message }}</p>
@@ -115,33 +109,65 @@
                               }
                             </ul>
                           }
-                          @if (removeIsSole()) {
-                            @if (removeColleagues().length === 0) {
-                              <p class="hint">Aucun collègue avec cette classe.</p>
-                            } @else {
-                              <button
-                                mat-flat-button
-                                color="primary"
-                                type="button"
-                                [disabled]="saving()"
-                                (click)="chooseMoveInstead(subject)"
-                              >
-                                Déplacer vers un collègue
-                              </button>
+                          @if (removeNeedsHandover()) {
+                            <ul class="colleague-list">
+                              @for (holder of subject.sharedWith; track holder.userId) {
+                                @if (holder.userId !== undefined && holder.userId !== null) {
+                                  <li>
+                                    <button
+                                      mat-button
+                                      type="button"
+                                      [class.selected]="handoverColleagueId() === holder.userId"
+                                      [disabled]="saving()"
+                                      (click)="setHandoverColleague(holder.userId)"
+                                    >
+                                      {{ holder.displayName }}
+                                    </button>
+                                  </li>
+                                }
+                              }
+                            </ul>
+                            <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                              Annuler
+                            </button>
+                            <button
+                              mat-flat-button
+                              color="primary"
+                              type="button"
+                              [disabled]="saving() || handoverColleagueId() === null || followers() === null"
+                              (click)="confirmHandover(subject.id)"
+                            >
+                              Demander la reprise
+                            </button>
+                          } @else {
+                            @if (removeIsSole()) {
+                              @if (removeColleagues().length === 0) {
+                                <p class="hint">Aucun collègue avec cette classe.</p>
+                              } @else {
+                                <button
+                                  mat-flat-button
+                                  color="primary"
+                                  type="button"
+                                  [disabled]="saving()"
+                                  (click)="chooseMoveInstead(subject)"
+                                >
+                                  Déplacer vers un collègue
+                                </button>
+                              }
                             }
+                            <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                              Annuler
+                            </button>
+                            <button
+                              mat-flat-button
+                              color="warn"
+                              type="button"
+                              [disabled]="saving() || followers() === null"
+                              (click)="confirmRemove(subject.id)"
+                            >
+                              Confirmer le retrait
+                            </button>
                           }
-                          <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
-                            Annuler
-                          </button>
-                          <button
-                            mat-flat-button
-                            color="warn"
-                            type="button"
-                            [disabled]="saving() || followers() === null"
-                            (click)="confirmRemove(subject.id)"
-                          >
-                            Confirmer le retrait
-                          </button>
                         } @else if (pending()?.id === subject.id && pending()?.kind === 'transfer') {
                           @if (transferConfirming()) {
                             <p class="confirm" role="alert">{{ transferConfirmText(school, grade, subject) }}</p>
