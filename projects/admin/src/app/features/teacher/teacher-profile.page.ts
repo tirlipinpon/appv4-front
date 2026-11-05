@@ -23,12 +23,10 @@ const NAME_TOO_LONG = 'Le nom est trop long (maximum 255).';
 const PENDING_EDIT =
   "La version envoyée est enregistrée. La saisie faite pendant l'enregistrement n'est pas encore enregistrée.";
 
-type KeptSchool = NonNullable<UpdateTeacherProfileRequest['schools']>[number];
-
 /**
  * Fiche du professeur (SCRUM-159, SCRUM-200).
- * Les écoles se règlent sur leur page. Ici on renvoie le nom, le mail de contact,
- * le téléphone, l'avatar, et les écoles déjà connues.
+ * Les écoles se règlent sur leur page : cet écran n'envoie pas ``schools``
+ * pour ne pas écraser une modification faite ailleurs.
  */
 @Component({
   selector: 'app-teacher-profile-page',
@@ -55,7 +53,6 @@ export class TeacherProfilePage implements OnInit {
   readonly nameError = signal<string | null>(null);
   /** Saisie arrivée après l'envoi : on ne l'écrase pas avec la réponse. */
   readonly pendingNotice = signal<string | null>(null);
-  private readonly keptSchools = signal<KeptSchool[]>([]);
 
   ngOnInit(): void {
     this.api.load().subscribe({
@@ -93,7 +90,7 @@ export class TeacherProfilePage implements OnInit {
   }
 
   /**
-   * Enregistre le nom tel qu'il est au clic, avec les écoles déjà connues.
+   * Enregistre le nom et les coordonnées, sans toucher aux écoles.
    * Si une saisie arrive pendant la requête, on ne la remplace pas par la réponse.
    */
   save(): void {
@@ -145,7 +142,6 @@ export class TeacherProfilePage implements OnInit {
   private payload(): UpdateTeacherProfileRequest {
     return {
       displayName: this.displayName().trim(),
-      schools: this.keptSchools(),
       contactEmail: this.contactEmail().trim(),
       phone: this.phone().trim(),
       avatarCode: this.avatarCode().trim(),
@@ -175,12 +171,6 @@ export class TeacherProfilePage implements OnInit {
     this.phone.set(profile.phone ?? '');
     this.avatarCode.set(profile.avatarCode ?? '');
     this.avatarChoices.set(profile.avatarChoices ?? []);
-    this.keptSchools.set(
-      (profile.schools ?? []).map((school) => ({
-        schoolId: school.schoolId,
-        grades: [...(school.grades ?? [])],
-      })),
-    );
   }
 
   private message(err: HttpErrorResponse, fallback: string): string {

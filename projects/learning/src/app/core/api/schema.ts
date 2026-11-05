@@ -1155,8 +1155,11 @@ export interface components {
             curriculum?: string;
             grades?: string[];
         };
+        /** @description Champs absents (null) : ne pas modifier. schools [] vide : retirer toutes les écoles. */
         UpdateTeacherProfileRequest: {
+            /** @description Null = garder le nom actuel */
             displayName?: string;
+            /** @description Null = garder les écoles ; [] = tout retirer */
             schools?: components["schemas"]["TeacherSchoolInput"][];
             contactEmail?: string;
             phone?: string;
