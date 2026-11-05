@@ -313,7 +313,7 @@ describe('TeacherSubjectsPage', () => {
     expectReload();
   });
 
-  it('retire une matière partagée avec le bon message', () => {
+  it('propose un handover quand le propriétaire retire une matière partagée', () => {
     boot(loaded);
     page.askRemove({
       id: 3,
@@ -327,16 +327,19 @@ describe('TeacherSubjectsPage', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      'Retirer Mathématiques de ta liste ? Camille la garde.',
+      "Pour quitter Mathématiques, choisis un collègue qui la suit déjà",
     );
     expect(fixture.nativeElement.textContent).toContain('1 enfant suit ce cours.');
     expect(fixture.nativeElement.textContent).toContain('Léa Martin');
-    expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
+    expect(fixture.nativeElement.textContent).toContain('Demander la reprise');
+    expect(fixture.nativeElement.textContent).not.toContain('Confirmer le retrait');
     http.expectNone(`${subjectsUrl}/3/colleagues`);
-    page.confirmRemove(3);
-    const del = http.expectOne(`${subjectsUrl}/3`);
-    expect(del.request.method).toBe('DELETE');
-    del.flush(null);
+    page.setHandoverColleague(10);
+    page.confirmHandover(3);
+    const post = http.expectOne(`${subjectsUrl}/3/transfer`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual({ colleagueUserId: 10, mode: 'handover' });
+    post.flush(null);
     expectReload();
   });
 
