@@ -81,6 +81,28 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Bonne réponse');
   });
 
+  it('navigates bounded pages and clears selection', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'qcm', label: 'QCM', sortOrder: 1 }] });
+    http.expectOne(questionsUrl).flush({
+      questions: [{ id: 10, formCode: 'qcm', prompt: 'First', choices: [] }], nextCursor: 10,
+    });
+    const page = fixture.componentInstance;
+    page.selectedIds.set([10]);
+    page.nextPage();
+    http.expectOne(`${questionsUrl}?afterId=10`).flush({
+      questions: [{ id: 11, formCode: 'qcm', prompt: 'Second', choices: [] }], nextCursor: null,
+    });
+    expect(page.questions().map((question) => question.id)).toEqual([11]);
+    expect(page.selectedIds()).toEqual([]);
+    expect(page.nextCursor()).toBeNull();
+    page.previousPage();
+    http.expectOne(questionsUrl).flush({
+      questions: [{ id: 10, formCode: 'qcm', prompt: 'First', choices: [] }], nextCursor: 10,
+    });
+    expect(page.questions().map((question) => question.id)).toEqual([10]);
+  });
+
   it('shows the API refusal', () => {
     boot();
 
