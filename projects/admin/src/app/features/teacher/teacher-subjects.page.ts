@@ -44,7 +44,7 @@ interface SchoolBlock {
   grades: GradeBlock[];
 }
 
-type TransferMode = 'move' | 'share';
+type TransferMode = 'move' | 'share' | 'handover';
 
 type Pending =
   | {
@@ -52,7 +52,10 @@ type Pending =
       kind: 'remove';
       /** Vrai si ce prof est le seul accès : retrait = plus personne ne voit la matière. */
       sole: boolean;
+      /** Vrai si propriétaire avec co-profs : doit proposer un handover avant de partir. */
+      needsHandover: boolean;
       colleagues: TeacherSubjectColleagueItem[];
+      handoverColleagueId: number | null;
     }
   | {
       id: number;
@@ -166,6 +169,10 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
+    const current = this.pending();
+    if (current?.kind === 'remove' && current.needsHandover) {
+      return `Pour quitter ${subject.name}, choisis un collègue qui la suit déjà : il devra accepter d'en devenir le propriétaire.`;
+    }
     const names = this.sharedNames(subject);
     if (names.length > 0) {
       return `Retirer ${subject.name} de ta liste ? ${names.join(', ')} la garde.`;
@@ -224,6 +231,9 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   inviteText(invite: TeacherTransferInviteItem): string {
+    if (invite.message) {
+      return invite.message;
+    }
     const place = invite.schoolName
       ? `${invite.subjectName} (${invite.schoolName}, ${invite.grade})`
       : `${invite.subjectName} (${invite.grade})`;
@@ -231,8 +241,16 @@ export class TeacherSubjectsPage implements OnInit {
     if (invite.mode === 'ask') {
       return `${from} demande à voir aussi ${place}. Si tu acceptes, vous la partagerez.`;
     }
+    if (invite.mode === 'handover') {
+      return `${from} te demande de reprendre ${place}.`;
+    }
     const action = invite.mode === 'move' ? 'déplacer' : 'partager';
     return `${from} propose de ${action} ${place}.`;
+  }
+
+  /** Zone unique invites + notices en haut de page. */
+  hasInbox(): boolean {
+    return this.invites().length > 0 || this.deactivateNotices().length > 0;
   }
 
   inputValue(event: Event): string {
@@ -442,8 +460,19 @@ export class TeacherSubjectsPage implements OnInit {
     this.renamingId.set(null);
     this.clearSubjectError(subject.id);
     const sole = subject.sharedWith.length === 0;
-    this.pending.set({ id: subject.id, kind: 'remove', sole, colleagues: [] });
+    const needsHandover = subject.ownedByMe && !sole;
+    this.pending.set({
+      id: subject.id,
+      kind: 'remove',
+      sole,
+      needsHandover,
+      colleagues: [],
+      handoverColleagueId: null,
+    });
     this.loadFollowers(subject.id);
+    if (needsHandover) {
+      return;
+    }
     if (!sole) {
       return;
     }
@@ -462,6 +491,52 @@ export class TeacherSubjectsPage implements OnInit {
         this.setSubjectError(subject.id, httpErrorMessage(err, 'Collègues indisponibles.'));
       },
     });
+  }
+
+  setHandoverColleague(userId: number): void {
+    const current = this.pending();
+    if (!current || current.kind !== 'remove' || !current.needsHandover) {
+      return;
+    }
+    this.pending.set({ ...current, handoverColleagueId: userId });
+    this.clearSubjectError(current.id);
+  }
+
+  removeNeedsHandover(): boolean {
+    const current = this.pending();
+    return current?.kind === 'remove' ? current.needsHandover : false;
+  }
+
+  handoverColleagueId(): number | null {
+    const current = this.pending();
+    return current?.kind === 'remove' ? current.handoverColleagueId : null;
+  }
+
+  confirmHandover(subjectId: number): void {
+    const current = this.pending();
+    if (
+      !current ||
+      current.kind !== 'remove' ||
+      !current.needsHandover ||
+      current.handoverColleagueId == null ||
+      this.saving()
+    ) {
+      return;
+    }
+    this.error.set(null);
+    this.saving.set(true);
+    this.api
+      .transfer(subjectId, {
+        colleagueUserId: current.handoverColleagueId,
+        mode: 'handover',
+      })
+      .subscribe({
+        next: () => this.reload(),
+        error: (err: HttpErrorResponse) => {
+          this.saving.set(false);
+          this.setSubjectError(subjectId, httpErrorMessage(err, 'Demande de reprise impossible.'));
+        },
+      });
   }
 
   /**

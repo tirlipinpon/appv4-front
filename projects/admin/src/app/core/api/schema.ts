@@ -1306,10 +1306,10 @@ export interface components {
              */
             colleagueUserId?: number;
             /**
-             * @description move ou share
+             * @description move, share (collègue sans accès) ou handover (co-détenteur reprend la propriété)
              * @enum {string}
              */
-            mode?: "move" | "share";
+            mode?: "move" | "share" | "handover";
         };
         DeactivateTeacherSubjectRequest: {
             /** @description Co-profs à désactiver aussi (créateur uniquement) */
@@ -1442,6 +1442,8 @@ export interface components {
             grade?: string;
             mode?: string;
             fromDisplayName?: string;
+            /** @description Texte prêt à afficher pour la demande */
+            message?: string;
         };
         TeacherTransferInvitesResponse: {
             invites?: components["schemas"]["TeacherTransferInviteItem"][];
@@ -1452,6 +1454,8 @@ export interface components {
             /** Format: int64 */
             subjectId?: number;
             subjectName?: string;
+            /** @description deactivate, handover_accepted, handover_rejected, … */
+            kind?: string;
             message?: string;
         };
         TeacherDeactivateNoticesResponse: {
