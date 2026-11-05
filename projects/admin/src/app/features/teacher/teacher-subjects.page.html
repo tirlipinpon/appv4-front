@@ -15,6 +15,9 @@
           <p class="error" role="alert">{{ error() }}</p>
         }
 
+        @if (invitesError(); as inviteProblem) {
+          <p class="error" role="alert">{{ inviteProblem }}</p>
+        }
         @if (invites().length > 0) {
           <section class="invites" aria-label="Demandes de transfert">
             <h2 class="invites-title">Demandes reçues</h2>
@@ -38,6 +41,9 @@
           </section>
         }
 
+        @if (noticesError(); as noticeProblem) {
+          <p class="error" role="alert">{{ noticeProblem }}</p>
+        }
         @if (deactivateNotices().length > 0) {
           <section class="invites" aria-label="Alertes de désactivation">
             <h2 class="invites-title">Alertes</h2>
