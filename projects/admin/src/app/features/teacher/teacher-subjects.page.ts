@@ -97,6 +97,7 @@ export class TeacherSubjectsPage implements OnInit {
   readonly error = signal<string | null>(null);
   readonly drafts = signal<Readonly<Record<string, string>>>({});
   readonly gradeErrors = signal<Readonly<Record<string, string>>>({});
+  readonly gradeErrorCodes = signal<Readonly<Record<string, string>>>({});
   readonly subjectErrors = signal<Readonly<Record<number, string>>>({});
   readonly renamingId = signal<number | null>(null);
   readonly renameDraft = signal('');
@@ -261,13 +262,20 @@ export class TeacherSubjectsPage implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
         this.setGradeError(schoolId, grade, httpErrorMessage(err, 'Ajout impossible.'));
+        if (typeof err.error?.code === 'string') {
+          const key = this.gradeKey(schoolId, grade);
+          this.gradeErrorCodes.update((current) => ({ ...current, [key]: err.error.code }));
+        }
       },
     });
   }
 
   /** Vrai quand l'ajout a été refusé parce que la matière a été retirée. */
   canRestore(schoolId: number, grade: string): boolean {
-    return this.gradeError(schoolId, grade) === REMOVED_RESTORABLE;
+    const code = this.gradeErrorCodes()[this.gradeKey(schoolId, grade)];
+    return code === undefined
+      ? this.gradeError(schoolId, grade) === REMOVED_RESTORABLE
+      : code === 'SUBJECT_RESTORABLE';
   }
 
   /**
@@ -275,6 +283,10 @@ export class TeacherSubjectsPage implements OnInit {
    * d'une matière encore visible.
    */
   canAskShare(schoolId: number, grade: string): boolean {
+    const code = this.gradeErrorCodes()[this.gradeKey(schoolId, grade)];
+    if (code !== undefined) {
+      return code === 'SUBJECT_SHARE_AVAILABLE';
+    }
     const message = this.gradeError(schoolId, grade);
     return (
       message != null &&
@@ -738,6 +750,11 @@ export class TeacherSubjectsPage implements OnInit {
 
   private clearGradeError(schoolId: number, grade: string): void {
     const key = this.gradeKey(schoolId, grade);
+    this.gradeErrorCodes.update((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
     this.gradeErrors.update((current) => {
       if (!(key in current)) {
         return current;
