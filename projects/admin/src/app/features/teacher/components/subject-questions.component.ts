@@ -123,25 +123,28 @@ export class SubjectQuestionsComponent implements OnInit {
         this.loadQuestions();
       }
     });
-    this.api.forms().subscribe({
-      next: (body) => {
-        const forms = (body.forms ?? []).flatMap((form) => {
-          if (!form.code) {
-            return [];
+    this.api
+      .forms()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => {
+          const forms = (body.forms ?? []).flatMap((form) => {
+            if (!form.code) {
+              return [];
+            }
+            return [{ code: form.code, label: form.label || form.code }];
+          });
+          this.forms.set(forms);
+          if (forms.length === 1) {
+            this.selectedCode.set(forms[0].code);
           }
-          return [{ code: form.code, label: form.label || form.code }];
-        });
-        this.forms.set(forms);
-        if (forms.length === 1) {
-          this.selectedCode.set(forms[0].code);
-        }
-        this.loadQuestions();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.error.set(httpErrorMessage(err, 'Formes indisponibles.'));
-      },
-    });
+          this.loadQuestions();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading.set(false);
+          this.error.set(httpErrorMessage(err, 'Formes indisponibles.'));
+        },
+      });
   }
 
   selectForm(code: string): void {
@@ -559,35 +562,38 @@ export class SubjectQuestionsComponent implements OnInit {
     const seq = ++this.loadSeq;
     this.loading.set(true);
     const afterId = this.pageCursors().at(-1) ?? 0;
-    this.api.list(this.subjectId, afterId).subscribe({
-      next: (body) => {
-        if (seq !== this.loadSeq) {
-          return;
-        }
-        const rows: SavedQuestion[] = [];
-        let skipped = false;
-        for (const question of body.questions ?? []) {
-          const saved = parseSavedQuestion(question);
-          if (saved) {
-            rows.push(saved);
-          } else {
-            skipped = true;
+    this.api
+      .list(this.subjectId, afterId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => {
+          if (seq !== this.loadSeq) {
+            return;
           }
-        }
-        this.questions.set(rows);
-        this.nextCursor.set(body.nextCursor ?? null);
-        this.loading.set(false);
-        if (skipped) {
-          this.error.set('Une question renvoyée par le serveur n’avait pas d’identifiant et a été ignorée.');
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        if (seq !== this.loadSeq) {
-          return;
-        }
-        this.loading.set(false);
-        this.error.set(httpErrorMessage(err, 'Questions indisponibles.'));
-      },
-    });
+          const rows: SavedQuestion[] = [];
+          let skipped = false;
+          for (const question of body.questions ?? []) {
+            const saved = parseSavedQuestion(question);
+            if (saved) {
+              rows.push(saved);
+            } else {
+              skipped = true;
+            }
+          }
+          this.questions.set(rows);
+          this.nextCursor.set(body.nextCursor ?? null);
+          this.loading.set(false);
+          if (skipped) {
+            this.error.set('Une question renvoyée par le serveur n’avait pas d’identifiant et a été ignorée.');
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          if (seq !== this.loadSeq) {
+            return;
+          }
+          this.loading.set(false);
+          this.error.set(httpErrorMessage(err, 'Questions indisponibles.'));
+        },
+      });
   }
 }
