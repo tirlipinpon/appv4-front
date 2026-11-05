@@ -1,10 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 
 import type { TeacherStudentsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
+import { PhotoObjectUrlBag } from '../../shared/photos/photo-object-url-bag';
 import { TeacherStudentsService } from './data-access/teacher-students.service';
 import { studentAvatar } from '../../shared/avatars/account-avatars';
 
@@ -44,6 +46,8 @@ interface SchoolBlock {
 })
 export class TeacherStudentsPage implements OnInit, OnDestroy {
   private readonly api = inject(TeacherStudentsService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly photoBag = new PhotoObjectUrlBag();
 
   readonly schools = signal<SchoolBlock[]>([]);
   readonly noClassMessage = signal('');
@@ -54,21 +58,26 @@ export class TeacherStudentsPage implements OnInit, OnDestroy {
   readonly emoji = studentAvatar;
 
   ngOnInit(): void {
-    this.api.load().subscribe({
-      next: (body) => this.apply(body),
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.error.set(httpErrorMessage(err, 'Élèves indisponibles.'));
-      },
-    });
+    this.api
+      .load()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => this.apply(body),
+        error: (err: HttpErrorResponse) => {
+          this.loading.set(false);
+          this.error.set(httpErrorMessage(err, 'Élèves indisponibles.'));
+        },
+      });
   }
 
   ngOnDestroy(): void {
-    this.releasePhotos();
+    this.photoBag.destroy();
+    this.photos.set({});
   }
 
   private apply(body: TeacherStudentsResponse): void {
-    this.releasePhotos();
+    this.photoBag.invalidate();
+    this.photos.set({});
     this.noClassMessage.set(body.noClassMessage ?? '');
     const schools: SchoolBlock[] = [];
     for (const school of body.schools ?? []) {
@@ -115,6 +124,7 @@ export class TeacherStudentsPage implements OnInit, OnDestroy {
   }
 
   private loadPhotos(schools: SchoolBlock[]): void {
+    const ticket = this.photoBag.ticket();
     for (const school of schools) {
       for (const grade of school.grades) {
         for (const student of grade.students) {
@@ -122,21 +132,18 @@ export class TeacherStudentsPage implements OnInit, OnDestroy {
             continue;
           }
           const id = student.id;
-          this.api.photo(id).subscribe({
-            next: (blob) => {
-              const url = URL.createObjectURL(blob);
-              this.photos.update((current) => ({ ...current, [id]: url }));
-            },
-          });
+          this.api
+            .photo(id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (blob) => {
+                if (this.photoBag.putIfCurrent(ticket, id, blob)) {
+                  this.photos.set(this.photoBag.snapshot());
+                }
+              },
+            });
         }
       }
     }
-  }
-
-  private releasePhotos(): void {
-    for (const url of Object.values(this.photos())) {
-      URL.revokeObjectURL(url);
-    }
-    this.photos.set({});
   }
 }

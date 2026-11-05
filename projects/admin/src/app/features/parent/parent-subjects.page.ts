@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -13,6 +14,7 @@ import type {
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { avatarEmoji } from '../../shared/avatars/account-avatars';
+import { PhotoObjectUrlBag } from '../../shared/photos/photo-object-url-bag';
 import { sexLabel } from './child-sex';
 import { ChildSubjectsService } from './data-access/child-subjects.service';
 import { ParentChildrenService } from './data-access/parent-children.service';
@@ -32,6 +34,8 @@ import { ParentChildrenService } from './data-access/parent-children.service';
 export class ParentSubjectsPage implements OnInit, OnDestroy {
   private readonly api = inject(ChildSubjectsService);
   private readonly childrenApi = inject(ParentChildrenService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly photoBag = new PhotoObjectUrlBag();
 
   readonly emoji = avatarEmoji;
   readonly sexLabel = sexLabel;
@@ -52,30 +56,35 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
   readonly pending = signal<{ childId: number; subjectId: number } | null>(null);
 
   ngOnInit(): void {
-    this.api.load().subscribe({
-      next: (body) => this.show(body),
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.error.set(httpErrorMessage(err, 'Matières indisponibles.'));
-      },
-    });
-    this.childrenApi.load().subscribe({
-      next: (body) => {
-        const rows = body.children ?? [];
-        this.profiles.set(rows);
-        this.loadPhotos(rows);
-      },
-      error: () => {
-        this.profiles.set([]);
-      },
-    });
+    this.api
+      .load()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => this.show(body),
+        error: (err: HttpErrorResponse) => {
+          this.loading.set(false);
+          this.error.set(httpErrorMessage(err, 'Matières indisponibles.'));
+        },
+      });
+    this.childrenApi
+      .load()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => {
+          const rows = body.children ?? [];
+          this.profiles.set(rows);
+          this.loadPhotos(rows);
+        },
+        error: () => {
+          this.profiles.set([]);
+        },
+      });
   }
 
   ngOnDestroy(): void {
     for (const [childId, seq] of this.searchSeq) this.searchSeq.set(childId, seq + 1);
-    for (const url of Object.values(this.photos())) {
-      URL.revokeObjectURL(url);
-    }
+    this.photoBag.destroy();
+    this.photos.set({});
   }
 
   profile(childId: number | undefined): ParentChildResponse | undefined {
@@ -258,17 +267,23 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
   }
 
   private loadPhotos(rows: ParentChildResponse[]): void {
+    const ticket = this.photoBag.invalidate();
+    this.photos.set({});
     for (const child of rows) {
       if (!child.hasPhoto || child.id == null) {
         continue;
       }
       const id = child.id;
-      this.childrenApi.photo(id).subscribe({
-        next: (blob) => {
-          const url = URL.createObjectURL(blob);
-          this.photos.update((current) => ({ ...current, [id]: url }));
-        },
-      });
+      this.childrenApi
+        .photo(id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (blob) => {
+            if (this.photoBag.putIfCurrent(ticket, id, blob)) {
+              this.photos.set(this.photoBag.snapshot());
+            }
+          },
+        });
     }
   }
 }
