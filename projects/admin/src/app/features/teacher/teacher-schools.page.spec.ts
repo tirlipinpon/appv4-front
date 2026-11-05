@@ -102,7 +102,6 @@ describe('TeacherSchoolsPage', () => {
 
     const put = http.expectOne(profileUrl);
     expect(put.request.body).toEqual({
-      displayName: 'Ancien',
       schools: [{ schoolId: 1, grades: ['1e primaire'] }],
     });
     put.flush({
@@ -246,7 +245,6 @@ describe('TeacherSchoolsPage retrait enregistré', () => {
     const put = http.expectOne(profileUrl);
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).toEqual({
-      displayName: 'Ancien',
       schools: [{ schoolId: 1, grades: ['2e primaire'] }],
     });
     put.flush({

@@ -368,9 +368,9 @@ export class TeacherSchoolsPage implements OnInit, OnDestroy {
     return null;
   }
 
+  /** N'envoie pas le nom : seul l'écran Profil le change (évite l'écrasement croisé). */
   private payload(): UpdateTeacherProfileRequest {
     return {
-      displayName: this.displayName().trim(),
       schools: this.blocks().map((block) => ({
         schoolId: block.schoolId ?? undefined,
         grades: block.grades,
