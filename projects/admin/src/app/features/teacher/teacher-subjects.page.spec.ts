@@ -271,6 +271,7 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [],
     });
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
@@ -321,6 +322,7 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [{ userId: 10, displayName: 'Camille' }],
     });
     flushFollowers(3, { childCount: 1, warning: '1 enfant suit ce cours.', names: ['Léa Martin'] });
@@ -351,6 +353,7 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [],
     });
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
@@ -368,6 +371,7 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [],
     });
     fixture.detectChanges();
@@ -383,6 +387,7 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [],
     });
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({ colleagues: [] });

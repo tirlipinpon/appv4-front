@@ -31,6 +31,7 @@
             >
               <span class="pick-name">{{ item.name }}</span>
               <span class="pick-place">{{ item.place }}</span>
+              <span class="pick-count">{{ item.questionCount }} question{{ item.questionCount === 1 ? '' : 's' }}</span>
             </button>
           }
         </div>
@@ -39,7 +40,7 @@
       @for (subject of openList(); track subject.id) {
         <section class="subject">
           <h2>{{ subject.name }}</h2>
-          <p class="hint">{{ subject.place }}</p>
+          <p class="hint">{{ subject.place }} · {{ subject.questionCount }} question{{ subject.questionCount === 1 ? '' : 's' }}</p>
           <app-subject-questions [subjectId]="subject.id" [destinations]="destinations()" />
         </section>
       }
