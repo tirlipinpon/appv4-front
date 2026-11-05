@@ -96,6 +96,7 @@ export class ParentProfilePage implements OnInit {
       return;
     }
     const sent = this.payload();
+    const bannerEpoch = this.account.bannerEpoch();
     this.error.set(null);
     this.saved.set(false);
     this.pendingNotice.set(null);
@@ -103,7 +104,7 @@ export class ParentProfilePage implements OnInit {
     this.api.save(sent).subscribe({
       next: (profile) => {
         this.saving.set(false);
-        this.remember(profile);
+        this.remember(profile, bannerEpoch);
         if (!this.samePayload(sent, this.payload())) {
           this.saved.set(false);
           this.pendingNotice.set(PROFILE_PENDING_EDIT);
@@ -138,10 +139,10 @@ export class ParentProfilePage implements OnInit {
     this.pendingNotice.set(null);
   }
 
-  private remember(profile: ParentProfileResponse): void {
+  private remember(profile: ParentProfileResponse, bannerEpoch: number): void {
     if (typeof profile.displayName === 'string') {
       const code = profile.avatarCode?.trim() ? profile.avatarCode.trim() : null;
-      this.account.remember(profile.displayName, code);
+      this.account.remember(profile.displayName, code, bannerEpoch);
     }
   }
 

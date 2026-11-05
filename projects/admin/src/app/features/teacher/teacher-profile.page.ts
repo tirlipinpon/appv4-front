@@ -102,6 +102,7 @@ export class TeacherProfilePage implements OnInit {
       return;
     }
     const sent = this.payload();
+    const bannerEpoch = this.account.bannerEpoch();
     this.error.set(null);
     this.saved.set(false);
     this.pendingNotice.set(null);
@@ -109,7 +110,7 @@ export class TeacherProfilePage implements OnInit {
     this.api.save(sent).subscribe({
       next: (profile) => {
         this.saving.set(false);
-        this.rememberSavedName(profile);
+        this.rememberSavedName(profile, bannerEpoch);
         if (!this.samePayload(sent, this.payload())) {
           this.saved.set(false);
           this.pendingNotice.set(PROFILE_PENDING_EDIT);
@@ -144,10 +145,10 @@ export class TeacherProfilePage implements OnInit {
     this.pendingNotice.set(null);
   }
 
-  private rememberSavedName(profile: TeacherProfileResponse): void {
+  private rememberSavedName(profile: TeacherProfileResponse, bannerEpoch: number): void {
     if (typeof profile.displayName === 'string') {
       const code = profile.avatarCode?.trim() ? profile.avatarCode.trim() : null;
-      this.account.remember(profile.displayName, code);
+      this.account.remember(profile.displayName, code, bannerEpoch);
     }
   }
 
