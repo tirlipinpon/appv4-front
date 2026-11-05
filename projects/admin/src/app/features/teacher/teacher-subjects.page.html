@@ -184,6 +184,7 @@
                             </button>
                           } @else {
                             <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
+                            <span class="question-count">{{ subject.questionCount }} question{{ subject.questionCount === 1 ? '' : 's' }}</span>
                             <div class="transfer">
                               <button
                                 mat-button
@@ -238,6 +239,7 @@
                         } @else if (!subject.followedByMe) {
                           <div class="headline">
                             <span class="name">{{ subject.name }}</span>
+                            <span class="question-count">{{ subject.questionCount }} question{{ subject.questionCount === 1 ? '' : 's' }}</span>
                             @if (sharedLabel(subject); as shared) {
                               <p class="hint shared">{{ shared }}</p>
                             }
@@ -260,6 +262,7 @@
                         } @else {
                           <div class="headline">
                             <span class="name" [class.inactive]="!subject.active">{{ subject.name }}</span>
+                            <span class="question-count">{{ subject.questionCount }} question{{ subject.questionCount === 1 ? '' : 's' }}</span>
                             @if (ownerAside(subject); as owner) {
                               <strong class="owner">{{ owner }}</strong>
                             }

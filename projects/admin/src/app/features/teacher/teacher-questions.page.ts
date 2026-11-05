@@ -11,6 +11,7 @@ interface SubjectRow {
   id: number;
   name: string;
   place: string;
+  questionCount: number;
 }
 
 interface GradeBlock {
@@ -86,7 +87,12 @@ export class TeacherQuestionsPage implements OnInit {
           if (subject.id == null || !subject.name || subject.followedByMe === false) {
             continue;
           }
-          subjects.push({ id: subject.id, name: subject.name, place });
+          subjects.push({
+            id: subject.id,
+            name: subject.name,
+            place,
+            questionCount: subject.questionCount ?? 0,
+          });
         }
         grades.push({ grade: grade.grade, subjects });
       }

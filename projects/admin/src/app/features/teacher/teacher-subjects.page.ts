@@ -31,6 +31,8 @@ interface SubjectRow {
   shareAskedTo?: TeacherSubjectSharedHolder[];
   /** Propriétaire : le professeur qui peut renommer. */
   owner?: TeacherSubjectSharedHolder;
+  /** Total des questions de la matière, renvoyé par l'API. */
+  questionCount: number;
 }
 
 interface GradeBlock {
@@ -849,6 +851,7 @@ export class TeacherSubjectsPage implements OnInit {
             sharedWith: holdersOf(subject.sharedWith),
             shareAskedTo: holdersOf(subject.shareAskedTo),
             owner: subject.owner?.userId != null ? holdersOf([subject.owner])[0] : undefined,
+            questionCount: subject.questionCount ?? 0,
           });
         }
         grades.push({ grade: grade.grade, subjects });
