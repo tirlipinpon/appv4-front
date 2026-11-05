@@ -216,6 +216,34 @@ describe('TeacherSubjectsPage', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Réactiver');
   });
 
+  it('choisit les actions par code meme si le message change', () => {
+    boot(loaded);
+    page.onDraft(2, '3e primaire', 'Calcul');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { code: 'SUBJECT_RESTORABLE', message: 'Autre texte' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    expect(page.canRestore(2, '3e primaire')).toBe(true);
+    expect(page.canAskShare(2, '3e primaire')).toBe(false);
+    page.onDraft(2, '3e primaire', 'Calcul');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { code: 'SUBJECT_SHARE_AVAILABLE', message: 'Texte modifie' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    expect(page.canRestore(2, '3e primaire')).toBe(false);
+    expect(page.canAskShare(2, '3e primaire')).toBe(true);
+    page.onDraft(2, '3e primaire', 'Calcul');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { code: 'UNKNOWN', message: 'Cette matière a été retirée. Tu peux la réactiver.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    expect(page.canRestore(2, '3e primaire')).toBe(false);
+    expect(page.canAskShare(2, '3e primaire')).toBe(false);
+  });
+
   it('explique une demande de partage reçue', () => {
     boot(loaded, [
       {
