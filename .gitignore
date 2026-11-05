@@ -36,6 +36,8 @@ yarn-error.log
 /libpeerconnection.log
 testem.log
 /typings
+# Checkout CI du contrat OpenAPI backend (api:check)
+.ci/
 
 # System files
 .DS_Store

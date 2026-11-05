@@ -32,6 +32,33 @@ jobs:
       - name: Lint (ESLint)
         run: npm run lint
 
+      # Même couple front ↔ contrat backend qu'en CI develop, avant build/deploy.
+      - name: Checkout backend OpenAPI contract
+        uses: actions/checkout@v4
+        with:
+          repository: tirlipinpon/appv4-back
+          ref: ${{ vars.BACKEND_CONTRACT_REF || 'develop' }}
+          path: .ci/appv4-back
+          sparse-checkout: |
+            openapi/openapi.json
+          sparse-checkout-cone-mode: false
+          fetch-depth: 1
+
+      - name: Require backend OpenAPI file
+        run: |
+          CONTRACT=".ci/appv4-back/openapi/openapi.json"
+          if [ ! -f "$CONTRACT" ]; then
+            echo "::error::Contrat OpenAPI backend absent ($CONTRACT). Refus explicite."
+            exit 1
+          fi
+          SHA="$(git -C .ci/appv4-back rev-parse HEAD)"
+          echo "Backend contract ref=${{ vars.BACKEND_CONTRACT_REF || 'develop' }} sha=$SHA"
+
+      - name: Check OpenAPI TypeScript schemas
+        run: npm run api:check
+        env:
+          APPV4_OPENAPI_PATH: .ci/appv4-back/openapi/openapi.json
+
       - name: Install Chrome for Karma
         id: setup-chrome
         uses: browser-actions/setup-chrome@v1
