@@ -583,15 +583,18 @@ export class SubjectQuestionsComponent implements OnInit {
           this.questions.set(rows);
           this.nextCursor.set(body.nextCursor ?? null);
           this.loading.set(false);
-          if (skipped) {
-            this.error.set('Une question renvoyée par le serveur n’avait pas d’identifiant et a été ignorée.');
-          }
+          this.error.set(
+            skipped
+              ? 'Une question renvoyée par le serveur n’avait pas d’identifiant et a été ignorée.'
+              : null,
+          );
         },
         error: (err: HttpErrorResponse) => {
           if (seq !== this.loadSeq) {
             return;
           }
           this.loading.set(false);
+          this.questions.set([]);
           this.error.set(httpErrorMessage(err, 'Questions indisponibles.'));
         },
       });

@@ -6,7 +6,7 @@
     <p class="field-error" role="alert">{{ message }}</p>
   }
 
-  @if (!loading()) {
+  @if (!loading() && error() === null) {
     <nav aria-label="Pages de questions">
       <button mat-button type="button" [disabled]="pageCursors().length <= 1 || saving() || pendingIds().length > 0"
         (click)="previousPage()">Précédent</button>
