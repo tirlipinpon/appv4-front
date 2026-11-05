@@ -14,6 +14,20 @@
           <p class="error" role="alert">{{ error() }}</p>
         }
 
+        @if (showDevProfiles) {
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Profil de test</mat-label>
+            <mat-select
+              [ngModel]="selectedDevProfile()"
+              (ngModelChange)="selectDevProfile($event)"
+            >
+              @for (profile of devProfiles; track profile.email) {
+                <mat-option [value]="profile.email">{{ profile.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
         <mat-form-field appearance="outline" class="full">
           <mat-label>Email</mat-label>
           <input
