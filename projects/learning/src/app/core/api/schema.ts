@@ -1014,6 +1014,7 @@ export interface components {
         };
         AuthErrorBody: {
             message?: string;
+            code?: string;
         };
         TeacherQuestionChoiceItem: {
             /** Format: int64 */
@@ -3630,6 +3631,7 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                page?: number;
             };
             header?: never;
             path?: never;
