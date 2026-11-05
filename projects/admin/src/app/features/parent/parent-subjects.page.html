@@ -103,6 +103,23 @@
             }
 
             <h2>À ajouter</h2>
+            @if (child.childId; as childId) {
+              <mat-form-field appearance="outline">
+                <mat-label>Nom de la matière</mat-label>
+                <input matInput [value]="searchQueries()[childId] ?? ''" (input)="setSearchQuery(childId, $event)" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Classe (facultatif)</mat-label>
+                <input matInput [value]="searchGrades()[childId] ?? ''" (input)="setSearchGrade(childId, $event)" />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving() || searchLoading()[childId]" (click)="search(childId)">Rechercher</button>
+              @if ((searchHistory()[childId]?.length ?? 0) > 1) {
+                <button mat-button type="button" [disabled]="saving() || searchLoading()[childId]" (click)="previousOffers(childId)">Précédent</button>
+              }
+              @if (searchCursors()[childId] !== null && searchCursors()[childId] !== undefined) {
+                <button mat-button type="button" [disabled]="saving() || searchLoading()[childId]" (click)="nextOffers(childId)">Suivant</button>
+              }
+            }
             @for (offer of proposed(child, false); track offer.subjectId) {
               <article class="line">
                 <p class="name">
