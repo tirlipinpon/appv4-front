@@ -1,3 +1,7 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+
 import { AuthService } from './auth.service';
 import { SpaceRoles } from './space-roles';
 
@@ -6,7 +10,10 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     sessionStorage.clear();
-    service = new AuthService();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(AuthService);
   });
 
   it('stores and clears token', () => {
