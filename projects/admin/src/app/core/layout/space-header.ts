@@ -12,7 +12,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
-import { knownAvatarEmoji } from '../../features/parent/child-avatars';
+import { knownAvatarEmoji } from '../../shared/avatars/account-avatars';
 import { AuthService } from '../auth/auth.service';
 import { ConnectedAccountService } from '../auth/connected-account.service';
 import { SpaceRoles } from '../auth/space-roles';
