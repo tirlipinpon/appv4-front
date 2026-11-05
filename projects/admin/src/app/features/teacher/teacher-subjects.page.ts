@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { Observable, catchError, of } from 'rxjs';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -87,10 +88,17 @@ const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
 })
 export class TeacherSubjectsPage implements OnInit {
   private readonly api = inject(TeacherSubjectsService);
+  private readonly destroyRef = inject(DestroyRef);
+  /** Ignore les réponses d'un reload plus ancien (invitations / alertes). */
+  private reloadSeq = 0;
 
   readonly schools = signal<SchoolBlock[]>([]);
   readonly invites = signal<TeacherTransferInviteItem[]>([]);
   readonly deactivateNotices = signal<TeacherDeactivateNoticeItem[]>([]);
+  /** Erreur de refresh invitations : on garde la dernière liste connue. */
+  readonly invitesError = signal<string | null>(null);
+  /** Erreur de refresh alertes : on garde la dernière liste connue. */
+  readonly noticesError = signal<string | null>(null);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly ready = signal(false);
@@ -673,31 +681,69 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   private reload(initial = false): void {
-    this.api.load().subscribe({
-      next: (subjects) => {
-        this.apply(subjects);
-        this.saving.set(false);
-        this.renamingId.set(null);
-        this.renameDraft.set('');
-        this.pending.set(null);
-        if (initial) {
+    const seq = ++this.reloadSeq;
+    this.api
+      .load()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (subjects) => {
+          if (seq !== this.reloadSeq) {
+            return;
+          }
+          this.apply(subjects);
+          this.saving.set(false);
+          this.renamingId.set(null);
+          this.renameDraft.set('');
+          this.pending.set(null);
+          if (initial) {
+            this.loading.set(false);
+          }
+          this.api
+            .transferInvites()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (body) => {
+                if (seq !== this.reloadSeq) {
+                  return;
+                }
+                this.invites.set(body.invites ?? []);
+                this.invitesError.set(null);
+              },
+              error: (err: HttpErrorResponse) => {
+                if (seq !== this.reloadSeq) {
+                  return;
+                }
+                this.invitesError.set(httpErrorMessage(err, 'Demandes indisponibles.'));
+              },
+            });
+          this.api
+            .deactivateNotices()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (body) => {
+                if (seq !== this.reloadSeq) {
+                  return;
+                }
+                this.deactivateNotices.set(body.notices ?? []);
+                this.noticesError.set(null);
+              },
+              error: (err: HttpErrorResponse) => {
+                if (seq !== this.reloadSeq) {
+                  return;
+                }
+                this.noticesError.set(httpErrorMessage(err, 'Alertes indisponibles.'));
+              },
+            });
+        },
+        error: (err: HttpErrorResponse) => {
+          if (seq !== this.reloadSeq) {
+            return;
+          }
+          this.saving.set(false);
           this.loading.set(false);
-        }
-        this.api
-          .transferInvites()
-          .pipe(catchError(() => of({ invites: [] })))
-          .subscribe((body) => this.invites.set(body.invites ?? []));
-        this.api
-          .deactivateNotices()
-          .pipe(catchError(() => of({ notices: [] })))
-          .subscribe((body) => this.deactivateNotices.set(body.notices ?? []));
-      },
-      error: (err: HttpErrorResponse) => {
-        this.saving.set(false);
-        this.loading.set(false);
-        this.error.set(httpErrorMessage(err, 'Matières indisponibles.'));
-      },
-    });
+          this.error.set(httpErrorMessage(err, 'Matières indisponibles.'));
+        },
+      });
   }
 
   private apply(body: TeacherSubjectsResponse): void {

@@ -589,4 +589,59 @@ describe('TeacherSubjectsPage', () => {
     expect(maths?.textContent).toContain('Transférer');
     expect(sciences?.querySelector('strong.owner')?.textContent).toBe('Luc');
   });
+
+  it('ignore les invitations d’un reload plus ancien qui arrivent en retard', () => {
+    fixture.detectChanges();
+    http.expectOne(subjectsUrl).flush(loaded);
+    const staleInvites = http.expectOne(invitesUrl);
+    http.expectOne(noticesUrl).flush({ notices: [] });
+    http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
+
+    (page as unknown as { reload: () => void }).reload();
+    http.expectOne(subjectsUrl).flush(loaded);
+    http.expectOne(invitesUrl).flush({ invites: [] });
+    http.expectOne(noticesUrl).flush({ notices: [] });
+    fixture.detectChanges();
+    expect(page.invites()).toEqual([]);
+
+    staleInvites.flush({
+      invites: [
+        {
+          id: 7,
+          subjectId: 2,
+          subjectName: 'Lecture',
+          schoolId: 1,
+          schoolName: 'École française',
+          grade: 'CE1',
+          mode: 'share',
+          fromDisplayName: 'Anne',
+        },
+      ],
+    });
+    fixture.detectChanges();
+    expect(page.invites()).toEqual([]);
+    expect(fixture.nativeElement.textContent).not.toContain('Anne propose de partager Lecture');
+  });
+
+  it('garde les alertes connues et montre une erreur si le refresh échoue', () => {
+    boot(loaded, [], [
+      { id: 9, message: 'Camille a désactivé Lecture.' },
+    ]);
+    expect(fixture.nativeElement.textContent).toContain('Camille a désactivé Lecture.');
+
+    page.dismissDeactivateNotice(9);
+    http.expectOne(`${noticesUrl}/9/dismiss`).flush(null);
+    http.expectOne(subjectsUrl).flush(loaded);
+    http.expectOne(invitesUrl).flush({ invites: [] });
+    http
+      .expectOne(noticesUrl)
+      .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+
+    expect(page.deactivateNotices()).toEqual([{ id: 9, message: 'Camille a désactivé Lecture.' }]);
+    expect(page.noticesError()).toBe('boom');
+    expect(fixture.nativeElement.textContent).toContain('boom');
+    expect(fixture.nativeElement.textContent).toContain('Camille a désactivé Lecture.');
+  });
 });
