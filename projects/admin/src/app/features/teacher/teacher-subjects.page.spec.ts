@@ -640,8 +640,8 @@ describe('TeacherSubjectsPage', () => {
     fixture.detectChanges();
 
     expect(page.deactivateNotices()).toEqual([{ id: 9, message: 'Camille a désactivé Lecture.' }]);
-    expect(page.noticesError()).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('Alertes indisponibles.');
+    expect(page.noticesError()).toBe('boom');
+    expect(fixture.nativeElement.textContent).toContain('boom');
     expect(fixture.nativeElement.textContent).toContain('Camille a désactivé Lecture.');
   });
 });
