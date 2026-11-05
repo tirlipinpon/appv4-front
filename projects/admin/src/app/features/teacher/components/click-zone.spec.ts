@@ -1,8 +1,11 @@
 import {
+  appendDraftPoint,
+  appendPoint,
   closesDraft,
   dropDraftPoint,
   moveHandle,
   pieceFrame,
+  POLYGON_POINTS_MAX,
   relativePoint,
   translateZone,
   zoneContains,
@@ -76,6 +79,24 @@ describe('click zones stay on the image', () => {
 
     expect(dropDraftPoint(points, 0)).toEqual([{ x: 0.4, y: 0.5 }]);
     expect(dropDraftPoint(points, 5)).toEqual(points);
+  });
+
+  it('keeps the draft and an existing polygon at the backend point ceiling', () => {
+    const draft = Array.from({ length: POLYGON_POINTS_MAX }, (_, index) => ({
+      x: index / 100,
+      y: 0.1,
+    }));
+    const zone = {
+      label: 'nuage',
+      correct: true,
+      shape: 'polygon' as const,
+      points: draft,
+    };
+
+    expect(appendDraftPoint(draft, { x: 0.9, y: 0.9 })).toBe(draft);
+    expect(appendDraftPoint(draft.slice(0, 3), { x: 0.9, y: 0.9 }).length).toBe(4);
+    expect(appendPoint(zone, { x: 0.9, y: 0.9 }).points.length).toBe(POLYGON_POINTS_MAX);
+    expect(appendPoint({ ...zone, points: draft.slice(0, 3) }, { x: 0.9, y: 0.9 }).points.length).toBe(4);
   });
 
   it('keeps a piece on the same fraction of the image', () => {
