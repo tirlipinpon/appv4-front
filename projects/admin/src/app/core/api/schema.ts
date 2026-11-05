@@ -1143,6 +1143,11 @@ export interface components {
             shareAskedTo?: components["schemas"]["TeacherSubjectSharedHolder"][];
             /** @description Propriétaire de la matière : le professeur qui peut la renommer. */
             owner?: components["schemas"]["TeacherSubjectSharedHolder"];
+            /**
+             * Format: int64
+             * @description Nombre total de questions enregistrées sur cette matière.
+             */
+            questionCount?: number;
         };
         TeacherSubjectSharedHolder: {
             /** Format: int64 */
@@ -1331,6 +1336,11 @@ export interface components {
             schoolName?: string;
             grade?: string;
             scolaire?: boolean;
+            /**
+             * Format: int64
+             * @description Nombre total de questions enregistrées sur cette matière.
+             */
+            questionCount?: number;
         };
         SwitchRoleRequest: {
             role: string;
