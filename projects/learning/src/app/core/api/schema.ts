@@ -1454,7 +1454,7 @@ export interface components {
             /** Format: int64 */
             subjectId?: number;
             subjectName?: string;
-            /** @description deactivate, handover_accepted, handover_rejected, … */
+            /** @description deactivate, handover_accepted, handover_rejected, invite_rejected, … */
             kind?: string;
             message?: string;
         };
