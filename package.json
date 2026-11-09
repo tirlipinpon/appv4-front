@@ -19,6 +19,7 @@
     "lint:learning": "ng lint learning",
     "lint:admin": "ng lint admin",
     "e2e": "playwright test",
+    "e2e:visual": "playwright test --ui --ui-host=127.0.0.1 --ui-port=9333",
     "api:generate": "node scripts/api-generate.mjs",
     "api:check": "node scripts/api-check.mjs"
   },
