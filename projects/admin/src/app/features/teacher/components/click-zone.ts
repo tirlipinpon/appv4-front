@@ -16,6 +16,9 @@ export interface ClickZone {
 
 const MIN_SPAN = 0.02;
 
+/** Même plafond que DrawnImageRules côté backend : un polygone a entre 3 et 24 points. */
+export const POLYGON_POINTS_MAX = 24;
+
 export function clamp01(value: number): number {
   if (Number.isNaN(value)) {
     return 0;
@@ -29,6 +32,17 @@ export function dropDraftPoint(points: ClickPoint[], index: number): ClickPoint[
     return points;
   }
   return points.filter((_, current) => current !== index);
+}
+
+/**
+ * Ajoute un point au brouillon initial, sans dépasser le plafond backend.
+ * Au-delà de {@link POLYGON_POINTS_MAX}, le tracé reste inchangé (pas de troncature silencieuse à l'envoi).
+ */
+export function appendDraftPoint(points: ClickPoint[], point: ClickPoint): ClickPoint[] {
+  if (points.length >= POLYGON_POINTS_MAX) {
+    return points;
+  }
+  return [...points, { x: clamp01(point.x), y: clamp01(point.y) }];
 }
 
 /** Vrai si ce clic retombe sur le premier point : la zone peut se fermer. */
@@ -226,7 +240,7 @@ export function changeShape(zone: ClickZone, shape: ClickShape): ClickZone {
 }
 
 export function appendPoint(zone: ClickZone, point: ClickPoint): ClickZone {
-  if (zone.shape !== 'polygon' || zone.points.length >= 24) {
+  if (zone.shape !== 'polygon' || zone.points.length >= POLYGON_POINTS_MAX) {
     return zone;
   }
   return { ...zone, points: [...zone.points, { x: clamp01(point.x), y: clamp01(point.y) }] };

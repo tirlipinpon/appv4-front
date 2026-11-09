@@ -780,6 +780,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search the school directory */
+        get: operations["searchSchools"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/subjects/{childId}/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search available subjects for a child */
+        get: operations["searchParentChildSubjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/hello": {
         parameters: {
             query?: never;
@@ -1031,6 +1065,7 @@ export interface components {
         };
         AuthErrorBody: {
             message?: string;
+            code?: string;
         };
         TeacherQuestionChoiceItem: {
             /** Format: int64 */
@@ -1125,6 +1160,11 @@ export interface components {
             shareAskedTo?: components["schemas"]["TeacherSubjectSharedHolder"][];
             /** @description Propriétaire de la matière : le professeur qui peut la renommer. */
             owner?: components["schemas"]["TeacherSubjectSharedHolder"];
+            /**
+             * Format: int64
+             * @description Nombre total de questions enregistrées sur cette matière.
+             */
+            questionCount?: number;
         };
         TeacherSubjectSharedHolder: {
             /** Format: int64 */
@@ -1137,8 +1177,11 @@ export interface components {
             curriculum?: string;
             grades?: string[];
         };
+        /** @description Champs absents (null) : ne pas modifier. schools [] vide : retirer toutes les écoles. */
         UpdateTeacherProfileRequest: {
+            /** @description Null = garder le nom actuel */
             displayName?: string;
+            /** @description Null = garder les écoles ; [] = tout retirer */
             schools?: components["schemas"]["TeacherSchoolInput"][];
             contactEmail?: string;
             phone?: string;
@@ -1282,6 +1325,8 @@ export interface components {
         };
         TeacherSubjectQuestionsResponse: {
             questions?: components["schemas"]["TeacherSubjectQuestionItem"][];
+            /** Format: int64 */
+            nextCursor?: number;
         };
         TransferTeacherSubjectRequest: {
             /**
@@ -1290,10 +1335,10 @@ export interface components {
              */
             colleagueUserId?: number;
             /**
-             * @description move ou share
+             * @description move, share (collègue sans accès) ou handover (co-détenteur reprend la propriété)
              * @enum {string}
              */
-            mode?: "move" | "share";
+            mode?: "move" | "share" | "handover";
         };
         DeactivateTeacherSubjectRequest: {
             /** @description Co-profs à désactiver aussi (créateur uniquement) */
@@ -1315,21 +1360,11 @@ export interface components {
             schoolName?: string;
             grade?: string;
             scolaire?: boolean;
-        };
-        ChildSubjectsResponse: {
-            /** Format: int64 */
-            childId?: number;
-            firstName?: string;
-            lastName?: string;
-            /** Format: int64 */
-            schoolId?: number;
-            schoolName?: string;
-            grade?: string;
-            chosen?: components["schemas"]["ChildSubjectOffer"][];
-            proposed?: components["schemas"]["ChildSubjectOffer"][];
-        };
-        ParentSubjectsResponse: {
-            children?: components["schemas"]["ChildSubjectsResponse"][];
+            /**
+             * Format: int64
+             * @description Nombre total de questions enregistrées sur cette matière.
+             */
+            questionCount?: number;
         };
         SwitchRoleRequest: {
             role: string;
@@ -1441,6 +1476,8 @@ export interface components {
             grade?: string;
             mode?: string;
             fromDisplayName?: string;
+            /** @description Texte prêt à afficher pour la demande */
+            message?: string;
         };
         TeacherTransferInvitesResponse: {
             invites?: components["schemas"]["TeacherTransferInviteItem"][];
@@ -1451,6 +1488,8 @@ export interface components {
             /** Format: int64 */
             subjectId?: number;
             subjectName?: string;
+            /** @description deactivate, handover_accepted, handover_rejected, invite_rejected, … */
+            kind?: string;
             message?: string;
         };
         TeacherDeactivateNoticesResponse: {
@@ -1527,6 +1566,38 @@ export interface components {
         };
         HelloMessageResponse: {
             text?: string;
+        };
+        SchoolOption: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            country?: string;
+            grades?: string[];
+        };
+        SchoolPage: {
+            schools?: components["schemas"]["SchoolOption"][];
+            /** Format: int64 */
+            nextCursor?: number;
+        };
+        ChildSubjectsResponse: {
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
+            lastName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            chosen?: components["schemas"]["ChildSubjectOffer"][];
+            proposed?: components["schemas"]["ChildSubjectOffer"][];
+        };
+        ParentSubjectsResponse: {
+            children?: components["schemas"]["ChildSubjectsResponse"][];
+        };
+        ChildSubjectOfferPage: {
+            offers?: components["schemas"]["ChildSubjectOffer"][];
+            /** Format: int64 */
+            nextCursor?: number;
         };
         ParentChildrenResponse: {
             children?: components["schemas"]["ParentChildResponse"][];
@@ -2000,7 +2071,10 @@ export interface operations {
     };
     listTeacherSubjectQuestions: {
         parameters: {
-            query?: never;
+            query?: {
+                afterId?: number;
+                limit?: number;
+            };
             header?: never;
             path: {
                 subjectId: number;
@@ -2614,7 +2688,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Chaque enfant, avec les matières déjà choisies et celles proposées */
+            /** @description Chaque enfant et les matières déjà choisies */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2647,13 +2721,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Listes après l'ajout */
+            /** @description Matière ajoutée */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ParentSubjectsResponse"];
+                    "*/*": components["schemas"]["ChildSubjectOffer"];
                 };
             };
             /** @description Matière introuvable, plus visible, ou déjà dans la liste */
@@ -3509,6 +3583,59 @@ export interface operations {
             };
         };
     };
+    searchSchools: {
+        parameters: {
+            query?: {
+                country?: string;
+                query?: string;
+                afterId?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SchoolPage"];
+                };
+            };
+        };
+    };
+    searchParentChildSubjects: {
+        parameters: {
+            query?: {
+                query?: string;
+                schoolId?: number;
+                grade?: string;
+                afterId?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                childId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildSubjectOfferPage"];
+                };
+            };
+        };
+    };
     getParentHello: {
         parameters: {
             query?: never;
@@ -3708,6 +3835,7 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                page?: number;
             };
             header?: never;
             path?: never;
@@ -3767,13 +3895,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Listes après le retrait. La matière du professeur reste */
+            /** @description Matière retirée de la liste de l'enfant */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ParentSubjectsResponse"];
+                    "*/*": components["schemas"]["ChildSubjectOffer"];
                 };
             };
             /** @description Enfant introuvable, ou matière absente de sa liste */

@@ -216,6 +216,34 @@ describe('TeacherSubjectsPage', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Réactiver');
   });
 
+  it('choisit les actions par code meme si le message change', () => {
+    boot(loaded);
+    page.onDraft(2, '3e primaire', 'Calcul');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { code: 'SUBJECT_RESTORABLE', message: 'Autre texte' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    expect(page.canRestore(2, '3e primaire')).toBe(true);
+    expect(page.canAskShare(2, '3e primaire')).toBe(false);
+    page.onDraft(2, '3e primaire', 'Calcul');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { code: 'SUBJECT_SHARE_AVAILABLE', message: 'Texte modifie' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    expect(page.canRestore(2, '3e primaire')).toBe(false);
+    expect(page.canAskShare(2, '3e primaire')).toBe(true);
+    page.onDraft(2, '3e primaire', 'Calcul');
+    page.add(2, '3e primaire');
+    http.expectOne(subjectsUrl).flush(
+      { code: 'UNKNOWN', message: 'Cette matière a été retirée. Tu peux la réactiver.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    expect(page.canRestore(2, '3e primaire')).toBe(false);
+    expect(page.canAskShare(2, '3e primaire')).toBe(false);
+  });
+
   it('explique une demande de partage reçue', () => {
     boot(loaded, [
       {
@@ -243,6 +271,7 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [],
     });
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
@@ -285,7 +314,7 @@ describe('TeacherSubjectsPage', () => {
     expectReload();
   });
 
-  it('retire une matière partagée avec le bon message', () => {
+  it('propose un handover quand le propriétaire retire une matière partagée', () => {
     boot(loaded);
     page.askRemove({
       id: 3,
@@ -293,22 +322,26 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [{ userId: 10, displayName: 'Camille' }],
     });
     flushFollowers(3, { childCount: 1, warning: '1 enfant suit ce cours.', names: ['Léa Martin'] });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      'Retirer Mathématiques de ta liste ? Camille la garde.',
+      "Pour quitter Mathématiques, choisis un collègue qui la suit déjà",
     );
     expect(fixture.nativeElement.textContent).toContain('1 enfant suit ce cours.');
     expect(fixture.nativeElement.textContent).toContain('Léa Martin');
-    expect(fixture.nativeElement.textContent).not.toContain('Déplacer vers un collègue');
+    expect(fixture.nativeElement.textContent).toContain('Demander la reprise');
+    expect(fixture.nativeElement.textContent).not.toContain('Confirmer le retrait');
     http.expectNone(`${subjectsUrl}/3/colleagues`);
-    page.confirmRemove(3);
-    const del = http.expectOne(`${subjectsUrl}/3`);
-    expect(del.request.method).toBe('DELETE');
-    del.flush(null);
+    page.setHandoverColleague(10);
+    page.confirmHandover(3);
+    const post = http.expectOne(`${subjectsUrl}/3/transfer`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual({ colleagueUserId: 10, mode: 'handover' });
+    post.flush(null);
     expectReload();
   });
 
@@ -320,6 +353,7 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [],
     });
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
@@ -337,6 +371,7 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [],
     });
     fixture.detectChanges();
@@ -352,6 +387,7 @@ describe('TeacherSubjectsPage', () => {
       active: true,
       ownedByMe: true,
       followedByMe: true,
+      questionCount: 0,
       sharedWith: [],
     });
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({ colleagues: [] });
@@ -559,6 +595,61 @@ describe('TeacherSubjectsPage', () => {
     expect(maths?.textContent).not.toContain('Renommer');
     expect(maths?.textContent).toContain('Retirer');
     expect(maths?.textContent).toContain('Transférer');
-    expect(sciences?.querySelector('strong.owner')?.textContent).toBe('Luc');
+    expect(sciences?.querySelector('strong.owner')?.textContent).toBe('Propriétaire sans accès : Luc');
+  });
+
+  it('ignore les invitations d’un reload plus ancien qui arrivent en retard', () => {
+    fixture.detectChanges();
+    http.expectOne(subjectsUrl).flush(loaded);
+    const staleInvites = http.expectOne(invitesUrl);
+    http.expectOne(noticesUrl).flush({ notices: [] });
+    http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
+
+    (page as unknown as { reload: () => void }).reload();
+    http.expectOne(subjectsUrl).flush(loaded);
+    http.expectOne(invitesUrl).flush({ invites: [] });
+    http.expectOne(noticesUrl).flush({ notices: [] });
+    fixture.detectChanges();
+    expect(page.invites()).toEqual([]);
+
+    staleInvites.flush({
+      invites: [
+        {
+          id: 7,
+          subjectId: 2,
+          subjectName: 'Lecture',
+          schoolId: 1,
+          schoolName: 'École française',
+          grade: 'CE1',
+          mode: 'share',
+          fromDisplayName: 'Anne',
+        },
+      ],
+    });
+    fixture.detectChanges();
+    expect(page.invites()).toEqual([]);
+    expect(fixture.nativeElement.textContent).not.toContain('Anne propose de partager Lecture');
+  });
+
+  it('garde les alertes connues et montre une erreur si le refresh échoue', () => {
+    boot(loaded, [], [
+      { id: 9, message: 'Camille a désactivé Lecture.' },
+    ]);
+    expect(fixture.nativeElement.textContent).toContain('Camille a désactivé Lecture.');
+
+    page.dismissDeactivateNotice(9);
+    http.expectOne(`${noticesUrl}/9/dismiss`).flush(null);
+    http.expectOne(subjectsUrl).flush(loaded);
+    http.expectOne(invitesUrl).flush({ invites: [] });
+    http
+      .expectOne(noticesUrl)
+      .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+
+    expect(page.deactivateNotices()).toEqual([{ id: 9, message: 'Camille a désactivé Lecture.' }]);
+    expect(page.noticesError()).toBe('boom');
+    expect(fixture.nativeElement.textContent).toContain('boom');
+    expect(fixture.nativeElement.textContent).toContain('Camille a désactivé Lecture.');
   });
 });

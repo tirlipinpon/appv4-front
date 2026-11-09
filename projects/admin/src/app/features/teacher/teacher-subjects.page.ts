@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { Observable, catchError, of } from 'rxjs';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -30,6 +31,8 @@ interface SubjectRow {
   shareAskedTo?: TeacherSubjectSharedHolder[];
   /** Propriétaire : le professeur qui peut renommer. */
   owner?: TeacherSubjectSharedHolder;
+  /** Total des questions de la matière, renvoyé par l'API. */
+  questionCount: number;
 }
 
 interface GradeBlock {
@@ -43,7 +46,7 @@ interface SchoolBlock {
   grades: GradeBlock[];
 }
 
-type TransferMode = 'move' | 'share';
+type TransferMode = 'move' | 'share' | 'handover';
 
 type Pending =
   | {
@@ -51,7 +54,10 @@ type Pending =
       kind: 'remove';
       /** Vrai si ce prof est le seul accès : retrait = plus personne ne voit la matière. */
       sole: boolean;
+      /** Vrai si propriétaire avec co-profs : doit proposer un handover avant de partir. */
+      needsHandover: boolean;
       colleagues: TeacherSubjectColleagueItem[];
+      handoverColleagueId: number | null;
     }
   | {
       id: number;
@@ -87,16 +93,24 @@ const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
 })
 export class TeacherSubjectsPage implements OnInit {
   private readonly api = inject(TeacherSubjectsService);
+  private readonly destroyRef = inject(DestroyRef);
+  /** Ignore les réponses d'un reload plus ancien (invitations / alertes). */
+  private reloadSeq = 0;
 
   readonly schools = signal<SchoolBlock[]>([]);
   readonly invites = signal<TeacherTransferInviteItem[]>([]);
   readonly deactivateNotices = signal<TeacherDeactivateNoticeItem[]>([]);
+  /** Erreur de refresh invitations : on garde la dernière liste connue. */
+  readonly invitesError = signal<string | null>(null);
+  /** Erreur de refresh alertes : on garde la dernière liste connue. */
+  readonly noticesError = signal<string | null>(null);
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly ready = signal(false);
   readonly error = signal<string | null>(null);
   readonly drafts = signal<Readonly<Record<string, string>>>({});
   readonly gradeErrors = signal<Readonly<Record<string, string>>>({});
+  readonly gradeErrorCodes = signal<Readonly<Record<string, string>>>({});
   readonly subjectErrors = signal<Readonly<Record<number, string>>>({});
   readonly renamingId = signal<number | null>(null);
   readonly renameDraft = signal('');
@@ -138,7 +152,10 @@ export class TeacherSubjectsPage implements OnInit {
     return `Suivie par ${names.join(', ')}`;
   }
 
-  /** Nom du propriétaire, en gras, quand un autre professeur peut renommer. */
+  /**
+   * Propriétaire hors de sharedWith (souvent sans accès) : libellé explicite.
+   * Évite d'afficher juste un prénom orphelin à côté du nom de matière.
+   */
   ownerAside(subject: SubjectRow): string | null {
     if (!subject.followedByMe || subject.ownedByMe) {
       return null;
@@ -149,7 +166,7 @@ export class TeacherSubjectsPage implements OnInit {
       return null;
     }
     const listed = subject.sharedWith.some((holder) => holder.userId === ownerId);
-    return listed ? null : name;
+    return listed ? null : `Propriétaire sans accès : ${name}`;
   }
 
   owns(subject: SubjectRow, holder: TeacherSubjectSharedHolder): boolean {
@@ -157,6 +174,10 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   confirmText(school: SchoolBlock, grade: GradeBlock, subject: SubjectRow): string {
+    const current = this.pending();
+    if (current?.kind === 'remove' && current.needsHandover) {
+      return `Pour quitter ${subject.name}, choisis un collègue qui la suit déjà : il devra accepter d'en devenir le propriétaire.`;
+    }
     const names = this.sharedNames(subject);
     if (names.length > 0) {
       return `Retirer ${subject.name} de ta liste ? ${names.join(', ')} la garde.`;
@@ -215,6 +236,9 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   inviteText(invite: TeacherTransferInviteItem): string {
+    if (invite.message) {
+      return invite.message;
+    }
     const place = invite.schoolName
       ? `${invite.subjectName} (${invite.schoolName}, ${invite.grade})`
       : `${invite.subjectName} (${invite.grade})`;
@@ -222,8 +246,16 @@ export class TeacherSubjectsPage implements OnInit {
     if (invite.mode === 'ask') {
       return `${from} demande à voir aussi ${place}. Si tu acceptes, vous la partagerez.`;
     }
+    if (invite.mode === 'handover') {
+      return `${from} te demande de reprendre ${place}.`;
+    }
     const action = invite.mode === 'move' ? 'déplacer' : 'partager';
     return `${from} propose de ${action} ${place}.`;
+  }
+
+  /** Zone unique invites + notices en haut de page. */
+  hasInbox(): boolean {
+    return this.invites().length > 0 || this.deactivateNotices().length > 0;
   }
 
   inputValue(event: Event): string {
@@ -261,13 +293,20 @@ export class TeacherSubjectsPage implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
         this.setGradeError(schoolId, grade, httpErrorMessage(err, 'Ajout impossible.'));
+        if (typeof err.error?.code === 'string') {
+          const key = this.gradeKey(schoolId, grade);
+          this.gradeErrorCodes.update((current) => ({ ...current, [key]: err.error.code }));
+        }
       },
     });
   }
 
   /** Vrai quand l'ajout a été refusé parce que la matière a été retirée. */
   canRestore(schoolId: number, grade: string): boolean {
-    return this.gradeError(schoolId, grade) === REMOVED_RESTORABLE;
+    const code = this.gradeErrorCodes()[this.gradeKey(schoolId, grade)];
+    return code === undefined
+      ? this.gradeError(schoolId, grade) === REMOVED_RESTORABLE
+      : code === 'SUBJECT_RESTORABLE';
   }
 
   /**
@@ -275,6 +314,10 @@ export class TeacherSubjectsPage implements OnInit {
    * d'une matière encore visible.
    */
   canAskShare(schoolId: number, grade: string): boolean {
+    const code = this.gradeErrorCodes()[this.gradeKey(schoolId, grade)];
+    if (code !== undefined) {
+      return code === 'SUBJECT_SHARE_AVAILABLE';
+    }
     const message = this.gradeError(schoolId, grade);
     return (
       message != null &&
@@ -422,8 +465,19 @@ export class TeacherSubjectsPage implements OnInit {
     this.renamingId.set(null);
     this.clearSubjectError(subject.id);
     const sole = subject.sharedWith.length === 0;
-    this.pending.set({ id: subject.id, kind: 'remove', sole, colleagues: [] });
+    const needsHandover = subject.ownedByMe && !sole;
+    this.pending.set({
+      id: subject.id,
+      kind: 'remove',
+      sole,
+      needsHandover,
+      colleagues: [],
+      handoverColleagueId: null,
+    });
     this.loadFollowers(subject.id);
+    if (needsHandover) {
+      return;
+    }
     if (!sole) {
       return;
     }
@@ -442,6 +496,52 @@ export class TeacherSubjectsPage implements OnInit {
         this.setSubjectError(subject.id, httpErrorMessage(err, 'Collègues indisponibles.'));
       },
     });
+  }
+
+  setHandoverColleague(userId: number): void {
+    const current = this.pending();
+    if (!current || current.kind !== 'remove' || !current.needsHandover) {
+      return;
+    }
+    this.pending.set({ ...current, handoverColleagueId: userId });
+    this.clearSubjectError(current.id);
+  }
+
+  removeNeedsHandover(): boolean {
+    const current = this.pending();
+    return current?.kind === 'remove' ? current.needsHandover : false;
+  }
+
+  handoverColleagueId(): number | null {
+    const current = this.pending();
+    return current?.kind === 'remove' ? current.handoverColleagueId : null;
+  }
+
+  confirmHandover(subjectId: number): void {
+    const current = this.pending();
+    if (
+      !current ||
+      current.kind !== 'remove' ||
+      !current.needsHandover ||
+      current.handoverColleagueId == null ||
+      this.saving()
+    ) {
+      return;
+    }
+    this.error.set(null);
+    this.saving.set(true);
+    this.api
+      .transfer(subjectId, {
+        colleagueUserId: current.handoverColleagueId,
+        mode: 'handover',
+      })
+      .subscribe({
+        next: () => this.reload(),
+        error: (err: HttpErrorResponse) => {
+          this.saving.set(false);
+          this.setSubjectError(subjectId, httpErrorMessage(err, 'Demande de reprise impossible.'));
+        },
+      });
   }
 
   /**
@@ -661,31 +761,69 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   private reload(initial = false): void {
-    this.api.load().subscribe({
-      next: (subjects) => {
-        this.apply(subjects);
-        this.saving.set(false);
-        this.renamingId.set(null);
-        this.renameDraft.set('');
-        this.pending.set(null);
-        if (initial) {
+    const seq = ++this.reloadSeq;
+    this.api
+      .load()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (subjects) => {
+          if (seq !== this.reloadSeq) {
+            return;
+          }
+          this.apply(subjects);
+          this.saving.set(false);
+          this.renamingId.set(null);
+          this.renameDraft.set('');
+          this.pending.set(null);
+          if (initial) {
+            this.loading.set(false);
+          }
+          this.api
+            .transferInvites()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (body) => {
+                if (seq !== this.reloadSeq) {
+                  return;
+                }
+                this.invites.set(body.invites ?? []);
+                this.invitesError.set(null);
+              },
+              error: (err: HttpErrorResponse) => {
+                if (seq !== this.reloadSeq) {
+                  return;
+                }
+                this.invitesError.set(httpErrorMessage(err, 'Demandes indisponibles.'));
+              },
+            });
+          this.api
+            .deactivateNotices()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (body) => {
+                if (seq !== this.reloadSeq) {
+                  return;
+                }
+                this.deactivateNotices.set(body.notices ?? []);
+                this.noticesError.set(null);
+              },
+              error: (err: HttpErrorResponse) => {
+                if (seq !== this.reloadSeq) {
+                  return;
+                }
+                this.noticesError.set(httpErrorMessage(err, 'Alertes indisponibles.'));
+              },
+            });
+        },
+        error: (err: HttpErrorResponse) => {
+          if (seq !== this.reloadSeq) {
+            return;
+          }
+          this.saving.set(false);
           this.loading.set(false);
-        }
-        this.api
-          .transferInvites()
-          .pipe(catchError(() => of({ invites: [] })))
-          .subscribe((body) => this.invites.set(body.invites ?? []));
-        this.api
-          .deactivateNotices()
-          .pipe(catchError(() => of({ notices: [] })))
-          .subscribe((body) => this.deactivateNotices.set(body.notices ?? []));
-      },
-      error: (err: HttpErrorResponse) => {
-        this.saving.set(false);
-        this.loading.set(false);
-        this.error.set(httpErrorMessage(err, 'Matières indisponibles.'));
-      },
-    });
+          this.error.set(httpErrorMessage(err, 'Matières indisponibles.'));
+        },
+      });
   }
 
   private apply(body: TeacherSubjectsResponse): void {
@@ -713,6 +851,7 @@ export class TeacherSubjectsPage implements OnInit {
             sharedWith: holdersOf(subject.sharedWith),
             shareAskedTo: holdersOf(subject.shareAskedTo),
             owner: subject.owner?.userId != null ? holdersOf([subject.owner])[0] : undefined,
+            questionCount: subject.questionCount ?? 0,
           });
         }
         grades.push({ grade: grade.grade, subjects });
@@ -738,6 +877,11 @@ export class TeacherSubjectsPage implements OnInit {
 
   private clearGradeError(schoolId: number, grade: string): void {
     const key = this.gradeKey(schoolId, grade);
+    this.gradeErrorCodes.update((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
     this.gradeErrors.update((current) => {
       if (!(key in current)) {
         return current;

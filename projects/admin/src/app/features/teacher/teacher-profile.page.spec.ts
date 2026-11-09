@@ -64,7 +64,6 @@ describe('TeacherProfilePage', () => {
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).toEqual({
       displayName: 'Version envoyee',
-      schools: [{ schoolId: 1, grades: ['1e primaire'] }],
       contactEmail: '',
       phone: '',
       avatarCode: '',

@@ -20,6 +20,7 @@ import { preparePhoto } from '../../../shared/prepare-photo/prepare-photo';
 import {
   ClickPoint,
   ClickZone,
+  appendDraftPoint,
   appendPoint,
   changeShape,
   closesDraft,
@@ -30,6 +31,7 @@ import {
   handles,
   moveHandle,
   polygonAttribute,
+  POLYGON_POINTS_MAX,
   rectangleBox,
   relativePoint,
   removePoint,
@@ -443,7 +445,10 @@ export class ClickZoneEditorComponent {
       this.adding.set(false);
       return;
     }
-    this.draft.update((points) => [...points, point]);
+    if (this.draft().length >= POLYGON_POINTS_MAX) {
+      return;
+    }
+    this.draft.update((points) => appendDraftPoint(points, point));
     this.draftHandle.set(this.draft().length - 1);
     this.selectedHandle.set(null);
   }
@@ -495,7 +500,8 @@ export class ClickZoneEditorComponent {
 
   finishDraft(): void {
     const points = this.draft();
-    if (points.length < 3 || this.disabled()) {
+    // Refuse un polygone hors bornes backend (3–24) plutôt que de le tronquer à l'envoi.
+    if (points.length < 3 || points.length > POLYGON_POINTS_MAX || this.disabled()) {
       return;
     }
     this.zonesChange.emit([
@@ -507,6 +513,9 @@ export class ClickZoneEditorComponent {
     this.selectedHandle.set(null);
     this.selected.set(this.zones().length);
   }
+
+  /** Plafond visible pendant le tracé : même règle que le backend. */
+  readonly draftPointsMax = POLYGON_POINTS_MAX;
 
   addRectangle(): void {
     this.emitZone(defaultRectangle());

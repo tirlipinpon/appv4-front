@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import type { AddChildSubjectRequest, ParentSubjectsResponse } from '../../../core/api/api-models';
+import type { AddChildSubjectRequest, ChildSubjectOffer, ParentSubjectsResponse } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -16,13 +16,21 @@ export class ChildSubjectsService {
     return this.http.get<ParentSubjectsResponse>(this.url());
   }
 
-  add(childId: number, subjectId: number): Observable<ParentSubjectsResponse> {
+  add(childId: number, subjectId: number): Observable<ChildSubjectOffer> {
     const body: AddChildSubjectRequest = { childId, subjectId };
-    return this.http.post<ParentSubjectsResponse>(this.url(), body);
+    return this.http.post<ChildSubjectOffer>(this.url(), body);
   }
 
-  remove(childId: number, subjectId: number): Observable<ParentSubjectsResponse> {
-    return this.http.delete<ParentSubjectsResponse>(`${this.url()}/${childId}/${subjectId}`);
+  remove(childId: number, subjectId: number): Observable<ChildSubjectOffer> {
+    return this.http.delete<ChildSubjectOffer>(`${this.url()}/${childId}/${subjectId}`);
+  }
+
+  search(childId: number, query: string, grade: string, afterId = 0): Observable<{
+    offers: ChildSubjectOffer[]; nextCursor: number | null;
+  }> {
+    return this.http.get<{ offers: ChildSubjectOffer[]; nextCursor: number | null }>(
+      `${this.url()}/${childId}/offers`, { params: { query, grade, afterId } },
+    );
   }
 
   private url(): string {

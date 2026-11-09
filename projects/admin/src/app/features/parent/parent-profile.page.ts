@@ -14,14 +14,11 @@ import type {
 import { ConnectedAccountService } from '../../core/auth/connected-account.service';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
+import {
+  PROFILE_PENDING_EDIT,
+  profileDisplayNameProblem,
+} from '../../shared/profile-contact/profile-display-name';
 import { ParentProfileService } from './data-access/parent-profile.service';
-
-/** Même plafond que le back (`DisplayNames.MAX_LENGTH`). */
-const NAME_MAX_LENGTH = 255;
-const NAME_REQUIRED = 'Le nom est obligatoire.';
-const NAME_TOO_LONG = 'Le nom est trop long (maximum 255).';
-const PENDING_EDIT =
-  "La version envoyée est enregistrée. La saisie faite pendant l'enregistrement n'est pas encore enregistrée.";
 
 /**
  * Fiche du parent (SCRUM-200). Le mail de connexion se lit. Le nom, le mail de contact,
@@ -91,7 +88,7 @@ export class ParentProfilePage implements OnInit {
     if (!this.ready() || this.saving()) {
       return;
     }
-    const nameError = this.nameProblem(this.displayName().trim());
+    const nameError = profileDisplayNameProblem(this.displayName().trim());
     this.nameError.set(nameError);
     if (nameError) {
       this.saved.set(false);
@@ -99,6 +96,7 @@ export class ParentProfilePage implements OnInit {
       return;
     }
     const sent = this.payload();
+    const bannerEpoch = this.account.bannerEpoch();
     this.error.set(null);
     this.saved.set(false);
     this.pendingNotice.set(null);
@@ -106,10 +104,10 @@ export class ParentProfilePage implements OnInit {
     this.api.save(sent).subscribe({
       next: (profile) => {
         this.saving.set(false);
-        this.remember(profile);
+        this.remember(profile, bannerEpoch);
         if (!this.samePayload(sent, this.payload())) {
           this.saved.set(false);
-          this.pendingNotice.set(PENDING_EDIT);
+          this.pendingNotice.set(PROFILE_PENDING_EDIT);
           return;
         }
         this.apply(profile);
@@ -121,16 +119,6 @@ export class ParentProfilePage implements OnInit {
         this.error.set(httpErrorMessage(err, 'Enregistrement impossible.'));
       },
     });
-  }
-
-  private nameProblem(name: string): string | null {
-    if (!name) {
-      return NAME_REQUIRED;
-    }
-    if (name.length > NAME_MAX_LENGTH) {
-      return NAME_TOO_LONG;
-    }
-    return null;
   }
 
   private payload(): UpdateParentProfileRequest {
@@ -151,10 +139,10 @@ export class ParentProfilePage implements OnInit {
     this.pendingNotice.set(null);
   }
 
-  private remember(profile: ParentProfileResponse): void {
+  private remember(profile: ParentProfileResponse, bannerEpoch: number): void {
     if (typeof profile.displayName === 'string') {
       const code = profile.avatarCode?.trim() ? profile.avatarCode.trim() : null;
-      this.account.remember(profile.displayName, code);
+      this.account.remember(profile.displayName, code, bannerEpoch);
     }
   }
 

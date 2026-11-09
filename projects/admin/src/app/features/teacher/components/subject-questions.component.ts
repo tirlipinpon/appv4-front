@@ -8,13 +8,31 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 import type { TeacherSubjectFollowersResponse } from '../../../core/api/api-models';
-import type { components } from '../../../core/api/schema';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherQuestionsService } from '../data-access/teacher-questions.service';
 import { ClickZoneEditorComponent } from './click-zone-editor.component';
 import { LetterBoxesComponent } from './letter-boxes.component';
 import { ClickZone } from './click-zone';
-import { MAGNET_DEFAULT } from './puzzle-piece';
+import { buildSaveBody, parseSavedQuestion, requireSavedQuestion } from './question-form.adapters';
+import {
+  ChoiceDraft,
+  GapWordDraft,
+  ItemDraft,
+  LinkDraft,
+  PairDraft,
+  SavedQuestion,
+  StatementDraft,
+  defaultMagnet,
+  emptyChoices,
+  emptyDecoys,
+  emptyItems,
+  emptyLinks,
+  emptyPairs,
+  emptyStatements,
+  holeCount,
+  isKnownFormCode,
+  withoutHole,
+} from './question-form.model';
 
 /** Matière proposée comme destination d'une copie. */
 export interface QuestionDestination {
@@ -26,72 +44,6 @@ interface FormChoice {
   code: string;
   label: string;
 }
-
-interface ChoiceDraft {
-  label: string;
-  correct: boolean;
-}
-
-interface SavedChoice {
-  label: string;
-  correct: boolean;
-}
-
-interface PairDraft {
-  questionSide: string;
-  answerSide: string;
-}
-
-interface ItemDraft {
-  label: string;
-}
-
-interface StatementDraft {
-  label: string;
-  truthful: boolean | null;
-}
-
-interface LinkDraft {
-  leftLabel: string;
-  rightLabel: string;
-}
-
-interface GapWordDraft {
-  label: string;
-}
-
-interface SavedQuestion {
-  id: number;
-  prompt: string;
-  formCode: string;
-  formLabel: string;
-  choices: SavedChoice[];
-  pairs: PairDraft[];
-  items: ItemDraft[];
-  statements: StatementDraft[];
-  links: LinkDraft[];
-  sentence: string;
-  answers: GapWordDraft[];
-  decoys: GapWordDraft[];
-  expectedAnswer: string;
-  imageDataUrl: string;
-  requireAllCorrect: boolean;
-  zones: ClickZone[];
-  snapDistance: number;
-}
-
-/** Formes dont le formulaire est écrit. Le libellé vient de l'API. */
-const QCM = 'qcm';
-const MEMORY = 'memory';
-const ORDER = 'order';
-const TRUE_FALSE = 'vrai_faux';
-const LINKS = 'liens';
-const CASE_VIDE = 'case_vide';
-const TEXTE = 'texte';
-const REPONSE_LIBRE = 'reponse_libre';
-const IMAGE_CLICK = 'image_interactive';
-const PUZZLE = 'puzzle';
-const HOLE = '___';
 
 /**
  * Préparer un choix multiple, un Memory, un Ordre ou un Vrai ou faux
@@ -142,6 +94,8 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly forms = signal<FormChoice[]>([]);
   readonly selectedCode = signal<string | null>(null);
   readonly questions = signal<SavedQuestion[]>([]);
+  readonly nextCursor = signal<number | null>(null);
+  readonly pageCursors = signal<number[]>([0]);
   readonly prompt = signal('');
   readonly choices = signal<ChoiceDraft[]>(emptyChoices());
   readonly pairs = signal<PairDraft[]>(emptyPairs());
@@ -153,7 +107,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly clickImage = signal('');
   readonly requireAllCorrect = signal(true);
   readonly clickZones = signal<ClickZone[]>([]);
-  readonly puzzleMagnet = signal(MAGNET_DEFAULT);
+  readonly puzzleMagnet = signal(defaultMagnet());
   readonly answers = signal<GapWordDraft[]>([]);
   readonly decoys = signal<GapWordDraft[]>(emptyDecoys());
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
@@ -175,25 +129,28 @@ export class SubjectQuestionsComponent implements OnInit {
         this.loadQuestions();
       }
     });
-    this.api.forms().subscribe({
-      next: (body) => {
-        const forms = (body.forms ?? []).flatMap((form) => {
-          if (!form.code) {
-            return [];
+    this.api
+      .forms()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => {
+          const forms = (body.forms ?? []).flatMap((form) => {
+            if (!form.code) {
+              return [];
+            }
+            return [{ code: form.code, label: form.label || form.code }];
+          });
+          this.forms.set(forms);
+          if (forms.length === 1) {
+            this.selectedCode.set(forms[0].code);
           }
-          return [{ code: form.code, label: form.label || form.code }];
-        });
-        this.forms.set(forms);
-        if (forms.length === 1) {
-          this.selectedCode.set(forms[0].code);
-        }
-        this.loadQuestions();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.error.set(httpErrorMessage(err, 'Formes indisponibles.'));
-      },
-    });
+          this.loadQuestions();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading.set(false);
+          this.error.set(httpErrorMessage(err, 'Formes indisponibles.'));
+        },
+      });
   }
 
   selectForm(code: string): void {
@@ -214,6 +171,10 @@ export class SubjectQuestionsComponent implements OnInit {
 
   setExpectedAnswer(value: string): void {
     this.expectedAnswer.set(value);
+  }
+
+  letterCount(answer: string): number {
+    return Array.from(answer).length;
   }
 
   letterMessage(id: number): string {
@@ -511,7 +472,10 @@ export class SubjectQuestionsComponent implements OnInit {
       next: (body) => {
         this.saving.set(false);
         this.selectedIds.set([]);
-        const copies = (body.questions ?? []).map((question) => toSaved(question));
+        const copies = (body.questions ?? []).flatMap((question) => {
+          const saved = parseSavedQuestion(question);
+          return saved ? [saved] : [];
+        });
         if (target === this.subjectId) {
           this.questions.update((rows) => [...rows, ...copies]);
         } else {
@@ -539,7 +503,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.clickImage.set('');
     this.requireAllCorrect.set(true);
     this.clickZones.set([]);
-    this.puzzleMagnet.set(MAGNET_DEFAULT);
+    this.puzzleMagnet.set(defaultMagnet());
     this.answers.set([]);
     this.decoys.set(emptyDecoys());
     this.error.set(null);
@@ -548,101 +512,30 @@ export class SubjectQuestionsComponent implements OnInit {
   save(): void {
     const code = this.selectedCode();
     const editingId = this.editingId();
-    if (
-      (code !== QCM &&
-        code !== MEMORY &&
-        code !== ORDER &&
-        code !== TRUE_FALSE &&
-        code !== LINKS &&
-        code !== CASE_VIDE &&
-        code !== TEXTE &&
-        code !== REPONSE_LIBRE &&
-        code !== IMAGE_CLICK &&
-        code !== PUZZLE) ||
-      this.saving()
-    ) {
+    if (!isKnownFormCode(code) || this.saving()) {
+      return;
+    }
+    const body = buildSaveBody(code, {
+      prompt: this.prompt(),
+      choices: this.choices(),
+      pairs: this.pairs(),
+      items: this.items(),
+      statements: this.statements(),
+      links: this.links(),
+      sentence: this.sentence(),
+      answers: this.answers(),
+      decoys: this.decoys(),
+      expectedAnswer: this.expectedAnswer(),
+      clickImage: this.clickImage(),
+      requireAllCorrect: this.requireAllCorrect(),
+      clickZones: this.clickZones(),
+      puzzleMagnet: this.puzzleMagnet(),
+    });
+    if (!body) {
       return;
     }
     this.saving.set(true);
     this.error.set(null);
-    const body =
-      code === MEMORY
-        ? {
-            formCode: code,
-            prompt: this.prompt(),
-            pairs: this.pairs().map((pair) => ({
-              questionSide: pair.questionSide,
-              answerSide: pair.answerSide,
-            })),
-          }
-        : code === ORDER
-          ? {
-              formCode: code,
-              prompt: this.prompt(),
-              items: this.items().map((item) => ({ label: item.label })),
-            }
-          : code === TRUE_FALSE
-            ? {
-                formCode: code,
-                prompt: this.prompt(),
-                statements: this.statements().map((row) => ({
-                  label: row.label,
-                  ...(row.truthful == null ? {} : { truthful: row.truthful }),
-                })),
-              }
-            : code === LINKS
-              ? {
-                  formCode: code,
-                  prompt: this.prompt(),
-                  links: this.links().map((row) => ({
-                    leftLabel: row.leftLabel,
-                    rightLabel: row.rightLabel,
-                  })),
-                }
-              : code === CASE_VIDE
-                ? {
-                    formCode: code,
-                    prompt: this.prompt(),
-                    sentence: this.sentence(),
-                    answers: this.answers().map((row) => ({ label: row.label })),
-                    decoys: this.decoys().map((row) => ({ label: row.label })),
-                  }
-                : code === TEXTE || code === REPONSE_LIBRE
-                  ? {
-                      formCode: code,
-                      prompt: this.prompt(),
-                      expectedAnswer: this.expectedAnswer(),
-                    }
-                  : code === IMAGE_CLICK
-                    ? {
-                        formCode: code,
-                        prompt: this.prompt(),
-                        imageWebp: webpPayload(this.clickImage()),
-                        requireAllCorrect: this.requireAllCorrect(),
-                        zones: this.clickZones().map((zone) => ({
-                          label: zone.label,
-                          correct: zone.correct,
-                          shape: zone.shape,
-                          points: zone.points.map((point) => ({ x: point.x, y: point.y })),
-                        })),
-                      }
-                    : code === PUZZLE
-                      ? {
-                          formCode: code,
-                          prompt: this.prompt(),
-                          imageWebp: webpPayload(this.clickImage()),
-                          snapDistance: this.puzzleMagnet(),
-                          pieces: this.clickZones().map((zone) => ({
-                            label: zone.label,
-                            shape: zone.shape,
-                            points: zone.points.map((point) => ({ x: point.x, y: point.y })),
-                          })),
-                        }
-                      : {
-                formCode: code,
-                prompt: this.prompt(),
-                choices: this.choices().map((choice) => ({ label: choice.label, correct: choice.correct })),
-              };
     const request =
       editingId == null
         ? this.api.create(this.subjectId, body)
@@ -650,10 +543,24 @@ export class SubjectQuestionsComponent implements OnInit {
     request.subscribe({
       next: (saved) => {
         this.saving.set(false);
-        const row = toSaved(saved);
-        this.questions.update((rows) =>
-          editingId == null ? [...rows, row] : rows.map((item) => (item.id === row.id ? row : item)),
-        );
+        let row: SavedQuestion;
+        try {
+          row = requireSavedQuestion(saved);
+        } catch {
+          this.error.set('Réponse serveur invalide (question sans identifiant).');
+          return;
+        }
+        const canAppend = this.nextCursor() === null && this.questions().length < 25;
+        this.questions.update((rows) => {
+          if (editingId != null) {
+            return rows.map((item) => (item.id === row.id ? row : item));
+          }
+          return canAppend ? [...rows, row] : rows;
+        });
+        if (editingId == null && !canAppend) {
+          this.notice.set('Question enregistrée. Consulte la dernière page pour la retrouver.');
+          this.loadQuestions();
+        }
         this.cancelEdit();
       },
       error: (err: HttpErrorResponse) => {
@@ -663,195 +570,62 @@ export class SubjectQuestionsComponent implements OnInit {
     });
   }
 
+  nextPage(): void {
+    const cursor = this.nextCursor();
+    if (cursor === null || this.saving() || this.pendingIds().length) return;
+    this.pageCursors.update((pages) => [...pages, cursor]);
+    this.selectedIds.set([]);
+    this.cancelEdit();
+    this.loadQuestions();
+  }
+
+  previousPage(): void {
+    if (this.pageCursors().length <= 1 || this.saving() || this.pendingIds().length) return;
+    this.pageCursors.update((pages) => pages.slice(0, -1));
+    this.selectedIds.set([]);
+    this.cancelEdit();
+    this.loadQuestions();
+  }
+
   private loadQuestions(): void {
     const seq = ++this.loadSeq;
-    this.api.list(this.subjectId).subscribe({
-      next: (body) => {
-        if (seq !== this.loadSeq) {
-          return;
-        }
-        this.questions.set((body.questions ?? []).map((question) => toSaved(question)));
-        this.loading.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        if (seq !== this.loadSeq) {
-          return;
-        }
-        this.loading.set(false);
-        this.error.set(httpErrorMessage(err, 'Questions indisponibles.'));
-      },
-    });
+    this.loading.set(true);
+    const afterId = this.pageCursors().at(-1) ?? 0;
+    this.api
+      .list(this.subjectId, afterId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => {
+          if (seq !== this.loadSeq) {
+            return;
+          }
+          const rows: SavedQuestion[] = [];
+          let skipped = false;
+          for (const question of body.questions ?? []) {
+            const saved = parseSavedQuestion(question);
+            if (saved) {
+              rows.push(saved);
+            } else {
+              skipped = true;
+            }
+          }
+          this.questions.set(rows);
+          this.nextCursor.set(body.nextCursor ?? null);
+          this.loading.set(false);
+          this.error.set(
+            skipped
+              ? 'Une question renvoyée par le serveur n’avait pas d’identifiant et a été ignorée.'
+              : null,
+          );
+        },
+        error: (err: HttpErrorResponse) => {
+          if (seq !== this.loadSeq) {
+            return;
+          }
+          this.loading.set(false);
+          this.questions.set([]);
+          this.error.set(httpErrorMessage(err, 'Questions indisponibles.'));
+        },
+      });
   }
-}
-
-function withoutHole(sentence: string, index: number): string {
-  let count = 0;
-  let from = 0;
-  while (from <= sentence.length - HOLE.length) {
-    const at = sentence.indexOf(HOLE, from);
-    if (at < 0) {
-      break;
-    }
-    if (count === index) {
-      let start = at;
-      let end = at + HOLE.length;
-      if (start > 0 && sentence.charAt(start - 1) === ' ') {
-        start -= 1;
-      } else if (end < sentence.length && sentence.charAt(end) === ' ') {
-        end += 1;
-      }
-      return sentence.slice(0, start) + sentence.slice(end);
-    }
-    count += 1;
-    from = at + HOLE.length;
-  }
-  return sentence;
-}
-
-function holeCount(sentence: string): number {
-  let count = 0;
-  let from = 0;
-  while (from <= sentence.length - HOLE.length) {
-    const at = sentence.indexOf(HOLE, from);
-    if (at < 0) {
-      break;
-    }
-    count += 1;
-    from = at + HOLE.length;
-  }
-  return count;
-}
-
-function emptyDecoys(): GapWordDraft[] {
-  return [{ label: '' }];
-}
-
-function emptyLinks(): LinkDraft[] {
-  return [
-    { leftLabel: '', rightLabel: '' },
-    { leftLabel: '', rightLabel: '' },
-  ];
-}
-
-function emptyStatements(): StatementDraft[] {
-  return [
-    { label: '', truthful: null },
-    { label: '', truthful: null },
-  ];
-}
-
-function emptyItems(): ItemDraft[] {
-  return [{ label: '' }, { label: '' }];
-}
-
-function emptyPairs(): PairDraft[] {
-  return [
-    { questionSide: '', answerSide: '' },
-    { questionSide: '', answerSide: '' },
-  ];
-}
-
-function emptyChoices(): ChoiceDraft[] {
-  return [
-    { label: '', correct: false },
-    { label: '', correct: false },
-  ];
-}
-
-function toSaved(question: components['schemas']['TeacherSubjectQuestionItem']): SavedQuestion {
-  const choices = (question.choices ?? []).flatMap((choice) => {
-    if (!choice.label) {
-      return [];
-    }
-    return [{ label: choice.label, correct: !!choice.correct }];
-  });
-  const pairs = (question.pairs ?? []).flatMap((pair) => {
-    if (!pair.questionSide || !pair.answerSide) {
-      return [];
-    }
-    return [{ questionSide: pair.questionSide, answerSide: pair.answerSide }];
-  });
-  const items = (question.items ?? []).flatMap((item) => {
-    if (!item.label) {
-      return [];
-    }
-    return [{ label: item.label }];
-  });
-  const statements = (question.statements ?? []).flatMap((row) => {
-    if (!row.label || row.truthful == null) {
-      return [];
-    }
-    return [{ label: row.label, truthful: row.truthful }];
-  });
-  const links = (question.links ?? []).flatMap((row) => {
-    if (!row.leftLabel || !row.rightLabel) {
-      return [];
-    }
-    return [{ leftLabel: row.leftLabel, rightLabel: row.rightLabel }];
-  });
-  const answers = (question.answers ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
-  const decoys = (question.decoys ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
-  return {
-    id: question.id ?? 0,
-    prompt: question.prompt ?? '',
-    formCode: question.formCode ?? '',
-    formLabel: question.formLabel ?? '',
-    choices,
-    pairs,
-    items,
-    statements,
-    links,
-    sentence: question.sentence ?? '',
-    answers,
-    decoys,
-    expectedAnswer: question.expectedAnswer ?? '',
-    imageDataUrl: question.imageWebp ? `data:image/webp;base64,${question.imageWebp}` : '',
-    requireAllCorrect: question.requireAllCorrect === true,
-    zones: question.formCode === 'puzzle' ? savedPieces(question.pieces) : savedZones(question.zones),
-    snapDistance:
-      question.formCode === 'puzzle' && typeof question.snapDistance === 'number'
-        ? question.snapDistance
-        : MAGNET_DEFAULT,
-  };
-}
-
-function webpPayload(dataUrl: string): string {
-  const comma = dataUrl.indexOf(',');
-  return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
-}
-
-function savedPieces(pieces: components['schemas']['TeacherSubjectQuestionItem']['pieces']): ClickZone[] {
-  return (pieces ?? []).flatMap((piece) => {
-    if (!piece.label || !piece.points?.length) {
-      return [];
-    }
-    if (piece.shape !== 'polygon' && piece.shape !== 'rect' && piece.shape !== 'ellipse') {
-      return [];
-    }
-    const points = piece.points.flatMap((point) =>
-      point.x == null || point.y == null ? [] : [{ x: point.x, y: point.y }],
-    );
-    if (!points.length) {
-      return [];
-    }
-    return [{ label: piece.label, correct: true, shape: piece.shape, points }];
-  });
-}
-
-function savedZones(zones: components['schemas']['TeacherSubjectQuestionItem']['zones']): ClickZone[] {
-  return (zones ?? []).flatMap((zone) => {
-    if (!zone.label || zone.correct == null || !zone.points?.length) {
-      return [];
-    }
-    if (zone.shape !== 'polygon' && zone.shape !== 'rect' && zone.shape !== 'ellipse') {
-      return [];
-    }
-    const points = zone.points.flatMap((point) =>
-      point.x == null || point.y == null ? [] : [{ x: point.x, y: point.y }],
-    );
-    if (!points.length) {
-      return [];
-    }
-    return [{ label: zone.label, correct: zone.correct, shape: zone.shape, points }];
-  });
 }

@@ -36,10 +36,11 @@ export class TeacherQuestionsService {
     return this.http.get<TeacherQuestionFormsResponse>(`${environment.apiBaseUrl}/teacher/question-forms`);
   }
 
-  list(subjectId: number): Observable<TeacherSubjectQuestionsResponse> {
-    return this.http.get<TeacherSubjectQuestionsResponse>(
-      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions`,
-    );
+  list(subjectId: number, afterId = 0): Observable<TeacherSubjectQuestionsResponse> {
+    const url = `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions`;
+    return afterId > 0
+      ? this.http.get<TeacherSubjectQuestionsResponse>(url, { params: { afterId } })
+      : this.http.get<TeacherSubjectQuestionsResponse>(url);
   }
 
   create(subjectId: number, body: CreateTeacherSubjectQuestionRequest): Observable<TeacherSubjectQuestionItem> {
