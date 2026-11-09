@@ -4,7 +4,8 @@ import { expect, test, type Page, type Route } from '@playwright/test';
  * Parcours parent (ADMIN-38) : accueil, profil, enfants, matières,
  * plus le refus si la session manque ou si le rôle est professeur.
  * Les API sont simulées : le back n'a pas besoin de tourner.
- * Le professeur reste pour un prochain passage.
+ * Les libellés d'interface se visent par data-testid (ADMIN-39).
+ * Les noms, e-mails et écoles restent du texte : ce sont des données.
  */
 
 const PARENT_URLS = ['/parent', '/parent/profil', '/parent/enfants', '/parent/matieres'] as const;
@@ -75,6 +76,89 @@ const SCHOOLS = [
   { id: 2, name: 'École du Parc', country: 'Belgique', grades: ['CE1'] },
 ];
 
+const ui = {
+  nav: 'space-nav',
+  navHome: 'nav-parent-home',
+  navChildren: 'nav-parent-children',
+  navProfile: 'nav-parent-profile',
+  navSubjects: 'nav-parent-subjects',
+  logout: 'account-logout',
+  childrenTitle: 'parent-children-title',
+  childrenEmpty: 'parent-children-empty',
+  subjectsTitle: 'parent-subjects-title',
+  subjectsEmpty: 'parent-subjects-empty',
+  profileName: 'profile-display-name',
+  profileContact: 'profile-contact-email',
+  profilePhone: 'profile-phone',
+  profileAvatarNone: 'profile-avatar-none',
+  profileAvatarOwl: 'profile-avatar-owl',
+  profileSave: 'profile-save',
+  profileSaved: 'profile-saved',
+  profileNameRequired: 'profile-name-required',
+  profileSaveError: 'profile-save-error',
+  childAdd: 'child-add',
+  childFormTitle: 'child-form-title',
+  childSave: 'child-save',
+  childClose: 'child-close',
+  childFirstName: 'child-first-name',
+  childLastName: 'child-last-name',
+  childAge: 'child-age',
+  childPin: 'child-pin',
+  childPinConfirm: 'child-pin-confirm',
+  childSex: 'child-sex',
+  childSexGirl: 'child-sex-FILLE',
+  childCountry: 'child-country',
+  childCountryBe: 'child-country-Belgique',
+  childGrade: 'child-grade',
+  childGradeCe1: 'child-grade-CE1',
+  childSchool: 'child-school',
+  childSchoolNew: 'child-school-1',
+  childSchoolPark: 'child-school-2',
+  childSchoolsMore: 'child-schools-more',
+  childAvatarFox: 'child-avatar-fox',
+  childCopy: 'child-copy',
+  childEdit: 'child-edit',
+  childDeactivate: 'child-deactivate',
+  childReactivate: 'child-reactivate',
+  childRemove: 'child-remove',
+  childCancel: 'child-cancel',
+  childConfirmDeactivate: 'child-confirm-deactivate',
+  childConfirmRemove: 'child-confirm-remove',
+  childDeactivateConfirm: 'child-deactivate-confirm',
+  childRemoveConfirm: 'child-remove-confirm',
+  childInactive: 'child-inactive',
+  childCardSex: 'child-card-sex',
+  childCardAge: 'child-card-age',
+  childSavedLinks: 'child-saved-links',
+  childDropLink: 'child-drop-link',
+  childLinkWith: 'child-link-with',
+  childLink: 'child-link',
+  childLinkNoah: 'child-link-target-2',
+  childLinkBrother: 'child-link-FRERE',
+  childSexRequired: 'child-sex-required',
+  childAgeInvalid: 'child-age-invalid',
+  childPinFormat: 'child-pin-format',
+  childPinMismatch: 'child-pin-mismatch',
+  childImageRequired: 'child-image-required',
+  offer: 'parent-offer',
+  offerAdd: 'parent-offer-add',
+  offerRemove: 'parent-offer-remove',
+  offerRemoveConfirm: 'parent-offer-remove-confirm',
+  offerRemoveCancel: 'parent-offer-remove-cancel',
+  offerRemoveApply: 'parent-offer-remove-apply',
+  offerEmptyExtra: 'parent-offer-empty-extra',
+  subjectSearchName: 'parent-subject-search-name',
+  subjectSearchGrade: 'parent-subject-search-grade',
+  subjectSearch: 'parent-subject-search',
+  subjectNext: 'parent-subject-next',
+  subjectPrevious: 'parent-subject-previous',
+  requestTeacher: 'space-request-teacher',
+  pendingTitle: 'teacher-pending-title',
+  pendingBack: 'teacher-pending-back',
+  switchTeacher: 'role-switch-teacher',
+  switchParent: 'role-switch-parent',
+} as const;
+
 test('sans session, chaque page parent revient au login', async ({ page }) => {
   for (const url of PARENT_URLS) {
     await page.goto(url);
@@ -95,31 +179,31 @@ test('le parent ouvre chaque page puis se deconnecte', async ({ page }) => {
   await signIn(page, world, 'parent');
 
   await page.goto('/parent');
-  await expect(page.getByRole('navigation', { name: 'Pages parent' })).toBeVisible();
+  await expect(page.getByTestId(ui.nav)).toBeVisible();
   await expect(page.getByText('Camille Parent')).toBeVisible();
 
   await page.goto('/parent/enfants');
-  await expect(page.getByRole('heading', { name: 'Mes enfants' })).toBeVisible();
-  await expect(page.getByText("Aucun enfant pour l'instant.")).toBeVisible();
+  await expect(page.getByTestId(ui.childrenTitle)).toBeVisible();
+  await expect(page.getByTestId(ui.childrenEmpty)).toBeVisible();
 
   await page.goto('/parent/profil');
   await expect(page.getByText('parent@example.com')).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Nom affiché' })).toHaveValue('Camille Parent');
+  await expect(page.getByTestId(ui.profileName)).toHaveValue('Camille Parent');
 
   await page.goto('/parent/matieres');
-  await expect(page.getByRole('heading', { name: 'Matières' })).toBeVisible();
-  await expect(page.getByText("Aucun enfant pour l'instant.")).toBeVisible();
+  await expect(page.getByTestId(ui.subjectsTitle)).toBeVisible();
+  await expect(page.getByTestId(ui.subjectsEmpty)).toBeVisible();
 
-  await page.getByRole('link', { name: 'Accueil' }).click();
+  await page.getByTestId(ui.navHome).click();
   await expect(page).toHaveURL(/\/parent$/);
-  await page.getByRole('link', { name: 'Enfants' }).click();
+  await page.getByTestId(ui.navChildren).click();
   await expect(page).toHaveURL(/\/parent\/enfants$/);
-  await page.getByRole('link', { name: 'Profil' }).click();
+  await page.getByTestId(ui.navProfile).click();
   await expect(page).toHaveURL(/\/parent\/profil$/);
-  await page.getByRole('link', { name: 'Matières' }).click();
+  await page.getByTestId(ui.navSubjects).click();
   await expect(page).toHaveURL(/\/parent\/matieres$/);
 
-  await page.getByRole('button', { name: 'Déconnexion' }).click();
+  await page.getByTestId(ui.logout).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goto('/parent');
   await expect(page).toHaveURL(/\/login$/);
@@ -131,79 +215,79 @@ test('le profil se corrige, refuse un nom vide, et montre le message de l api', 
   await page.goto('/parent/profil');
   await expect(page.getByText('parent@example.com')).toBeVisible();
 
-  await page.getByRole('textbox', { name: 'Nom affiché' }).fill('');
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-  await expect(page.getByText('Le nom est obligatoire.')).toBeVisible();
-  await expect(page.getByText('Enregistré.')).toHaveCount(0);
+  await page.getByTestId(ui.profileName).fill('');
+  await page.getByTestId(ui.profileSave).click();
+  await expect(page.getByTestId(ui.profileNameRequired)).toBeVisible();
+  await expect(page.getByTestId(ui.profileSaved)).toHaveCount(0);
 
-  await page.getByRole('textbox', { name: 'Nom affiché' }).fill('Camille Martin');
-  await page.getByRole('textbox', { name: 'Mail de contact' }).fill('contact.parent@example.com');
-  await page.getByRole('textbox', { name: 'Téléphone' }).fill('+32 470 00 00 00');
-  await page.getByRole('button', { name: 'Aucun', exact: true }).click();
-  await page.getByRole('button', { name: 'Hibou', exact: true }).click();
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-  await expect(page.getByText('Enregistré.')).toBeVisible();
+  await page.getByTestId(ui.profileName).fill('Camille Martin');
+  await page.getByTestId(ui.profileContact).fill('contact.parent@example.com');
+  await page.getByTestId(ui.profilePhone).fill('+32 470 00 00 00');
+  await page.getByTestId(ui.profileAvatarNone).click();
+  await page.getByTestId(ui.profileAvatarOwl).click();
+  await page.getByTestId(ui.profileSave).click();
+  await expect(page.getByTestId(ui.profileSaved)).toBeVisible();
   await expect(page.getByText('Camille Martin').first()).toBeVisible();
 
-  await page.getByRole('textbox', { name: 'Mail de contact' }).fill('pas-un-mail');
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText("Le mail de contact n'est pas valide.");
-  await expect(page.getByText('Enregistré.')).toHaveCount(0);
+  await page.getByTestId(ui.profileContact).fill('pas-un-mail');
+  await page.getByTestId(ui.profileSave).click();
+  await expect(page.getByTestId(ui.profileSaveError)).toBeVisible();
+  await expect(page.getByTestId(ui.profileSaved)).toHaveCount(0);
 });
 
 test('le formulaire enfant refuse une saisie incomplete', async ({ page }) => {
   await signIn(page, parentWorld(), 'parent');
   await page.goto('/parent/enfants');
-  await page.getByRole('button', { name: 'Ajouter un enfant' }).click();
-  await expect(page.getByText('Nouvel enfant')).toBeVisible();
+  await page.getByTestId(ui.childAdd).click();
+  await expect(page.getByTestId(ui.childFormTitle)).toHaveAttribute('data-form-mode', 'create');
 
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText('Choisis fille, garçon ou non genré.');
+  await page.getByTestId(ui.childSave).click();
+  await expect(page.getByTestId(ui.childSexRequired)).toBeVisible();
 
-  await choose(page, 'Sexe', 'Fille');
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText("L'âge doit être un nombre entier entre 2 et 18.");
+  await pick(page, ui.childSex, ui.childSexGirl);
+  await page.getByTestId(ui.childSave).click();
+  await expect(page.getByTestId(ui.childAgeInvalid)).toBeVisible();
 
-  await page.getByRole('textbox', { name: 'Âge' }).fill('8');
-  await page.getByRole('textbox', { name: 'Code PIN', exact: true }).fill('12');
-  await page.getByRole('textbox', { name: 'Confirmer le code PIN' }).fill('12');
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText('Le code PIN doit faire 4 chiffres.');
+  await page.getByTestId(ui.childAge).fill('8');
+  await page.getByTestId(ui.childPin).fill('12');
+  await page.getByTestId(ui.childPinConfirm).fill('12');
+  await page.getByTestId(ui.childSave).click();
+  await expect(page.getByTestId(ui.childPinFormat)).toBeVisible();
 
-  await page.getByRole('textbox', { name: 'Code PIN', exact: true }).fill('1234');
-  await page.getByRole('textbox', { name: 'Confirmer le code PIN' }).fill('9999');
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText('Les deux codes PIN ne sont pas les mêmes.');
+  await page.getByTestId(ui.childPin).fill('1234');
+  await page.getByTestId(ui.childPinConfirm).fill('9999');
+  await page.getByTestId(ui.childSave).click();
+  await expect(page.getByTestId(ui.childPinMismatch)).toBeVisible();
 
-  await page.getByRole('textbox', { name: 'Confirmer le code PIN' }).fill('1234');
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText('Choisis une photo ou un avatar.');
+  await page.getByTestId(ui.childPinConfirm).fill('1234');
+  await page.getByTestId(ui.childSave).click();
+  await expect(page.getByTestId(ui.childImageRequired)).toBeVisible();
 
-  await page.getByRole('button', { name: 'Fermer' }).click();
-  await expect(page.getByText('Nouvel enfant')).toHaveCount(0);
+  await page.getByTestId(ui.childClose).click();
+  await expect(page.getByTestId(ui.childFormTitle)).toHaveCount(0);
 });
 
 test('le parent ajoute un enfant avec ecole, puis peut en preparer un autre', async ({ page }) => {
   await signIn(page, parentWorld(), 'parent');
   await page.goto('/parent/enfants');
-  await expect(page.getByText("Aucun enfant pour l'instant.")).toBeVisible();
+  await expect(page.getByTestId(ui.childrenEmpty)).toBeVisible();
 
-  await page.getByRole('button', { name: 'Ajouter un enfant' }).click();
+  await page.getByTestId(ui.childAdd).click();
   await fillChild(page, { firstName: 'Léa', lastName: 'Martin' });
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+  await page.getByTestId(ui.childSave).click();
 
   const lea = childCard(page, 'Léa Martin');
   await expect(lea).toBeVisible();
-  await expect(lea).toContainText('Fille');
-  await expect(lea).toContainText('8 ans');
+  await expect(lea.getByTestId(ui.childCardSex)).toHaveAttribute('data-sex', 'FILLE');
+  await expect(lea.getByTestId(ui.childCardAge)).toHaveAttribute('data-age', '8');
   await expect(lea).toContainText('École Nouvelle');
-  await expect(page.getByText('Nouvel enfant')).toHaveCount(0);
+  await expect(page.getByTestId(ui.childFormTitle)).toHaveCount(0);
 
-  await lea.getByRole('button', { name: 'Ajouter à partir de celui-ci' }).click();
-  await expect(page.getByText('Nouvel enfant')).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Nom', exact: true })).toHaveValue('Martin');
-  await expect(page.getByRole('textbox', { name: 'Prénom' })).toHaveValue('');
-  await page.getByRole('button', { name: 'Fermer' }).click();
+  await lea.getByTestId(ui.childCopy).click();
+  await expect(page.getByTestId(ui.childFormTitle)).toHaveAttribute('data-form-mode', 'create');
+  await expect(page.getByTestId(ui.childLastName)).toHaveValue('Martin');
+  await expect(page.getByTestId(ui.childFirstName)).toHaveValue('');
+  await page.getByTestId(ui.childClose).click();
 });
 
 test('le parent modifie, desactive, reactive, puis retire un enfant', async ({ page }) => {
@@ -215,31 +299,31 @@ test('le parent modifie, desactive, reactive, puis retire un enfant', async ({ p
   await page.goto('/parent/enfants');
 
   const lea = childCard(page, 'Léa Martin');
-  await lea.getByRole('button', { name: 'Modifier' }).click();
-  await expect(page.getByText('Modifier', { exact: true }).last()).toBeVisible();
-  await page.getByRole('textbox', { name: 'Prénom' }).fill('Lina');
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+  await lea.getByTestId(ui.childEdit).click();
+  await expect(page.getByTestId(ui.childFormTitle)).toHaveAttribute('data-form-mode', 'edit');
+  await page.getByTestId(ui.childFirstName).fill('Lina');
+  await page.getByTestId(ui.childSave).click();
   await expect(childCard(page, 'Lina Martin')).toBeVisible();
 
   const lina = childCard(page, 'Lina Martin');
-  await lina.getByRole('button', { name: 'Désactiver' }).click();
-  await expect(page.getByText('Désactiver Lina Martin ?')).toBeVisible();
-  await page.getByRole('button', { name: 'Annuler' }).click();
-  await expect(page.getByText('Désactiver Lina Martin ?')).toHaveCount(0);
+  await lina.getByTestId(ui.childDeactivate).click();
+  await expect(lina.getByTestId(ui.childDeactivateConfirm)).toContainText('Lina Martin');
+  await lina.getByTestId(ui.childCancel).click();
+  await expect(lina.getByTestId(ui.childDeactivateConfirm)).toHaveCount(0);
 
-  await lina.getByRole('button', { name: 'Désactiver' }).click();
-  await page.getByRole('button', { name: 'Confirmer la désactivation' }).click();
-  await expect(lina.getByText('Désactivé')).toBeVisible();
-  await lina.getByRole('button', { name: 'Réactiver' }).click();
-  await expect(lina.getByText('Désactivé')).toHaveCount(0);
-  await expect(lina.getByRole('button', { name: 'Désactiver' })).toBeVisible();
+  await lina.getByTestId(ui.childDeactivate).click();
+  await lina.getByTestId(ui.childConfirmDeactivate).click();
+  await expect(lina.getByTestId(ui.childInactive)).toBeVisible();
+  await lina.getByTestId(ui.childReactivate).click();
+  await expect(lina.getByTestId(ui.childInactive)).toHaveCount(0);
+  await expect(lina.getByTestId(ui.childDeactivate)).toBeVisible();
 
-  await lina.getByRole('button', { name: 'Supprimer' }).click();
-  await expect(page.getByText("Retirer Lina Martin de l'affichage ?")).toBeVisible();
-  await page.getByRole('button', { name: 'Annuler' }).click();
-  await lina.getByRole('button', { name: 'Supprimer' }).click();
-  await page.getByRole('button', { name: 'Confirmer le retrait' }).click();
-  await expect(page.getByText("Aucun enfant pour l'instant.")).toBeVisible();
+  await lina.getByTestId(ui.childRemove).click();
+  await expect(lina.getByTestId(ui.childRemoveConfirm)).toContainText('Lina Martin');
+  await lina.getByTestId(ui.childCancel).click();
+  await lina.getByTestId(ui.childRemove).click();
+  await lina.getByTestId(ui.childConfirmRemove).click();
+  await expect(page.getByTestId(ui.childrenEmpty)).toBeVisible();
 });
 
 test('le parent lie deux enfants puis retire le lien', async ({ page }) => {
@@ -253,15 +337,15 @@ test('le parent lie deux enfants puis retire le lien', async ({ page }) => {
   await signIn(page, world, 'parent');
   await page.goto('/parent/enfants');
 
-  await childCard(page, 'Léa Martin').getByRole('button', { name: 'Modifier' }).click();
-  await choose(page, 'Lier avec', 'Noah Martin');
-  await choose(page, 'Lien avec Noah', 'Frère');
-  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+  await childCard(page, 'Léa Martin').getByTestId(ui.childEdit).click();
+  await pick(page, ui.childLinkWith, ui.childLinkNoah);
+  await pick(page, ui.childLink, ui.childLinkBrother);
+  await page.getByTestId(ui.childSave).click();
 
   await expect(page.getByText('Frère').first()).toBeVisible();
-  await childCard(page, 'Léa Martin').getByRole('button', { name: 'Modifier' }).click();
-  await expect(page.getByText('Liens déjà enregistrés')).toBeVisible();
-  await page.getByRole('button', { name: 'Retirer' }).click();
+  await childCard(page, 'Léa Martin').getByTestId(ui.childEdit).click();
+  await expect(page.getByTestId(ui.childSavedLinks)).toBeVisible();
+  await page.getByTestId(ui.childDropLink).click();
   await expect(page.getByText('Frère')).toHaveCount(0);
 });
 
@@ -276,27 +360,28 @@ test('le parent cherche une matiere, l ajoute, puis la retire', async ({ page })
   await page.goto('/parent/matieres');
 
   await expect(page.getByText('Léa Martin')).toBeVisible();
-  await expect(article(page, 'Mathématiques')).toContainText('Scolaire');
-  await expect(page.getByText('Aucune matière').first()).toBeVisible();
+  await expect(offerRow(page, 'Mathématiques')).toHaveAttribute('data-offer-scope', 'class');
+  await expect(page.getByTestId(ui.offerEmptyExtra)).toBeVisible();
 
-  await page.getByRole('textbox', { name: 'Nom de la matière' }).fill('anglais');
-  await page.getByRole('textbox', { name: 'Classe (facultatif)' }).fill('CE2');
-  await page.getByRole('button', { name: 'Rechercher' }).click();
+  await page.getByTestId(ui.subjectSearchName).fill('anglais');
+  await page.getByTestId(ui.subjectSearchGrade).fill('CE2');
+  await page.getByTestId(ui.subjectSearch).click();
 
-  const anglais = article(page, 'Anglais');
-  await expect(anglais).toContainText('Extra-scolaire');
-  await anglais.getByRole('button', { name: 'Ajouter' }).click();
-  await expect(anglais.getByRole('button', { name: 'Retirer' })).toBeVisible();
+  const anglais = offerRow(page, 'Anglais');
+  await expect(anglais).toHaveAttribute('data-offer-scope', 'extra');
+  await anglais.getByTestId(ui.offerAdd).click();
+  await expect(anglais.getByTestId(ui.offerRemove)).toBeVisible();
 
-  await anglais.getByRole('button', { name: 'Retirer' }).click();
-  await expect(page.getByText('Retirer Anglais de Prof B de la liste de Léa ?')).toBeVisible();
-  await page.getByRole('button', { name: 'Annuler' }).click();
-  await expect(page.getByText('Retirer Anglais de Prof B de la liste de Léa ?')).toHaveCount(0);
+  await anglais.getByTestId(ui.offerRemove).click();
+  await expect(anglais.getByTestId(ui.offerRemoveConfirm)).toContainText('Anglais');
+  await expect(anglais.getByTestId(ui.offerRemoveConfirm)).toContainText('Léa');
+  await anglais.getByTestId(ui.offerRemoveCancel).click();
+  await expect(anglais.getByTestId(ui.offerRemoveConfirm)).toHaveCount(0);
 
-  await anglais.getByRole('button', { name: 'Retirer' }).click();
-  await page.getByRole('button', { name: 'Confirmer le retrait' }).click();
-  await expect(anglais.getByRole('button', { name: 'Ajouter' })).toBeVisible();
-  await expect(article(page, 'Mathématiques').getByRole('button', { name: 'Retirer' })).toBeVisible();
+  await anglais.getByTestId(ui.offerRemove).click();
+  await anglais.getByTestId(ui.offerRemoveApply).click();
+  await expect(anglais.getByTestId(ui.offerAdd)).toBeVisible();
+  await expect(offerRow(page, 'Mathématiques').getByTestId(ui.offerRemove)).toBeVisible();
 });
 
 test('la recherche de matieres passe a la page suivante puis revient', async ({ page }) => {
@@ -310,37 +395,37 @@ test('la recherche de matieres passe a la page suivante puis revient', async ({ 
   });
   await signIn(page, world, 'parent');
   await page.goto('/parent/matieres');
-  await page.getByRole('button', { name: 'Rechercher' }).click();
+  await page.getByTestId(ui.subjectSearch).click();
 
-  await expect(article(page, 'Anglais')).toBeVisible();
-  await expect(article(page, 'Dessin')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Suivant' }).click();
-  await expect(article(page, 'Dessin')).toBeVisible();
-  await expect(article(page, 'Anglais')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Précédent' }).click();
-  await expect(article(page, 'Anglais')).toBeVisible();
-  await expect(article(page, 'Dessin')).toHaveCount(0);
+  await expect(offerRow(page, 'Anglais')).toBeVisible();
+  await expect(offerRow(page, 'Dessin')).toHaveCount(0);
+  await page.getByTestId(ui.subjectNext).click();
+  await expect(offerRow(page, 'Dessin')).toBeVisible();
+  await expect(offerRow(page, 'Anglais')).toHaveCount(0);
+  await page.getByTestId(ui.subjectPrevious).click();
+  await expect(offerRow(page, 'Anglais')).toBeVisible();
+  await expect(offerRow(page, 'Dessin')).toHaveCount(0);
 });
 
 test('le parent voit plus d ecoles dans le formulaire', async ({ page }) => {
   await signIn(page, parentWorld(), 'parent');
   await page.goto('/parent/enfants');
-  await page.getByRole('button', { name: 'Ajouter un enfant' }).click();
-  await choose(page, 'Pays', 'Belgique');
-  await page.getByRole('combobox', { name: 'École' }).fill('École');
-  await expect(page.getByRole('button', { name: 'École Nouvelle' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'École du Parc' })).toHaveCount(0);
-  await page.getByRole('button', { name: "Voir plus d'écoles" }).click();
-  await expect(page.getByRole('button', { name: 'École du Parc' })).toBeVisible();
+  await page.getByTestId(ui.childAdd).click();
+  await pick(page, ui.childCountry, ui.childCountryBe);
+  await page.getByTestId(ui.childSchool).fill('École');
+  await expect(page.getByTestId(ui.childSchoolNew)).toBeVisible();
+  await expect(page.getByTestId(ui.childSchoolPark)).toHaveCount(0);
+  await page.getByTestId(ui.childSchoolsMore).click();
+  await expect(page.getByTestId(ui.childSchoolPark)).toBeVisible();
 });
 
 test('demander l espace professeur ouvre la page d attente', async ({ page }) => {
   await signIn(page, parentWorld(), 'parent');
   await page.goto('/parent');
-  await page.getByRole('button', { name: "Demander l'espace professeur" }).click();
+  await page.getByTestId(ui.requestTeacher).click();
   await expect(page).toHaveURL(/\/teacher-pending$/);
-  await expect(page.getByText('Demande en attente')).toBeVisible();
-  await page.getByRole('link', { name: "Retour à l'espace parent" }).click();
+  await expect(page.getByTestId(ui.pendingTitle)).toBeVisible();
+  await page.getByTestId(ui.pendingBack).click();
   await expect(page).toHaveURL(/\/parent$/);
 });
 
@@ -348,9 +433,9 @@ test('un compte des deux roles passe au professeur puis revient au parent', asyn
   const world = parentWorld({ roles: ['parent', 'teacher'] });
   await signIn(page, world, 'parent');
   await page.goto('/parent');
-  await page.getByRole('button', { name: 'Professeur' }).click();
+  await page.getByTestId(ui.switchTeacher).click();
   await expect(page).toHaveURL(/\/teacher$/);
-  await page.getByRole('button', { name: 'Parent' }).click();
+  await page.getByTestId(ui.switchParent).click();
   await expect(page).toHaveURL(/\/parent$/);
 });
 
@@ -420,27 +505,27 @@ function childCard(page: Page, name: string) {
   });
 }
 
-function article(page: Page, name: string) {
-  return page.locator('article', { hasText: name });
+function offerRow(page: Page, name: string) {
+  return page.getByTestId(ui.offer).filter({ hasText: name });
 }
 
-async function choose(page: Page, field: string, option: string): Promise<void> {
-  await page.getByRole('combobox', { name: field }).click();
-  await page.getByRole('option', { name: option, exact: true }).click();
+async function pick(page: Page, field: string, option: string): Promise<void> {
+  await page.getByTestId(field).click();
+  await page.getByTestId(option).click();
 }
 
 async function fillChild(page: Page, names: { firstName: string; lastName: string }): Promise<void> {
-  await page.getByRole('textbox', { name: 'Prénom' }).fill(names.firstName);
-  await page.getByRole('textbox', { name: 'Nom', exact: true }).fill(names.lastName);
-  await choose(page, 'Sexe', 'Fille');
-  await page.getByRole('textbox', { name: 'Âge' }).fill('8');
-  await choose(page, 'Pays', 'Belgique');
-  await page.getByRole('combobox', { name: 'École' }).fill('École');
-  await page.getByRole('button', { name: 'École Nouvelle' }).click();
-  await choose(page, 'Classe', 'CE1');
-  await page.getByRole('button', { name: 'Renard' }).click();
-  await page.getByRole('textbox', { name: 'Code PIN', exact: true }).fill('1234');
-  await page.getByRole('textbox', { name: 'Confirmer le code PIN' }).fill('1234');
+  await page.getByTestId(ui.childFirstName).fill(names.firstName);
+  await page.getByTestId(ui.childLastName).fill(names.lastName);
+  await pick(page, ui.childSex, ui.childSexGirl);
+  await page.getByTestId(ui.childAge).fill('8');
+  await pick(page, ui.childCountry, ui.childCountryBe);
+  await page.getByTestId(ui.childSchool).fill('École');
+  await page.getByTestId(ui.childSchoolNew).click();
+  await pick(page, ui.childGrade, ui.childGradeCe1);
+  await page.getByTestId(ui.childAvatarFox).click();
+  await page.getByTestId(ui.childPin).fill('1234');
+  await page.getByTestId(ui.childPinConfirm).fill('1234');
 }
 
 async function signIn(page: Page, world: World, activeRole: 'parent' | 'teacher'): Promise<void> {

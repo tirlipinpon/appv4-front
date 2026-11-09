@@ -36,6 +36,7 @@ import {
   IMAGE_REQUIRED,
   PIN_FORMAT,
   PIN_MISMATCH,
+  SEX_REQUIRED,
   SCHOOL_PAUSE_MS,
   ageError,
   digitsOnly,
@@ -99,6 +100,25 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   readonly preparing = signal(false);
   readonly formOpen = signal(false);
   readonly error = signal<string | null>(null);
+  /** Repère du message affiché dans le formulaire. Le texte peut changer de langue, pas ce code. */
+  readonly formAlertTestId = computed((): string | null => {
+    switch (this.error()) {
+      case null:
+        return null;
+      case AGE_INVALID:
+        return 'child-age-invalid';
+      case PIN_FORMAT:
+        return 'child-pin-format';
+      case PIN_MISMATCH:
+        return 'child-pin-mismatch';
+      case IMAGE_REQUIRED:
+        return 'child-image-required';
+      case SEX_REQUIRED:
+        return 'child-sex-required';
+      default:
+        return 'child-form-error';
+    }
+  });
 
   readonly firstName = signal('');
   readonly lastName = signal('');
@@ -526,7 +546,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     }
     this.error.set(null);
     if (!this.sex()) {
-      this.error.set('Choisis fille, garçon ou non genré.');
+      this.error.set(SEX_REQUIRED);
       return;
     }
     if (!this.linkChoiceReady()) {

@@ -5,7 +5,34 @@ import { expect, test, type Page, type Route } from '@playwright/test';
  * (dernier détenteur vs partagée). APIs mockées — pas besoin du back.
  */
 
-type Mode = 'move' | 'share' | 'ask';
+type Mode = 'move' | 'share' | 'ask' | 'handover';
+
+const ui = {
+  intro: 'teacher-subjects-intro',
+  transfer: 'teacher-subject-transfer',
+  share: 'teacher-subject-share',
+  move: 'teacher-subject-move',
+  colleague: 'teacher-subject-colleague',
+  continue: 'teacher-subject-continue',
+  send: 'teacher-subject-send',
+  transferConfirm: 'teacher-subject-transfer-confirm',
+  invite: 'teacher-invite',
+  accept: 'teacher-invite-accept',
+  reject: 'teacher-invite-reject',
+  name: 'teacher-subject-name',
+  add: 'teacher-subject-add',
+  gradeError: 'teacher-subject-grade-error',
+  askShare: 'teacher-subject-ask-share',
+  shareSent: 'teacher-subject-share-sent',
+  shared: 'teacher-subject-shared',
+  remove: 'teacher-subject-remove',
+  removeConfirm: 'teacher-subject-remove-confirm',
+  confirmRemove: 'teacher-subject-confirm-remove',
+  moveInstead: 'teacher-subject-move-instead',
+  noColleague: 'teacher-subject-no-colleague',
+  handover: 'teacher-subject-handover',
+  handoverSend: 'teacher-subject-handover-send',
+} as const;
 
 interface SharedHolder {
   userId: number;
@@ -36,13 +63,15 @@ test('partage : demande envoyée puis acceptée par le collègue', async ({ page
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByRole('button', { name: 'Transférer' }).first().click();
-  await page.getByRole('button', { name: 'Partager' }).click();
-  await page.getByRole('button', { name: 'Camille' }).click();
-  await page.getByRole('button', { name: 'Continuer' }).click();
-  await expect(page.getByText(/Proposer de partager Lecture/)).toBeVisible();
-  await page.getByRole('button', { name: 'Envoyer la demande' }).click();
-  await expect(page.getByRole('button', { name: 'Transférer' }).first()).toBeVisible();
+  await page.getByTestId(ui.transfer).first().click();
+  await page.getByTestId(ui.share).click();
+  await colleague(page, 'Camille').click();
+  await page.getByTestId(ui.continue).click();
+  await expect(page.getByTestId(ui.transferConfirm)).toHaveAttribute('data-transfer-mode', 'share');
+  await expect(page.getByTestId(ui.transferConfirm)).toContainText('Lecture');
+  await expect(page.getByTestId(ui.transferConfirm)).toContainText('Camille');
+  await page.getByTestId(ui.send).click();
+  await expect(page.getByTestId(ui.transfer).first()).toBeVisible();
   expect(state.pendingTransfers).toHaveLength(1);
   expect(state.pendingTransfers[0].mode).toBe('share');
 
@@ -59,9 +88,12 @@ test('partage : demande envoyée puis acceptée par le collègue', async ({ page
     },
   ];
   await page.reload();
-  await expect(page.getByText('Anne propose de partager Lecture')).toBeVisible();
-  await page.getByRole('button', { name: 'Accepter' }).click();
-  await expect(page.getByText('Demandes reçues')).toHaveCount(0);
+  const invite = page.getByTestId(ui.invite);
+  await expect(invite).toHaveAttribute('data-invite-mode', 'share');
+  await expect(invite).toContainText('Anne');
+  await expect(invite).toContainText('Lecture');
+  await page.getByTestId(ui.accept).click();
+  await expect(page.getByTestId(ui.invite)).toHaveCount(0);
   expect(state.subjects[0].sharedWith).toEqual([{ userId: 1, displayName: 'Anne' }]);
 });
 
@@ -70,11 +102,12 @@ test('nom déjà pris : le professeur demande au créateur de partager', async (
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByLabel('Nouvelle matière').fill('Calcul');
-  await page.getByRole('button', { name: 'Ajouter' }).click();
-  await expect(page.getByText('Tu peux demander à Anne de la partager.')).toBeVisible();
-  await page.getByRole('button', { name: 'Demander le partage' }).click();
-  await expect(page.getByText('Demande envoyée.')).toBeVisible();
+  await page.getByTestId(ui.name).fill('Calcul');
+  await page.getByTestId(ui.add).click();
+  await expect(page.getByTestId(ui.gradeError)).toHaveAttribute('data-error-code', 'SUBJECT_SHARE_AVAILABLE');
+  await expect(page.getByTestId(ui.gradeError)).toContainText('Anne');
+  await page.getByTestId(ui.askShare).click();
+  await expect(page.getByTestId(ui.shareSent)).toBeVisible();
   expect(state.shareRequests).toEqual([{ schoolId: 1, grade: '3e primaire', name: 'Calcul' }]);
 
   state.invites = [
@@ -90,13 +123,12 @@ test('nom déjà pris : le professeur demande au créateur de partager', async (
     },
   ];
   await page.reload();
-  await expect(
-    page.getByText(
-      'Camille demande à voir aussi Calcul (École Nouvelle, 3e primaire). Si tu acceptes, vous la partagerez.',
-    ),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Accepter' }).click();
-  await expect(page.getByText('Partagée avec Camille')).toBeVisible();
+  const ask = page.getByTestId(ui.invite);
+  await expect(ask).toHaveAttribute('data-invite-mode', 'ask');
+  await expect(ask).toContainText('Camille');
+  await expect(ask).toContainText('Calcul');
+  await page.getByTestId(ui.accept).click();
+  await expect(page.getByTestId(ui.shared)).toContainText('Camille');
 });
 
 test('déplacement : demande envoyée puis acceptée par le destinataire', async ({ page }) => {
@@ -104,12 +136,13 @@ test('déplacement : demande envoyée puis acceptée par le destinataire', async
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByRole('button', { name: 'Transférer' }).first().click();
-  await page.getByRole('button', { name: 'Déplacer', exact: true }).click();
-  await page.getByRole('button', { name: 'Camille' }).click();
-  await page.getByRole('button', { name: 'Continuer' }).click();
-  await expect(page.getByText(/Proposer de déplacer Lecture/)).toBeVisible();
-  await page.getByRole('button', { name: 'Envoyer la demande' }).click();
+  await page.getByTestId(ui.transfer).first().click();
+  await page.getByTestId(ui.move).click();
+  await colleague(page, 'Camille').click();
+  await page.getByTestId(ui.continue).click();
+  await expect(page.getByTestId(ui.transferConfirm)).toHaveAttribute('data-transfer-mode', 'move');
+  await expect(page.getByTestId(ui.transferConfirm)).toContainText('Lecture');
+  await page.getByTestId(ui.send).click();
 
   state.invites = [
     {
@@ -124,11 +157,11 @@ test('déplacement : demande envoyée puis acceptée par le destinataire', async
     },
   ];
   await page.reload();
-  await page.getByRole('button', { name: 'Accepter' }).click();
-  await expect(page.getByText('Demandes reçues')).toHaveCount(0);
+  await page.getByTestId(ui.accept).click();
+  await expect(page.getByTestId(ui.invite)).toHaveCount(0);
   // Destinataire : la matière reste, sans co-prof (seul accès après move).
   await expect(page.getByText('Lecture', { exact: true })).toBeVisible();
-  await expect(page.getByText(/Partagée avec/)).toHaveCount(0);
+  await expect(page.getByTestId(ui.shared)).toHaveCount(0);
   expect(state.subjects.find((s) => s.id === 2)?.sharedWith).toEqual([]);
   expect(state.subjects.find((s) => s.id === 2)?.ownedByMe).toBe(true);
 });
@@ -150,8 +183,8 @@ test('invite refusée : la matière ne change pas', async ({ page }) => {
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByRole('button', { name: 'Refuser' }).click();
-  await expect(page.getByText('Demandes reçues')).toHaveCount(0);
+  await page.getByTestId(ui.reject).click();
+  await expect(page.getByTestId(ui.invite)).toHaveCount(0);
   await expect(page.getByText('Lecture')).toBeVisible();
   expect(state.subjects[0].sharedWith).toEqual([]);
 });
@@ -171,11 +204,16 @@ test('retrait partagé : le collègue garde la matière', async ({ page }) => {
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByRole('button', { name: 'Retirer' }).click();
-  await expect(page.getByText(/Camille la garde/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Déplacer vers un collègue' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Confirmer le retrait' }).click();
-  await expect(page.getByText('Mathématiques')).toHaveCount(0);
+  await page.getByTestId(ui.remove).click();
+  const sharedConfirm = page.getByTestId(ui.removeConfirm);
+  await expect(sharedConfirm).toHaveAttribute('data-remove-kind', 'shared');
+  await expect(sharedConfirm).toContainText('Mathématiques');
+  await expect(page.getByTestId(ui.moveInstead)).toHaveCount(0);
+  await expect(page.getByTestId(ui.confirmRemove)).toHaveCount(0);
+  await page.getByTestId(ui.handover).filter({ hasText: 'Camille' }).click();
+  await post(page, ui.handoverSend, '/transfer');
+  expect(state.pendingTransfers[0]).toMatchObject({ mode: 'handover', colleagueUserId: 10 });
+  await expect(page.getByText('Mathématiques')).toBeVisible();
 });
 
 test('retrait dernier détenteur avec collègues : proposer déplacer ou confirmer', async ({ page }) => {
@@ -183,16 +221,16 @@ test('retrait dernier détenteur avec collègues : proposer déplacer ou confirm
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByRole('button', { name: 'Retirer' }).first().click();
-  await expect(page.getByText(/plus aucun professeur ne la verra/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Déplacer vers un collègue' })).toBeVisible();
+  await page.getByTestId(ui.remove).first().click();
+  await expect(page.getByTestId(ui.removeConfirm)).toHaveAttribute('data-remove-kind', 'sole');
+  await expect(page.getByTestId(ui.moveInstead)).toBeVisible();
 
-  await page.getByRole('button', { name: 'Déplacer vers un collègue' }).click();
-  await expect(page.getByRole('button', { name: 'Déplacer', exact: true })).toHaveClass(/selected/);
-  await expect(page.getByRole('button', { name: 'Camille' })).toBeVisible();
-  await page.getByRole('button', { name: 'Camille' }).click();
-  await page.getByRole('button', { name: 'Continuer' }).click();
-  await page.getByRole('button', { name: 'Envoyer la demande' }).click();
+  await page.getByTestId(ui.moveInstead).click();
+  await expect(page.getByTestId(ui.move)).toHaveClass(/selected/);
+  await expect(colleague(page, 'Camille')).toBeVisible();
+  await colleague(page, 'Camille').click();
+  await page.getByTestId(ui.continue).click();
+  await post(page, ui.send, '/transfer');
   expect(state.pendingTransfers[0]).toMatchObject({ mode: 'move', colleagueUserId: 10 });
   await expect(page.getByText('Lecture')).toBeVisible();
 });
@@ -202,8 +240,8 @@ test('retrait dernier détenteur : confirmer le retrait cache la matière', asyn
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByRole('button', { name: 'Retirer' }).first().click();
-  await page.getByRole('button', { name: 'Confirmer le retrait' }).click();
+  await page.getByTestId(ui.remove).first().click();
+  await page.getByTestId(ui.confirmRemove).click();
   await expect(page.getByText('Lecture')).toHaveCount(0);
   expect(state.subjects.find((s) => s.id === 2)).toBeUndefined();
 });
@@ -213,11 +251,11 @@ test('retrait dernier détenteur sans collègue : pas de bouton déplacer', asyn
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByRole('button', { name: 'Retirer' }).first().click();
-  await expect(page.getByText(/plus aucun professeur ne la verra/)).toBeVisible();
-  await expect(page.getByText('Aucun collègue avec cette classe.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Déplacer vers un collègue' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Confirmer le retrait' }).click();
+  await page.getByTestId(ui.remove).first().click();
+  await expect(page.getByTestId(ui.removeConfirm)).toHaveAttribute('data-remove-kind', 'sole');
+  await expect(page.getByTestId(ui.noColleague)).toBeVisible();
+  await expect(page.getByTestId(ui.moveInstead)).toHaveCount(0);
+  await page.getByTestId(ui.confirmRemove).click();
   await expect(page.getByText('Lecture')).toHaveCount(0);
 });
 
@@ -226,9 +264,9 @@ test('transfert sans collègue : message Aucun collègue', async ({ page }) => {
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByRole('button', { name: 'Transférer' }).first().click();
-  await expect(page.getByText('Aucun collègue avec cette classe.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Continuer' })).toBeDisabled();
+  await page.getByTestId(ui.transfer).first().click();
+  await expect(page.getByTestId(ui.noColleague)).toBeVisible();
+  await expect(page.getByTestId(ui.continue)).toBeDisabled();
 });
 
 interface MockState {
@@ -264,7 +302,19 @@ async function openMatieres(page: Page): Promise<void> {
     sessionStorage.setItem('admin.jwt', token);
   }, teacherJwt());
   await page.goto('/teacher/matieres');
-  await expect(page.getByText('Un nom par classe')).toBeVisible();
+  await expect(page.getByTestId(ui.intro)).toBeVisible();
+}
+
+function colleague(page: Page, name: string) {
+  return page.getByTestId(ui.colleague).filter({ hasText: name });
+}
+
+async function post(page: Page, testId: string, urlPart: string): Promise<void> {
+  const done = page.waitForResponse(
+    (response) => response.url().includes(urlPart) && response.request().method() === 'POST',
+  );
+  await page.getByTestId(testId).click();
+  await done;
 }
 
 async function mockTeacherApis(page: Page, state: MockState): Promise<void> {
@@ -344,6 +394,7 @@ async function mockTeacherApis(page: Page, state: MockState): Promise<void> {
         contentType: 'application/json',
         body: JSON.stringify({
           message: 'Une matière de ce nom existe déjà. Tu peux demander à Anne de la partager.',
+          code: 'SUBJECT_SHARE_AVAILABLE',
         }),
       });
       return;

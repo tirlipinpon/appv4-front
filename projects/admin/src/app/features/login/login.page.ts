@@ -94,6 +94,8 @@ export class LoginPage implements OnInit {
   readonly password = signal(DEV_DEFAULT_PROFILE?.password ?? '');
   readonly showPassword = signal(false);
   readonly error = signal<string | null>(null);
+  /** Code stable quand le login affiche un refus OAuth. Vide pour une autre erreur. */
+  readonly errorReason = signal<string | null>(null);
   readonly loading = signal(false);
   readonly googleLoading = signal(false);
   readonly facebookLoading = signal(false);
@@ -116,6 +118,7 @@ export class LoginPage implements OnInit {
     const fromQuery = this.route.snapshot.queryParamMap.get('error');
     if (fromQuery) {
       this.error.set(fromQuery);
+      this.errorReason.set(this.route.snapshot.queryParamMap.get('reason'));
     }
   }
 

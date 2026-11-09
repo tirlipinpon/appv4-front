@@ -26,6 +26,17 @@ export type OAuthCallbackStep =
  * Décide du callback avant l'échange : annulation, state invalide, ou code à envoyer.
  * Le state stocké est consommé dès qu'on n'est pas sur une annulation fournisseur.
  */
+/** Code stable du refus OAuth. Le texte affiché sur le login reste celui du fournisseur. */
+export function oauthLoginReason(copy: OAuthCallbackCopy, message: string): string {
+  if (message === copy.cancelled) {
+    return `oauth-${copy.id}-cancelled`;
+  }
+  if (message === copy.invalidState) {
+    return `oauth-${copy.id}-invalid-state`;
+  }
+  return `oauth-${copy.id}-exchange-failed`;
+}
+
 export function prepareOAuthCallback(copy: OAuthCallbackCopy, query: OAuthQuery): OAuthCallbackStep {
   if (query.error) {
     return { type: 'login', error: copy.cancelled };

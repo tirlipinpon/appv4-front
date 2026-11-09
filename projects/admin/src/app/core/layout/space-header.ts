@@ -22,6 +22,8 @@ import { SpaceAccess } from './space-access';
 interface SpaceMenuItem {
   label: string;
   path: string;
+  /** Repère stable pour les parcours. Le libellé, lui, change avec la langue. */
+  testId: string;
 }
 
 /**
@@ -57,10 +59,10 @@ export class SpaceHeader implements OnInit {
       return {
         label: 'Pages parent',
         items: [
-          { label: 'Accueil', path: '/parent' },
-          { label: 'Enfants', path: '/parent/enfants' },
-          { label: 'Profil', path: '/parent/profil' },
-          { label: 'Matières', path: '/parent/matieres' },
+          { label: 'Accueil', path: '/parent', testId: 'nav-parent-home' },
+          { label: 'Enfants', path: '/parent/enfants', testId: 'nav-parent-children' },
+          { label: 'Profil', path: '/parent/profil', testId: 'nav-parent-profile' },
+          { label: 'Matières', path: '/parent/matieres', testId: 'nav-parent-subjects' },
         ],
       };
     }
@@ -68,12 +70,12 @@ export class SpaceHeader implements OnInit {
       return {
         label: 'Pages professeur',
         items: [
-          { label: 'Accueil', path: '/teacher' },
-          { label: 'Profil', path: '/teacher/profil' },
-          { label: 'Écoles', path: '/teacher/ecoles' },
-          { label: 'Élèves', path: '/teacher/eleves' },
-          { label: 'Matières', path: '/teacher/matieres' },
-          { label: 'Questions', path: '/teacher/questions' },
+          { label: 'Accueil', path: '/teacher', testId: 'nav-teacher-home' },
+          { label: 'Profil', path: '/teacher/profil', testId: 'nav-teacher-profile' },
+          { label: 'Écoles', path: '/teacher/ecoles', testId: 'nav-teacher-schools' },
+          { label: 'Élèves', path: '/teacher/eleves', testId: 'nav-teacher-students' },
+          { label: 'Matières', path: '/teacher/matieres', testId: 'nav-teacher-subjects' },
+          { label: 'Questions', path: '/teacher/questions', testId: 'nav-teacher-questions' },
         ],
       };
     }

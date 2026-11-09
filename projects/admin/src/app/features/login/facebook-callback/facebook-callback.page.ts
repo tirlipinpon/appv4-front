@@ -7,7 +7,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { landingPath } from '../../../core/auth/space-landing';
-import { connectOAuthCallback, type OAuthCallbackCopy } from '../data-access/oauth-callback';
+import { connectOAuthCallback, oauthLoginReason, type OAuthCallbackCopy } from '../data-access/oauth-callback';
 import { FacebookOAuthService } from '../data-access/facebook-oauth.service';
 
 const FACEBOOK: OAuthCallbackCopy = {
@@ -47,14 +47,18 @@ export class FacebookCallbackPage implements OnInit {
       },
       exchange: (code, state) => this.facebookOAuth.exchangeCode(code, state),
       onLoginError: (error) => {
-        void this.router.navigate(['/login'], { queryParams: { error } });
+        void this.router.navigate(['/login'], {
+          queryParams: { error, reason: oauthLoginReason(FACEBOOK, error) },
+        });
       },
       onSuccess: (token) => {
         this.auth.setToken(token);
         void this.router.navigateByUrl(landingPath(this.auth.session()));
       },
       onExchangeError: (error) => {
-        void this.router.navigate(['/login'], { queryParams: { error } });
+        void this.router.navigate(['/login'], {
+          queryParams: { error, reason: oauthLoginReason(FACEBOOK, error) },
+        });
       },
     });
     pending?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe();

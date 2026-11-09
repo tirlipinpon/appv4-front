@@ -4,7 +4,7 @@
   <main class="content">
     <section class="panel">
       <header class="heading">
-        <h1>Matières</h1>
+        <h1 data-testid="parent-subjects-title">Matières</h1>
       </header>
 
       @if (loading()) {
@@ -14,7 +14,7 @@
         <p class="error" role="alert">{{ error() }}</p>
       }
       @if (!loading() && children().length === 0) {
-        <p class="hint">Aucun enfant pour l'instant.</p>
+        <p class="hint" data-testid="parent-subjects-empty">Aucun enfant pour l'instant.</p>
       }
 
       <ul class="list">
@@ -52,25 +52,25 @@
             @if (hasClass(child)) {
               <h3>De sa classe</h3>
               @if (chosen(child, true).length === 0) {
-                <p class="hint">Aucune matière</p>
+                <p class="hint" data-testid="parent-offer-empty-class">Aucune matière</p>
               }
               @for (offer of chosen(child, true); track offer.subjectId) {
-                <article class="line">
+                <article class="line" data-testid="parent-offer" [attr.data-offer-scope]="offer.scolaire ? 'class' : 'extra'">
                   <p class="name">
                     {{ offer.name }}
                     <span class="meta">Scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
                   </p>
                   @if (pendingFor(child.childId, offer.subjectId)) {
-                    <p class="confirm" role="alert">{{ confirmText(child, offer) }}</p>
+                    <p class="confirm" role="alert" data-testid="parent-offer-remove-confirm">{{ confirmText(child, offer) }}</p>
                     <p class="actions">
-                      <button mat-button type="button" [disabled]="saving()" (click)="cancelRemove()">Annuler</button>
-                      <button mat-flat-button color="warn" type="button" [disabled]="saving()" (click)="confirmRemove(child.childId, offer.subjectId)">
+                      <button mat-button type="button" data-testid="parent-offer-remove-cancel" [disabled]="saving()" (click)="cancelRemove()">Annuler</button>
+                      <button mat-flat-button color="warn" type="button" data-testid="parent-offer-remove-apply" [disabled]="saving()" (click)="confirmRemove(child.childId, offer.subjectId)">
                         Confirmer le retrait
                       </button>
                     </p>
                   } @else {
                     <p class="actions">
-                      <button mat-button type="button" [disabled]="saving()" (click)="askRemove(child.childId, offer.subjectId)">Retirer</button>
+                      <button mat-button type="button" data-testid="parent-offer-remove" [disabled]="saving()" (click)="askRemove(child.childId, offer.subjectId)">Retirer</button>
                     </p>
                   }
                 </article>
@@ -78,25 +78,25 @@
             }
             <h3>Autres cours</h3>
             @if (chosen(child, false).length === 0) {
-              <p class="hint">Aucune matière</p>
+              <p class="hint" data-testid="parent-offer-empty-extra">Aucune matière</p>
             }
             @for (offer of chosen(child, false); track offer.subjectId) {
-              <article class="line">
+              <article class="line" data-testid="parent-offer" [attr.data-offer-scope]="offer.scolaire ? 'class' : 'extra'">
                 <p class="name">
                   {{ offer.name }}
                   <span class="meta">Extra-scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
                 </p>
                 @if (pendingFor(child.childId, offer.subjectId)) {
-                  <p class="confirm" role="alert">{{ confirmText(child, offer) }}</p>
+                  <p class="confirm" role="alert" data-testid="parent-offer-remove-confirm">{{ confirmText(child, offer) }}</p>
                   <p class="actions">
-                    <button mat-button type="button" [disabled]="saving()" (click)="cancelRemove()">Annuler</button>
-                    <button mat-flat-button color="warn" type="button" [disabled]="saving()" (click)="confirmRemove(child.childId, offer.subjectId)">
+                    <button mat-button type="button" data-testid="parent-offer-remove-cancel" [disabled]="saving()" (click)="cancelRemove()">Annuler</button>
+                    <button mat-flat-button color="warn" type="button" data-testid="parent-offer-remove-apply" [disabled]="saving()" (click)="confirmRemove(child.childId, offer.subjectId)">
                       Confirmer le retrait
                     </button>
                   </p>
                 } @else {
                   <p class="actions">
-                    <button mat-button type="button" [disabled]="saving()" (click)="askRemove(child.childId, offer.subjectId)">Retirer</button>
+                    <button mat-button type="button" data-testid="parent-offer-remove" [disabled]="saving()" (click)="askRemove(child.childId, offer.subjectId)">Retirer</button>
                   </p>
                 }
               </article>
@@ -106,41 +106,41 @@
             @if (child.childId; as childId) {
               <mat-form-field appearance="outline">
                 <mat-label>Nom de la matière</mat-label>
-                <input matInput [value]="searchQueries()[childId] ?? ''" (input)="setSearchQuery(childId, $event)" />
+                <input matInput data-testid="parent-subject-search-name" [value]="searchQueries()[childId] ?? ''" (input)="setSearchQuery(childId, $event)" />
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label>Classe (facultatif)</mat-label>
-                <input matInput [value]="searchGrades()[childId] ?? ''" (input)="setSearchGrade(childId, $event)" />
+                <input matInput data-testid="parent-subject-search-grade" [value]="searchGrades()[childId] ?? ''" (input)="setSearchGrade(childId, $event)" />
               </mat-form-field>
-              <button mat-button type="button" [disabled]="saving() || searchLoading()[childId]" (click)="search(childId)">Rechercher</button>
+              <button mat-button type="button" data-testid="parent-subject-search" [disabled]="saving() || searchLoading()[childId]" (click)="search(childId)">Rechercher</button>
               @if ((searchHistory()[childId]?.length ?? 0) > 1) {
-                <button mat-button type="button" [disabled]="saving() || searchLoading()[childId]" (click)="previousOffers(childId)">Précédent</button>
+                <button mat-button type="button" data-testid="parent-subject-previous" [disabled]="saving() || searchLoading()[childId]" (click)="previousOffers(childId)">Précédent</button>
               }
               @if (searchCursors()[childId] !== null && searchCursors()[childId] !== undefined) {
-                <button mat-button type="button" [disabled]="saving() || searchLoading()[childId]" (click)="nextOffers(childId)">Suivant</button>
+                <button mat-button type="button" data-testid="parent-subject-next" [disabled]="saving() || searchLoading()[childId]" (click)="nextOffers(childId)">Suivant</button>
               }
             }
             @for (offer of proposed(child, false); track offer.subjectId) {
-              <article class="line">
+              <article class="line" data-testid="parent-offer" [attr.data-offer-scope]="offer.scolaire ? 'class' : 'extra'">
                 <p class="name">
                   {{ offer.name }}
                   <span class="meta">Extra-scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
                 </p>
                 <p class="actions">
-                  <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="add(child.childId, offer.subjectId)">
+                  <button mat-flat-button color="primary" type="button" data-testid="parent-offer-add" [disabled]="saving()" (click)="add(child.childId, offer.subjectId)">
                     Ajouter
                   </button>
                 </p>
               </article>
             }
             @for (offer of proposed(child, true); track offer.subjectId) {
-              <article class="line">
+              <article class="line" data-testid="parent-offer" [attr.data-offer-scope]="offer.scolaire ? 'class' : 'extra'">
                 <p class="name">
                   {{ offer.name }}
                   <span class="meta">Scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
                 </p>
                 <p class="actions">
-                  <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="add(child.childId, offer.subjectId)">
+                  <button mat-flat-button color="primary" type="button" data-testid="parent-offer-add" [disabled]="saving()" (click)="add(child.childId, offer.subjectId)">
                     Ajouter
                   </button>
                 </p>

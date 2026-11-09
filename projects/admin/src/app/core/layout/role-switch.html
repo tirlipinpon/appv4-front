@@ -7,6 +7,7 @@
         [class.is-current]="tab.current"
         [attr.aria-current]="tab.current ? 'page' : null"
         [disabled]="loading()"
+        [attr.data-testid]="'role-switch-' + tab.role"
         (click)="open(tab.role)"
       >
         {{ tab.label }}

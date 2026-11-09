@@ -85,6 +85,10 @@ export class TeacherRequestsPage implements OnInit {
     return requestAgeLabel(createdAt);
   }
 
+  ageFact(createdAt: string | undefined): RequestAgeFact | null {
+    return requestAgeFact(createdAt);
+  }
+
   when(value: string | undefined): string {
     return requestDateLabel(value);
   }
@@ -139,22 +143,47 @@ export function requestDateLabel(value: string | undefined): string {
   }).format(date);
 }
 
-/** Ancienneté affichée à côté de l'email. */
-export function requestAgeLabel(createdAt: string | undefined, now = Date.now()): string {
+export type RequestAgeUnit = 'instant' | 'min' | 'h' | 'd';
+
+export interface RequestAgeFact {
+  unit: RequestAgeUnit;
+  amount: number;
+}
+
+/** Ancienneté sans le mot affiché : le test et la traduction s'appuient sur l'unité. */
+export function requestAgeFact(createdAt: string | undefined, now = Date.now()): RequestAgeFact | null {
   if (!createdAt) {
-    return '';
+    return null;
   }
   const elapsed = now - new Date(createdAt).getTime();
   if (Number.isNaN(elapsed) || elapsed < 60_000) {
-    return 'à l’instant';
+    return { unit: 'instant', amount: 0 };
   }
   const minutes = Math.floor(elapsed / 60_000);
   if (minutes < 60) {
-    return `depuis ${minutes} min`;
+    return { unit: 'min', amount: minutes };
   }
   const hours = Math.floor(minutes / 60);
   if (hours < 48) {
-    return `depuis ${hours} h`;
+    return { unit: 'h', amount: hours };
   }
-  return `depuis ${Math.floor(hours / 24)} j`;
+  return { unit: 'd', amount: Math.floor(hours / 24) };
+}
+
+/** Ancienneté affichée à côté de l'email. */
+export function requestAgeLabel(createdAt: string | undefined, now = Date.now()): string {
+  const fact = requestAgeFact(createdAt, now);
+  if (!fact) {
+    return '';
+  }
+  switch (fact.unit) {
+    case 'instant':
+      return 'à l’instant';
+    case 'min':
+      return `depuis ${fact.amount} min`;
+    case 'h':
+      return `depuis ${fact.amount} h`;
+    case 'd':
+      return `depuis ${fact.amount} j`;
+  }
 }

@@ -4,7 +4,7 @@
   </button>
 }
 @if (showRequestTeacher()) {
-  <button mat-button class="space-action" type="button" [disabled]="loading()" (click)="requestTeacher()">
+  <button mat-button class="space-action" type="button" data-testid="space-request-teacher" [disabled]="loading()" (click)="requestTeacher()">
     Demander l'espace professeur
   </button>
 }

@@ -11,7 +11,7 @@
       </mat-card-header>
       <mat-card-content>
         @if (error()) {
-          <p class="error" role="alert">{{ error() }}</p>
+          <p class="error" role="alert" data-testid="login-error" [attr.data-reason]="errorReason()">{{ error() }}</p>
         }
 
         @if (showDevProfiles) {
@@ -34,6 +34,7 @@
             matInput
             type="email"
             name="email"
+            data-testid="login-email"
             autocomplete="username"
             [ngModel]="email()"
             (ngModelChange)="email.set($event)"
@@ -50,6 +51,7 @@
             matInput
             [type]="showPassword() ? 'text' : 'password'"
             name="password"
+            data-testid="login-password"
             autocomplete="current-password"
             [ngModel]="password()"
             (ngModelChange)="password.set($event)"
@@ -73,6 +75,7 @@
           color="primary"
           class="oauth-btn"
           type="button"
+          data-testid="login-submit"
           [disabled]="!canSubmit()"
           (click)="submit()"
         >

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -15,6 +15,8 @@ import { ConnectedAccountService } from '../../core/auth/connected-account.servi
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import {
+  PROFILE_NAME_REQUIRED,
+  PROFILE_NAME_TOO_LONG,
   PROFILE_PENDING_EDIT,
   profileDisplayNameProblem,
 } from '../../shared/profile-contact/profile-display-name';
@@ -47,6 +49,17 @@ export class ParentProfilePage implements OnInit {
   readonly saved = signal(false);
   readonly error = signal<string | null>(null);
   readonly nameError = signal<string | null>(null);
+  /** Repère du refus de nom. Le texte affiché reste celui de la règle, pas le test. */
+  readonly nameAlertTestId = computed(() => {
+    switch (this.nameError()) {
+      case PROFILE_NAME_REQUIRED:
+        return 'profile-name-required';
+      case PROFILE_NAME_TOO_LONG:
+        return 'profile-name-too-long';
+      default:
+        return null;
+    }
+  });
   readonly pendingNotice = signal<string | null>(null);
 
   ngOnInit(): void {

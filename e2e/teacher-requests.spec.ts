@@ -2,11 +2,34 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { environment } from '../projects/admin/src/environments/environment';
 
+const ui = {
+  email: 'login-email',
+  password: 'login-password',
+  submit: 'login-submit',
+  age: 'teacher-request-age',
+  approve: 'teacher-request-approve',
+  emptyPending: 'teacher-request-empty-pending',
+  approved: 'teacher-request-approved',
+  revoke: 'teacher-request-revoke',
+  reapprove: 'teacher-request-reapprove',
+  emptyApproved: 'teacher-request-empty-approved',
+  revoked: 'teacher-request-revoked',
+  reviewed: 'teacher-request-reviewed',
+  revokedOn: 'teacher-request-revoked-on',
+} as const;
+
 test('un admin arrive sur la file, valide, et voit la demande acceptée', async ({ page }) => {
   const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   const validatedAt = '2026-10-23T18:00:00.000Z';
   let status: 'pending' | 'approved' | 'revoked' = 'pending';
 
+  await page.route('**/api/int/auth/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ displayName: 'Admin', avatarCode: null }),
+    });
+  });
   await page.route('**/api/int/auth/login', async (route) => {
     await route.fulfill({
       status: 200,
@@ -72,23 +95,30 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
   await login(page, 'admin@example.com');
   await expect(page).toHaveURL(/\/admin\/teacher-requests$/);
   await expect(page.getByText('Prof Test')).toBeVisible();
-  await expect(page.getByText('prof@example.com')).toBeVisible();
-  await expect(page.getByText(/depuis \d+ h/)).toBeVisible();
-  await page.getByRole('button', { name: 'Valider' }).click();
-  await expect(page.getByText('Aucune demande en attente.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Déjà traitées' }).locator('..')).toContainText('Prof Test');
-  await expect(page.getByRole('button', { name: 'Révoquer' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Re-valider' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Révoquer' }).click();
-  await expect(page.getByText('Aucune demande traitée.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Révoquées' }).locator('..')).toContainText('Prof Test');
-  await expect(page.getByText(/Validée le/)).toBeVisible();
-  await expect(page.getByText(/Révoquée le/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Re-valider' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Révoquer' })).toHaveCount(0);
+  await expect(page.getByTestId('teacher-request-email')).toHaveText('prof@example.com');
+  await expect(page.getByTestId(ui.age)).toHaveAttribute('data-age-unit', 'h');
+  await page.getByTestId(ui.approve).click();
+  await expect(page.getByTestId(ui.emptyPending)).toBeVisible();
+  await expect(page.getByTestId(ui.approved)).toContainText('Prof Test');
+  await expect(page.getByTestId(ui.revoke)).toBeVisible();
+  await expect(page.getByTestId(ui.reapprove)).toHaveCount(0);
+  await page.getByTestId(ui.revoke).click();
+  await expect(page.getByTestId(ui.emptyApproved)).toBeVisible();
+  await expect(page.getByTestId(ui.revoked)).toContainText('Prof Test');
+  await expect(page.getByTestId(ui.reviewed)).toBeVisible();
+  await expect(page.getByTestId(ui.revokedOn)).toBeVisible();
+  await expect(page.getByTestId(ui.reapprove)).toBeVisible();
+  await expect(page.getByTestId(ui.revoke)).toHaveCount(0);
 });
 
 test('un parent n ouvre pas la file de modération', async ({ page }) => {
+  await page.route('**/api/int/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ displayName: 'Parent', roles: ['parent'], teacherRequest: 'none' }),
+    });
+  });
   await page.addInitScript((token) => {
     sessionStorage.setItem('admin.jwt', token);
   }, jwt({ activeRole: 'parent', roles: ['parent'] }));
@@ -98,9 +128,9 @@ test('un parent n ouvre pas la file de modération', async ({ page }) => {
 
 async function login(page: Page, email: string): Promise<void> {
   await page.goto('/login');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Mot de passe', { exact: true }).fill(environment.devLoginPassword);
-  await page.getByRole('button', { name: 'Se connecter' }).click();
+  await page.getByTestId(ui.email).fill(email);
+  await page.getByTestId(ui.password).fill(environment.devLoginPassword);
+  await page.getByTestId(ui.submit).click();
 }
 
 function jwt(payload: object): string {

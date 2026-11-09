@@ -1,6 +1,7 @@
 import type { ParentSchoolOption } from '../../core/api/api-models';
 
 /** Messages déjà renvoyés par l'API, affichés avant l'envoi (SCRUM-165). */
+export const SEX_REQUIRED = 'Choisis fille, garçon ou non genré.';
 export const PIN_FORMAT = 'Le code PIN doit faire 4 chiffres.';
 export const PIN_MISMATCH = 'Les deux codes PIN ne sont pas les mêmes.';
 export const AGE_INVALID = "L'âge doit être un nombre entier entre 2 et 18.";

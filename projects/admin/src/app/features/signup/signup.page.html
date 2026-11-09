@@ -21,6 +21,7 @@
             matInput
             type="email"
             name="email"
+            data-testid="signup-email"
             autocomplete="email"
             [ngModel]="email()"
             (ngModelChange)="email.set($event)"
@@ -42,6 +43,7 @@
             matInput
             [type]="showPassword() ? 'text' : 'password'"
             name="password"
+            data-testid="signup-password"
             autocomplete="new-password"
             [ngModel]="password()"
             (ngModelChange)="password.set($event)"
@@ -74,6 +76,7 @@
           mat-flat-button
           color="primary"
           type="button"
+          data-testid="signup-submit"
           [disabled]="!canSubmit()"
           (click)="submit()"
         >

@@ -13,24 +13,29 @@
       </p>
     }
 
-    <section>
+    <section data-testid="teacher-request-pending">
       <h2>En attente</h2>
       @if (pending().length === 0) {
-        <p class="empty">{{ emptyLabel('en attente') }}</p>
+        <p class="empty" data-testid="teacher-request-empty-pending">{{ emptyLabel('en attente') }}</p>
       }
       @for (item of pending(); track item.id) {
         <article class="row">
           <div>
             <strong>{{ item.displayName || item.email }}</strong>
             @if (item.displayName) {
-              <span>{{ item.email }}</span>
+              <span data-testid="teacher-request-email">{{ item.email }}</span>
             }
-            <span>Demande faite le {{ when(item.createdAt) }} ({{ age(item.createdAt) }})</span>
+            <span>Demande faite le {{ when(item.createdAt) }}
+              @if (ageFact(item.createdAt); as fact) {
+                (<span data-testid="teacher-request-age" [attr.data-age-unit]="fact.unit" [attr.data-age-amount]="fact.amount">{{ age(item.createdAt) }}</span>)
+              }
+            </span>
           </div>
           <button
             mat-flat-button
             color="primary"
             type="button"
+            data-testid="teacher-request-approve"
             [disabled]="approvingId() === item.id"
             (click)="approve(item)"
           >
@@ -40,24 +45,25 @@
       }
     </section>
 
-    <section>
-      <h2>Déjà traitées</h2>
+    <section data-testid="teacher-request-approved">
+      <h2 data-testid="teacher-request-approved-title">Déjà traitées</h2>
       @if (approved().length === 0) {
-        <p class="empty">{{ emptyLabel('traitée') }}</p>
+        <p class="empty" data-testid="teacher-request-empty-approved">{{ emptyLabel('traitée') }}</p>
       }
       @for (item of approved(); track item.id) {
         <article class="row">
           <div>
             <strong>{{ item.displayName || item.email }}</strong>
             @if (item.displayName) {
-              <span>{{ item.email }}</span>
+              <span data-testid="teacher-request-email">{{ item.email }}</span>
             }
             <span>Demande faite le {{ when(item.createdAt) }}</span>
-            <span>{{ validatedOn(item) }}</span>
+            <span data-testid="teacher-request-reviewed">{{ validatedOn(item) }}</span>
           </div>
           <button
             mat-stroked-button
             type="button"
+            data-testid="teacher-request-revoke"
             [disabled]="approvingId() === item.id"
             (click)="revoke(item)"
           >
@@ -67,26 +73,27 @@
       }
     </section>
 
-    <section>
-      <h2>Révoquées</h2>
+    <section data-testid="teacher-request-revoked">
+      <h2 data-testid="teacher-request-revoked-title">Révoquées</h2>
       @if (revoked().length === 0) {
-        <p class="empty">{{ emptyLabel('révoquée') }}</p>
+        <p class="empty" data-testid="teacher-request-empty-revoked">{{ emptyLabel('révoquée') }}</p>
       }
       @for (item of revoked(); track item.id) {
         <article class="row">
           <div>
             <strong>{{ item.displayName || item.email }}</strong>
             @if (item.displayName) {
-              <span>{{ item.email }}</span>
+              <span data-testid="teacher-request-email">{{ item.email }}</span>
             }
             <span>Demande faite le {{ when(item.createdAt) }}</span>
-            <span>{{ validatedOn(item) }}</span>
-            <span>{{ revokedOn(item) }}</span>
+            <span data-testid="teacher-request-reviewed">{{ validatedOn(item) }}</span>
+            <span data-testid="teacher-request-revoked-on">{{ revokedOn(item) }}</span>
           </div>
           <button
             mat-flat-button
             color="primary"
             type="button"
+            data-testid="teacher-request-reapprove"
             [disabled]="approvingId() === item.id"
             (click)="approve(item)"
           >

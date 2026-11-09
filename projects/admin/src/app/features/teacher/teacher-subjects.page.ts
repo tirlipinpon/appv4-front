@@ -134,6 +134,10 @@ export class TeacherSubjectsPage implements OnInit {
     return this.gradeErrors()[this.gradeKey(schoolId, grade)] ?? null;
   }
 
+  gradeErrorCode(schoolId: number, grade: string): string | null {
+    return this.gradeErrorCodes()[this.gradeKey(schoolId, grade)] ?? null;
+  }
+
   subjectError(subjectId: number): string | null {
     return this.subjectErrors()[subjectId] ?? null;
   }

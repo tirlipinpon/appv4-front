@@ -5,7 +5,7 @@
     <mat-card class="card">
       <mat-card-header>
         <mat-card-title>Matières</mat-card-title>
-        <mat-card-subtitle>Un nom par classe</mat-card-subtitle>
+        <mat-card-subtitle data-testid="teacher-subjects-intro">Un nom par classe</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         @if (loading()) {
@@ -25,18 +25,19 @@
           <section class="invites" aria-label="À traiter">
             <h2 class="invites-title">À traiter</h2>
             @for (invite of invites(); track invite.id) {
-              <article class="invite">
+              <article class="invite" data-testid="teacher-invite" [attr.data-invite-mode]="invite.mode">
                 <p class="confirm" role="status">{{ inviteText(invite) }}</p>
                 <button
                   mat-flat-button
                   color="primary"
                   type="button"
+                  data-testid="teacher-invite-accept"
                   [disabled]="saving()"
                   (click)="acceptInvite(invite.id)"
                 >
                   Accepter
                 </button>
-                <button mat-button type="button" [disabled]="saving()" (click)="rejectInvite(invite.id)">
+                <button mat-button type="button" data-testid="teacher-invite-reject" [disabled]="saving()" (click)="rejectInvite(invite.id)">
                   Refuser
                 </button>
               </article>
@@ -98,7 +99,7 @@
                             </button>
                           </div>
                         } @else if (pending()?.id === subject.id && pending()?.kind === 'remove') {
-                          <p class="confirm" role="alert">{{ confirmText(school, grade, subject) }}</p>
+                          <p class="confirm" role="alert" data-testid="teacher-subject-remove-confirm" [attr.data-remove-kind]="removeIsSole() ? 'sole' : 'shared'">{{ confirmText(school, grade, subject) }}</p>
                           @if (followersLoading()) {
                             <p class="hint">Chargement…</p>
                           } @else if (followers(); as people) {
@@ -117,6 +118,7 @@
                                     <button
                                       mat-button
                                       type="button"
+                                      data-testid="teacher-subject-handover"
                                       [class.selected]="handoverColleagueId() === holder.userId"
                                       [disabled]="saving()"
                                       (click)="setHandoverColleague(holder.userId)"
@@ -134,6 +136,7 @@
                               mat-flat-button
                               color="primary"
                               type="button"
+                              data-testid="teacher-subject-handover-send"
                               [disabled]="saving() || handoverColleagueId() === null || followers() === null"
                               (click)="confirmHandover(subject.id)"
                             >
@@ -142,12 +145,13 @@
                           } @else {
                             @if (removeIsSole()) {
                               @if (removeColleagues().length === 0) {
-                                <p class="hint">Aucun collègue avec cette classe.</p>
+                                <p class="hint" data-testid="teacher-subject-no-colleague">Aucun collègue avec cette classe.</p>
                               } @else {
                                 <button
                                   mat-flat-button
                                   color="primary"
                                   type="button"
+                                  data-testid="teacher-subject-move-instead"
                                   [disabled]="saving()"
                                   (click)="chooseMoveInstead(subject)"
                                 >
@@ -155,13 +159,14 @@
                                 </button>
                               }
                             }
-                            <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                            <button mat-button type="button" data-testid="teacher-subject-cancel" [disabled]="saving()" (click)="cancelPending()">
                               Annuler
                             </button>
                             <button
                               mat-flat-button
                               color="warn"
                               type="button"
+                              data-testid="teacher-subject-confirm-remove"
                               [disabled]="saving() || followers() === null"
                               (click)="confirmRemove(subject.id)"
                             >
@@ -170,13 +175,14 @@
                           }
                         } @else if (pending()?.id === subject.id && pending()?.kind === 'transfer') {
                           @if (transferConfirming()) {
-                            <p class="confirm" role="alert">{{ transferConfirmText(school, grade, subject) }}</p>
-                            <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                            <p class="confirm" role="alert" data-testid="teacher-subject-transfer-confirm" [attr.data-transfer-mode]="transferMode()">{{ transferConfirmText(school, grade, subject) }}</p>
+                            <button mat-button type="button" data-testid="teacher-subject-cancel" [disabled]="saving()" (click)="cancelPending()">
                               Annuler
                             </button>
                             <button
                               mat-flat-button
                               type="button"
+                              data-testid="teacher-subject-send"
                               [disabled]="saving()"
                               (click)="confirmTransfer(subject.id)"
                             >
@@ -189,6 +195,7 @@
                               <button
                                 mat-button
                                 type="button"
+                                data-testid="teacher-subject-move"
                                 [disabled]="saving()"
                                 [class.selected]="transferMode() === 'move'"
                                 (click)="setTransferMode('move')"
@@ -198,6 +205,7 @@
                               <button
                                 mat-button
                                 type="button"
+                                data-testid="teacher-subject-share"
                                 [disabled]="saving()"
                                 [class.selected]="transferMode() === 'share'"
                                 (click)="setTransferMode('share')"
@@ -205,7 +213,7 @@
                                 Partager
                               </button>
                               @if (transferColleagues().length === 0) {
-                                <p class="hint">Aucun collègue avec cette classe.</p>
+                                <p class="hint" data-testid="teacher-subject-no-colleague">Aucun collègue avec cette classe.</p>
                               } @else {
                                 <ul class="colleagues">
                                   @for (colleague of transferColleagues(); track colleague.userId) {
@@ -213,6 +221,7 @@
                                       <button
                                         mat-button
                                         type="button"
+                                        data-testid="teacher-subject-colleague"
                                         [disabled]="saving()"
                                         [class.selected]="transferColleagueId() === colleague.userId"
                                         (click)="setTransferColleague(colleague.userId!)"
@@ -226,12 +235,13 @@
                               <button
                                 mat-flat-button
                                 type="button"
+                                data-testid="teacher-subject-continue"
                                 [disabled]="saving() || transferColleagues().length === 0"
                                 (click)="prepareTransferConfirm(subject.id)"
                               >
                                 Continuer
                               </button>
-                              <button mat-button type="button" [disabled]="saving()" (click)="cancelPending()">
+                              <button mat-button type="button" data-testid="teacher-subject-cancel" [disabled]="saving()" (click)="cancelPending()">
                                 Annuler
                               </button>
                             </div>
@@ -253,6 +263,7 @@
                                 color="primary"
                                 type="button"
                                 [disabled]="saving()"
+                                data-testid="teacher-subject-ask-share"
                                 (click)="requestShareOf(school.schoolId, grade.grade, subject)"
                               >
                                 Demander le partage
@@ -267,7 +278,7 @@
                               <strong class="owner">{{ owner }}</strong>
                             }
                             @if (subject.sharedWith.length > 0) {
-                              <p class="hint shared">Partagée avec @for (holder of subject.sharedWith; track holder.userId; let last = $last) {@if (owns(subject, holder)) {<strong>{{ holder.displayName }}</strong>}@else {{{ holder.displayName }}}@if (!last) {, }}</p>
+                              <p class="hint shared" data-testid="teacher-subject-shared">Partagée avec @for (holder of subject.sharedWith; track holder.userId; let last = $last) {@if (owns(subject, holder)) {<strong>{{ holder.displayName }}</strong>}@else {{{ holder.displayName }}}@if (!last) {, }}</p>
                             }
                           </div>
                           @if (!subject.active) {
@@ -279,7 +290,7 @@
                                 Renommer
                               </button>
                             }
-                            <button mat-button type="button" [disabled]="saving()" (click)="askRemove(subject)">
+                            <button mat-button type="button" data-testid="teacher-subject-remove" [disabled]="saving()" (click)="askRemove(subject)">
                               Retirer
                             </button>
                             @if (!subject.active) {
@@ -287,7 +298,7 @@
                                 Réactiver
                               </button>
                             }
-                            <button mat-button type="button" [disabled]="saving()" (click)="askTransfer(subject)">
+                            <button mat-button type="button" data-testid="teacher-subject-transfer" [disabled]="saving()" (click)="askTransfer(subject)">
                               Transférer
                             </button>
                           </div>
@@ -306,6 +317,7 @@
                     <input
                       matInput
                       [value]="draft(school.schoolId, grade.grade)"
+                      data-testid="teacher-subject-name"
                       [disabled]="saving()"
                       (input)="onDraft(school.schoolId, grade.grade, inputValue($event))"
                     />
@@ -314,6 +326,7 @@
                     mat-flat-button
                     color="primary"
                     type="button"
+                    data-testid="teacher-subject-add"
                     [disabled]="saving()"
                     (click)="add(school.schoolId, grade.grade)"
                   >
@@ -321,7 +334,7 @@
                   </button>
                 </div>
                 @if (gradeError(school.schoolId, grade.grade); as gradeMessage) {
-                  <p class="field-error" role="alert">{{ gradeMessage }}</p>
+                  <p class="field-error" role="alert" data-testid="teacher-subject-grade-error" [attr.data-error-code]="gradeErrorCode(school.schoolId, grade.grade)">{{ gradeMessage }}</p>
                   @if (canRestore(school.schoolId, grade.grade)) {
                     <button
                       mat-flat-button
@@ -339,6 +352,7 @@
                       color="primary"
                       type="button"
                       [disabled]="saving()"
+                      data-testid="teacher-subject-ask-share"
                       (click)="requestShare(school.schoolId, grade.grade)"
                     >
                       Demander le partage
@@ -346,7 +360,7 @@
                   }
                 }
                 @if (shareAsked(school.schoolId, grade.grade)) {
-                  <p class="hint" role="status">
+                  <p class="hint" role="status" data-testid="teacher-subject-share-sent">
                     Demande envoyée. Le professeur qui a créé la matière peut accepter de la partager.
                   </p>
                 }
