@@ -18,6 +18,9 @@ const ui = {
   revokedOn: 'teacher-request-revoked-on',
 } as const;
 
+test.describe('file des demandes professeur', { tag: ['@moderation', '@mock'] }, () => {
+  test.describe.configure({ mode: 'parallel' });
+
 test('un admin arrive sur la file, valide, et voit la demande acceptée', async ({ page }) => {
   const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   const validatedAt = '2026-10-23T18:00:00.000Z';
@@ -124,6 +127,7 @@ test('un parent n ouvre pas la file de modération', async ({ page }) => {
   }, jwt({ activeRole: 'parent', roles: ['parent'] }));
   await page.goto('/admin/teacher-requests');
   await expect(page).toHaveURL(/\/parent$/);
+});
 });
 
 async function login(page: Page, email: string): Promise<void> {

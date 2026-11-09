@@ -3,7 +3,7 @@
     @if (avatarFace(); as face) {
       <span class="face" aria-hidden="true">{{ face }}</span>
     }
-    <span class="who">{{ displayName() }}</span>
+    <span class="who" data-testid="account-name">{{ displayName() }}</span>
     @if (showSpaceActions()) {
       <app-role-switch />
     }

@@ -20,6 +20,8 @@ const ui = {
 const API = 'http://localhost:8080/api/int';
 const PASSWORD = environment.devLoginPassword;
 
+test.describe('inscription et choix de rôle', { tag: '@auth' }, () => {
+
 test('email parent seul arrive sur /parent, et y revient au login suivant', async ({ page }) => {
   const email = uniqueEmail('parent');
   await signupThroughUi(page, email);
@@ -51,25 +53,17 @@ test('email avec les deux cases entre dans l espace parent', async ({ page }) =>
   await expect(page).not.toHaveURL(/select-role/);
 });
 
-test('google neuf passe par le choix de role puis /parent', async ({ page, request }) => {
-  const email = uniqueEmail('google');
-  const token = await signupByApi(request, email);
-  await interceptOAuth(page, 'google', token);
-  await openOAuthCallback(page, 'google');
-  await expect(page).toHaveURL(/\/complete-roles$/);
-  await chooseRoles(page, { parent: true });
-  await expect(page).toHaveURL(/\/parent$/);
-});
-
-test('facebook neuf passe par le choix de role puis /parent', async ({ page, request }) => {
-  const email = uniqueEmail('facebook');
-  const token = await signupByApi(request, email);
-  await interceptOAuth(page, 'facebook', token);
-  await openOAuthCallback(page, 'facebook');
-  await expect(page).toHaveURL(/\/complete-roles$/);
-  await chooseRoles(page, { parent: true });
-  await expect(page).toHaveURL(/\/parent$/);
-});
+for (const provider of ['google', 'facebook'] as const) {
+  test(`${provider} neuf passe par le choix de role puis /parent`, async ({ page, request }) => {
+    const email = uniqueEmail(provider);
+    const token = await signupByApi(request, email);
+    await interceptOAuth(page, provider, token);
+    await openOAuthCallback(page, provider);
+    await expect(page).toHaveURL(/\/complete-roles$/);
+    await chooseRoles(page, { parent: true });
+    await expect(page).toHaveURL(/\/parent$/);
+  });
+}
 
 test('google sur un email deja parent saute la page de choix', async ({ page, request }) => {
   const email = uniqueEmail('linked');
@@ -92,9 +86,13 @@ test('un callback google avec un state different revient au login', async ({ pag
   await expect(page).toHaveURL(/\/login/);
   await expect(page.getByTestId(ui.loginError)).toHaveAttribute('data-reason', 'oauth-google-invalid-state');
 });
+});
+
+let emailSeq = 0;
 
 function uniqueEmail(prefix: string): string {
-  return `${prefix}-${Date.now()}@example.com`;
+  emailSeq += 1;
+  return `${prefix}-${Date.now()}-${emailSeq}@example.com`;
 }
 
 async function signupThroughUi(page: Page, email: string): Promise<void> {

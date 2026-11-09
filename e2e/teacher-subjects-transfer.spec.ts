@@ -58,12 +58,15 @@ interface InviteState {
   fromDisplayName: string;
 }
 
+test.describe('matières professeur', { tag: ['@teacher', '@mock'] }, () => {
+  test.describe.configure({ mode: 'parallel' });
+
 test('partage : demande envoyée puis acceptée par le collègue', async ({ page }) => {
   const state = createState();
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByTestId(ui.transfer).first().click();
+  await page.getByTestId(ui.transfer).click();
   await page.getByTestId(ui.share).click();
   await colleague(page, 'Camille').click();
   await page.getByTestId(ui.continue).click();
@@ -71,7 +74,7 @@ test('partage : demande envoyée puis acceptée par le collègue', async ({ page
   await expect(page.getByTestId(ui.transferConfirm)).toContainText('Lecture');
   await expect(page.getByTestId(ui.transferConfirm)).toContainText('Camille');
   await page.getByTestId(ui.send).click();
-  await expect(page.getByTestId(ui.transfer).first()).toBeVisible();
+  await expect(page.getByTestId(ui.transfer)).toBeVisible();
   expect(state.pendingTransfers).toHaveLength(1);
   expect(state.pendingTransfers[0].mode).toBe('share');
 
@@ -136,7 +139,7 @@ test('déplacement : demande envoyée puis acceptée par le destinataire', async
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByTestId(ui.transfer).first().click();
+  await page.getByTestId(ui.transfer).click();
   await page.getByTestId(ui.move).click();
   await colleague(page, 'Camille').click();
   await page.getByTestId(ui.continue).click();
@@ -221,7 +224,7 @@ test('retrait dernier détenteur avec collègues : proposer déplacer ou confirm
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByTestId(ui.remove).first().click();
+  await page.getByTestId(ui.remove).click();
   await expect(page.getByTestId(ui.removeConfirm)).toHaveAttribute('data-remove-kind', 'sole');
   await expect(page.getByTestId(ui.moveInstead)).toBeVisible();
 
@@ -240,7 +243,7 @@ test('retrait dernier détenteur : confirmer le retrait cache la matière', asyn
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByTestId(ui.remove).first().click();
+  await page.getByTestId(ui.remove).click();
   await page.getByTestId(ui.confirmRemove).click();
   await expect(page.getByText('Lecture')).toHaveCount(0);
   expect(state.subjects.find((s) => s.id === 2)).toBeUndefined();
@@ -251,7 +254,7 @@ test('retrait dernier détenteur sans collègue : pas de bouton déplacer', asyn
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByTestId(ui.remove).first().click();
+  await page.getByTestId(ui.remove).click();
   await expect(page.getByTestId(ui.removeConfirm)).toHaveAttribute('data-remove-kind', 'sole');
   await expect(page.getByTestId(ui.noColleague)).toBeVisible();
   await expect(page.getByTestId(ui.moveInstead)).toHaveCount(0);
@@ -264,9 +267,10 @@ test('transfert sans collègue : message Aucun collègue', async ({ page }) => {
   await mockTeacherApis(page, state);
 
   await openMatieres(page);
-  await page.getByTestId(ui.transfer).first().click();
+  await page.getByTestId(ui.transfer).click();
   await expect(page.getByTestId(ui.noColleague)).toBeVisible();
   await expect(page.getByTestId(ui.continue)).toBeDisabled();
+});
 });
 
 interface MockState {

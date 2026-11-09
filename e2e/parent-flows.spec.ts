@@ -157,7 +157,11 @@ const ui = {
   pendingBack: 'teacher-pending-back',
   switchTeacher: 'role-switch-teacher',
   switchParent: 'role-switch-parent',
+  accountName: 'account-name',
 } as const;
+
+test.describe('parcours parent', { tag: ['@parent', '@mock'] }, () => {
+  test.describe.configure({ mode: 'parallel' });
 
 test('sans session, chaque page parent revient au login', async ({ page }) => {
   for (const url of PARENT_URLS) {
@@ -180,7 +184,7 @@ test('le parent ouvre chaque page puis se deconnecte', async ({ page }) => {
 
   await page.goto('/parent');
   await expect(page.getByTestId(ui.nav)).toBeVisible();
-  await expect(page.getByText('Camille Parent')).toBeVisible();
+  await expect(page.getByTestId(ui.accountName)).toHaveText('Camille Parent');
 
   await page.goto('/parent/enfants');
   await expect(page.getByTestId(ui.childrenTitle)).toBeVisible();
@@ -227,7 +231,7 @@ test('le profil se corrige, refuse un nom vide, et montre le message de l api', 
   await page.getByTestId(ui.profileAvatarOwl).click();
   await page.getByTestId(ui.profileSave).click();
   await expect(page.getByTestId(ui.profileSaved)).toBeVisible();
-  await expect(page.getByText('Camille Martin').first()).toBeVisible();
+  await expect(page.getByTestId(ui.accountName)).toHaveText('Camille Martin');
 
   await page.getByTestId(ui.profileContact).fill('pas-un-mail');
   await page.getByTestId(ui.profileSave).click();
@@ -342,7 +346,7 @@ test('le parent lie deux enfants puis retire le lien', async ({ page }) => {
   await pick(page, ui.childLink, ui.childLinkBrother);
   await page.getByTestId(ui.childSave).click();
 
-  await expect(page.getByText('Frère').first()).toBeVisible();
+  await expect(page.getByText('Frère')).not.toHaveCount(0);
   await childCard(page, 'Léa Martin').getByTestId(ui.childEdit).click();
   await expect(page.getByTestId(ui.childSavedLinks)).toBeVisible();
   await page.getByTestId(ui.childDropLink).click();
@@ -437,6 +441,7 @@ test('un compte des deux roles passe au professeur puis revient au parent', asyn
   await expect(page).toHaveURL(/\/teacher$/);
   await page.getByTestId(ui.switchParent).click();
   await expect(page).toHaveURL(/\/parent$/);
+});
 });
 
 function parentWorld(partial: Partial<World> = {}): World {
