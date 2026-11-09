@@ -1,10 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-import { AuthService } from '../../core/auth/auth.service';
-import { RoleSwitch } from '../../core/layout/role-switch';
+import { SpaceHeader } from '../../core/layout/space-header';
 
 /**
  * Adresse de l'espace professeur (SCRUM-128).
@@ -12,17 +8,9 @@ import { RoleSwitch } from '../../core/layout/role-switch';
  */
 @Component({
   selector: 'app-teacher-space-page',
-  imports: [MatToolbarModule, MatButtonModule, RoleSwitch],
+  imports: [SpaceHeader],
   templateUrl: './teacher-space.page.html',
   styleUrl: './teacher-space.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TeacherSpacePage {
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
-
-  logout(): void {
-    this.auth.logout();
-    void this.router.navigateByUrl('/login');
-  }
-}
+export class TeacherSpacePage {}

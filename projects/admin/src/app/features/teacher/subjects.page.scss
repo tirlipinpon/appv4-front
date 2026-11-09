@@ -1,0 +1,184 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f7fb;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem 3rem;
+}
+
+.card {
+  width: min(100%, 40rem);
+  height: fit-content;
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  color: #5f6368;
+}
+
+.error,
+.field-error,
+.confirm {
+  color: #b3261e;
+  margin: 0.35rem 0 0;
+}
+
+.follower-names {
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 1.2rem;
+}
+
+.school {
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem 1rem;
+  margin-top: 1rem;
+}
+
+.school-name {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.grade {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e6e8ee;
+}
+
+.grade-name {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.subjects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.subject {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.75rem 0.4rem;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+}
+
+.headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.75rem;
+  width: 100%;
+}
+
+.name {
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.question-count {
+  color: #5f6368;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.name.inactive {
+  color: #5f6368;
+  font-weight: 500;
+}
+
+.subject .hint {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem 0.15rem;
+  margin: 0.1rem 0 0 -0.5rem;
+}
+
+.add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.invites {
+  margin: 0.75rem 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.invites-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.invite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.shared {
+  margin: 0;
+}
+
+.owner,
+.shared strong {
+  font-weight: 700;
+}
+
+.transfer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  width: 100%;
+}
+
+.colleagues {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+button.selected {
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.add-field,
+.rename-field {
+  flex: 1;
+  min-width: 12rem;
+  margin-bottom: -0.75rem;
+}
+
+.rename-field {
+  align-self: stretch;
+  width: 100%;
+}

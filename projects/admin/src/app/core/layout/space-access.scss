@@ -1,0 +1,14 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.space-action {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+
+.space-error {
+  font-size: 0.85rem;
+}

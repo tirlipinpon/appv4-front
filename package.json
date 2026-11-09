@@ -11,7 +11,8 @@
     "build:admin": "ng build admin",
     "watch:learning": "ng build learning --watch --configuration development",
     "watch:admin": "ng build admin --watch --configuration development",
-    "test": "npm run test:learning && npm run test:admin",
+    "test": "npm run test:api-check && npm run test:learning && npm run test:admin",
+    "test:api-check": "node --test scripts/api-check.test.mjs",
     "test:learning": "ng test learning --watch=false --browsers=ChromeHeadlessCI",
     "test:admin": "ng test admin --watch=false --browsers=ChromeHeadlessCI",
     "lint": "ng lint learning && ng lint admin",
@@ -34,6 +35,7 @@
     "@angular/platform-browser-dynamic": "^22.2.2",
     "@angular/router": "^22.2.2",
     "bootstrap": "^5.3.3",
+    "ngx-image-cropper": "^9.1.7",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

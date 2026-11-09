@@ -1,0 +1,614 @@
+<section class="panel" aria-label="Questions">
+  @if (loading()) {
+    <p>Chargement…</p>
+  }
+  @if (error(); as message) {
+    <p class="field-error" role="alert">{{ message }}</p>
+  }
+
+  @if (!loading() && error() === null) {
+    <nav aria-label="Pages de questions">
+      <button mat-button type="button" [disabled]="pageCursors().length <= 1 || saving() || pendingIds().length > 0"
+        (click)="previousPage()">Précédent</button>
+      <span>Page {{ pageCursors().length }}</span>
+      <button mat-button type="button" [disabled]="nextCursor() === null || saving() || pendingIds().length > 0"
+        (click)="nextPage()">Suivant</button>
+    </nav>
+    @if (questions().length === 0) {
+      <p class="hint">Aucune question</p>
+    } @else {
+      <div class="copy">
+        @if (destinationChoices().length) {
+          <p class="hint">
+            Coche une ou plusieurs questions, choisis la matière, puis copie. Tu peux aussi les supprimer.
+          </p>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Matière</mat-label>
+            <mat-select
+              [value]="targetId()"
+              [disabled]="saving() || pendingIds().length > 0"
+              (selectionChange)="setTarget($event.value)"
+            >
+              @for (destination of destinationChoices(); track destination.id) {
+                <mat-option [value]="destination.id">{{ destinationLabel(destination) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="saving() || pendingIds().length > 0 || selectedIds().length === 0 || targetId() === null"
+            (click)="copySelected()"
+          >
+            Copier
+          </button>
+        } @else {
+          <p class="hint">Coche une ou plusieurs questions pour les supprimer.</p>
+        }
+        <button
+          mat-button
+          type="button"
+          [disabled]="saving() || pendingIds().length > 0 || selectedIds().length === 0"
+          (click)="askDeleteSelected()"
+        >
+          Supprimer
+        </button>
+      </div>
+      @if (pendingIds().length) {
+        <div class="warning" role="alertdialog" aria-label="Suppression">
+          @if (followersLoading()) {
+            <p>Chargement…</p>
+          } @else if (followers(); as people) {
+            <p>{{ people.warning }}</p>
+            <ul class="names">
+              @for (name of people.names; track $index) {
+                <li>{{ name }}</li>
+              }
+            </ul>
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelDelete()">
+              Annuler la suppression
+            </button>
+            <button mat-flat-button color="warn" type="button" [disabled]="saving()" (click)="confirmDelete()">
+              Confirmer la suppression
+            </button>
+          }
+        </div>
+      }
+      <ul class="saved">
+        @for (question of questions(); track question.id) {
+          <li [class.editing]="editingId() === question.id">
+            @if (question.prompt) {
+              <p class="prompt">{{ question.prompt }}</p>
+            }
+            <p class="kind">{{ question.formLabel }}</p>
+            @if (question.formCode === 'memory') {
+              <ul class="answers">
+                @for (pair of question.pairs; track $index) {
+                  <li>{{ pair.questionSide }} — {{ pair.answerSide }}</li>
+                }
+              </ul>
+            } @else if (question.formCode === 'order') {
+              <ol class="answers ordered">
+                @for (item of question.items; track $index) {
+                  <li>{{ item.label }}</li>
+                }
+              </ol>
+            } @else if (question.formCode === 'image_interactive') {
+              <app-click-zone-editor
+                [readonly]="true"
+                [imageDataUrl]="question.imageDataUrl"
+                [zones]="question.zones"
+              />
+              <p class="hint">
+                {{
+                  question.requireAllCorrect
+                    ? 'Toutes les zones correctes sont à cliquer.'
+                    : 'Une partie des zones correctes suffit.'
+                }}
+              </p>
+            } @else if (question.formCode === 'puzzle') {
+              <app-click-zone-editor
+                [readonly]="true"
+                variant="puzzle"
+                [imageDataUrl]="question.imageDataUrl"
+                [zones]="question.zones"
+                [magnet]="question.snapDistance"
+              />
+            } @else if (question.formCode === 'texte') {
+              <p>{{ question.expectedAnswer }}</p>
+            } @else if (question.formCode === 'case_vide') {
+              <p>{{ question.sentence }}</p>
+              <ul class="answers">
+                @for (answer of question.answers; track $index) {
+                  <li>{{ answer.label }}</li>
+                }
+              </ul>
+              @if (question.decoys.length) {
+                <p class="hint">Leurres</p>
+                <ul class="answers">
+                  @for (decoy of question.decoys; track $index) {
+                    <li>{{ decoy.label }}</li>
+                  }
+                </ul>
+              }
+            } @else if (question.formCode === 'liens') {
+              <ul class="answers">
+                @for (link of question.links; track $index) {
+                  <li>{{ link.leftLabel }} — {{ link.rightLabel }}</li>
+                }
+              </ul>
+            } @else if (question.formCode === 'vrai_faux') {
+              <ul class="answers">
+                @for (statement of question.statements; track $index) {
+                  <li>
+                    {{ statement.label }}
+                    <span class="mark">{{ statement.truthful ? 'Vrai' : 'Faux' }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <ul class="answers">
+                @for (choice of question.choices; track $index) {
+                  <li [class.correct]="choice.correct">
+                    {{ choice.label }}
+                    @if (choice.correct) {
+                      <span class="mark">Bonne réponse</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+            <div class="question-actions">
+              <mat-checkbox
+                [checked]="isSelected(question.id)"
+                [disabled]="saving() || pendingIds().length > 0"
+                (change)="toggleSelected(question.id, $event.checked)"
+              >
+                Sélectionner
+              </mat-checkbox>
+              <button mat-button type="button" [disabled]="saving() || pendingIds().length > 0" (click)="beginEdit(question)">
+                Modifier
+              </button>
+              <button
+                mat-button
+                type="button"
+                [disabled]="saving() || pendingIds().length > 0"
+                (click)="askDelete([question.id])"
+              >
+                Supprimer
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+    @if (notice(); as message) {
+      <p class="hint">{{ message }}</p>
+    }
+
+    <h3 class="zone">{{ editingId() ? 'Modifier la question' : 'Nouvelle question' }}</h3>
+    @if (forms().length === 0) {
+      <p class="hint">Aucune forme de question n'est disponible.</p>
+    } @else {
+      <div class="forms" role="list">
+        @for (form of forms(); track form.code) {
+          <button
+            class="form-chip"
+            type="button"
+            [disabled]="saving()"
+            [class.selected]="selectedCode() === form.code"
+            (click)="selectForm(form.code)"
+          >
+            {{ form.label }}
+          </button>
+        }
+      </div>
+
+      @if (selectedCode() === 'qcm') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          @for (choice of choices(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Proposition</mat-label>
+                <input
+                  matInput
+                  [value]="choice.label"
+                  [disabled]="saving()"
+                  (input)="setChoiceLabel($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <mat-checkbox
+                [checked]="choice.correct"
+                [disabled]="saving()"
+                (change)="setChoiceCorrect($index, $event.checked)"
+              >
+                Bonne réponse
+              </mat-checkbox>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeChoice($index)">Enlever</button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addChoice()">
+            Ajouter une proposition
+          </button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'memory') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          @for (pair of pairs(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Côté question</mat-label>
+                <input
+                  matInput
+                  [value]="pair.questionSide"
+                  [disabled]="saving()"
+                  (input)="setPairSide($index, 'questionSide', inputValue($event))"
+                />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Côté réponse</mat-label>
+                <input
+                  matInput
+                  [value]="pair.answerSide"
+                  [disabled]="saving()"
+                  (input)="setPairSide($index, 'answerSide', inputValue($event))"
+                />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removePair($index)">Enlever</button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addPair()">Ajouter une paire</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'order') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          @for (item of items(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Élément</mat-label>
+                <input
+                  matInput
+                  [value]="item.label"
+                  [disabled]="saving()"
+                  (input)="setItemLabel($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeItem($index)">Enlever</button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addItem()">Ajouter un élément</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'vrai_faux') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          @for (statement of statements(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Phrase</mat-label>
+                <input
+                  matInput
+                  [value]="statement.label"
+                  [disabled]="saving()"
+                  (input)="setStatementLabel($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <div class="sides">
+                <button
+                  class="side vrai"
+                  type="button"
+                  [disabled]="saving()"
+                  [class.selected]="statement.truthful === true"
+                  [attr.aria-pressed]="statement.truthful === true"
+                  (click)="setStatementSide($index, true)"
+                >
+                  Vrai
+                </button>
+                <button
+                  class="side faux"
+                  type="button"
+                  [disabled]="saving()"
+                  [class.selected]="statement.truthful === false"
+                  [attr.aria-pressed]="statement.truthful === false"
+                  (click)="setStatementSide($index, false)"
+                >
+                  Faux
+                </button>
+              </div>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeStatement($index)">Enlever</button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addStatement()">Ajouter une phrase</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'liens') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          @for (link of links(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Mot</mat-label>
+                <input
+                  matInput
+                  [value]="link.leftLabel"
+                  [disabled]="saving()"
+                  (input)="setLinkSide($index, 'leftLabel', inputValue($event))"
+                />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Réponse</mat-label>
+                <input
+                  matInput
+                  [value]="link.rightLabel"
+                  [disabled]="saving()"
+                  (input)="setLinkSide($index, 'rightLabel', inputValue($event))"
+                />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeLink($index)">Enlever</button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addLink()">Ajouter un lien</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'case_vide') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Phrase</mat-label>
+            <input
+              matInput
+              [value]="sentence()"
+              [disabled]="saving()"
+              (input)="setSentence(inputValue($event))"
+            />
+          </mat-form-field>
+          <p class="hint">Écris ___ à la place de chaque trou.</p>
+          @for (answer of answers(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Mot juste</mat-label>
+                <input
+                  matInput
+                  [value]="answer.label"
+                  [disabled]="saving()"
+                  (input)="setAnswer($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeAnswer($index)">Enlever</button>
+            </div>
+          }
+          @for (decoy of decoys(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Leurre</mat-label>
+                <input
+                  matInput
+                  [value]="decoy.label"
+                  [disabled]="saving()"
+                  (input)="setDecoy($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeDecoy($index)">Enlever</button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addDecoy()">Ajouter un leurre</button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'image_interactive') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <app-click-zone-editor
+            [imageDataUrl]="clickImage()"
+            [zones]="clickZones()"
+            [disabled]="saving()"
+            (imageSelected)="setClickImage($event)"
+            (imageError)="setClickImageError($event)"
+            (zonesChange)="setClickZones($event)"
+          />
+          <mat-checkbox
+            [checked]="requireAllCorrect()"
+            [disabled]="saving()"
+            (change)="setRequireAllCorrect($event.checked)"
+          >
+            Toutes les zones correctes sont à cliquer
+          </mat-checkbox>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'puzzle') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <app-click-zone-editor
+            variant="puzzle"
+            [imageDataUrl]="clickImage()"
+            [zones]="clickZones()"
+            [disabled]="saving()"
+            [magnet]="puzzleMagnet()"
+            (imageSelected)="setClickImage($event)"
+            (imageError)="setClickImageError($event)"
+            (zonesChange)="setClickZones($event)"
+            (magnetChange)="setPuzzleMagnet($event)"
+          />
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
+      @if (selectedCode() === 'texte') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Réponse attendue</mat-label>
+            <input
+              matInput
+              [value]="expectedAnswer()"
+              [disabled]="saving()"
+              (input)="setExpectedAnswer(inputValue($event))"
+            />
+          </mat-form-field>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+    }
+  }
+</section>

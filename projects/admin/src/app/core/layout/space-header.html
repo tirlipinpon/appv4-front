@@ -1,0 +1,30 @@
+<div class="banner">
+  <mat-toolbar color="primary">
+    @if (avatarFace(); as face) {
+      <span class="face" aria-hidden="true">{{ face }}</span>
+    }
+    <span class="who">{{ displayName() }}</span>
+    @if (showSpaceActions()) {
+      <app-role-switch />
+    }
+    <span class="spacer"></span>
+    @if (showSpaceActions()) {
+      <app-space-access />
+    }
+    <button mat-button class="logout" type="button" (click)="logout()">Déconnexion</button>
+  </mat-toolbar>
+  @if (showSpaceActions() && menu(); as section) {
+    <nav class="subnav" [attr.aria-label]="section.label">
+      @for (item of section.items; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="is-current"
+          [routerLinkActiveOptions]="{ exact: true }"
+          ariaCurrentWhenActive="page"
+        >
+          {{ item.label }}
+        </a>
+      }
+    </nav>
+  }
+</div>

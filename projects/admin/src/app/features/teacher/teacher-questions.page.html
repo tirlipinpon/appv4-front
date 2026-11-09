@@ -1,0 +1,49 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content">
+    <section class="panel">
+      <header class="heading">
+        <h1>Questions</h1>
+      </header>
+      <p class="lead">Une matière à la fois : tu lis ses questions, tu en copies, ou tu en prépares une nouvelle.</p>
+
+      @if (loading()) {
+        <p>Chargement…</p>
+      }
+      @if (error()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
+
+      @if (ready() && subjectChoices().length === 0) {
+        <p class="hint">Il n'y a pas encore de matière.</p>
+      }
+
+      @if (subjectChoices().length > 1) {
+        <div class="picker">
+          @for (item of subjectChoices(); track item.id) {
+            <button
+              type="button"
+              class="pick"
+              [class.selected]="openId() === item.id"
+              [attr.aria-pressed]="openId() === item.id"
+              (click)="open(item.id)"
+            >
+              <span class="pick-name">{{ item.name }}</span>
+              <span class="pick-place">{{ item.place }}</span>
+              <span class="pick-count">{{ item.questionCount }} question{{ item.questionCount === 1 ? '' : 's' }}</span>
+            </button>
+          }
+        </div>
+      }
+
+      @for (subject of openList(); track subject.id) {
+        <section class="subject">
+          <h2>{{ subject.name }}</h2>
+          <p class="hint">{{ subject.place }} · {{ subject.questionCount }} question{{ subject.questionCount === 1 ? '' : 's' }}</p>
+          <app-subject-questions [subjectId]="subject.id" [destinations]="destinations()" />
+        </section>
+      }
+    </section>
+  </main>
+</div>

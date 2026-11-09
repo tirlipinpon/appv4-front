@@ -1,4 +1,122 @@
-@use "bootstrap/scss/bootstrap";
+// Learning n'a qu'une page : carte centrée, grille responsive et alerte.
+// Bootstrap 5.3 se personnalise encore avec @import, pour partager ses variables.
+// La dépréciation Sass « import » est ignorée pour le build learning (angular.json).
+//
+// Mesure `ng build learning` (production), feuille styles :
+// avant : 230.04 kB bruts, 22.98 kB transfert
+// après : 39.33 kB bruts, 5.61 kB transfert
+
+@use "sass:map";
+
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/utilities";
+
+// Classes couvertes : min-vh-100, d-flex, align-items-center, justify-content-center,
+// bg-primary-subtle, shadow-sm, border-0, py-5, p-4, p-md-5, mt-*, mb-*,
+// text-center, text-uppercase, text-secondary, text-success, fw-bold.
+// .container, .row, .col-*, .card, .alert, .display-5 et .small viennent des partials.
+$utilities: (
+  "min-viewport-height": map.get($utilities, "min-viewport-height"),
+  "display": map.merge(
+    map.get($utilities, "display"),
+    (
+      responsive: false,
+      print: false,
+      values: flex,
+    )
+  ),
+  "align-items": map.merge(
+    map.get($utilities, "align-items"),
+    (
+      responsive: false,
+      values: (
+        center: center,
+      ),
+    )
+  ),
+  "justify-content": map.merge(
+    map.get($utilities, "justify-content"),
+    (
+      responsive: false,
+      values: (
+        center: center,
+      ),
+    )
+  ),
+  "shadow": map.merge(
+    map.get($utilities, "shadow"),
+    (
+      values: (
+        sm: var(--#{$prefix}box-shadow-sm),
+      ),
+    )
+  ),
+  "border": map.merge(
+    map.get($utilities, "border"),
+    (
+      values: (
+        0: 0,
+      ),
+    )
+  ),
+  "padding": map.get($utilities, "padding"),
+  "padding-y": map.get($utilities, "padding-y"),
+  "margin-top": map.get($utilities, "margin-top"),
+  "margin-bottom": map.get($utilities, "margin-bottom"),
+  "font-weight": map.merge(
+    map.get($utilities, "font-weight"),
+    (
+      values: (
+        bold: $font-weight-bold,
+      ),
+    )
+  ),
+  "text-align": map.merge(
+    map.get($utilities, "text-align"),
+    (
+      responsive: false,
+      values: (
+        center: center,
+      ),
+    )
+  ),
+  "text-transform": map.merge(
+    map.get($utilities, "text-transform"),
+    (
+      values: uppercase,
+    )
+  ),
+  "color": map.merge(
+    map.get($utilities, "color"),
+    (
+      values: (
+        "secondary": map.get($utilities-text-colors, "secondary"),
+        "success": map.get($utilities-text-colors, "success"),
+      ),
+    )
+  ),
+  "subtle-background-color": map.merge(
+    map.get($utilities, "subtle-background-color"),
+    (
+      values: (
+        "primary-subtle": map.get($utilities-bg-subtle, "primary-subtle"),
+      ),
+    )
+  ),
+);
+
+@import "bootstrap/scss/root";
+@import "bootstrap/scss/reboot";
+@import "bootstrap/scss/type";
+@import "bootstrap/scss/containers";
+@import "bootstrap/scss/grid";
+@import "bootstrap/scss/card";
+@import "bootstrap/scss/alert";
+@import "bootstrap/scss/utilities/api";
 
 html,
 body {

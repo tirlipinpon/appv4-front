@@ -1,0 +1,56 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content">
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Élèves</mat-card-title>
+        <mat-card-subtitle>Les enfants inscrits dans tes classes</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (loading()) {
+          <p>Chargement…</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        @if (ready() && schools().length === 0) {
+          <p class="hint">{{ noClassMessage() }}</p>
+        }
+
+        @for (school of schools(); track school.schoolId) {
+          <section class="school">
+            <h2 class="school-name">{{ school.schoolName }}</h2>
+            @for (grade of school.grades; track grade.grade) {
+              <article class="grade">
+                <h3 class="grade-name">{{ school.curriculumLabel }} — {{ grade.grade }}</h3>
+                <p class="count">{{ grade.countLabel }}</p>
+                @if (grade.students.length === 0) {
+                  <p class="hint">{{ grade.emptyMessage }}</p>
+                } @else {
+                  <ul class="students">
+                    @for (student of grade.students; track student.id) {
+                      <li class="student">
+                        @if (student.hasPhoto && photos()[student.id]) {
+                          <img
+                            [src]="photos()[student.id]"
+                            [alt]="student.firstName + ' ' + student.lastName"
+                          />
+                        } @else {
+                          <span class="avatar" aria-hidden="true">{{ emoji(student.avatarCode) }}</span>
+                        }
+                        <span class="name">{{ student.lastName }} {{ student.firstName }}</span>
+                        <span class="age">{{ student.age }} ans</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </article>
+            }
+          </section>
+        }
+      </mat-card-content>
+    </mat-card>
+  </main>
+</div>

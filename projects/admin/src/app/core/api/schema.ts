@@ -4,6 +4,371 @@
  */
 
 export interface paths {
+    "/api/int/teacher/subjects/{subjectId}/questions/{questionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Corriger une question déjà enregistrée */
+        put: operations["updateTeacherSubjectQuestion"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Renommer une matière créée par le professeur connecté */
+        put: operations["renameTeacherSubject"];
+        post?: never;
+        /** Retirer une matière du professeur connecté */
+        delete: operations["deleteTeacherSubject"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire le profil du professeur connecté */
+        get: operations["getTeacherProfile"];
+        /** Enregistrer le nom, le contact et les écoles du professeur */
+        put: operations["updateTeacherProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la fiche du parent connecté */
+        get: operations["getParentProfile"];
+        /** Enregistrer la fiche du parent connecté */
+        put: operations["updateParentProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Modifier un enfant du parent connecté */
+        put: operations["updateParentChild"];
+        post?: never;
+        /** Retirer un enfant de l'affichage */
+        delete: operations["deleteParentChild"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les matières de ses classes, y compris celles déjà suivies par un collègue */
+        get: operations["listTeacherSubjects"];
+        put?: never;
+        /** Créer une matière dans une classe du professeur */
+        post: operations["createTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{subjectId}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les questions d'une matière */
+        get: operations["listTeacherSubjectQuestions"];
+        put?: never;
+        /** Ajouter une question à une matière */
+        post: operations["createTeacherSubjectQuestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{subjectId}/questions/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Supprimer une ou plusieurs questions */
+        post: operations["deleteTeacherSubjectQuestions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{subjectId}/questions/clone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Copier des questions vers une matière */
+        post: operations["cloneTeacherSubjectQuestions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Proposer de déplacer ou partager une matière avec un collègue */
+        post: operations["transferTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Réactiver une matière du professeur connecté */
+        post: operations["reactivateTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Désactiver une matière pour soi, et éventuellement des co-profs si créateur */
+        post: operations["deactivateTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/transfer-invites/{inviteId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuser une demande de transfert */
+        post: operations["rejectTeacherSubjectTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/transfer-invites/{inviteId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accepter une demande de transfert */
+        post: operations["acceptTeacherSubjectTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/share-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demander au créateur de partager une matière déjà existante */
+        post: operations["requestTeacherSubjectShare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Réactiver une matière retirée de la classe */
+        post: operations["restoreTeacherSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/deactivate-notices/{noticeId}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fermer une alerte de désactivation */
+        post: operations["dismissTeacherSubjectDeactivateNotice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les enfants et leurs matières */
+        get: operations["listParentSubjects"];
+        put?: never;
+        /** Ajouter une matière à un enfant */
+        post: operations["addParentChildSubject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les enfants du parent connecté */
+        get: operations["listParentChildren"];
+        put?: never;
+        /** Ajouter un enfant au parent connecté */
+        post: operations["addParentChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Réactiver un enfant du parent connecté */
+        post: operations["reactivateParentChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Désactiver un enfant du parent connecté */
+        post: operations["deactivateParentChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/auth/switch-role": {
         parameters: {
             query?: never;
@@ -15,6 +380,40 @@ export interface paths {
         put?: never;
         /** Changer l'espace actif et recevoir un nouveau jeton */
         post: operations["switchRole"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/auth/spaces/teacher": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demander l'espace professeur sans écrire le rôle teacher */
+        post: operations["requestTeacherSpace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/auth/spaces/parent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ouvrir l'espace parent tout de suite et recevoir un jeton à jour */
+        post: operations["openParentSpace"];
         delete?: never;
         options?: never;
         head?: never;
@@ -98,8 +497,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Échanger le code Apple contre un JWT */
+        /**
+         * Échanger le code Apple contre un JWT
+         * @description redirectUri = URL SPA de reprise ; l'échange token utilise APPLE_CALLBACK_URI.
+         */
         post: operations["loginWithApple"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/auth/oauth/apple/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Callback form_post Apple → redirect SPA */
+        post: operations["appleOAuthFormPostCallback"];
         delete?: never;
         options?: never;
         head?: never;
@@ -191,6 +610,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/{subjectId}/followers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voir quels enfants suivent ce cours */
+        get: operations["listTeacherSubjectFollowers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{id}/colleagues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les collègues à qui proposer un transfert */
+        get: operations["listTeacherSubjectColleagues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/transfer-invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les demandes de transfert reçues */
+        get: operations["listTeacherSubjectTransferInvites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/deactivate-notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les alertes de désactivation reçues */
+        get: operations["listTeacherSubjectDeactivateNotices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les élèves des classes du professeur */
+        get: operations["listTeacherStudents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/students/{id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la photo d'un élève d'une classe du professeur */
+        get: operations["getTeacherStudentPhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/question-forms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les formes de questions proposables */
+        get: operations["listTeacherQuestionForms"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/profile/removal-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voir les élèves et les matières avant de retirer une année ou une école */
+        get: operations["getTeacherRemovalPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/hello": {
         parameters: {
             query?: never;
@@ -200,6 +755,40 @@ export interface paths {
         };
         /** Hello de l'espace professeur */
         get: operations["getTeacherHello"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search the school directory */
+        get: operations["searchSchools"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/subjects/{childId}/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search available subjects for a child */
+        get: operations["searchParentChildSubjects"];
         put?: never;
         post?: never;
         delete?: never;
@@ -225,6 +814,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/{id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la photo d'un enfant du parent connecté */
+        get: operations["getParentChildPhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/hello": {
         parameters: {
             query?: never;
@@ -234,6 +840,23 @@ export interface paths {
         };
         /** Hello admin (JWT requis) */
         get: operations["getAdminHello"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/auth/spaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rôles déjà accordés et état de la demande professeur */
+        get: operations["getSpaceAccess"];
         put?: never;
         post?: never;
         delete?: never;
@@ -283,8 +906,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** URL d'autorisation Apple */
+        /** URL d'autorisation Apple (form_post vers le callback back) */
         get: operations["getAppleAuthorizeUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Nom de la personne connectée */
+        get: operations["getConnectedAccount"];
         put?: never;
         post?: never;
         delete?: never;
@@ -300,7 +940,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lister les demandes professeur en attente et acceptées */
+        /** Lister les demandes professeur (pending, approved, revoked), lecture bornée */
         get: operations["listTeacherRequests"];
         put?: never;
         post?: never;
@@ -327,20 +967,397 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/subjects/{childId}/{subjectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Retirer une matière de la liste d'un enfant */
+        delete: operations["removeParentChildSubject"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        SwitchRoleRequest: {
-            role: string;
+        CreateTeacherSubjectQuestionRequest: {
+            formCode?: string;
+            prompt?: string;
+            choices?: components["schemas"]["TeacherQuestionChoiceInput"][];
+            pairs?: components["schemas"]["TeacherQuestionPairInput"][];
+            items?: components["schemas"]["TeacherQuestionItemInput"][];
+            statements?: components["schemas"]["TeacherQuestionStatementInput"][];
+            links?: components["schemas"]["TeacherQuestionLinkInput"][];
+            sentence?: string;
+            answers?: components["schemas"]["TeacherQuestionGapWordInput"][];
+            decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
+            expectedAnswer?: string;
+            imageWebp?: string;
+            requireAllCorrect?: boolean;
+            zones?: components["schemas"]["TeacherQuestionZoneInput"][];
+            pieces?: components["schemas"]["TeacherQuestionPieceInput"][];
+            /** Format: double */
+            snapDistance?: number;
+        };
+        TeacherQuestionChoiceInput: {
+            label?: string;
+            correct?: boolean;
+        };
+        TeacherQuestionGapWordInput: {
+            label?: string;
+        };
+        TeacherQuestionItemInput: {
+            label?: string;
+        };
+        TeacherQuestionLinkInput: {
+            leftLabel?: string;
+            rightLabel?: string;
+        };
+        TeacherQuestionPairInput: {
+            questionSide?: string;
+            answerSide?: string;
+        };
+        TeacherQuestionPieceInput: {
+            label?: string;
+            shape?: string;
+            points?: components["schemas"]["TeacherQuestionPointInput"][];
+        };
+        TeacherQuestionPointInput: {
+            /** Format: double */
+            x?: number;
+            /** Format: double */
+            y?: number;
+        };
+        TeacherQuestionStatementInput: {
+            label?: string;
+            truthful?: boolean;
+        };
+        TeacherQuestionZoneInput: {
+            label?: string;
+            correct?: boolean;
+            shape?: string;
+            points?: components["schemas"]["TeacherQuestionPointInput"][];
         };
         AuthErrorBody: {
             message?: string;
+            code?: string;
+        };
+        TeacherQuestionChoiceItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+            correct?: boolean;
+        };
+        TeacherQuestionGapWordItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+        };
+        TeacherQuestionItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+        };
+        TeacherQuestionLinkItem: {
+            /** Format: int64 */
+            id?: number;
+            leftLabel?: string;
+            rightLabel?: string;
+        };
+        TeacherQuestionPairItem: {
+            /** Format: int64 */
+            id?: number;
+            questionSide?: string;
+            answerSide?: string;
+        };
+        TeacherQuestionPieceItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+            shape?: string;
+            points?: components["schemas"]["TeacherQuestionPointItem"][];
+        };
+        TeacherQuestionPointItem: {
+            /** Format: double */
+            x?: number;
+            /** Format: double */
+            y?: number;
+        };
+        TeacherQuestionStatementItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+            truthful?: boolean;
+        };
+        TeacherQuestionZoneItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+            correct?: boolean;
+            shape?: string;
+            points?: components["schemas"]["TeacherQuestionPointItem"][];
+        };
+        TeacherSubjectQuestionItem: {
+            /** Format: int64 */
+            id?: number;
+            formCode?: string;
+            formLabel?: string;
+            prompt?: string;
+            choices?: components["schemas"]["TeacherQuestionChoiceItem"][];
+            pairs?: components["schemas"]["TeacherQuestionPairItem"][];
+            items?: components["schemas"]["TeacherQuestionItem"][];
+            statements?: components["schemas"]["TeacherQuestionStatementItem"][];
+            links?: components["schemas"]["TeacherQuestionLinkItem"][];
+            sentence?: string;
+            answers?: components["schemas"]["TeacherQuestionGapWordItem"][];
+            decoys?: components["schemas"]["TeacherQuestionGapWordItem"][];
+            expectedAnswer?: string;
+            imageWebp?: string;
+            requireAllCorrect?: boolean;
+            zones?: components["schemas"]["TeacherQuestionZoneItem"][];
+            pieces?: components["schemas"]["TeacherQuestionPieceItem"][];
+            /** Format: double */
+            snapDistance?: number;
+        };
+        RenameTeacherSubjectRequest: {
+            name?: string;
+        };
+        TeacherSubjectItem: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            active?: boolean;
+            ownedByMe?: boolean;
+            /** @description Faux si la matière est déjà dans la classe mais que ce professeur ne la suit pas. sharedWith nomme alors les professeurs qui la suivent. */
+            followedByMe?: boolean;
+            sharedWith?: components["schemas"]["TeacherSubjectSharedHolder"][];
+            /** @description Destinataires d'une demande de partage encore en attente, envoyée par ce professeur. Vide s'il n'y en a pas. */
+            shareAskedTo?: components["schemas"]["TeacherSubjectSharedHolder"][];
+            /** @description Propriétaire de la matière : le professeur qui peut la renommer. */
+            owner?: components["schemas"]["TeacherSubjectSharedHolder"];
+            /**
+             * Format: int64
+             * @description Nombre total de questions enregistrées sur cette matière.
+             */
+            questionCount?: number;
+        };
+        TeacherSubjectSharedHolder: {
+            /** Format: int64 */
+            userId?: number;
+            displayName?: string;
+        };
+        TeacherSchoolInput: {
+            /** Format: int64 */
+            schoolId?: number;
+            curriculum?: string;
+            grades?: string[];
+        };
+        /** @description Champs absents (null) : ne pas modifier. schools [] vide : retirer toutes les écoles. */
+        UpdateTeacherProfileRequest: {
+            /** @description Null = garder le nom actuel */
+            displayName?: string;
+            /** @description Null = garder les écoles ; [] = tout retirer */
+            schools?: components["schemas"]["TeacherSchoolInput"][];
+            contactEmail?: string;
+            phone?: string;
+            avatarCode?: string;
+        };
+        AvatarChoice: {
+            code?: string;
+            label?: string;
+        };
+        TeacherAssignedSchool: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            country?: string;
+            curriculum?: string;
+            grades?: string[];
+        };
+        TeacherAvailableSchool: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            country?: string;
+            grades?: string[];
+        };
+        TeacherCurriculumOption: {
+            code?: string;
+            label?: string;
+            grades?: string[];
+        };
+        TeacherProfileResponse: {
+            email?: string;
+            displayName?: string;
+            contactEmail?: string;
+            phone?: string;
+            avatarCode?: string;
+            avatarChoices?: components["schemas"]["AvatarChoice"][];
+            schools?: components["schemas"]["TeacherAssignedSchool"][];
+            availableSchools?: components["schemas"]["TeacherAvailableSchool"][];
+            curricula?: components["schemas"]["TeacherCurriculumOption"][];
+        };
+        UpdateParentProfileRequest: {
+            displayName?: string;
+            contactEmail?: string;
+            phone?: string;
+            avatarCode?: string;
+        };
+        ParentProfileResponse: {
+            email?: string;
+            displayName?: string;
+            contactEmail?: string;
+            phone?: string;
+            avatarCode?: string;
+            avatarChoices?: components["schemas"]["AvatarChoice"][];
+        };
+        CreateParentChildRequest: {
+            firstName?: string;
+            lastName?: string;
+            /** @description GARCON, FILLE ou NON_GENRE */
+            sex?: string;
+            age?: string;
+            country?: string;
+            grade?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            avatarCode?: string;
+            photoBase64?: string;
+            photoContentType?: string;
+            pin?: string;
+            pinConfirmation?: string;
+            /**
+             * Format: int64
+             * @description Enfant de départ. Absent pour un formulaire vide.
+             */
+            fromChildId?: number;
+            /** @description AUCUN, FRERE, SOEUR, DEMI_FRERE, DEMI_SOEUR, JUMEAU, JUMELLE, COUSIN ou COUSINE. */
+            link?: string;
+        };
+        ParentChildLink: {
+            /** Format: int64 */
+            otherChildId?: number;
+            /** @description Mot court du lien, par exemple « Frère ». */
+            label?: string;
+        };
+        ParentChildResponse: {
+            /** Format: int64 */
+            id?: number;
+            firstName?: string;
+            lastName?: string;
+            /** @description GARCON, FILLE ou NON_GENRE */
+            sex?: string;
+            /** Format: int32 */
+            age?: number;
+            country?: string;
+            curriculum?: string;
+            grade?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            avatarCode?: string;
+            hasPhoto?: boolean;
+            /** @description Faux : encore dans la liste, plus proposé dans le reste de l'application */
+            active?: boolean;
+            /** @description Phrases de lien, par exemple « Noah est le frère de Léa ». Vide s'il n'y en a pas. */
+            linkPhrases?: string[];
+            /**
+             * Format: int32
+             * @description Matières visibles de la même école et de la même année
+             */
+            schoolSubjectCount?: number;
+            /**
+             * Format: int32
+             * @description Autres matières visibles, hors de sa classe
+             */
+            extraSubjectCount?: number;
+            /** @description L'autre enfant du lien, pour afficher sa photo ou son avatar, et le mot court. */
+            links?: components["schemas"]["ParentChildLink"][];
+        };
+        CreateTeacherSubjectRequest: {
+            /** Format: int64 */
+            schoolId?: number;
+            grade?: string;
+            name?: string;
+        };
+        DeleteTeacherSubjectQuestionsRequest: {
+            questionIds?: number[];
+        };
+        DeleteTeacherSubjectQuestionsResponse: {
+            deletedIds?: number[];
+        };
+        CloneTeacherSubjectQuestionsRequest: {
+            /** Format: int64 */
+            targetSubjectId?: number;
+            questionIds?: number[];
+        };
+        TeacherSubjectQuestionsResponse: {
+            questions?: components["schemas"]["TeacherSubjectQuestionItem"][];
+            /** Format: int64 */
+            nextCursor?: number;
+        };
+        TransferTeacherSubjectRequest: {
+            /**
+             * Format: int64
+             * @description Identifiant du collègue choisi dans la liste
+             */
+            colleagueUserId?: number;
+            /**
+             * @description move, share (collègue sans accès) ou handover (co-détenteur reprend la propriété)
+             * @enum {string}
+             */
+            mode?: "move" | "share" | "handover";
+        };
+        DeactivateTeacherSubjectRequest: {
+            /** @description Co-profs à désactiver aussi (créateur uniquement) */
+            alsoUserIds?: number[];
+        };
+        AddChildSubjectRequest: {
+            /** Format: int64 */
+            childId?: number;
+            /** Format: int64 */
+            subjectId?: number;
+        };
+        ChildSubjectOffer: {
+            /** Format: int64 */
+            subjectId?: number;
+            name?: string;
+            teacherName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            scolaire?: boolean;
+            /**
+             * Format: int64
+             * @description Nombre total de questions enregistrées sur cette matière.
+             */
+            questionCount?: number;
+        };
+        SwitchRoleRequest: {
+            role: string;
         };
         JwtTokenResponse: {
             token?: string;
             /** Format: int64 */
             expiresAtEpochSeconds?: number;
+        };
+        SpaceAccessResponse: {
+            /** @description Rôles d'espace déjà accordés : parent et/ou teacher */
+            roles?: string[];
+            /**
+             * @description Demande professeur : none, pending, approved ou revoked
+             * @enum {string}
+             */
+            teacherRequest?: "none" | "pending" | "approved" | "revoked";
         };
         SignupRequest: {
             /** Format: email */
@@ -358,14 +1375,18 @@ export interface components {
         GoogleLoginRequest: {
             authorizationCode: string;
             redirectUri: string;
+            state: string;
         };
         FacebookLoginRequest: {
             authorizationCode: string;
             redirectUri: string;
+            state: string;
         };
         AppleLoginRequest: {
             authorizationCode: string;
+            /** @description URL SPA de reprise (lié au state) */
             redirectUri: string;
+            state: string;
         };
         LoginRequest: {
             /** Format: email */
@@ -392,14 +1413,197 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
         };
+        TeacherSubjectGrade: {
+            grade?: string;
+            subjects?: components["schemas"]["TeacherSubjectItem"][];
+        };
+        TeacherSubjectSchool: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grades?: components["schemas"]["TeacherSubjectGrade"][];
+        };
+        TeacherSubjectsResponse: {
+            schools?: components["schemas"]["TeacherSubjectSchool"][];
+        };
+        TeacherSubjectFollowersResponse: {
+            /** Format: int32 */
+            childCount?: number;
+            warning?: string;
+            names?: string[];
+        };
+        TeacherSubjectColleagueItem: {
+            /** Format: int64 */
+            userId?: number;
+            displayName?: string;
+        };
+        TeacherSubjectColleaguesResponse: {
+            colleagues?: components["schemas"]["TeacherSubjectColleagueItem"][];
+        };
+        TeacherTransferInviteItem: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            subjectId?: number;
+            subjectName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            mode?: string;
+            fromDisplayName?: string;
+            /** @description Texte prêt à afficher pour la demande */
+            message?: string;
+        };
+        TeacherTransferInvitesResponse: {
+            invites?: components["schemas"]["TeacherTransferInviteItem"][];
+        };
+        TeacherDeactivateNoticeItem: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            subjectId?: number;
+            subjectName?: string;
+            /** @description deactivate, handover_accepted, handover_rejected, invite_rejected, … */
+            kind?: string;
+            message?: string;
+        };
+        TeacherDeactivateNoticesResponse: {
+            notices?: components["schemas"]["TeacherDeactivateNoticeItem"][];
+        };
+        TeacherStudentGrade: {
+            grade?: string;
+            countLabel?: string;
+            emptyMessage?: string;
+            students?: components["schemas"]["TeacherStudentLine"][];
+        };
+        TeacherStudentLine: {
+            /** Format: int64 */
+            id?: number;
+            firstName?: string;
+            lastName?: string;
+            /** Format: int32 */
+            age?: number;
+            avatarCode?: string;
+            hasPhoto?: boolean;
+        };
+        TeacherStudentSchool: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            curriculumLabel?: string;
+            grades?: components["schemas"]["TeacherStudentGrade"][];
+        };
+        TeacherStudentsResponse: {
+            noClassMessage?: string;
+            schools?: components["schemas"]["TeacherStudentSchool"][];
+        };
+        TeacherQuestionFormItem: {
+            code?: string;
+            label?: string;
+            /** Format: int32 */
+            sortOrder?: number;
+        };
+        TeacherQuestionFormsResponse: {
+            forms?: components["schemas"]["TeacherQuestionFormItem"][];
+        };
+        TeacherRemovalPreviewResponse: {
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            /** Format: int32 */
+            studentCount?: number;
+            studentCountLabel?: string;
+            emptyStudentsLabel?: string;
+            students?: components["schemas"]["TeacherRemovalStudent"][];
+            /** Format: int32 */
+            subjectCount?: number;
+            subjectCountLabel?: string;
+            emptySubjectsLabel?: string;
+            subjects?: components["schemas"]["TeacherRemovalSubject"][];
+        };
+        TeacherRemovalStudent: {
+            /** Format: int64 */
+            id?: number;
+            firstName?: string;
+            lastName?: string;
+            grade?: string;
+        };
+        TeacherRemovalSubject: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            grade?: string;
+            /** Format: int32 */
+            followerCount?: number;
+            followerWarning?: string;
+            followerNames?: string[];
+        };
         HelloMessageResponse: {
             text?: string;
         };
+        SchoolOption: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            country?: string;
+            grades?: string[];
+        };
+        SchoolPage: {
+            schools?: components["schemas"]["SchoolOption"][];
+            /** Format: int64 */
+            nextCursor?: number;
+        };
+        ChildSubjectsResponse: {
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
+            lastName?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            grade?: string;
+            chosen?: components["schemas"]["ChildSubjectOffer"][];
+            proposed?: components["schemas"]["ChildSubjectOffer"][];
+        };
+        ParentSubjectsResponse: {
+            children?: components["schemas"]["ChildSubjectsResponse"][];
+        };
+        ChildSubjectOfferPage: {
+            offers?: components["schemas"]["ChildSubjectOffer"][];
+            /** Format: int64 */
+            nextCursor?: number;
+        };
+        ParentChildrenResponse: {
+            children?: components["schemas"]["ParentChildResponse"][];
+            schools?: components["schemas"]["ParentSchoolOption"][];
+            curricula?: components["schemas"]["ParentGradeList"][];
+        };
+        ParentGradeList: {
+            country?: string;
+            grades?: string[];
+        };
+        ParentSchoolOption: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            country?: string;
+            grades?: string[];
+        };
         AuthorizeUrlResponse: {
             authorizationUrl?: string;
+            state?: string;
+        };
+        ConnectedAccountResponse: {
+            /** @description Nom du compte connecté (parent, professeur ou admin) */
+            displayName?: string;
+            /** @description Code d'avatar, absent s'il n'y en a pas */
+            avatarCode?: string;
         };
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
+            truncated?: boolean;
         };
     };
     responses: never;
@@ -410,6 +1614,1202 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    updateTeacherSubjectQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherSubjectQuestionRequest"];
+            };
+        };
+        responses: {
+            /** @description Question corrigée, la forme ne change pas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectQuestionItem"];
+                };
+            };
+            /** @description Forme inconnue ou différente, énoncé invalide, ou contenu insuffisant pour cette forme */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière ou question absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    renameTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Nom enregistré, la classe ne change pas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectItem"];
+                };
+            };
+            /** @description Nom vide, trop long, déjà pris dans la même classe, ou ce professeur n'est pas le créateur */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deleteTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accès retiré. Cachée seulement s'il ne reste personne */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getTeacherProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Email, nom, contact, avatar, écoles déjà choisies et écoles proposables */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherProfileResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    updateTeacherProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTeacherProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Profil enregistré */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherProfileResponse"];
+                };
+            };
+            /** @description Nom vide ou trop long, école inconnue, école en double, ou année manquante */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getParentProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mail de connexion, nom, contact, téléphone, avatar et choix */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentProfileResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    updateParentProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateParentProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Fiche enregistrée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentProfileResponse"];
+                };
+            };
+            /** @description Nom, mail de contact, téléphone ou avatar refusé */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    updateParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateParentChildRequest"];
+            };
+        };
+        responses: {
+            /** @description Fiche mise à jour, sans le PIN */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentChildResponse"];
+                };
+            };
+            /** @description Champ refusé */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deleteParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retiré de l'affichage, fiche conservée en base */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Écoles du profil, années cochées, matières triées par nom. followedByMe faux : visible, mais ce professeur ne la suit pas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    createTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Matière créée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectItem"];
+                };
+            };
+            /** @description Nom vide, trop long, déjà pris, demande de partage possible, matière retirée à réactiver, ou classe absente du profil */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjectQuestions: {
+        parameters: {
+            query?: {
+                afterId?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Énoncés de cette matière, du plus ancien au plus récent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectQuestionsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    createTeacherSubjectQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherSubjectQuestionRequest"];
+            };
+        };
+        responses: {
+            /** @description Question enregistrée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectQuestionItem"];
+                };
+            };
+            /** @description Forme inconnue, énoncé invalide, ou contenu insuffisant pour cette forme */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deleteTeacherSubjectQuestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteTeacherSubjectQuestionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Questions retirées de la matière */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DeleteTeacherSubjectQuestionsResponse"];
+                };
+            };
+            /** @description Aucune question choisie */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière ou question absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    cloneTeacherSubjectQuestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloneTeacherSubjectQuestionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Copies créées, les questions d'origine restent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectQuestionsResponse"];
+                };
+            };
+            /** @description Aucune question choisie, ou matière d'arrivée absente de la demande */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière ou question absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    transferTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Demande créée ; l'accès ne change qu'après acceptation */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Mode, collègue ou demande déjà en attente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    reactivateTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description De nouveau proposée dans le reste de l'application */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deactivateTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DeactivateTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Accès désactivés ; alerte envoyée aux autres détenteurs si créateur et matière partagée */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description alsoUserIds non autorisé ou collègue sans accès */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    rejectTeacherSubjectTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inviteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demande refusée, accès inchangé */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Demande introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    acceptTeacherSubjectTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inviteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accès mis à jour (même matière, pas une copie) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Demande plus valable */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Demande introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    requestTeacherSubjectShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Demande créée ; l'accès ne change qu'après acceptation du créateur */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nom invalide, classe absente, matière introuvable, déjà détenue, ou demande en attente */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    restoreTeacherSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeacherSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Même matière, de nouveau dans la liste du professeur */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectItem"];
+                };
+            };
+            /** @description Nom invalide, classe absente, matière encore affichée, ou rien à réactiver */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Aucune matière retirée de ce nom dans cette classe */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    dismissTeacherSubjectDeactivateNotice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                noticeId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Alerte dismissée */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Alerte introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listParentSubjects: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Chaque enfant et les matières déjà choisies */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentSubjectsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    addParentChildSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddChildSubjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Matière ajoutée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildSubjectOffer"];
+                };
+            };
+            /** @description Matière introuvable, plus visible, ou déjà dans la liste */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listParentChildren: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fiches du parent et écoles proposables */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentChildrenResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    addParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateParentChildRequest"];
+            };
+        };
+        responses: {
+            /** @description Fiche créée, sans le PIN */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentChildResponse"];
+                };
+            };
+            /** @description Champ obligatoire manquant, âge, classe, image, PIN ou lien refusé */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description L'enfant de départ n'appartient pas à ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    reactivateParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description De nouveau proposé dans le reste de l'application */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deactivateParentChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Toujours affiché dans la liste, plus proposé ailleurs */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     switchRole: {
         parameters: {
             query?: never;
@@ -439,6 +2839,46 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    requestTeacherSpace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demande pending, ou état inchangé si déjà demandé ou déjà teacher */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SpaceAccessResponse"];
+                };
+            };
+        };
+    };
+    openParentSpace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JWT avec le rôle parent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JwtTokenResponse"];
                 };
             };
         };
@@ -560,6 +3000,32 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["JwtTokenResponse"];
                 };
+            };
+        };
+    };
+    appleOAuthFormPostCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/x-www-form-urlencoded": {
+                    state?: string;
+                    code?: string;
+                    error?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -733,6 +3199,283 @@ export interface operations {
             };
         };
     };
+    listTeacherSubjectFollowers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nombre d'enfants et leurs noms, avant une suppression */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectFollowersResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjectColleagues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Professeurs acceptés de la même classe qui n'ont pas encore cette matière, triés par nom */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectColleaguesResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjectTransferInvites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demandes en attente avec le détail matière et mode */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherTransferInvitesResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherSubjectDeactivateNotices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Alertes non dismissées, message prêt à afficher */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherDeactivateNoticesResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherStudents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Écoles du profil, années cochées, élèves triés par nom */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherStudentsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getTeacherStudentPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Image de l'élève */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Élève hors des classes du professeur, ou fiche sans photo */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherQuestionForms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Formes que le professeur peut préparer maintenant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherQuestionFormsResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getTeacherRemovalPreview: {
+        parameters: {
+            query: {
+                schoolId: number;
+                grade?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Élèves de la classe, matières et suiveurs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherRemovalPreviewResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description École absente du profil, ou année non cochée */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     getTeacherHello: {
         parameters: {
             query?: never;
@@ -758,6 +3501,59 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    searchSchools: {
+        parameters: {
+            query?: {
+                country?: string;
+                query?: string;
+                afterId?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SchoolPage"];
+                };
+            };
+        };
+    };
+    searchParentChildSubjects: {
+        parameters: {
+            query?: {
+                query?: string;
+                schoolId?: number;
+                grade?: string;
+                afterId?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                childId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildSubjectOfferPage"];
                 };
             };
         };
@@ -791,6 +3587,37 @@ export interface operations {
             };
         };
     };
+    getParentChildPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Image de l'enfant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Pas de photo pour cet enfant, ou enfant d'un autre parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     getAdminHello: {
         parameters: {
             query?: never;
@@ -807,6 +3634,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["HelloMessageResponse"];
+                };
+            };
+        };
+    };
+    getSpaceAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description État pour l'en-tête */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SpaceAccessResponse"];
                 };
             };
         };
@@ -877,7 +3724,7 @@ export interface operations {
             };
         };
     };
-    listTeacherRequests: {
+    getConnectedAccount: {
         parameters: {
             query?: never;
             header?: never;
@@ -886,7 +3733,39 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description File de modération */
+            /** @description Nom à afficher dans l'en-tête */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnectedAccountResponse"];
+                };
+            };
+            /** @description Compte introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listTeacherRequests: {
+        parameters: {
+            query?: {
+                limit?: number;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File de modération (limitée) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -922,6 +3801,38 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["HelloMessageResponse"];
+                };
+            };
+        };
+    };
+    removeParentChildSubject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                childId: number;
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matière retirée de la liste de l'enfant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildSubjectOffer"];
+                };
+            };
+            /** @description Enfant introuvable, ou matière absente de sa liste */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
         };

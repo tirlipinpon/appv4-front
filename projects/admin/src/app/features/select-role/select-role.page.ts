@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -9,6 +10,7 @@ import { ActiveRoleService } from '../../core/auth/active-role.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { landingPath } from '../../core/auth/space-landing';
 import { SpaceRoles, spaceRoleLabel, type SpaceRole } from '../../core/auth/space-roles';
+import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 
 /**
  * Choix d'espace quand le jeton n'en a pas encore (SCRUM-128).
@@ -25,6 +27,7 @@ export class SelectRolePage {
   private readonly rolesApi = inject(ActiveRoleService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly choices: SpaceRole[] = [SpaceRoles.parent, SpaceRoles.teacher];
   readonly loading = signal(false);
@@ -38,16 +41,18 @@ export class SelectRolePage {
   choose(role: SpaceRole): void {
     this.loading.set(true);
     this.error.set(null);
-    this.rolesApi.switchTo(role).subscribe({
-      next: () => {
-        this.loading.set(false);
-        void this.router.navigateByUrl(landingPath(this.auth.session()));
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        const message = (err.error as { message?: string } | null)?.message;
-        this.error.set(message || 'Choix impossible.');
-      },
-    });
+    this.rolesApi
+      .switchTo(role)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loading.set(false);
+          void this.router.navigateByUrl(landingPath(this.auth.session()));
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading.set(false);
+          this.error.set(httpErrorMessage(err, 'Choix impossible.'));
+        },
+      });
   }
 }

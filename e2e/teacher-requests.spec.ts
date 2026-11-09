@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { environment } from '../projects/admin/src/environments/environment';
+
 test('un admin arrive sur la file, valide, et voit la demande acceptée', async ({ page }) => {
   const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   const validatedAt = '2026-10-23T18:00:00.000Z';
@@ -12,26 +14,29 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
       body: JSON.stringify({ token: jwt({ roles: ['admin'] }), expiresAtEpochSeconds: 1 }),
     });
   });
-  await page.route('**/api/int/admin/teacher-requests', async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.fallback();
-      return;
-    }
-    const item = {
-      id: 7,
-      email: 'prof@example.com',
-      displayName: 'Prof Test',
-      status,
-      createdAt,
-      reviewedAt: status === 'pending' ? undefined : validatedAt,
-      revokedAt: status === 'revoked' ? new Date().toISOString() : undefined,
-    };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ requests: [item] }),
-    });
-  });
+  await page.route(
+    (url) => url.pathname === '/api/int/admin/teacher-requests',
+    async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+      const item = {
+        id: 7,
+        email: 'prof@example.com',
+        displayName: 'Prof Test',
+        status,
+        createdAt,
+        reviewedAt: status === 'pending' ? undefined : validatedAt,
+        revokedAt: status === 'revoked' ? new Date().toISOString() : undefined,
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ requests: [item] }),
+      });
+    },
+  );
   await page.route('**/api/int/admin/teacher-requests/7/revoke', async (route) => {
     status = 'revoked';
     await route.fulfill({
@@ -94,11 +99,12 @@ test('un parent n ouvre pas la file de modération', async ({ page }) => {
 async function login(page: Page, email: string): Promise<void> {
   await page.goto('/login');
   await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Mot de passe', { exact: true }).fill('Secret1!');
+  await page.getByLabel('Mot de passe', { exact: true }).fill(environment.devLoginPassword);
   await page.getByRole('button', { name: 'Se connecter' }).click();
 }
 
 function jwt(payload: object): string {
-  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  const body = Buffer.from(JSON.stringify({ exp, ...payload })).toString('base64url');
   return `e30.${body}.sig`;
 }

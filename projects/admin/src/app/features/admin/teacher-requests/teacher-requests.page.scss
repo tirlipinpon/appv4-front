@@ -5,10 +5,6 @@
   background: #f5f7fb;
 }
 
-.spacer {
-  flex: 1;
-}
-
 .content {
   width: min(100%, 40rem);
   margin: 0 auto;
@@ -54,6 +50,11 @@ section + section {
 
 .empty {
   margin: 0;
+  color: #5f6368;
+}
+
+.hint {
+  margin: 0 0 1.25rem;
   color: #5f6368;
 }
 
