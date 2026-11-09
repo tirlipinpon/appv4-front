@@ -2,7 +2,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatSelect } from '@angular/material/select';
 
 import type { TeacherSubjectsResponse } from '../../core/api/api-models';
 import { TeacherSubjectsPage } from './teacher-subjects.page';
@@ -24,6 +26,16 @@ const loaded: TeacherSubjectsResponse = {
         {
           grade: 'CE1',
           subjects: [{ id: 2, name: 'Lecture', active: true, ownedByMe: true, sharedWith: [] }],
+          addableCourses: [
+            {
+              name: 'Mathématiques',
+              schoolId: 1,
+              schoolName: 'École française',
+              postalCode: '75011',
+              grades: ['CE2'],
+              label: 'Mathématiques — 75011 — CE2 — École française',
+            },
+          ],
         },
         {
           grade: 'CE2',
@@ -115,6 +127,25 @@ describe('TeacherSubjectsPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Aucune matière');
     expect(fixture.nativeElement.textContent).toContain('Lecture');
     expect(fixture.nativeElement.textContent).toContain('Partagée avec Camille');
+    expect(fixture.nativeElement.textContent).toContain('Matière déjà créée');
+    expect(page.schools()[0].grades[0].addable[0].label).toBe(
+      'Mathématiques — 75011 — CE2 — École française',
+    );
+    const select = fixture.debugElement.query(By.css('.add-reuse mat-select'))
+      .componentInstance as MatSelect;
+    select.open();
+    fixture.detectChanges();
+    expect(select.options.map((option) => option.getLabel())).toContain(
+      'Mathématiques — 75011 — CE2 — École française',
+    );
+
+    page.reuse(1, 'CE1', '1|Mathématiques');
+    expect(page.draft(1, 'CE1')).toBe('Mathématiques');
+    expect(page.picked(1, 'CE1')).toBe('1|Mathématiques');
+
+    page.onNameInput(1, 'CE1', 'Calcul');
+    expect(page.draft(1, 'CE1')).toBe('Calcul');
+    expect(page.picked(1, 'CE1')).toBe('');
 
     page.onDraft(1, 'CE1', '   ');
     page.add(1, 'CE1');

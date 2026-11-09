@@ -1437,9 +1437,21 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
         };
+        TeacherSubjectAddableCourse: {
+            name?: string;
+            /** Format: int64 */
+            schoolId?: number;
+            schoolName?: string;
+            postalCode?: string;
+            grades?: string[];
+            /** @description Nom, code postal, années de création et école, prêts à afficher */
+            label?: string;
+        };
         TeacherSubjectGrade: {
             grade?: string;
             subjects?: components["schemas"]["TeacherSubjectItem"][];
+            /** @description Matières déjà créées dans une autre année, absentes de celle-ci */
+            addableCourses?: components["schemas"]["TeacherSubjectAddableCourse"][];
         };
         TeacherSubjectSchool: {
             /** Format: int64 */
@@ -2007,7 +2019,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Écoles du profil, années cochées, matières triées par nom. followedByMe faux : visible, mais ce professeur ne la suit pas */
+            /** @description Écoles du profil, années cochées, matières triées par nom. followedByMe faux : visible, mais ce professeur ne la suit pas. addableCourses : matières déjà créées dans une autre année, absentes de l'année affichée. label assemble le nom, le code postal, les années de création et le nom de l'école. */
             200: {
                 headers: {
                     [name: string]: unknown;

@@ -50,6 +50,7 @@ export type TeacherStudentLine = components['schemas']['TeacherStudentLine'];
 export type TeacherSubjectsResponse = components['schemas']['TeacherSubjectsResponse'];
 export type TeacherSubjectSchool = components['schemas']['TeacherSubjectSchool'];
 export type TeacherSubjectGrade = components['schemas']['TeacherSubjectGrade'];
+export type TeacherSubjectAddableCourse = components['schemas']['TeacherSubjectAddableCourse'];
 export type TeacherSubjectItem = components['schemas']['TeacherSubjectItem'];
 export type TeacherSubjectSharedHolder = components['schemas']['TeacherSubjectSharedHolder'];
 export type CreateTeacherSubjectRequest = components['schemas']['CreateTeacherSubjectRequest'];
