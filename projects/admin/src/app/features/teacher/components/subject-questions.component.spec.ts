@@ -784,6 +784,87 @@ describe('SubjectQuestionsComponent', () => {
     expect(page.editingId()).toBe(13);
   });
 
+  it('opens the letter by letter editor when the chip is clicked', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [
+        { code: 'qcm', label: 'Choix multiples', sortOrder: 1 },
+        { code: 'reponse_libre', label: 'Lettre par lettre', sortOrder: 9 },
+      ],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.editor')).toBeNull();
+
+    buttonNamed('Lettre par lettre')?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.editor')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Énoncé');
+    expect(fixture.nativeElement.textContent).toContain('Réponse attendue');
+  });
+
+  it('counts supplementary Unicode characters as one box', () => {
+    expect(fixture.componentInstance.letterCount('A\u{1F600}')).toBe(2);
+  });
+
+  it('posts a letter by letter word and validates the boxes through the API', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'reponse_libre', label: 'Lettre par lettre', sortOrder: 9 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Capitale de la France');
+    page.setExpectedAnswer('Paris');
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const created = http.expectOne(questionsUrl);
+    expect(created.request.body).toEqual({
+      formCode: 'reponse_libre',
+      prompt: 'Capitale de la France',
+      expectedAnswer: 'Paris',
+    });
+    created.flush({
+      id: 15,
+      formCode: 'reponse_libre',
+      formLabel: 'Lettre par lettre',
+      prompt: 'Capitale de la France',
+      expectedAnswer: 'Paris',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+    });
+    fixture.detectChanges();
+
+    const inputs = Array.from(
+      fixture.nativeElement.querySelectorAll('app-letter-boxes input') as NodeListOf<HTMLInputElement>,
+    );
+    expect(inputs.length).toBe(5);
+    expect(buttonNamed('Valider')?.disabled).toBe(true);
+
+    for (const [index, letter] of ['p', 'a', 'r', 'i', 's'].entries()) {
+      inputs[index].value = letter;
+      inputs[index].dispatchEvent(new InputEvent('input', { bubbles: true, data: letter }));
+    }
+    fixture.detectChanges();
+
+    buttonNamed('Valider')?.click();
+    const attempt = http.expectOne('http://localhost:8080/api/int/teacher/subjects/4/questions/15/attempt');
+    expect(attempt.request.body).toEqual({ attempt: 'paris' });
+    attempt.flush({ accepted: true, message: 'La réponse est acceptée.' });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('La réponse est acceptée.');
+  });
+
   it('posts a click image with its zones and the rule', () => {
     fixture.detectChanges();
     http.expectOne(formsUrl).flush({

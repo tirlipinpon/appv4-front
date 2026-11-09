@@ -177,6 +177,19 @@ describe('question-form.adapters', () => {
     );
   });
 
+  it('builds a letter by letter body with the expected word', () => {
+    expect(
+      buildSaveBody(
+        FORM.REPONSE_LIBRE,
+        emptyDraft({ prompt: 'Capitale', expectedAnswer: 'Paris' }),
+      ),
+    ).toEqual({
+      formCode: FORM.REPONSE_LIBRE,
+      prompt: 'Capitale',
+      expectedAnswer: 'Paris',
+    });
+  });
+
   it('returns null for an unknown form code', () => {
     expect(buildSaveBody('inconnu', emptyDraft())).toBeNull();
     expect(buildSaveBody(null, emptyDraft())).toBeNull();
