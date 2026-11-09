@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 
 import type {
   TeacherDeactivateNoticeItem,
@@ -35,9 +36,19 @@ interface SubjectRow {
   questionCount: number;
 }
 
+interface AddableCourse {
+  key: string;
+  name: string;
+  /** Texte renvoyé par l'API : existe déjà, ou a été retirée. */
+  label: string;
+  /** Vrai : la ligne de ce cours est encore en base, le choix la réactive. */
+  removedHere: boolean;
+}
+
 interface GradeBlock {
   grade: string;
   subjects: SubjectRow[];
+  addable: AddableCourse[];
 }
 
 interface SchoolBlock {
@@ -83,10 +94,12 @@ const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
  * Dans une année déjà cochée, il voit aussi les matières suivies par un collègue,
  * et le nom de ce collègue. Il ne peut pas les modifier : il peut demander le partage.
  * Le collègue valide via l'alerte en haut de page.
+ * Le menu de chaque année liste les cours déjà créés, absents de cette année.
+ * Le libellé vient de l'API et dit que le cours existe déjà. Le choix remplit le nom.
  */
 @Component({
   selector: 'app-teacher-subjects-page',
-  imports: [MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, SpaceHeader],
+  imports: [MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule, SpaceHeader],
   templateUrl: './teacher-subjects.page.html',
   styleUrl: './subjects.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -109,6 +122,8 @@ export class TeacherSubjectsPage implements OnInit {
   readonly ready = signal(false);
   readonly error = signal<string | null>(null);
   readonly drafts = signal<Readonly<Record<string, string>>>({});
+  /** Matière déjà créée choisie dans le menu, par école et année. */
+  readonly reused = signal<Readonly<Record<string, string>>>({});
   readonly gradeErrors = signal<Readonly<Record<string, string>>>({});
   readonly gradeErrorCodes = signal<Readonly<Record<string, string>>>({});
   readonly subjectErrors = signal<Readonly<Record<number, string>>>({});
@@ -128,6 +143,37 @@ export class TeacherSubjectsPage implements OnInit {
 
   draft(schoolId: number, grade: string): string {
     return this.drafts()[this.gradeKey(schoolId, grade)] ?? '';
+  }
+
+  picked(schoolId: number, grade: string): string {
+    return this.reused()[this.gradeKey(schoolId, grade)] ?? '';
+  }
+
+  /** Saisie libre : on lâche le choix du menu, le nom tapé prime. */
+  onNameInput(schoolId: number, grade: string, value: string): void {
+    this.clearReuse(schoolId, grade);
+    this.onDraft(schoolId, grade, value);
+  }
+
+  /**
+   * Le menu liste une matière encore en base et absente de ce cours.
+   * Retirée de ce cours : on la réactive. Sinon on crée le même nom ici.
+   */
+  reuse(schoolId: number, grade: string, key: string | null): void {
+    if (!key || this.saving()) {
+      return;
+    }
+    const course = this.courseOf(schoolId, grade, key);
+    if (!course) {
+      return;
+    }
+    this.reused.update((current) => ({ ...current, [this.gradeKey(schoolId, grade)]: key }));
+    this.onDraft(schoolId, grade, course.name);
+    if (course.removedHere) {
+      this.restore(schoolId, grade);
+      return;
+    }
+    this.add(schoolId, grade);
   }
 
   gradeError(schoolId: number, grade: string): string | null {
@@ -287,6 +333,7 @@ export class TeacherSubjectsPage implements OnInit {
     this.saving.set(true);
     this.api.create({ schoolId, grade, name: raw.trim() }).subscribe({
       next: () => {
+        this.clearReuse(schoolId, grade);
         this.onDraft(schoolId, grade, '');
         this.reload();
       },
@@ -407,6 +454,7 @@ export class TeacherSubjectsPage implements OnInit {
     this.saving.set(true);
     this.api.restore({ schoolId, grade, name: raw.trim() }).subscribe({
       next: () => {
+        this.clearReuse(schoolId, grade);
         this.onDraft(schoolId, grade, '');
         this.reload();
       },
@@ -854,7 +902,19 @@ export class TeacherSubjectsPage implements OnInit {
             questionCount: subject.questionCount ?? 0,
           });
         }
-        grades.push({ grade: grade.grade, subjects });
+        const addable: AddableCourse[] = [];
+        for (const course of grade.addableCourses ?? []) {
+          if (!course.name || !course.label || course.schoolId == null) {
+            continue;
+          }
+          addable.push({
+            key: `${course.schoolId}|${course.name}`,
+            name: course.name,
+            label: course.label,
+            removedHere: course.removedHere === true,
+          });
+        }
+        grades.push({ grade: grade.grade, subjects, addable });
       }
       schools.push({
         schoolId: school.schoolId,
@@ -868,6 +928,33 @@ export class TeacherSubjectsPage implements OnInit {
 
   private gradeKey(schoolId: number, grade: string): string {
     return `${schoolId}|${grade}`;
+  }
+
+  private courseOf(schoolId: number, grade: string, key: string): AddableCourse | null {
+    for (const school of this.schools()) {
+      if (school.schoolId !== schoolId) {
+        continue;
+      }
+      for (const block of school.grades) {
+        if (block.grade !== grade) {
+          continue;
+        }
+        return block.addable.find((course) => course.key === key) ?? null;
+      }
+    }
+    return null;
+  }
+
+  private clearReuse(schoolId: number, grade: string): void {
+    const key = this.gradeKey(schoolId, grade);
+    this.reused.update((current) => {
+      if (!(key in current)) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
   }
 
   private setGradeError(schoolId: number, grade: string, message: string): void {
