@@ -785,7 +785,7 @@ describe('SubjectQuestionsComponent', () => {
   });
 
   it('counts supplementary Unicode characters as one box', () => {
-    expect(fixture.componentInstance.letterCount('A??')).toBe(2);
+    expect(fixture.componentInstance.letterCount('A\u{1F600}')).toBe(2);
   });
 
   it('posts a letter by letter word and validates the boxes through the API', () => {
