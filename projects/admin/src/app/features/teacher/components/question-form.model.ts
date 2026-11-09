@@ -17,6 +17,7 @@ export const FORM = {
   LINKS: 'liens',
   CASE_VIDE: 'case_vide',
   TEXTE: 'texte',
+  REPONSE_LIBRE: 'reponse_libre',
   IMAGE_CLICK: 'image_interactive',
   PUZZLE: 'puzzle',
 } as const;
@@ -109,6 +110,7 @@ export function isKnownFormCode(code: string | null | undefined): code is KnownF
     code === FORM.LINKS ||
     code === FORM.CASE_VIDE ||
     code === FORM.TEXTE ||
+    code === FORM.REPONSE_LIBRE ||
     code === FORM.IMAGE_CLICK ||
     code === FORM.PUZZLE
   );

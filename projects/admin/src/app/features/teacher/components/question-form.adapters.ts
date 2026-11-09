@@ -149,6 +149,7 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         answers: draft.answers.map((row) => ({ label: row.label })),
         decoys: draft.decoys.map((row) => ({ label: row.label })),
       };
+    case FORM.REPONSE_LIBRE:
     case FORM.TEXTE:
       return {
         formCode: code,

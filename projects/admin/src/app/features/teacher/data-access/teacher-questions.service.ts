@@ -7,6 +7,8 @@ import type {
   CreateTeacherSubjectQuestionRequest,
   DeleteTeacherSubjectQuestionsRequest,
   DeleteTeacherSubjectQuestionsResponse,
+  LetterAttemptRequest,
+  LetterAttemptResponse,
   TeacherQuestionFormsResponse,
   TeacherSubjectFollowersResponse,
   TeacherSubjectQuestionItem,
@@ -82,6 +84,18 @@ export class TeacherQuestionsService {
   ): Observable<DeleteTeacherSubjectQuestionsResponse> {
     return this.http.post<DeleteTeacherSubjectQuestionsResponse>(
       `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/delete`,
+      body,
+    );
+  }
+
+  /** Mot composé dans les cases. Le message affiché est celui de l'API. */
+  tryLetter(
+    subjectId: number,
+    questionId: number,
+    body: LetterAttemptRequest,
+  ): Observable<LetterAttemptResponse> {
+    return this.http.post<LetterAttemptResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/${questionId}/attempt`,
       body,
     );
   }
