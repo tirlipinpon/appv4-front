@@ -1,0 +1,20 @@
+<div class="boxes">
+  @for (letter of letters(); track $index) {
+    <input
+      #box
+      class="box"
+      type="text"
+      inputmode="text"
+      autocomplete="off"
+      [attr.aria-label]="'Lettre ' + ($index + 1)"
+      [value]="letter"
+      [disabled]="busy"
+      (input)="onInput($index, $event)"
+      (keydown)="onKeydown($index, $event)"
+    />
+  }
+</div>
+<button mat-stroked-button type="button" [disabled]="busy || !complete()" (click)="submit()">Valider</button>
+@if (message) {
+  <p class="verdict">{{ message }}</p>
+}
