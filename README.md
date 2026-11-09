@@ -40,6 +40,15 @@ npm run build:admin
 
 Les builds sont indépendants : un échec sur `admin` ne bloque pas `build:learning`.
 
+## Tests Playwright
+
+Guide : **[docs/playwright-e2e.md](./docs/playwright-e2e.md)**.
+
+```bash
+npm run e2e:mock
+npm run e2e:auth
+```
+
 ## Branches & deploiement
 
 Voir **[BRANCHING.md](./BRANCHING.md)** : `feature/*` → **PR** → `develop` (CI) → **PR** → `release` (CD Azure).  
