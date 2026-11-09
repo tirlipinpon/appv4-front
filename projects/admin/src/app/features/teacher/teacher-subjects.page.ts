@@ -39,8 +39,10 @@ interface SubjectRow {
 interface AddableCourse {
   key: string;
   name: string;
-  /** Texte renvoyé par l'API : nom, code postal, années, école. */
+  /** Texte renvoyé par l'API : existe déjà, ou a été retirée. */
   label: string;
+  /** Vrai : la ligne de ce cours est encore en base, le choix la réactive. */
+  removedHere: boolean;
 }
 
 interface GradeBlock {
@@ -92,8 +94,8 @@ const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
  * Dans une année déjà cochée, il voit aussi les matières suivies par un collègue,
  * et le nom de ce collègue. Il ne peut pas les modifier : il peut demander le partage.
  * Le collègue valide via l'alerte en haut de page.
- * Le menu de chaque année reprend une matière déjà créée ailleurs.
- * Le libellé vient de l'API (code postal, années, école) et le choix remplit le nom.
+ * Le menu de chaque année liste les cours déjà créés, absents de cette année.
+ * Le libellé vient de l'API et dit que le cours existe déjà. Le choix remplit le nom.
  */
 @Component({
   selector: 'app-teacher-subjects-page',
@@ -154,11 +156,11 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   /**
-   * Le menu affiche le libellé de l'API. Le nom repart dans le champ,
-   * puis le bouton Ajouter crée la matière dans cette année.
+   * Le menu liste une matière encore en base et absente de ce cours.
+   * Retirée de ce cours : on la réactive. Sinon on crée le même nom ici.
    */
   reuse(schoolId: number, grade: string, key: string | null): void {
-    if (!key) {
+    if (!key || this.saving()) {
       return;
     }
     const course = this.courseOf(schoolId, grade, key);
@@ -167,6 +169,11 @@ export class TeacherSubjectsPage implements OnInit {
     }
     this.reused.update((current) => ({ ...current, [this.gradeKey(schoolId, grade)]: key }));
     this.onDraft(schoolId, grade, course.name);
+    if (course.removedHere) {
+      this.restore(schoolId, grade);
+      return;
+    }
+    this.add(schoolId, grade);
   }
 
   gradeError(schoolId: number, grade: string): string | null {
@@ -904,6 +911,7 @@ export class TeacherSubjectsPage implements OnInit {
             key: `${course.schoolId}|${course.name}`,
             name: course.name,
             label: course.label,
+            removedHere: course.removedHere === true,
           });
         }
         grades.push({ grade: grade.grade, subjects, addable });

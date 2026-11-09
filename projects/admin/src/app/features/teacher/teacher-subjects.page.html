@@ -301,20 +301,19 @@
                 }
 
                 <div class="add">
-                  @if (grade.addable.length > 0) {
-                    <mat-form-field appearance="outline" class="add-field add-reuse">
-                      <mat-label>Matière déjà créée</mat-label>
-                      <mat-select
-                        [value]="picked(school.schoolId, grade.grade)"
-                        [disabled]="saving()"
-                        (selectionChange)="reuse(school.schoolId, grade.grade, $event.value)"
-                      >
-                        @for (course of grade.addable; track course.key) {
-                          <mat-option [value]="course.key">{{ course.label }}</mat-option>
-                        }
-                      </mat-select>
-                    </mat-form-field>
-                  }
+                  <mat-form-field appearance="outline" class="add-field add-reuse">
+                    <mat-label>Cours déjà existant</mat-label>
+                    <mat-select
+                      [value]="picked(school.schoolId, grade.grade)"
+                      [disabled]="saving()"
+                      placeholder="Choisir"
+                      (selectionChange)="reuse(school.schoolId, grade.grade, $event.value)"
+                    >
+                      @for (course of grade.addable; track course.key) {
+                        <mat-option [value]="course.key">{{ course.label }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
                   <mat-form-field appearance="outline" class="add-field">
                     <mat-label>Nouvelle matière</mat-label>
                     <input

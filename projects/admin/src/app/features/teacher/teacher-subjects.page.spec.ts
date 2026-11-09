@@ -33,7 +33,7 @@ const loaded: TeacherSubjectsResponse = {
               schoolName: 'École française',
               postalCode: '75011',
               grades: ['CE2'],
-              label: 'Mathématiques — 75011 — CE2 — École française',
+              label: 'Existe déjà : Mathématiques — 75011 — CE2 — École française',
             },
           ],
         },
@@ -127,21 +127,25 @@ describe('TeacherSubjectsPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Aucune matière');
     expect(fixture.nativeElement.textContent).toContain('Lecture');
     expect(fixture.nativeElement.textContent).toContain('Partagée avec Camille');
-    expect(fixture.nativeElement.textContent).toContain('Matière déjà créée');
+    expect(fixture.nativeElement.textContent).toContain('Cours déjà existant');
     expect(page.schools()[0].grades[0].addable[0].label).toBe(
-      'Mathématiques — 75011 — CE2 — École française',
+      'Existe déjà : Mathématiques — 75011 — CE2 — École française',
     );
     const select = fixture.debugElement.query(By.css('.add-reuse mat-select'))
       .componentInstance as MatSelect;
     select.open();
     fixture.detectChanges();
     expect(select.options.map((option) => option.getLabel())).toContain(
-      'Mathématiques — 75011 — CE2 — École française',
+      'Existe déjà : Mathématiques — 75011 — CE2 — École française',
     );
 
     page.reuse(1, 'CE1', '1|Mathématiques');
-    expect(page.draft(1, 'CE1')).toBe('Mathématiques');
-    expect(page.picked(1, 'CE1')).toBe('1|Mathématiques');
+    const taken = http.expectOne(subjectsUrl);
+    expect(taken.request.method).toBe('POST');
+    expect(taken.request.body).toEqual({ schoolId: 1, grade: 'CE1', name: 'Mathématiques' });
+    taken.flush({ id: 9, name: 'Mathématiques', active: true, ownedByMe: true, sharedWith: [] });
+    expectReload();
+    fixture.detectChanges();
 
     page.onNameInput(1, 'CE1', 'Calcul');
     expect(page.draft(1, 'CE1')).toBe('Calcul');

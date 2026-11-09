@@ -1444,13 +1444,15 @@ export interface components {
             schoolName?: string;
             postalCode?: string;
             grades?: string[];
-            /** @description Nom, code postal, années de création et école, prêts à afficher */
+            /** @description « Existe déjà » ou « A été retirée », puis le nom, le code postal, les années et l'école */
             label?: string;
+            /** @description Vrai si cette matière a été retirée de ce cours et que la ligne est encore en base. Le choix la réactive. */
+            removedHere?: boolean;
         };
         TeacherSubjectGrade: {
             grade?: string;
             subjects?: components["schemas"]["TeacherSubjectItem"][];
-            /** @description Matières déjà créées dans une autre année, absentes de celle-ci */
+            /** @description Cours déjà créés, absents de cette année. Le professeur reprend le nom au lieu de l'écrire. */
             addableCourses?: components["schemas"]["TeacherSubjectAddableCourse"][];
         };
         TeacherSubjectSchool: {
@@ -2019,7 +2021,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Écoles du profil, années cochées, matières triées par nom. followedByMe faux : visible, mais ce professeur ne la suit pas. addableCourses : matières déjà créées dans une autre année, absentes de l'année affichée. label assemble le nom, le code postal, les années de création et le nom de l'école. */
+            /** @description Écoles du profil, années cochées, matières triées par nom. followedByMe faux : visible, mais ce professeur ne la suit pas. addableCourses : cours déjà créés, absents de l'année affichée. label commence par « Existe déjà » et donne le nom, le code postal, les années de création et le nom de l'école. */
             200: {
                 headers: {
                     [name: string]: unknown;
