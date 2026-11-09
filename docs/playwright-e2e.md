@@ -18,6 +18,7 @@ Les parcours admin vivent dans `e2e/`. L’admin tourne sur http://localhost:420
 Un fichier par parcours, déjà en place :
 
 - `e2e/parent-flows.spec.ts`
+- `e2e/teacher-flows.spec.ts`
 - `e2e/teacher-subjects-transfer.spec.ts`
 - `e2e/teacher-requests.spec.ts`
 - `e2e/complete-roles.spec.ts`

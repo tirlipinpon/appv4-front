@@ -16,7 +16,7 @@
         }
 
         @if (ready() && schools().length === 0) {
-          <p class="hint">{{ noClassMessage() }}</p>
+          <p class="hint" data-testid="teacher-students-empty">{{ noClassMessage() }}</p>
         }
 
         @for (school of schools(); track school.schoolId) {

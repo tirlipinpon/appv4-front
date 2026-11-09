@@ -4,7 +4,7 @@
   <main class="content">
     <section class="panel">
       <header class="heading">
-        <h1>Questions</h1>
+        <h1 data-testid="teacher-questions-title">Questions</h1>
       </header>
       <p class="lead">Une matière à la fois : tu lis ses questions, tu en copies, ou tu en prépares une nouvelle.</p>
 
@@ -16,7 +16,7 @@
       }
 
       @if (ready() && subjectChoices().length === 0) {
-        <p class="hint">Il n'y a pas encore de matière.</p>
+        <p class="hint" data-testid="teacher-questions-empty">Il n'y a pas encore de matière.</p>
       }
 
       @if (subjectChoices().length > 1) {
@@ -39,7 +39,7 @@
 
       @for (subject of openList(); track subject.id) {
         <section class="subject">
-          <h2>{{ subject.name }}</h2>
+          <h2 data-testid="teacher-questions-subject">{{ subject.name }}</h2>
           <p class="hint">{{ subject.place }} · {{ subject.questionCount }} question{{ subject.questionCount === 1 ? '' : 's' }}</p>
           <app-subject-questions [subjectId]="subject.id" [destinations]="destinations()" />
         </section>

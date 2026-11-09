@@ -4,7 +4,7 @@
   <main class="content">
     <mat-card class="card">
       <mat-card-header>
-        <mat-card-title>Écoles</mat-card-title>
+        <mat-card-title data-testid="teacher-schools-title">Écoles</mat-card-title>
         <mat-card-subtitle>Écoles et classes</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
@@ -15,7 +15,7 @@
           <p class="error" role="alert">{{ error() }}</p>
         }
         @if (saved()) {
-          <p class="ok" role="status">Enregistré.</p>
+          <p class="ok" role="status" data-testid="teacher-school-saved">Enregistré.</p>
         }
         @if (pendingNotice()) {
           <p class="hint" role="status">{{ pendingNotice() }}</p>
@@ -31,51 +31,54 @@
           }
 
             @for (block of blocks(); track block.key) {
-              <article class="school">
+              <article class="school" data-testid="teacher-school-block">
                 @if (blockError(block.key); as blockMessage) {
-                  <p class="field-error" role="alert">{{ blockMessage }}</p>
+                  <p class="field-error" role="alert" [attr.data-testid]="blockErrorTestId(block.key)">{{ blockMessage }}</p>
                 }
                 <mat-form-field appearance="outline" class="full">
                   <mat-label>Pays</mat-label>
                   <mat-select
+                    data-testid="teacher-school-country"
                     [value]="block.country"
                     [disabled]="saving() || blocked(block.key)"
                     (selectionChange)="onCountryChange(block.key, $event)"
                     placeholder="Choisir un pays"
                   >
                     @for (country of countries(); track country) {
-                      <mat-option [value]="country">{{ country }}</mat-option>
+                      <mat-option [value]="country" [attr.data-testid]="'teacher-country-' + country">{{ country }}</mat-option>
                     }
                   </mat-select>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="full">
                   <mat-label>Rechercher une école</mat-label>
-                  <input matInput [disabled]="!block.country || saving() || blocked(block.key)"
+                  <input matInput data-testid="teacher-school-search" [disabled]="!block.country || saving() || blocked(block.key)"
                     [value]="schoolQueries()[block.key] ?? ''" (input)="onSchoolSearch(block.key, $event)" />
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="full">
                   <mat-label>École</mat-label>
                   <mat-select
+                    data-testid="teacher-school-pick"
                     [value]="block.schoolId"
                     [disabled]="saving() || !block.country || blocked(block.key)"
                     (selectionChange)="onSchoolChange(block.key, $event)"
                     placeholder="Choisir une école"
                   >
                     @for (school of optionsFor(block); track school.id) {
-                      <mat-option [value]="school.id">{{ school.name }}</mat-option>
+                      <mat-option [value]="school.id" [attr.data-testid]="'teacher-school-option-' + school.id">{{ school.name }}</mat-option>
                     }
                   </mat-select>
                 </mat-form-field>
 
                 @if (schoolCursors()[block.key] !== null && schoolCursors()[block.key] !== undefined) {
-                  <button mat-button type="button" (click)="moreSchools(block.key)">Voir plus d'écoles</button>
+                  <button mat-button type="button" data-testid="teacher-schools-more" (click)="moreSchools(block.key)">Voir plus d'écoles</button>
                 }
 
                 @if (gradesFor(block).length) {
                   <div class="grades">
                     @for (grade of gradesFor(block); track grade) {
                       <mat-checkbox
+                        [attr.data-testid]="'teacher-grade-' + grade"
                         [checked]="block.grades.includes(grade)"
                         [disabled]="saving() || blocked(block.key)"
                         (change)="onGradeChange(block.key, grade, $event)"
@@ -87,7 +90,7 @@
                 }
 
                 @for (impact of impactsFor(block.key); track impact.kind + (impact.grade ?? '')) {
-                  <aside class="impact" role="region">
+                  <aside class="impact" role="region" data-testid="teacher-school-impact">
                     @if (impact.loading) {
                       <p>Chargement…</p>
                     }
@@ -150,6 +153,7 @@
                           <button
                             mat-button
                             type="button"
+                            data-testid="teacher-school-confirm-removal"
                             [disabled]="impact.loading"
                             (click)="confirmRemoval(impact)"
                           >
@@ -161,14 +165,14 @@
                   </aside>
                 }
 
-                <button mat-button type="button" [disabled]="saving() || blocked(block.key)" (click)="removeSchool(block.key)">
+                <button mat-button type="button" data-testid="teacher-school-remove" [disabled]="saving() || blocked(block.key)" (click)="removeSchool(block.key)">
                   Retirer cette école
                 </button>
               </article>
             }
 
             @if (canAdd()) {
-              <button mat-stroked-button type="button" [disabled]="saving()" (click)="addSchool()">
+              <button mat-stroked-button type="button" data-testid="teacher-school-add" [disabled]="saving()" (click)="addSchool()">
                 Ajouter une école
               </button>
             }
@@ -176,7 +180,7 @@
       </mat-card-content>
       @if (ready()) {
         <mat-card-actions align="end">
-          <button mat-flat-button color="primary" type="button" [disabled]="saving() || awaitingChoice()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" data-testid="teacher-school-save" [disabled]="saving() || awaitingChoice()" (click)="save()">
             {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
         </mat-card-actions>

@@ -297,6 +297,20 @@ export class TeacherSchoolsPage implements OnInit, OnDestroy {
     return this.blockErrors()[key] ?? null;
   }
 
+  /** Repère du refus d'un bloc. Le texte affiché reste la constante déjà utilisée. */
+  blockErrorTestId(key: number): string | null {
+    switch (this.blockError(key)) {
+      case null:
+        return null;
+      case SCHOOL_REQUIRED:
+        return 'teacher-school-required';
+      case GRADE_REQUIRED:
+        return 'teacher-grade-required';
+      default:
+        return 'teacher-school-block-error';
+    }
+  }
+
   save(): void {
     if (!this.ready() || this.saving() || this.awaitingChoice()) {
       return;
