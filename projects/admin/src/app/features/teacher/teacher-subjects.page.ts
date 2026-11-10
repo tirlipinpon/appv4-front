@@ -39,10 +39,12 @@ interface SubjectRow {
 interface AddableCourse {
   key: string;
   name: string;
-  /** Texte renvoyé par l'API : existe déjà, ou a été retirée. */
+  /** Texte renvoyé par l'API : nom, code postal, années, école. */
   label: string;
   /** Vrai : la ligne de ce cours est encore en base, le choix la réactive. */
   removedHere: boolean;
+  /** Total des questions de ce cours, renvoyé par l'API. */
+  questionCount: number;
 }
 
 interface GradeBlock {
@@ -95,7 +97,8 @@ const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
  * et le nom de ce collègue. Il ne peut pas les modifier : il peut demander le partage.
  * Le collègue valide via l'alerte en haut de page.
  * Le menu de chaque année liste les cours déjà créés, absents de cette année.
- * Le libellé vient de l'API et dit que le cours existe déjà. Le choix remplit le nom.
+ * Le libellé vient de l'API et commence par le nom. Le nombre de questions
+ * vient de l'API. Le choix remplit le nom.
  */
 @Component({
   selector: 'app-teacher-subjects-page',
@@ -912,6 +915,7 @@ export class TeacherSubjectsPage implements OnInit {
             name: course.name,
             label: course.label,
             removedHere: course.removedHere === true,
+            questionCount: course.questionCount ?? 0,
           });
         }
         grades.push({ grade: grade.grade, subjects, addable });

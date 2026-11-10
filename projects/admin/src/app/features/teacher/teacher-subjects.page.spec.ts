@@ -33,7 +33,8 @@ const loaded: TeacherSubjectsResponse = {
               schoolName: 'École française',
               postalCode: '75011',
               grades: ['CE2'],
-              label: 'Existe déjà : Mathématiques — 75011 — CE2 — École française',
+              label: 'Mathématiques — 75011 — CE2 — École française',
+              questionCount: 4,
             },
           ],
         },
@@ -129,14 +130,15 @@ describe('TeacherSubjectsPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Partagée avec Camille');
     expect(fixture.nativeElement.textContent).toContain('Cours déjà existant');
     expect(page.schools()[0].grades[0].addable[0].label).toBe(
-      'Existe déjà : Mathématiques — 75011 — CE2 — École française',
+      'Mathématiques — 75011 — CE2 — École française',
     );
+    expect(page.schools()[0].grades[0].addable[0].questionCount).toBe(4);
     const select = fixture.debugElement.query(By.css('.add-reuse mat-select'))
       .componentInstance as MatSelect;
     select.open();
     fixture.detectChanges();
     expect(select.options.map((option) => option.getLabel())).toContain(
-      'Existe déjà : Mathématiques — 75011 — CE2 — École française',
+      'Mathématiques — 75011 — CE2 — École française · 4 questions',
     );
 
     page.reuse(1, 'CE1', '1|Mathématiques');
