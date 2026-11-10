@@ -11,7 +11,7 @@
       </mat-card-header>
       <mat-card-content>
         @if (error()) {
-          <p class="error" role="alert">{{ error() }}</p>
+          <p class="error" role="alert" data-testid="login-alert">{{ error() }}</p>
         }
 
         @if (showDevProfiles) {
@@ -32,6 +32,7 @@
           <mat-label>Email</mat-label>
           <input
             matInput
+            data-testid="login-email"
             type="email"
             name="email"
             autocomplete="username"
@@ -48,6 +49,7 @@
           <mat-label>Mot de passe</mat-label>
           <input
             matInput
+            data-testid="login-password"
             [type]="showPassword() ? 'text' : 'password'"
             name="password"
             autocomplete="current-password"
@@ -73,6 +75,7 @@
           color="primary"
           class="oauth-btn"
           type="button"
+          data-testid="login-submit"
           [disabled]="!canSubmit()"
           (click)="submit()"
         >

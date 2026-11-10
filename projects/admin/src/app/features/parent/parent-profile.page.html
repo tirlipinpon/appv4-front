@@ -12,17 +12,17 @@
           <p>Chargement…</p>
         }
         @if (error()) {
-          <p class="error" role="alert">{{ error() }}</p>
+          <p class="error" role="alert" data-testid="profile-alert">{{ error() }}</p>
         }
         @if (saved()) {
-          <p class="ok" role="status">Enregistré.</p>
+          <p class="ok" role="status" data-testid="profile-saved">Enregistré.</p>
         }
         @if (pendingNotice()) {
           <p class="hint" role="status">{{ pendingNotice() }}</p>
         }
 
         @if (ready()) {
-          <p class="email">
+          <p class="email" data-testid="profile-email">
             <span class="label">Email</span>
             {{ email() }}
           </p>
@@ -31,6 +31,7 @@
             <mat-label>Nom affiché</mat-label>
             <input
               matInput
+              data-testid="profile-name"
               type="text"
               name="displayName"
               autocomplete="name"
@@ -42,13 +43,14 @@
             />
           </mat-form-field>
           @if (nameError()) {
-            <p class="field-error" role="alert">{{ nameError() }}</p>
+            <p class="field-error" role="alert" data-testid="profile-name-alert">{{ nameError() }}</p>
           }
 
           <mat-form-field appearance="outline" class="full">
             <mat-label>Mail de contact</mat-label>
             <input
               matInput
+              data-testid="profile-contact"
               type="email"
               name="contactEmail"
               autocomplete="email"
@@ -62,6 +64,7 @@
             <mat-label>Téléphone</mat-label>
             <input
               matInput
+              data-testid="profile-phone"
               type="tel"
               name="phone"
               autocomplete="tel"
@@ -73,12 +76,13 @@
 
           <p class="label">Avatar</p>
           <div class="avatars" role="radiogroup" aria-label="Avatar">
-            <button type="button" [class.is-on]="!avatarCode()" [disabled]="saving()" (click)="onAvatar('')">
+            <button type="button" data-testid="profile-avatar-none" [class.is-on]="!avatarCode()" [disabled]="saving()" (click)="onAvatar('')">
               Aucun
             </button>
             @for (choice of avatarChoices(); track choice.code) {
               <button
                 type="button"
+                [attr.data-testid]="'profile-avatar-' + (choice.code ?? '')"
                 [class.is-on]="avatarCode() === choice.code"
                 [disabled]="saving()"
                 (click)="onAvatar(choice.code ?? '')"
@@ -91,7 +95,7 @@
       </mat-card-content>
       @if (ready()) {
         <mat-card-actions align="end">
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" data-testid="profile-save" [disabled]="saving()" (click)="save()">
             {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
         </mat-card-actions>

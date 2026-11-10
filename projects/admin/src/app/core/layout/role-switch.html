@@ -6,6 +6,7 @@
         class="tab"
         [class.is-current]="tab.current"
         [attr.aria-current]="tab.current ? 'page' : null"
+        [attr.data-testid]="'role-tab-' + tab.role"
         [disabled]="loading()"
         (click)="open(tab.role)"
       >
