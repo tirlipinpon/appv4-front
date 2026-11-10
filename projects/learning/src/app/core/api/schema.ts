@@ -1483,6 +1483,8 @@ export interface components {
             displayName?: string;
             /** @description Vrai si ce collègue suit déjà la matière. Le propriétaire peut quand même lui proposer un déplacement. Un partage reste refusé. */
             alreadyFollows?: boolean;
+            /** @description Texte à afficher à côté du nom pendant un déplacement. Dit si ce collègue possède déjà la matière, ou pas encore. */
+            listLabel?: string;
         };
         TeacherSubjectColleaguesResponse: {
             colleagues?: components["schemas"]["TeacherSubjectColleagueItem"][];

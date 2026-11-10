@@ -313,21 +313,32 @@ describe('TeacherSubjectsPage', () => {
     });
     http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
       colleagues: [
-        { userId: 10, displayName: 'Camille', alreadyFollows: false },
-        { userId: 11, displayName: 'Luc', alreadyFollows: true },
+        {
+          userId: 10,
+          displayName: 'Camille',
+          alreadyFollows: false,
+          listLabel: 'pas encore dans sa liste',
+        },
+        { userId: 11, displayName: 'Luc', alreadyFollows: true, listLabel: 'la possède déjà' },
       ],
     });
     fixture.detectChanges();
 
     page.setTransferMode('move');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Luc');
-    expect(fixture.nativeElement.textContent).toContain('Camille');
+    const moved = fixture.nativeElement.textContent as string;
+    expect(moved).toContain('Luc');
+    expect(moved).toContain('la possède déjà');
+    expect(moved).toContain('Camille');
+    expect(moved).toContain('pas encore dans sa liste');
 
     page.setTransferMode('share');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Camille');
-    expect(fixture.nativeElement.textContent).not.toContain('Luc');
+    const shared = fixture.nativeElement.textContent as string;
+    expect(shared).toContain('Camille');
+    expect(shared).not.toContain('Luc');
+    expect(shared).not.toContain('la possède déjà');
+    expect(shared).not.toContain('pas encore dans sa liste');
 
     page.setTransferMode('move');
     page.setTransferColleague(11);

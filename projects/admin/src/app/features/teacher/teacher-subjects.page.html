@@ -221,6 +221,9 @@
                                         (click)="setTransferColleague(colleague.userId!)"
                                       >
                                         {{ colleague.displayName }}
+                                        @if (transferMode() === 'move' && colleague.listLabel) {
+                                          <span class="list-label">{{ colleague.listLabel }}</span>
+                                        }
                                       </button>
                                     </li>
                                   }
