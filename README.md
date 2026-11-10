@@ -28,8 +28,8 @@ npm run start:admin
 
 Smoke attendu :
 
-- learning affiche **hello learning**
-- admin affiche **admin-helloworld**
+- learning affiche sa page d’accueil.
+- admin affiche sa page d’accueil après connexion.
 
 ## Build
 

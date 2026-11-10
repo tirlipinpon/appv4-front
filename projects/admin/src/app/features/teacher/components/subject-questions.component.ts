@@ -118,6 +118,8 @@ export class SubjectQuestionsComponent implements OnInit {
   /** Questions en attente de confirmation. Vide = pas d'avertissement affiché. */
   readonly pendingIds = signal<number[]>([]);
   readonly followersLoading = signal(false);
+  readonly formsLoading = signal(true);
+  readonly formsError = signal<string | null>(null);
   readonly followers = signal<TeacherSubjectFollowersResponse | null>(null);
   readonly letterMessages = signal<Readonly<Record<number, string>>>({});
   readonly letterBusyId = signal<number | null>(null);
@@ -129,6 +131,13 @@ export class SubjectQuestionsComponent implements OnInit {
         this.loadQuestions();
       }
     });
+    this.loadQuestions();
+    this.loadForms();
+  }
+
+  loadForms(): void {
+    this.formsLoading.set(true);
+    this.formsError.set(null);
     this.api
       .forms()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -141,14 +150,14 @@ export class SubjectQuestionsComponent implements OnInit {
             return [{ code: form.code, label: form.label || form.code }];
           });
           this.forms.set(forms);
+          this.formsLoading.set(false);
           if (forms.length === 1) {
             this.selectedCode.set(forms[0].code);
           }
-          this.loadQuestions();
         },
         error: (err: HttpErrorResponse) => {
-          this.loading.set(false);
-          this.error.set(httpErrorMessage(err, 'Formes indisponibles.'));
+          this.formsLoading.set(false);
+          this.formsError.set(httpErrorMessage(err, 'Formes indisponibles.'));
         },
       });
   }

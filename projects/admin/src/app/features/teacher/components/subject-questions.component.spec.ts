@@ -36,6 +36,21 @@ describe('SubjectQuestionsComponent', () => {
     fixture.detectChanges();
   }
 
+  it('loads questions independently and retries an unavailable forms catalogue', () => {
+    fixture.detectChanges();
+    const forms = http.expectOne(formsUrl);
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    forms.flush({}, { status: 503, statusText: 'Unavailable' });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.componentInstance.formsError()).not.toBeNull();
+    fixture.componentInstance.loadForms();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'qcm', label: 'QCM' }] });
+    expect(fixture.componentInstance.formsError()).toBeNull();
+    expect(fixture.componentInstance.forms().length).toBe(1);
+    http.expectNone(questionsUrl);
+  });
+
   it('shows the form returned by the API and posts a multiple choice question', () => {
     boot();
 
