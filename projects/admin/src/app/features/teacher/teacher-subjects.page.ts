@@ -79,6 +79,8 @@ type Pending =
       colleagueUserId: number | null;
       colleagues: TeacherSubjectColleagueItem[];
       confirm: boolean;
+      /** Vrai quand on arrive du retrait : seul le déplacement est proposé. */
+      fromRemoval: boolean;
     };
 
 const NAME_REQUIRED = 'Le nom est obligatoire.';
@@ -264,6 +266,12 @@ export class TeacherSubjectsPage implements OnInit {
     return `Proposer de partager ${place} avec ${who} ? Vous pourrez tous les deux agir s'il accepte.`;
   }
 
+  /** Vrai : on vient du retrait, Partager n'est pas proposé. */
+  transferFromRemoval(): boolean {
+    const current = this.pending();
+    return current?.kind === 'transfer' ? current.fromRemoval : false;
+  }
+
   transferMode(): TransferMode | null {
     const current = this.pending();
     return current?.kind === 'transfer' ? current.mode : null;
@@ -277,6 +285,20 @@ export class TeacherSubjectsPage implements OnInit {
   transferColleagues(): TeacherSubjectColleagueItem[] {
     const current = this.pending();
     return current?.kind === 'transfer' ? current.colleagues : [];
+  }
+
+  /** Vrai si ce collègue a déjà refusé le déplacement renvoyé par l'API. */
+  moveRefused(colleague: TeacherSubjectColleagueItem): boolean {
+    return this.transferMode() === 'move' && !!colleague.refusedAction;
+  }
+
+  /** Partager cache ceux qui suivent déjà. Déplacer les propose aussi. */
+  visibleTransferColleagues(): TeacherSubjectColleagueItem[] {
+    const rows = this.transferColleagues();
+    if (this.transferMode() === 'share') {
+      return rows.filter((row) => row.alreadyFollows !== true);
+    }
+    return rows;
   }
 
   transferConfirming(): boolean {
@@ -554,8 +576,44 @@ export class TeacherSubjectsPage implements OnInit {
     if (!current || current.kind !== 'remove' || !current.needsHandover) {
       return;
     }
+    if (this.holderRefused(current.id, userId)) {
+      return;
+    }
     this.pending.set({ ...current, handoverColleagueId: userId });
     this.clearSubjectError(current.id);
+  }
+
+  /** Vrai si ce collègue a déjà refusé l'action renvoyée par l'API. */
+  holderRefused(subjectId: number | undefined, userId: number | undefined): boolean {
+    if (subjectId == null || userId == null) {
+      return false;
+    }
+    return !!this.sharedHolder(subjectId, userId)?.refusedAction;
+  }
+
+  private subjectById(subjectId: number): SubjectRow | undefined {
+    for (const school of this.schools()) {
+      for (const grade of school.grades) {
+        const subject = grade.subjects.find((row) => row.id === subjectId);
+        if (subject) {
+          return subject;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  private sharedHolder(subjectId: number, userId: number): TeacherSubjectSharedHolder | undefined {
+    for (const school of this.schools()) {
+      for (const grade of school.grades) {
+        const subject = grade.subjects.find((row) => row.id === subjectId);
+        const holder = subject?.sharedWith.find((row) => row.userId === userId);
+        if (holder) {
+          return holder;
+        }
+      }
+    }
+    return undefined;
   }
 
   removeNeedsHandover(): boolean {
@@ -601,7 +659,13 @@ export class TeacherSubjectsPage implements OnInit {
    */
   chooseMoveInstead(subject: SubjectRow): void {
     const current = this.pending();
-    if (!current || current.kind !== 'remove' || !current.sole || current.id !== subject.id) {
+    if (
+      !subject.ownedByMe ||
+      !current ||
+      current.kind !== 'remove' ||
+      !current.sole ||
+      current.id !== subject.id
+    ) {
       return;
     }
     this.clearSubjectError(subject.id);
@@ -613,6 +677,7 @@ export class TeacherSubjectsPage implements OnInit {
       colleagueUserId: null,
       colleagues: current.colleagues,
       confirm: false,
+      fromRemoval: true,
     });
   }
 
@@ -626,6 +691,7 @@ export class TeacherSubjectsPage implements OnInit {
       colleagueUserId: null,
       colleagues: [],
       confirm: false,
+      fromRemoval: false,
     });
     this.api.colleagues(subject.id).subscribe({
       next: (body) => {
@@ -650,13 +716,27 @@ export class TeacherSubjectsPage implements OnInit {
     if (!current || current.kind !== 'transfer') {
       return;
     }
-    this.pending.set({ ...current, mode, confirm: false });
+    if (current.fromRemoval || (mode === 'move' && !this.subjectById(current.id)?.ownedByMe)) {
+      return;
+    }
+    const selected = current.colleagues.find((row) => row.userId === current.colleagueUserId);
+    const keepColleague = mode !== 'share' || selected?.alreadyFollows !== true;
+    this.pending.set({
+      ...current,
+      mode,
+      colleagueUserId: keepColleague ? current.colleagueUserId : null,
+      confirm: false,
+    });
     this.clearSubjectError(current.id);
   }
 
   setTransferColleague(userId: number): void {
     const current = this.pending();
     if (!current || current.kind !== 'transfer') {
+      return;
+    }
+    const selected = current.colleagues.find((row) => row.userId === userId);
+    if (current.mode === 'move' && selected?.refusedAction) {
       return;
     }
     this.pending.set({ ...current, colleagueUserId: userId, confirm: false });

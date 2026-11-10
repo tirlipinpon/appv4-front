@@ -1170,6 +1170,8 @@ export interface components {
             /** Format: int64 */
             userId?: number;
             displayName?: string;
+            /** @description Nom de l'action déjà refusée par ce collègue au professeur connecté. Vide s'il peut encore être sollicité. Exemple : Demander la reprise. */
+            refusedAction?: string;
         };
         TeacherSchoolInput: {
             /** Format: int64 */
@@ -1479,6 +1481,12 @@ export interface components {
             /** Format: int64 */
             userId?: number;
             displayName?: string;
+            /** @description Vrai si ce collègue suit déjà la matière. Le propriétaire peut quand même lui proposer un déplacement. Un partage reste refusé. */
+            alreadyFollows?: boolean;
+            /** @description Texte à afficher à côté du nom pendant un déplacement. Dit si ce collègue possède déjà la matière, ou pas encore. */
+            listLabel?: string;
+            /** @description Nom de l'action déjà refusée par ce collègue au professeur connecté. Vide s'il peut encore être choisi. Exemple : Déplacer. */
+            refusedAction?: string;
         };
         TeacherSubjectColleaguesResponse: {
             colleagues?: components["schemas"]["TeacherSubjectColleagueItem"][];
