@@ -196,7 +196,12 @@
     }
 
     <h3 class="zone">{{ editingId() ? 'Modifier la question' : 'Nouvelle question' }}</h3>
-    @if (forms().length === 0) {
+    @if (formsLoading()) {
+      <p class="hint">Chargement des formes…</p>
+    } @else if (formsError(); as message) {
+      <p class="field-error" role="alert">{{ message }}</p>
+      <button mat-button type="button" (click)="loadForms()">Réessayer</button>
+    } @else if (forms().length === 0) {
       <p class="hint">Aucune forme de question n'est disponible.</p>
     } @else {
       <div class="forms" role="list">
