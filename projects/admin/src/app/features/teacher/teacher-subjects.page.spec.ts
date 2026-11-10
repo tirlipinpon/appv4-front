@@ -300,6 +300,47 @@ describe('TeacherSubjectsPage', () => {
     );
   });
 
+  it('propose le déplacement aussi à un collègue qui suit déjà', () => {
+    boot(loaded);
+    page.askTransfer({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: true,
+      followedByMe: true,
+      questionCount: 0,
+      sharedWith: [],
+    });
+    http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
+      colleagues: [
+        { userId: 10, displayName: 'Camille', alreadyFollows: false },
+        { userId: 11, displayName: 'Luc', alreadyFollows: true },
+      ],
+    });
+    fixture.detectChanges();
+
+    page.setTransferMode('move');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Luc');
+    expect(fixture.nativeElement.textContent).toContain('Camille');
+
+    page.setTransferMode('share');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Camille');
+    expect(fixture.nativeElement.textContent).not.toContain('Luc');
+
+    page.setTransferMode('move');
+    page.setTransferColleague(11);
+    page.prepareTransferConfirm(2);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Proposer de déplacer Lecture');
+    page.confirmTransfer(2);
+    const post = http.expectOne(`${subjectsUrl}/2/transfer`);
+    expect(post.request.body).toEqual({ colleagueUserId: 11, mode: 'move' });
+    post.flush(null);
+    expectReload();
+  });
+
   it('propose un partage via la liste des collègues', () => {
     boot(loaded);
     page.askTransfer({

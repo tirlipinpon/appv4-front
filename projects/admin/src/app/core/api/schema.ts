@@ -1481,6 +1481,8 @@ export interface components {
             /** Format: int64 */
             userId?: number;
             displayName?: string;
+            /** @description Vrai si ce collègue suit déjà la matière. Le propriétaire peut quand même lui proposer un déplacement. Un partage reste refusé. */
+            alreadyFollows?: boolean;
         };
         TeacherSubjectColleaguesResponse: {
             colleagues?: components["schemas"]["TeacherSubjectColleagueItem"][];

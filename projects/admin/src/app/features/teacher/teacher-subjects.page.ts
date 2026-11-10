@@ -279,6 +279,15 @@ export class TeacherSubjectsPage implements OnInit {
     return current?.kind === 'transfer' ? current.colleagues : [];
   }
 
+  /** Partager cache ceux qui suivent déjà. Déplacer les propose aussi. */
+  visibleTransferColleagues(): TeacherSubjectColleagueItem[] {
+    const rows = this.transferColleagues();
+    if (this.transferMode() === 'share') {
+      return rows.filter((row) => row.alreadyFollows !== true);
+    }
+    return rows;
+  }
+
   transferConfirming(): boolean {
     const current = this.pending();
     return current?.kind === 'transfer' ? current.confirm : false;
@@ -674,7 +683,14 @@ export class TeacherSubjectsPage implements OnInit {
     if (!current || current.kind !== 'transfer') {
       return;
     }
-    this.pending.set({ ...current, mode, confirm: false });
+    const selected = current.colleagues.find((row) => row.userId === current.colleagueUserId);
+    const keepColleague = mode !== 'share' || selected?.alreadyFollows !== true;
+    this.pending.set({
+      ...current,
+      mode,
+      colleagueUserId: keepColleague ? current.colleagueUserId : null,
+      confirm: false,
+    });
     this.clearSubjectError(current.id);
   }
 

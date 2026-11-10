@@ -207,11 +207,11 @@
                               >
                                 Partager
                               </button>
-                              @if (transferColleagues().length === 0) {
+                              @if (visibleTransferColleagues().length === 0) {
                                 <p class="hint">Aucun collègue avec cette classe.</p>
                               } @else {
                                 <ul class="colleagues">
-                                  @for (colleague of transferColleagues(); track colleague.userId) {
+                                  @for (colleague of visibleTransferColleagues(); track colleague.userId) {
                                     <li>
                                       <button
                                         mat-button
@@ -229,7 +229,7 @@
                               <button
                                 mat-flat-button
                                 type="button"
-                                [disabled]="saving() || transferColleagues().length === 0"
+                                [disabled]="saving() || visibleTransferColleagues().length === 0"
                                 (click)="prepareTransferConfirm(subject.id)"
                               >
                                 Continuer
