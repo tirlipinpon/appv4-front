@@ -120,4 +120,29 @@ describe('TeacherStudentsPage', () => {
     expect(main.querySelectorAll('.student').length).toBe(2);
     expect(main.querySelector('.student img')).not.toBeNull();
   });
+
+  it('loads 30 student photos with at most four requests at a time', () => {
+    fixture.detectChanges();
+    http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
+    http.expectOne(studentsUrl).flush({
+      schools: [{
+        schoolId: 1, schoolName: 'School', curriculumLabel: 'France',
+        grades: [{
+          grade: 'CE1', students: Array.from({ length: 30 }, (_, i) => ({
+            id: i + 1, firstName: `Student${i}`, lastName: 'Test', age: 8, hasPhoto: true,
+          })),
+        }],
+      }],
+    });
+    let count = 0;
+    for (let first = 1; first <= 30; first += 4) {
+      const requests = http.match((request) => request.url.startsWith(`${studentsUrl}/`) && request.url.endsWith('/photo'));
+      expect(requests.length).toBe(Math.min(4, 31 - first));
+      count += requests.length;
+      requests.forEach((request) => request.flush(new Blob(['image'], { type: 'image/png' })));
+    }
+    expect(count).toBe(30);
+    fixture.destroy();
+  });
 });
