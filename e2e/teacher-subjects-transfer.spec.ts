@@ -200,7 +200,7 @@ test('Anne est la seule sur Lecture. Au lieu de la retirer, elle propose de la d
   await expect(page.getByRole('button', { name: 'Déplacer vers un collègue' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Déplacer vers un collègue' }).click();
-  await expect(page.getByRole('button', { name: 'Déplacer', exact: true })).toHaveClass(/selected/);
+  await expect(page.getByRole('button', { name: 'Partager' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Camille' })).toBeVisible();
   await page.getByRole('button', { name: 'Camille' }).click();
   await page.getByRole('button', { name: 'Continuer' }).click();

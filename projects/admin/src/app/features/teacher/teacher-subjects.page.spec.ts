@@ -618,7 +618,10 @@ describe('TeacherSubjectsPage', () => {
     });
     fixture.detectChanges();
     expect(page.transferMode()).toBe('move');
+    expect(fixture.nativeElement.textContent).not.toContain('Partager');
     expect(page.transferColleagues().map((row) => row.displayName)).toEqual(['Camille']);
+    page.setTransferMode('share');
+    expect(page.transferMode()).toBe('move');
   });
 
   it('retire quand même si dernier détenteur sans collègue', () => {

@@ -79,6 +79,8 @@ type Pending =
       colleagueUserId: number | null;
       colleagues: TeacherSubjectColleagueItem[];
       confirm: boolean;
+      /** Vrai quand on arrive du retrait : seul le déplacement est proposé. */
+      fromRemoval: boolean;
     };
 
 const NAME_REQUIRED = 'Le nom est obligatoire.';
@@ -262,6 +264,12 @@ export class TeacherSubjectsPage implements OnInit {
       return `Proposer de déplacer ${place} vers ${who} ? Elle quittera ta liste s'il accepte.`;
     }
     return `Proposer de partager ${place} avec ${who} ? Vous pourrez tous les deux agir s'il accepte.`;
+  }
+
+  /** Vrai : on vient du retrait, Partager n'est pas proposé. */
+  transferFromRemoval(): boolean {
+    const current = this.pending();
+    return current?.kind === 'transfer' ? current.fromRemoval : false;
   }
 
   transferMode(): TransferMode | null {
@@ -669,6 +677,7 @@ export class TeacherSubjectsPage implements OnInit {
       colleagueUserId: null,
       colleagues: current.colleagues,
       confirm: false,
+      fromRemoval: true,
     });
   }
 
@@ -682,6 +691,7 @@ export class TeacherSubjectsPage implements OnInit {
       colleagueUserId: null,
       colleagues: [],
       confirm: false,
+      fromRemoval: false,
     });
     this.api.colleagues(subject.id).subscribe({
       next: (body) => {
@@ -706,7 +716,7 @@ export class TeacherSubjectsPage implements OnInit {
     if (!current || current.kind !== 'transfer') {
       return;
     }
-    if (mode === 'move' && !this.subjectById(current.id)?.ownedByMe) {
+    if (current.fromRemoval || (mode === 'move' && !this.subjectById(current.id)?.ownedByMe)) {
       return;
     }
     const selected = current.colleagues.find((row) => row.userId === current.colleagueUserId);
