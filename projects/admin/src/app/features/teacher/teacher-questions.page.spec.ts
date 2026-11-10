@@ -135,9 +135,7 @@ describe('TeacherQuestionsPage', () => {
     histoire?.click();
     fixture.detectChanges();
 
-    http.expectOne(formsUrl).flush({
-      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
-    });
+    http.expectNone(formsUrl);
     http.expectOne('http://localhost:8080/api/int/teacher/subjects/9/questions').flush({
       questions: [
         {

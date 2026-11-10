@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, catchError, from, map, mergeMap } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -269,21 +270,17 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
   private loadPhotos(rows: ParentChildResponse[]): void {
     const ticket = this.photoBag.invalidate();
     this.photos.set({});
-    for (const child of rows) {
-      if (!child.hasPhoto || child.id == null) {
-        continue;
+    const ids = rows.flatMap((child) => child.hasPhoto && child.id != null ? [child.id] : []);
+    from([...new Set(ids)]).pipe(
+      mergeMap((id) => this.childrenApi.photo(id).pipe(
+        map((blob) => ({ id, blob })),
+        catchError(() => EMPTY),
+      ), 4),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(({ id, blob }) => {
+      if (this.photoBag.putIfCurrent(ticket, id, blob)) {
+        this.photos.set(this.photoBag.snapshot());
       }
-      const id = child.id;
-      this.childrenApi
-        .photo(id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (blob) => {
-            if (this.photoBag.putIfCurrent(ticket, id, blob)) {
-              this.photos.set(this.photoBag.snapshot());
-            }
-          },
-        });
-    }
+    });
   }
 }

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, shareReplay } from 'rxjs';
 
 import type {
   CloneTeacherSubjectQuestionsRequest,
@@ -24,6 +24,7 @@ import { environment } from '../../../../environments/environment';
 export class TeacherQuestionsService {
   private readonly http = inject(HttpClient);
   private readonly copiedSubject = new Subject<number>();
+  private formsRequest?: Observable<TeacherQuestionFormsResponse>;
 
   /** La matière qui vient de recevoir des copies, pour recharger sa liste. */
   readonly copiedToSubject$ = this.copiedSubject.asObservable();
@@ -33,7 +34,8 @@ export class TeacherQuestionsService {
   }
 
   forms(): Observable<TeacherQuestionFormsResponse> {
-    return this.http.get<TeacherQuestionFormsResponse>(`${environment.apiBaseUrl}/teacher/question-forms`);
+    return (this.formsRequest ??= this.http.get<TeacherQuestionFormsResponse>(`${environment.apiBaseUrl}/teacher/question-forms`)
+      .pipe(shareReplay({ bufferSize: 1, refCount: true })));
   }
 
   list(subjectId: number, afterId = 0): Observable<TeacherSubjectQuestionsResponse> {

@@ -4,8 +4,8 @@ Workspace Angular **22** avec deux applications :
 
 | App | Port | API backend | UI |
 |-----|------|-------------|-----|
-| `learning` | http://localhost:4200 | `GET http://localhost:8080/api/ext/hello` | Bootstrap 5 |
-| `admin` | http://localhost:4201 | `GET http://localhost:8080/api/int/hello` | Angular Material |
+| `learning` | http://localhost:4200 | `/api/ext` | Bootstrap 5 |
+| `admin` | http://localhost:4201 | `/api/int` | Angular Material |
 
 ## Prérequis
 

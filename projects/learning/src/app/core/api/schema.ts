@@ -763,23 +763,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/int/teacher/hello": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Hello de l'espace professeur */
-        get: operations["getTeacherHello"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/int/schools": {
         parameters: {
             query?: never;
@@ -814,23 +797,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/int/parent/hello": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Hello de l'espace parent */
-        get: operations["getParentHello"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/int/parent/children/{id}/photo": {
         parameters: {
             query?: never;
@@ -840,23 +806,6 @@ export interface paths {
         };
         /** Lire la photo d'un enfant du parent connecté */
         get: operations["getParentChildPhoto"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/int/hello": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Hello admin (JWT requis) */
-        get: operations["getAdminHello"];
         put?: never;
         post?: never;
         delete?: never;
@@ -959,23 +908,6 @@ export interface paths {
         };
         /** Lister les demandes professeur (pending, approved, revoked), lecture bornée */
         get: operations["listTeacherRequests"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/ext/hello": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Hello learning (public) */
-        get: operations["getLearningHello"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1590,9 +1522,6 @@ export interface components {
             followerCount?: number;
             followerWarning?: string;
             followerNames?: string[];
-        };
-        HelloMessageResponse: {
-            text?: string;
         };
         SchoolOption: {
             /** Format: int64 */
@@ -3581,35 +3510,6 @@ export interface operations {
             };
         };
     };
-    getTeacherHello: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Jeton professeur */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["HelloMessageResponse"];
-                };
-            };
-            /** @description Jeton parent, ou espace non choisi */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuthErrorBody"];
-                };
-            };
-        };
-    };
     searchSchools: {
         parameters: {
             query?: {
@@ -3663,35 +3563,6 @@ export interface operations {
             };
         };
     };
-    getParentHello: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Jeton parent */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["HelloMessageResponse"];
-                };
-            };
-            /** @description Jeton professeur, ou espace non choisi */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuthErrorBody"];
-                };
-            };
-        };
-    };
     getParentChildPhoto: {
         parameters: {
             query?: never;
@@ -3719,26 +3590,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
-                };
-            };
-        };
-    };
-    getAdminHello: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["HelloMessageResponse"];
                 };
             };
         };
@@ -3886,26 +3737,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
-                };
-            };
-        };
-    };
-    getLearningHello: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["HelloMessageResponse"];
                 };
             };
         };
