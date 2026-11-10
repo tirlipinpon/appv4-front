@@ -11,7 +11,6 @@ export type JwtTokenResponse = Required<components['schemas']['JwtTokenResponse'
 export type AuthorizeUrlResponse = Required<components['schemas']['AuthorizeUrlResponse']>;
 export type AuthMessageResponse = Required<components['schemas']['AuthMessageResponse']>;
 export type AuthErrorBody = Required<components['schemas']['AuthErrorBody']>;
-export type HelloMessageResponse = Required<components['schemas']['HelloMessageResponse']>;
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type SignupRequest = components['schemas']['SignupRequest'];
 export type SwitchRoleRequest = components['schemas']['SwitchRoleRequest'];

@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, catchError, from, map, mergeMap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -576,22 +577,18 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   private loadPhotos(children: ParentChildResponse[]): void {
     const ticket = this.photoBag.invalidate();
     this.photos.set({});
-    for (const child of children) {
-      if (!child.hasPhoto || child.id == null) {
-        continue;
+    const ids = children.flatMap((child) => child.hasPhoto && child.id != null ? [child.id] : []);
+    from([...new Set(ids)]).pipe(
+      mergeMap((id) => this.api.photo(id).pipe(
+        map((blob) => ({ id, blob })),
+        catchError(() => EMPTY),
+      ), 4),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(({ id, blob }) => {
+      if (this.photoBag.putIfCurrent(ticket, id, blob)) {
+        this.photos.set(this.photoBag.snapshot());
       }
-      const id = child.id;
-      this.api
-        .photo(id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (blob) => {
-            if (this.photoBag.putIfCurrent(ticket, id, blob)) {
-              this.photos.set(this.photoBag.snapshot());
-            }
-          },
-        });
-    }
+    });
   }
 
   private linkChoiceReady(): boolean {

@@ -6,6 +6,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { QuestionDestination, SubjectQuestionsComponent } from './components/subject-questions.component';
 import { TeacherSubjectsService } from './data-access/teacher-subjects.service';
+import { TeacherQuestionsService } from './data-access/teacher-questions.service';
 
 interface SubjectRow {
   id: number;
@@ -33,6 +34,7 @@ interface SchoolBlock {
 @Component({
   selector: 'app-teacher-questions-page',
   imports: [SpaceHeader, SubjectQuestionsComponent],
+  providers: [TeacherQuestionsService],
   templateUrl: './teacher-questions.page.html',
   styleUrl: './teacher-questions.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

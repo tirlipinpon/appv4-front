@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
+import { EMPTY, catchError, from, map, mergeMap } from 'rxjs';
 
 import type { TeacherStudentsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
@@ -125,25 +126,19 @@ export class TeacherStudentsPage implements OnInit, OnDestroy {
 
   private loadPhotos(schools: SchoolBlock[]): void {
     const ticket = this.photoBag.ticket();
-    for (const school of schools) {
-      for (const grade of school.grades) {
-        for (const student of grade.students) {
-          if (!student.hasPhoto) {
-            continue;
-          }
-          const id = student.id;
-          this.api
-            .photo(id)
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe({
-              next: (blob) => {
-                if (this.photoBag.putIfCurrent(ticket, id, blob)) {
-                  this.photos.set(this.photoBag.snapshot());
-                }
-              },
-            });
-        }
+    const ids = [...new Set(schools.flatMap((school) =>
+      school.grades.flatMap((grade) => grade.students.filter((student) => student.hasPhoto).map((student) => student.id)),
+    ))];
+    from(ids).pipe(
+      mergeMap((id) => this.api.photo(id).pipe(
+        map((blob) => ({ id, blob })),
+        catchError(() => EMPTY),
+      ), 4),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(({ id, blob }) => {
+      if (this.photoBag.putIfCurrent(ticket, id, blob)) {
+        this.photos.set(this.photoBag.snapshot());
       }
-    }
+    });
   }
 }
