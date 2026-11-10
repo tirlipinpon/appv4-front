@@ -310,7 +310,7 @@
                       (selectionChange)="reuse(school.schoolId, grade.grade, $event.value)"
                     >
                       @for (course of grade.addable; track course.key) {
-                        <mat-option [value]="course.key">{{ course.label }}</mat-option>
+                        <mat-option [value]="course.key">{{ course.label }} · {{ course.questionCount }} question{{ course.questionCount === 1 ? '' : 's' }}</mat-option>
                       }
                     </mat-select>
                   </mat-form-field>

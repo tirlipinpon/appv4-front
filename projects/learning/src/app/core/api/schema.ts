@@ -1444,10 +1444,15 @@ export interface components {
             schoolName?: string;
             postalCode?: string;
             grades?: string[];
-            /** @description « Existe déjà » ou « A été retirée », puis le nom, le code postal, les années et l'école */
+            /** @description Nom, code postal, années et école. Le nom est en premier, sans indication devant. */
             label?: string;
             /** @description Vrai si cette matière a été retirée de ce cours et que la ligne est encore en base. Le choix la réactive. */
             removedHere?: boolean;
+            /**
+             * Format: int64
+             * @description Nombre de questions enregistrées sur ce cours. 0 s'il n'y en a pas.
+             */
+            questionCount?: number;
         };
         TeacherSubjectGrade: {
             grade?: string;
@@ -2021,7 +2026,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Écoles du profil, années cochées, matières triées par nom. followedByMe faux : visible, mais ce professeur ne la suit pas. addableCourses : cours déjà créés, absents de l'année affichée. label commence par « Existe déjà » et donne le nom, le code postal, les années de création et le nom de l'école. */
+            /** @description Écoles du profil, années cochées, matières triées par nom. followedByMe faux : visible, mais ce professeur ne la suit pas. addableCourses : cours déjà créés, absents de l'année affichée. label commence par le nom, puis le code postal, les années et l'école. questionCount est le nombre de questions de ce cours. */
             200: {
                 headers: {
                     [name: string]: unknown;
