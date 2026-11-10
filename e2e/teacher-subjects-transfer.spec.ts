@@ -5,7 +5,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
  * (dernier détenteur vs partagée). APIs mockées — pas besoin du back.
  */
 
-type Mode = 'move' | 'share' | 'ask';
+type Mode = 'move' | 'share' | 'ask' | 'handover';
 
 interface SharedHolder {
   userId: number;
@@ -18,6 +18,7 @@ interface SubjectState {
   active: boolean;
   ownedByMe: boolean;
   sharedWith: SharedHolder[];
+  questionCount?: number;
 }
 
 interface InviteState {
@@ -61,7 +62,7 @@ test('partage : demande envoyée puis acceptée par le collègue', async ({ page
   await page.reload();
   await expect(page.getByText('Anne propose de partager Lecture')).toBeVisible();
   await page.getByRole('button', { name: 'Accepter' }).click();
-  await expect(page.getByText('Demandes reçues')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'À traiter' })).toHaveCount(0);
   expect(state.subjects[0].sharedWith).toEqual([{ userId: 1, displayName: 'Anne' }]);
 });
 
@@ -125,7 +126,7 @@ test('déplacement : demande envoyée puis acceptée par le destinataire', async
   ];
   await page.reload();
   await page.getByRole('button', { name: 'Accepter' }).click();
-  await expect(page.getByText('Demandes reçues')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'À traiter' })).toHaveCount(0);
   // Destinataire : la matière reste, sans co-prof (seul accès après move).
   await expect(page.getByText('Lecture', { exact: true })).toBeVisible();
   await expect(page.getByText(/Partagée avec/)).toHaveCount(0);
@@ -151,12 +152,12 @@ test('invite refusée : la matière ne change pas', async ({ page }) => {
 
   await openMatieres(page);
   await page.getByRole('button', { name: 'Refuser' }).click();
-  await expect(page.getByText('Demandes reçues')).toHaveCount(0);
-  await expect(page.getByText('Lecture')).toBeVisible();
+  await expect(page.getByText(/Anne propose de partager/)).toHaveCount(0);
+  await expect(page.getByText('Lecture', { exact: true })).toBeVisible();
   expect(state.subjects[0].sharedWith).toEqual([]);
 });
 
-test('retrait partagé : le collègue garde la matière', async ({ page }) => {
+test('retrait partagé : le collègue doit accepter de reprendre la matière', async ({ page }) => {
   const state = createState({
     subjects: [
       {
@@ -172,10 +173,17 @@ test('retrait partagé : le collègue garde la matière', async ({ page }) => {
 
   await openMatieres(page);
   await page.getByRole('button', { name: 'Retirer' }).click();
-  await expect(page.getByText(/Camille la garde/)).toBeVisible();
+  await expect(page.getByText(/Pour quitter Mathématiques/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Déplacer vers un collègue' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Confirmer le retrait' }).click();
-  await expect(page.getByText('Mathématiques')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Confirmer le retrait' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Camille' }).click();
+  const sent = page.waitForResponse(
+    (response) => response.url().includes('/transfer') && response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Demander la reprise' }).click();
+  await sent;
+  expect(state.pendingTransfers[0]).toMatchObject({ mode: 'handover', colleagueUserId: 10 });
+  await expect(page.getByText('Mathématiques', { exact: true })).toBeVisible();
 });
 
 test('retrait dernier détenteur avec collègues : proposer déplacer ou confirmer', async ({ page }) => {
@@ -221,6 +229,29 @@ test('retrait dernier détenteur sans collègue : pas de bouton déplacer', asyn
   await expect(page.getByText('Lecture')).toHaveCount(0);
 });
 
+test('un cours déjà créé s ajoute en montrant son nombre de questions', async ({ page }) => {
+  const state = createState({
+    addable: [
+      {
+        name: 'Calcul',
+        label: 'Calcul — autre classe',
+        schoolId: 9,
+        questionCount: 4,
+      },
+    ],
+    allowCreate: true,
+  });
+  await mockTeacherApis(page, state);
+
+  await openMatieres(page);
+  await page.getByRole('combobox', { name: 'Cours déjà existant' }).click();
+  await expect(page.getByRole('option', { name: /Calcul — autre classe/ })).toContainText('4 questions');
+  await page.getByRole('option', { name: /Calcul — autre classe/ }).click();
+  await expect(page.getByText('Calcul', { exact: true })).toBeVisible();
+  await expect(page.getByText('4 questions')).toBeVisible();
+  expect(state.created).toEqual([{ schoolId: 1, grade: '3e primaire', name: 'Calcul' }]);
+});
+
 test('transfert sans collègue : message Aucun collègue', async ({ page }) => {
   const state = createState({ colleagues: [] });
   await mockTeacherApis(page, state);
@@ -231,22 +262,34 @@ test('transfert sans collègue : message Aucun collègue', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Continuer' })).toBeDisabled();
 });
 
+interface AddableCourseState {
+  name: string;
+  label: string;
+  schoolId: number;
+  questionCount: number;
+}
+
 interface MockState {
   subjects: SubjectState[];
   colleagues: { userId: number; displayName: string }[];
   invites: InviteState[];
   pendingTransfers: { subjectId: number; colleagueUserId: number; mode: Mode }[];
   shareRequests: { schoolId: number; grade: string; name: string }[];
+  addable: AddableCourseState[];
+  allowCreate: boolean;
+  created: { schoolId: number; grade: string; name: string }[];
   nextInviteId: number;
 }
 
 function createState(partial?: {
   subjects?: SubjectState[];
   colleagues?: { userId: number; displayName: string }[];
+  addable?: AddableCourseState[];
+  allowCreate?: boolean;
 }): MockState {
   return {
     subjects: partial?.subjects ?? [
-      { id: 2, name: 'Lecture', active: true, ownedByMe: true, sharedWith: [] },
+      { id: 2, name: 'Lecture', active: true, ownedByMe: true, sharedWith: [], questionCount: 0 },
     ],
     colleagues:
       partial?.colleagues !== undefined
@@ -255,6 +298,9 @@ function createState(partial?: {
     invites: [],
     pendingTransfers: [],
     shareRequests: [],
+    addable: partial?.addable ?? [],
+    allowCreate: partial?.allowCreate === true,
+    created: [],
     nextInviteId: 1,
   };
 }
@@ -276,26 +322,29 @@ async function mockTeacherApis(page: Page, state: MockState): Promise<void> {
     await json(route, { email: 'anne@example.com', displayName: 'Anne' });
   });
 
-  await page.route('**/api/int/teacher/subjects/transfer-invites/**', async (route) => {
-    const url = new URL(route.request().url());
-    const parts = url.pathname.split('/');
-    const action = parts[parts.length - 1];
-    const inviteId = Number(parts[parts.length - 2]);
-    const invite = state.invites.find((row) => row.id === inviteId);
-    if (!invite) {
-      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
-      return;
-    }
-    if (action === 'accept') {
-      applyAccept(state, invite);
-    }
-    state.invites = state.invites.filter((row) => row.id !== inviteId);
-    await route.fulfill({ status: 204, body: '' });
-  });
-
-  await page.route('**/api/int/teacher/subjects/transfer-invites', async (route) => {
-    await json(route, { invites: state.invites });
-  });
+  await page.route(
+    (url) => url.pathname.includes('/teacher/subjects/transfer-invites'),
+    async (route) => {
+      const url = new URL(route.request().url());
+      const parts = url.pathname.split('/').filter((part) => part.length > 0);
+      const action = parts[parts.length - 1];
+      if (action === 'transfer-invites') {
+        await json(route, { invites: state.invites });
+        return;
+      }
+      const inviteId = Number(parts[parts.length - 2]);
+      const invite = state.invites.find((row) => row.id === inviteId);
+      if (!invite || (action !== 'accept' && action !== 'reject')) {
+        await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      if (action === 'accept') {
+        applyAccept(state, invite);
+      }
+      state.invites = state.invites.filter((row) => row.id !== inviteId);
+      await route.fulfill({ status: 204, body: '' });
+    },
+  );
 
   await page.route('**/api/int/teacher/subjects/deactivate-notices/**', async (route) => {
     await route.fulfill({ status: 204, body: '' });
@@ -337,31 +386,56 @@ async function mockTeacherApis(page: Page, state: MockState): Promise<void> {
     await route.fulfill({ status: 204, body: '' });
   });
 
-  await page.route('**/api/int/teacher/subjects', async (route) => {
-    if (route.request().method() === 'POST') {
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          message: 'Une matière de ce nom existe déjà. Tu peux demander à Anne de la partager.',
-        }),
+  await page.route(
+    (url) => url.pathname.endsWith('/teacher/subjects'),
+    async (route) => {
+      if (route.request().method() === 'POST') {
+        const body = route.request().postDataJSON() as { schoolId: number; grade: string; name: string };
+        if (!state.allowCreate) {
+          await route.fulfill({
+            status: 400,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              message: 'Une matière de ce nom existe déjà. Tu peux demander à Anne de la partager.',
+            }),
+          });
+          return;
+        }
+        state.created.push(body);
+        const course = state.addable.find((item) => item.name === body.name);
+        state.subjects.push({
+          id: 50,
+          name: body.name,
+          active: true,
+          ownedByMe: true,
+          sharedWith: [],
+          questionCount: course?.questionCount ?? 0,
+        });
+        state.addable = state.addable.filter((item) => item.name !== body.name);
+        await json(route, { id: 50, name: body.name });
+        return;
+      }
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+      await json(route, {
+        schools: [
+          {
+            schoolId: 1,
+            schoolName: 'École Nouvelle',
+            grades: [
+              {
+                grade: '3e primaire',
+                subjects: state.subjects,
+                addableCourses: state.addable,
+              },
+            ],
+          },
+        ],
       });
-      return;
-    }
-    if (route.request().method() !== 'GET') {
-      await route.fallback();
-      return;
-    }
-    await json(route, {
-      schools: [
-        {
-          schoolId: 1,
-          schoolName: 'École Nouvelle',
-          grades: [{ grade: '3e primaire', subjects: state.subjects }],
-        },
-      ],
-    });
-  });
+    },
+  );
 
   await page.route('**/api/int/teacher/subjects/share-requests', async (route) => {
     state.shareRequests.push(
@@ -382,6 +456,7 @@ function applyAccept(state: MockState, invite: InviteState): void {
       active: true,
       ownedByMe: invite.mode !== 'share',
       sharedWith: invite.mode === 'move' ? [] : [fromHolder],
+      questionCount: 0,
     });
     return;
   }

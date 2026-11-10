@@ -7,6 +7,20 @@ test('un admin arrive sur la file, valide, et voit la demande acceptée', async 
   const validatedAt = '2026-10-23T18:00:00.000Z';
   let status: 'pending' | 'approved' | 'revoked' = 'pending';
 
+  await page.route('**/api/int/auth/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ displayName: 'Admin', avatarCode: null }),
+    });
+  });
+  await page.route('**/api/int/auth/spaces', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ roles: ['admin'], teacherRequest: 'none' }),
+    });
+  });
   await page.route('**/api/int/auth/login', async (route) => {
     await route.fulfill({
       status: 200,
