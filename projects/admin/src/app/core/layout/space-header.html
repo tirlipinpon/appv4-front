@@ -3,7 +3,7 @@
     @if (avatarFace(); as face) {
       <span class="face" aria-hidden="true">{{ face }}</span>
     }
-    <span class="who">{{ displayName() }}</span>
+    <span class="who" data-testid="account-name">{{ displayName() }}</span>
     @if (showSpaceActions()) {
       <app-role-switch />
     }
@@ -11,16 +11,17 @@
     @if (showSpaceActions()) {
       <app-space-access />
     }
-    <button mat-button class="logout" type="button" (click)="logout()">Déconnexion</button>
+    <button mat-button class="logout" type="button" data-testid="account-logout" (click)="logout()">Déconnexion</button>
   </mat-toolbar>
   @if (showSpaceActions() && menu(); as section) {
-    <nav class="subnav" [attr.aria-label]="section.label">
+    <nav class="subnav" data-testid="space-nav" [attr.aria-label]="section.label">
       @for (item of section.items; track item.path) {
         <a
           [routerLink]="item.path"
           routerLinkActive="is-current"
           [routerLinkActiveOptions]="{ exact: true }"
           ariaCurrentWhenActive="page"
+          [attr.data-testid]="item.testId"
         >
           {{ item.label }}
         </a>

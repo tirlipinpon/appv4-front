@@ -22,6 +22,8 @@ import { SpaceAccess } from './space-access';
 interface SpaceMenuItem {
   label: string;
   path: string;
+  /** Repère stable pour les tests. Absent si aucun scénario ne clique ce lien. */
+  testId?: string;
 }
 
 /**
@@ -57,10 +59,10 @@ export class SpaceHeader implements OnInit {
       return {
         label: 'Pages parent',
         items: [
-          { label: 'Accueil', path: '/parent' },
-          { label: 'Enfants', path: '/parent/enfants' },
-          { label: 'Profil', path: '/parent/profil' },
-          { label: 'Matières', path: '/parent/matieres' },
+          { label: 'Accueil', path: '/parent', testId: 'parent-nav-home' },
+          { label: 'Enfants', path: '/parent/enfants', testId: 'parent-nav-children' },
+          { label: 'Profil', path: '/parent/profil', testId: 'parent-nav-profile' },
+          { label: 'Matières', path: '/parent/matieres', testId: 'parent-nav-subjects' },
         ],
       };
     }

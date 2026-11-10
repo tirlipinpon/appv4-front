@@ -21,7 +21,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
       <main class="content">
         <mat-card class="card">
           <mat-card-header>
-            <mat-card-title>Demande en attente</mat-card-title>
+            <mat-card-title data-testid="teacher-pending-title">Demande en attente</mat-card-title>
             <mat-card-subtitle>Le rôle professeur n'est pas encore ouvert</mat-card-subtitle>
           </mat-card-header>
           <mat-card-content>
@@ -32,7 +32,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
           </mat-card-content>
           @if (backToSpace(); as back) {
             <mat-card-actions align="end">
-              <a mat-flat-button color="primary" [routerLink]="back.path">
+              <a mat-flat-button color="primary" data-testid="teacher-pending-back" [routerLink]="back.path">
                 Retour à l'espace {{ back.label }}
               </a>
             </mat-card-actions>

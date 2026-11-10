@@ -15,17 +15,17 @@
         }
         <fieldset class="roles">
           <legend>Je m'inscris en tant que</legend>
-          <mat-checkbox [checked]="wantParent()" (change)="wantParent.set($event.checked)">
+          <mat-checkbox data-testid="role-parent" [checked]="wantParent()" (change)="wantParent.set($event.checked)">
             Parent
           </mat-checkbox>
-          <mat-checkbox [checked]="wantTeacher()" (change)="wantTeacher.set($event.checked)">
+          <mat-checkbox data-testid="role-teacher" [checked]="wantTeacher()" (change)="wantTeacher.set($event.checked)">
             Professeur
           </mat-checkbox>
           <p class="hint">Au moins Parent ou Professeur. Le professeur reste en attente de validation.</p>
         </fieldset>
       </mat-card-content>
       <mat-card-actions align="end">
-        <button mat-flat-button color="primary" type="button" [disabled]="!canSubmit()" (click)="submit()">
+        <button mat-flat-button color="primary" type="button" data-testid="roles-continue" [disabled]="!canSubmit()" (click)="submit()">
           {{ loading() ? 'Enregistrement…' : 'Continuer' }}
         </button>
       </mat-card-actions>

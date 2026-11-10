@@ -4,8 +4,8 @@
   <main class="content">
     <section class="panel">
       <header class="heading">
-        <h1>Mes enfants</h1>
-        <button mat-flat-button color="primary" type="button" (click)="openForm()">Ajouter un enfant</button>
+        <h1 data-testid="child-heading">Mes enfants</h1>
+        <button mat-flat-button color="primary" type="button" data-testid="child-add" (click)="openForm()">Ajouter un enfant</button>
       </header>
 
       @if (loading()) {
@@ -15,7 +15,7 @@
         <p class="error" role="alert">{{ error() }}</p>
       }
       @if (!loading() && children().length === 0) {
-        <p class="hint">Aucun enfant pour l'instant.</p>
+        <p class="hint" data-testid="child-empty">Aucun enfant pour l'instant.</p>
       }
 
       @if (familyLines().length > 0) {
@@ -46,7 +46,7 @@
 
       <ul class="list">
         @for (child of children(); track child.id) {
-          <li class="child" [class.inactive]="child.active === false">
+          <li class="child" [class.inactive]="child.active === false" [attr.data-testid]="'child-' + child.id">
             <div class="identity">
               @if (child.hasPhoto && photos()[child.id!]) {
                 <img class="portrait" [src]="photos()[child.id!]" [alt]="child.firstName + ' ' + child.lastName" />
@@ -55,19 +55,19 @@
               }
               <div>
                 <strong>{{ child.firstName }} {{ child.lastName }}</strong>
-                <span class="badge">{{ sexLabel(child.sex) }}</span>
+                <span class="badge" data-testid="child-sex">{{ sexLabel(child.sex) }}</span>
                 @if (child.active === false) {
-                  <span class="badge">Désactivé</span>
+                  <span class="badge" data-testid="child-inactive">Désactivé</span>
                 }
-                <p>{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
-                <p>{{ child.schoolName || 'École non renseignée' }}</p>
+                <p data-testid="child-age">{{ child.age }} ans · {{ child.country }} · {{ child.grade }}</p>
+                <p data-testid="child-school">{{ child.schoolName || 'École non renseignée' }}</p>
                 <p class="hint">{{ subjectSummary(child) }}</p>
                 @if ((child.links ?? []).length > 0) {
                   <div class="chips">
                     @for (link of child.links ?? []; track link.otherChildId) {
                       @let other = otherChild(link.otherChildId);
                       @if (other) {
-                        <span class="chip" tabindex="0" [attr.aria-label]="(other.firstName ?? '') + ' ' + (other.lastName ?? '')">
+                        <span class="chip" data-testid="child-link-chip" tabindex="0" [attr.aria-label]="(other.firstName ?? '') + ' ' + (other.lastName ?? '')">
                           @if (other.hasPhoto && photos()[other.id!]) {
                             <img class="mini" [src]="photos()[other.id!]" [alt]="other.firstName" />
                           } @else {
@@ -84,35 +84,35 @@
                   <p class="hint">Visible dans cette liste, plus proposé dans le reste de l'application.</p>
                 }
                 @if (pendingKind() === 'deactivate' && pendingChildId() === child.id) {
-                  <p class="confirm" role="alert">
+                  <p class="confirm" role="alert" data-testid="child-pending">
                     Désactiver {{ child.firstName }} {{ child.lastName }} ? Il reste dans cette liste, mais il ne sera plus proposé ailleurs.
                   </p>
                   <p class="actions">
-                    <button mat-button type="button" (click)="cancelPending()">Annuler</button>
-                    <button mat-flat-button type="button" (click)="confirmDeactivate(child)">Confirmer la désactivation</button>
+                    <button mat-button type="button" data-testid="child-pending-cancel" (click)="cancelPending()">Annuler</button>
+                    <button mat-flat-button type="button" data-testid="child-deactivate-confirm" (click)="confirmDeactivate(child)">Confirmer la désactivation</button>
                   </p>
                 } @else if (pendingKind() === 'hide' && pendingChildId() === child.id) {
-                  <p class="confirm" role="alert">
+                  <p class="confirm" role="alert" data-testid="child-pending">
                     Retirer {{ child.firstName }} {{ child.lastName }} de l'affichage ? La fiche reste enregistrée, elle n'apparaîtra plus ici.
                   </p>
                   <p class="actions">
-                    <button mat-button type="button" (click)="cancelPending()">Annuler</button>
-                    <button mat-flat-button color="warn" type="button" (click)="confirmRemove(child)">Confirmer le retrait</button>
+                    <button mat-button type="button" data-testid="child-pending-cancel" (click)="cancelPending()">Annuler</button>
+                    <button mat-flat-button color="warn" type="button" data-testid="child-remove-confirm" (click)="confirmRemove(child)">Confirmer le retrait</button>
                   </p>
                 } @else {
                   <p class="actions">
-                    <button mat-button type="button" (click)="edit(child)">Modifier</button>
+                    <button mat-button type="button" data-testid="child-edit" (click)="edit(child)">Modifier</button>
                     @if (child.active === false) {
-                      <button mat-button type="button" (click)="reactivate(child)">Réactiver</button>
+                      <button mat-button type="button" data-testid="child-reactivate" (click)="reactivate(child)">Réactiver</button>
                     } @else {
-                      <button mat-button type="button" (click)="askDeactivate(child)">Désactiver</button>
+                      <button mat-button type="button" data-testid="child-deactivate" (click)="askDeactivate(child)">Désactiver</button>
                     }
-                    <button mat-button type="button" (click)="askRemove(child)">Supprimer</button>
+                    <button mat-button type="button" data-testid="child-delete" (click)="askRemove(child)">Supprimer</button>
                   </p>
                 }
               </div>
             </div>
-            <button mat-stroked-button type="button" [disabled]="preparing()" (click)="openFrom(child)">
+            <button mat-stroked-button type="button" data-testid="child-copy" [disabled]="preparing()" (click)="openFrom(child)">
               Ajouter à partir de celui-ci
             </button>
           </li>
@@ -120,31 +120,31 @@
       </ul>
 
       @if (formOpen()) {
-        <mat-card class="form">
+        <mat-card class="form" data-testid="child-form">
           <mat-card-header>
-            <mat-card-title>{{ editingId() === null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
+            <mat-card-title data-testid="child-form-title">{{ editingId() === null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (error()) {
-              <p class="error" role="alert">{{ error() }}</p>
+              <p class="error" role="alert" data-testid="child-form-alert">{{ error() }}</p>
             }
             @if (editingId() !== null && currentLinks().length > 0) {
-              <p class="label">Liens déjà enregistrés</p>
+              <p class="label" data-testid="child-links-saved">Liens déjà enregistrés</p>
               @for (item of currentLinks(); track item.otherChildId) {
                 @let other = otherChild(item.otherChildId);
                 <p class="actions">
                   <span class="chip">{{ other?.firstName }} · {{ item.label }}</span>
-                  <button mat-button type="button" (click)="dropLink(item.otherChildId)">Retirer</button>
+                  <button mat-button type="button" data-testid="child-link-remove" (click)="dropLink(item.otherChildId)">Retirer</button>
                 </p>
               }
             }
             @if (linkChoices().length > 0) {
               <mat-form-field appearance="outline" class="full">
                 <mat-label>Lier avec</mat-label>
-                <mat-select [value]="fromChildId()" (selectionChange)="onLinkTarget($event.value)">
+                <mat-select data-testid="child-link-target" [value]="fromChildId()" (selectionChange)="onLinkTarget($event.value)">
                   <mat-option [value]="null">{{ editingId() === null ? 'Aucun' : 'Ne pas changer' }}</mat-option>
                   @for (existing of linkChoices(); track existing.id) {
-                    <mat-option [value]="existing.id">{{ existing.firstName }} {{ existing.lastName }}</mat-option>
+                    <mat-option [value]="existing.id" [attr.data-testid]="'child-link-target-' + existing.id">{{ existing.firstName }} {{ existing.lastName }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
@@ -152,12 +152,12 @@
             @if (fromChildId() !== null) {
               <mat-form-field appearance="outline" class="full">
                 <mat-label>Lien avec {{ fromChildFirstName() }}</mat-label>
-                <mat-select [value]="link() || null" (selectionChange)="link.set($event.value)" placeholder="Choisir">
+                <mat-select data-testid="child-link-kind" [value]="link() || null" (selectionChange)="link.set($event.value)" placeholder="Choisir">
                   @if (editingId() === null || selectedAlreadyLinked()) {
-                    <mat-option value="AUCUN">{{ editingId() === null ? 'Aucun' : 'Aucun — retirer ce lien' }}</mat-option>
+                    <mat-option value="AUCUN" data-testid="child-link-kind-AUCUN">{{ editingId() === null ? 'Aucun' : 'Aucun — retirer ce lien' }}</mat-option>
                   }
                   @for (item of relationChoices(); track item.code) {
-                    <mat-option [value]="item.code">{{ item.label }}</mat-option>
+                    <mat-option [value]="item.code" [attr.data-testid]="'child-link-kind-' + item.code">{{ item.label }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
@@ -173,17 +173,17 @@
             }
             <mat-form-field appearance="outline" class="full">
               <mat-label>Prénom</mat-label>
-              <input matInput name="firstName" [ngModel]="firstName()" (ngModelChange)="firstName.set($event)" required />
+              <input matInput data-testid="child-first-name" name="firstName" [ngModel]="firstName()" (ngModelChange)="firstName.set($event)" required />
             </mat-form-field>
             <mat-form-field appearance="outline" class="full">
               <mat-label>Nom</mat-label>
-              <input matInput name="lastName" [ngModel]="lastName()" (ngModelChange)="lastName.set($event)" required />
+              <input matInput data-testid="child-last-name" name="lastName" [ngModel]="lastName()" (ngModelChange)="lastName.set($event)" required />
             </mat-form-field>
             <mat-form-field appearance="outline" class="full">
               <mat-label>Sexe</mat-label>
-              <mat-select [value]="sex()" (selectionChange)="sex.set($event.value)" placeholder="Choisir">
+              <mat-select data-testid="child-sex-field" [value]="sex()" (selectionChange)="sex.set($event.value)" placeholder="Choisir">
                 @for (item of sexes; track item.code) {
-                  <mat-option [value]="item.code">{{ item.label }}</mat-option>
+                  <mat-option [value]="item.code" [attr.data-testid]="'child-sex-' + item.code">{{ item.label }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
@@ -191,6 +191,7 @@
               <mat-label>Âge</mat-label>
               <input
                 matInput
+                data-testid="child-age-field"
                 name="age"
                 inputmode="numeric"
                 autocomplete="off"
@@ -202,7 +203,7 @@
 
             <mat-form-field appearance="outline" class="full">
               <mat-label>Pays</mat-label>
-              <mat-select [value]="country()" (selectionChange)="onCountry($event.value)" placeholder="Choisir un pays">
+              <mat-select data-testid="child-country" [value]="country()" (selectionChange)="onCountry($event.value)" placeholder="Choisir un pays">
                 @for (item of countries(); track item) {
                   <mat-option [value]="item">{{ item }}</mat-option>
                 }
@@ -213,6 +214,7 @@
               <mat-label>École</mat-label>
               <input
                 matInput
+                data-testid="child-school-field"
                 name="school"
                 role="combobox"
                 aria-autocomplete="list"
@@ -229,13 +231,13 @@
               <ul id="school-suggestions" class="suggestions" role="listbox">
                 @for (school of schoolSuggestions(); track school.id) {
                   <li role="option" [attr.aria-selected]="school.id === schoolId() ? 'true' : 'false'">
-                    <button type="button" (click)="onSchoolPicked(school)">{{ school.name }}</button>
+                    <button type="button" [attr.data-testid]="'school-' + school.id" (click)="onSchoolPicked(school)">{{ school.name }}</button>
                   </li>
                 }
               </ul>
             }
             @if (schoolNextCursor() !== null) {
-              <button mat-button type="button" (click)="moreSchools()">Voir plus d'écoles</button>
+              <button mat-button type="button" data-testid="child-schools-more" (click)="moreSchools()">Voir plus d'écoles</button>
             }
             @if (country() && schoolId() === null && schoolText().trim().length < 2) {
               <p class="hint">Tape au moins deux lettres du nom pour voir les écoles.</p>
@@ -243,7 +245,7 @@
 
             <mat-form-field appearance="outline" class="full">
               <mat-label>Classe</mat-label>
-              <mat-select [value]="grade()" [disabled]="!country()" (selectionChange)="grade.set($event.value)">
+              <mat-select data-testid="child-grade" [value]="grade()" [disabled]="!country()" (selectionChange)="grade.set($event.value)">
                 @for (item of gradeOptions(); track item) {
                   <mat-option [value]="item">{{ item }}</mat-option>
                 }
@@ -256,6 +258,7 @@
                 <button
                   type="button"
                   class="avatar-btn"
+                  [attr.data-testid]="'child-avatar-' + avatar.code"
                   [class.selected]="avatarCode() === avatar.code"
                   (click)="chooseAvatar(avatar.code)"
                   [attr.aria-label]="avatar.label"
@@ -303,6 +306,7 @@
               <mat-label>Code PIN</mat-label>
               <input
                 matInput
+                data-testid="child-pin"
                 name="pin"
                 inputmode="numeric"
                 maxlength="4"
@@ -315,6 +319,7 @@
               <mat-label>Confirmer le code PIN</mat-label>
               <input
                 matInput
+                data-testid="child-pin-confirm"
                 name="pinConfirmation"
                 inputmode="numeric"
                 maxlength="4"
@@ -325,8 +330,8 @@
             </mat-form-field>
           </mat-card-content>
           <mat-card-actions align="end">
-            <button mat-button type="button" (click)="closeForm()">Fermer</button>
-            <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            <button mat-button type="button" data-testid="child-form-close" (click)="closeForm()">Fermer</button>
+            <button mat-flat-button color="primary" type="button" data-testid="child-form-save" [disabled]="saving()" (click)="save()">
               {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
           </mat-card-actions>
