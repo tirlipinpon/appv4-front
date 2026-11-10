@@ -300,6 +300,102 @@ describe('TeacherSubjectsPage', () => {
     );
   });
 
+  it('cache le déplacement pour un collègue qui n est pas propriétaire', () => {
+    boot({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE1',
+              subjects: [
+                {
+                  id: 2,
+                  name: 'Lecture',
+                  active: true,
+                  ownedByMe: false,
+                  followedByMe: true,
+                  questionCount: 0,
+                  sharedWith: [{ userId: 4, displayName: 'Anne' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    page.askTransfer({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: false,
+      followedByMe: true,
+      questionCount: 0,
+      sharedWith: [{ userId: 4, displayName: 'Anne' }],
+    });
+    http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
+      colleagues: [
+        { userId: 11, displayName: 'Luc', alreadyFollows: false, listLabel: 'pas encore dans sa liste' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Partager');
+    expect(text).toContain('Luc');
+    expect(text).not.toContain('Déplacer');
+    page.setTransferMode('move');
+    expect(page.transferMode()).toBeNull();
+  });
+
+  it('ne repropose pas un collègue qui a déjà refusé le déplacement', () => {
+    boot(loaded);
+    page.askTransfer({
+      id: 2,
+      name: 'Lecture',
+      active: true,
+      ownedByMe: true,
+      followedByMe: true,
+      questionCount: 0,
+      sharedWith: [],
+    });
+    http.expectOne(`${subjectsUrl}/2/colleagues`).flush({
+      colleagues: [
+        {
+          userId: 10,
+          displayName: 'Camille',
+          alreadyFollows: false,
+          listLabel: 'pas encore dans sa liste',
+          refusedAction: 'Déplacer',
+        },
+        {
+          userId: 11,
+          displayName: 'Luc',
+          alreadyFollows: false,
+          listLabel: 'pas encore dans sa liste',
+          refusedAction: '',
+        },
+      ],
+    });
+    fixture.detectChanges();
+    page.setTransferMode('move');
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('déjà refusé Déplacer');
+    expect(text).toContain('pas encore dans sa liste');
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+    const camille = buttons.find((button) => button.textContent?.includes('Camille'));
+    const luc = buttons.find((button) => button.textContent?.includes('Luc'));
+    expect(camille?.disabled).toBeTrue();
+    expect(luc?.disabled).toBeFalse();
+    page.setTransferColleague(10);
+    expect(page.transferColleagueId()).toBeNull();
+    page.setTransferColleague(11);
+    expect(page.transferColleagueId()).toBe(11);
+  });
+
   it('propose le déplacement aussi à un collègue qui suit déjà', () => {
     boot(loaded);
     page.askTransfer({

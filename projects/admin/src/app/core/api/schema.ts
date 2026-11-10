@@ -1485,6 +1485,8 @@ export interface components {
             alreadyFollows?: boolean;
             /** @description Texte à afficher à côté du nom pendant un déplacement. Dit si ce collègue possède déjà la matière, ou pas encore. */
             listLabel?: string;
+            /** @description Nom de l'action déjà refusée par ce collègue au professeur connecté. Vide s'il peut encore être choisi. Exemple : Déplacer. */
+            refusedAction?: string;
         };
         TeacherSubjectColleaguesResponse: {
             colleagues?: components["schemas"]["TeacherSubjectColleagueItem"][];

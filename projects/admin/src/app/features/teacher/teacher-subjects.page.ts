@@ -279,6 +279,11 @@ export class TeacherSubjectsPage implements OnInit {
     return current?.kind === 'transfer' ? current.colleagues : [];
   }
 
+  /** Vrai si ce collègue a déjà refusé le déplacement renvoyé par l'API. */
+  moveRefused(colleague: TeacherSubjectColleagueItem): boolean {
+    return this.transferMode() === 'move' && !!colleague.refusedAction;
+  }
+
   /** Partager cache ceux qui suivent déjà. Déplacer les propose aussi. */
   visibleTransferColleagues(): TeacherSubjectColleagueItem[] {
     const rows = this.transferColleagues();
@@ -578,6 +583,18 @@ export class TeacherSubjectsPage implements OnInit {
     return !!this.sharedHolder(subjectId, userId)?.refusedAction;
   }
 
+  private subjectById(subjectId: number): SubjectRow | undefined {
+    for (const school of this.schools()) {
+      for (const grade of school.grades) {
+        const subject = grade.subjects.find((row) => row.id === subjectId);
+        if (subject) {
+          return subject;
+        }
+      }
+    }
+    return undefined;
+  }
+
   private sharedHolder(subjectId: number, userId: number): TeacherSubjectSharedHolder | undefined {
     for (const school of this.schools()) {
       for (const grade of school.grades) {
@@ -634,7 +651,13 @@ export class TeacherSubjectsPage implements OnInit {
    */
   chooseMoveInstead(subject: SubjectRow): void {
     const current = this.pending();
-    if (!current || current.kind !== 'remove' || !current.sole || current.id !== subject.id) {
+    if (
+      !subject.ownedByMe ||
+      !current ||
+      current.kind !== 'remove' ||
+      !current.sole ||
+      current.id !== subject.id
+    ) {
       return;
     }
     this.clearSubjectError(subject.id);
@@ -683,6 +706,9 @@ export class TeacherSubjectsPage implements OnInit {
     if (!current || current.kind !== 'transfer') {
       return;
     }
+    if (mode === 'move' && !this.subjectById(current.id)?.ownedByMe) {
+      return;
+    }
     const selected = current.colleagues.find((row) => row.userId === current.colleagueUserId);
     const keepColleague = mode !== 'share' || selected?.alreadyFollows !== true;
     this.pending.set({
@@ -697,6 +723,10 @@ export class TeacherSubjectsPage implements OnInit {
   setTransferColleague(userId: number): void {
     const current = this.pending();
     if (!current || current.kind !== 'transfer') {
+      return;
+    }
+    const selected = current.colleagues.find((row) => row.userId === userId);
+    if (current.mode === 'move' && selected?.refusedAction) {
       return;
     }
     this.pending.set({ ...current, colleagueUserId: userId, confirm: false });
