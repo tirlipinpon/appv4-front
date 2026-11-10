@@ -554,8 +554,32 @@ export class TeacherSubjectsPage implements OnInit {
     if (!current || current.kind !== 'remove' || !current.needsHandover) {
       return;
     }
+    if (this.holderRefused(current.id, userId)) {
+      return;
+    }
     this.pending.set({ ...current, handoverColleagueId: userId });
     this.clearSubjectError(current.id);
+  }
+
+  /** Vrai si ce collègue a déjà refusé l'action renvoyée par l'API. */
+  holderRefused(subjectId: number | undefined, userId: number | undefined): boolean {
+    if (subjectId == null || userId == null) {
+      return false;
+    }
+    return !!this.sharedHolder(subjectId, userId)?.refusedAction;
+  }
+
+  private sharedHolder(subjectId: number, userId: number): TeacherSubjectSharedHolder | undefined {
+    for (const school of this.schools()) {
+      for (const grade of school.grades) {
+        const subject = grade.subjects.find((row) => row.id === subjectId);
+        const holder = subject?.sharedWith.find((row) => row.userId === userId);
+        if (holder) {
+          return holder;
+        }
+      }
+    }
+    return undefined;
   }
 
   removeNeedsHandover(): boolean {

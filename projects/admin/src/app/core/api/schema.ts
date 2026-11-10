@@ -1170,6 +1170,8 @@ export interface components {
             /** Format: int64 */
             userId?: number;
             displayName?: string;
+            /** @description Nom de l'action déjà refusée par ce collègue au professeur connecté. Vide s'il peut encore être sollicité. Exemple : Demander la reprise. */
+            refusedAction?: string;
         };
         TeacherSchoolInput: {
             /** Format: int64 */

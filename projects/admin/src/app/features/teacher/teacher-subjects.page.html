@@ -118,10 +118,13 @@
                                       mat-button
                                       type="button"
                                       [class.selected]="handoverColleagueId() === holder.userId"
-                                      [disabled]="saving()"
+                                      [disabled]="saving() || holderRefused(subject.id, holder.userId)"
                                       (click)="setHandoverColleague(holder.userId)"
                                     >
                                       {{ holder.displayName }}
+                                      @if (holder.refusedAction) {
+                                        <span class="refused">déjà refusé {{ holder.refusedAction }}</span>
+                                      }
                                     </button>
                                   </li>
                                 }

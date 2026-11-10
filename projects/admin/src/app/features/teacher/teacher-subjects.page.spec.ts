@@ -351,6 +351,63 @@ describe('TeacherSubjectsPage', () => {
     expectReload();
   });
 
+  it('ne repropose pas un collègue qui a déjà refusé la reprise', () => {
+    const withRefusal: TeacherSubjectsResponse = {
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE2',
+              subjects: [
+                {
+                  id: 3,
+                  name: 'Mathématiques',
+                  active: true,
+                  ownedByMe: true,
+                  followedByMe: true,
+                  questionCount: 0,
+                  sharedWith: [
+                    { userId: 10, displayName: 'Camille', refusedAction: 'Demander la reprise' },
+                    { userId: 11, displayName: 'Luc', refusedAction: '' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    boot(withRefusal);
+    page.askRemove({
+      id: 3,
+      name: 'Mathématiques',
+      active: true,
+      ownedByMe: true,
+      followedByMe: true,
+      questionCount: 0,
+      sharedWith: [
+        { userId: 10, displayName: 'Camille', refusedAction: 'Demander la reprise' },
+        { userId: 11, displayName: 'Luc', refusedAction: '' },
+      ],
+    });
+    flushFollowers(3, { childCount: 0, warning: 'Aucun enfant ne suit ce cours.', names: [] });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('déjà refusé Demander la reprise');
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+    const camille = buttons.find((button) => button.textContent?.includes('Camille'));
+    const luc = buttons.find((button) => button.textContent?.includes('Luc'));
+    expect(camille?.disabled).toBeTrue();
+    expect(luc?.disabled).toBeFalse();
+    page.setHandoverColleague(10);
+    expect(page.handoverColleagueId()).toBeNull();
+    page.setHandoverColleague(11);
+    expect(page.handoverColleagueId()).toBe(11);
+  });
+
   it('propose un handover quand le propriétaire retire une matière partagée', () => {
     boot(loaded);
     page.askRemove({
