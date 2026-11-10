@@ -466,8 +466,8 @@ function applyAccept(state: MockState, invite: InviteState): void {
     }
     return;
   }
-  // Move accepté : le destinataire est seul dessus.
-  subject.sharedWith = [];
+  // Move accepté : l'émetteur quitte, les autres co-profs restent, le destinataire devient propriétaire.
+  subject.sharedWith = subject.sharedWith.filter((row) => row.displayName !== invite.fromDisplayName);
   subject.ownedByMe = true;
 }
 
