@@ -83,13 +83,24 @@
                   @if (gradesFor(block).length) {
                     <div class="grades">
                       @for (grade of gradesFor(block); track grade) {
-                        <mat-checkbox
-                          [checked]="block.grades.includes(grade)"
-                          [disabled]="saving() || blocked(block.key)"
-                          (change)="onGradeChange(block.key, grade, $event)"
+                        <span
+                          class="grade-wrap"
+                          (mouseenter)="showGradeTip(block, grade)"
+                          (mouseleave)="hideTip()"
                         >
-                          {{ grade }}
-                        </mat-checkbox>
+                          <mat-checkbox
+                            [checked]="block.grades.includes(grade)"
+                            [disabled]="saving() || blocked(block.key)"
+                            (change)="onGradeChange(block.key, grade, $event)"
+                          >
+                            {{ grade }}
+                          </mat-checkbox>
+                          @if (tipMatches(block.key, grade) && tip(); as current) {
+                            <aside class="impact impact-tip" role="tooltip">
+                              <ng-container [ngTemplateOutlet]="impactBody" [ngTemplateOutletContext]="{ tip: current }" />
+                            </aside>
+                          }
+                        </span>
                       }
                     </div>
                   }
@@ -110,14 +121,21 @@
                       >
                         Modifier
                       </button>
-                      <button
-                        mat-button
-                        type="button"
-                        [disabled]="saving() || blocked(block.key)"
-                        (click)="removeSchool(block.key)"
-                      >
-                        Supprimer
-                      </button>
+                      <span class="remove-wrap" (mouseenter)="showSchoolTip(block)" (mouseleave)="hideTip()">
+                        <button
+                          mat-button
+                          type="button"
+                          [disabled]="saving() || blocked(block.key)"
+                          (click)="removeSchool(block.key)"
+                        >
+                          Supprimer
+                        </button>
+                        @if (tipMatches(block.key, null) && tip(); as current) {
+                          <aside class="impact impact-tip" role="tooltip">
+                            <ng-container [ngTemplateOutlet]="impactBody" [ngTemplateOutletContext]="{ tip: current }" />
+                          </aside>
+                        }
+                      </span>
                     </div>
                   </div>
                   @if (block.grades.length) {
@@ -129,87 +147,19 @@
                   }
                 }
 
-                @for (impact of impactsFor(block.key); track impact.kind + (impact.grade ?? '')) {
-                  <aside class="impact" role="region">
-                    @if (impact.loading) {
-                      <p class="status" role="status">Chargement…</p>
-                    }
-                    @if (impact.error) {
-                      <p class="field-error" role="alert">{{ impact.error }}</p>
-                    }
-                    @if (impact.view; as view) {
-                      <p class="impact-school">{{ view.schoolName }}</p>
-                      @if (view.grade) {
-                        <p class="impact-grade">{{ view.grade }}</p>
-                      }
-                      <p class="count">{{ view.studentCountLabel }}</p>
-                      @if (view.studentCount === 0) {
-                        <p class="hint">{{ view.emptyStudentsLabel }}</p>
-                      } @else {
-                        <ul class="names">
-                          @for (student of view.students ?? []; track student.id) {
-                            <li>
-                              {{ student.firstName }} {{ student.lastName }}
-                              @if (!view.grade) {
-                                <span> — {{ student.grade }}</span>
-                              }
-                            </li>
-                          }
-                        </ul>
-                      }
-                      <p class="count">{{ view.subjectCountLabel }}</p>
-                      @if (view.subjectCount === 0) {
-                        <p class="hint">{{ view.emptySubjectsLabel }}</p>
-                      } @else {
-                        <ul class="subjects">
-                          @for (subject of view.subjects ?? []; track subject.id) {
-                            <li>
-                              <p>
-                                {{ subject.name }}
-                                @if (!view.grade) {
-                                  <span> — {{ subject.grade }}</span>
-                                }
-                              </p>
-                              @if (subject.followerCount === 0) {
-                                <p class="hint">{{ subject.followerWarning }}</p>
-                              } @else {
-                                <ul class="names">
-                                  @for (name of subject.followerNames ?? []; track name) {
-                                    <li>{{ name }}</li>
-                                  }
-                                </ul>
-                              }
-                            </li>
-                          }
-                        </ul>
-                      }
-                    }
-                    @if (!impact.confirmed) {
-                      <div class="impact-actions">
-                        <button mat-button type="button" (click)="keep(impact)">
-                          {{ impact.kind === 'grade' ? 'Garder cette année' : 'Garder cette école' }}
-                        </button>
-                        @if (impact.view) {
-                          <button
-                            mat-button
-                            type="button"
-                            [disabled]="impact.loading"
-                            (click)="confirmRemoval(impact)"
-                          >
-                            Retirer quand même
-                          </button>
-                        }
-                      </div>
-                    }
-                  </aside>
-                }
-
                 @if (showsForm(block)) {
                   <div class="form-actions">
                     @if (block.savedSchoolId !== null) {
-                      <button mat-button type="button" [disabled]="saving() || blocked(block.key)" (click)="removeSchool(block.key)">
-                        Supprimer
-                      </button>
+                      <span class="remove-wrap" (mouseenter)="showSchoolTip(block)" (mouseleave)="hideTip()">
+                        <button mat-button type="button" [disabled]="saving() || blocked(block.key)" (click)="removeSchool(block.key)">
+                          Supprimer
+                        </button>
+                        @if (tipMatches(block.key, null) && tip(); as current) {
+                          <aside class="impact impact-tip" role="tooltip">
+                            <ng-container [ngTemplateOutlet]="impactBody" [ngTemplateOutletContext]="{ tip: current }" />
+                          </aside>
+                        }
+                      </span>
                     }
                     <span class="form-actions-end">
                       <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit(block.key)">
@@ -234,3 +184,51 @@
     </mat-card>
   </main>
 </div>
+
+<ng-template #impactBody let-tip="tip">
+  @if (tip.loading) {
+    <p class="status" role="status">Chargement…</p>
+  }
+  @if (tip.error) {
+    <p class="field-error" role="alert">{{ tip.error }}</p>
+  }
+  @if (tip.view; as view) {
+    <p class="impact-school">{{ view.schoolName }}</p>
+    @if (view.grade) {
+      <p class="impact-grade">{{ view.grade }}</p>
+    }
+    <p class="count">{{ view.studentCountLabel }}</p>
+    @if (view.studentCount === 0) {
+      <p class="hint">{{ view.emptyStudentsLabel }}</p>
+    } @else {
+      <ul class="names">
+        @for (student of view.students ?? []; track student.id) {
+          <li>
+            {{ student.firstName }} {{ student.lastName }}
+            @if (!view.grade) {
+              <span> — {{ student.grade }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+    <p class="count">{{ view.subjectCountLabel }}</p>
+    @if (view.subjectCount === 0) {
+      <p class="hint">{{ view.emptySubjectsLabel }}</p>
+    } @else {
+      <ul class="subjects">
+        @for (subject of view.subjects ?? []; track subject.id) {
+          <li>
+            {{ subject.name }}
+            @if (!view.grade) {
+              <span> — {{ subject.grade }}</span>
+            }
+            @if (subject.followerCount === 0) {
+              <span class="hint"> — {{ subject.followerWarning }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+</ng-template>

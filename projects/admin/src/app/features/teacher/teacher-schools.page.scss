@@ -89,6 +89,20 @@
   white-space: nowrap;
 }
 
+.grade-wrap,
+.remove-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.impact-tip {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: min(32rem, 70vw);
+}
+
 .impact {
   margin-top: 0.75rem;
   padding: 0.75rem;
@@ -105,8 +119,12 @@
 
 .names,
 .subjects {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 0.25rem 0.75rem;
   margin: 0 0 0.5rem;
-  padding-left: 1.2rem;
+  padding: 0;
+  list-style: none;
 }
 
 .impact-actions {

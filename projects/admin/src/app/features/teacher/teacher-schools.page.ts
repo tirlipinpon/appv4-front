@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -31,6 +32,14 @@ interface SchoolBlock {
   savedGrades: string[];
   /** Vrai : formulaire ouvert. Faux : l'école déjà choisie reste en lecture. */
   editing: boolean;
+}
+
+interface HoverTip {
+  key: number;
+  grade: string | null;
+  loading: boolean;
+  error: string | null;
+  view: TeacherRemovalPreviewResponse | null;
 }
 
 interface RemovalImpact {
@@ -70,6 +79,7 @@ const PENDING_EDIT =
 @Component({
   selector: 'app-teacher-schools-page',
   imports: [
+    NgTemplateOutlet,
     FormsModule,
     MatButtonModule,
     MatCardModule,
@@ -106,6 +116,10 @@ export class TeacherSchoolsPage implements OnInit, OnDestroy {
   readonly blockErrors = signal<Readonly<Record<number, string>>>({});
   readonly pendingNotice = signal<string | null>(null);
   readonly impacts = signal<RemovalImpact[]>([]);
+  /** Infos d'impact affichées au survol, pas dans un panneau avec des boutons. */
+  readonly tip = signal<HoverTip | null>(null);
+  private tipSeq = 0;
+  private readonly previewCache = new Map<string, TeacherRemovalPreviewResponse>();
 
   readonly awaitingChoice = computed(() => this.impacts().some((item) => !item.confirmed));
 
@@ -206,10 +220,6 @@ export class TeacherSchoolsPage implements OnInit, OnDestroy {
     if (!block || this.blocked(key)) {
       return;
     }
-    if (this.onSavedSchool(block)) {
-      this.openImpact(block, 'school', null, { type: 'remove-school' });
-      return;
-    }
     this.markDirty();
     this.clearBlockError(key);
     this.blocks.update((list) => list.filter((item) => item.key !== key));
@@ -222,10 +232,7 @@ export class TeacherSchoolsPage implements OnInit, OnDestroy {
     if (!block || country === block.country) {
       return;
     }
-    if (this.blocked(key) || this.onSavedSchool(block)) {
-      if (!this.blocked(key) && this.onSavedSchool(block)) {
-        this.openImpact(block, 'school', null, { type: 'replace-country', country });
-      }
+    if (this.blocked(key)) {
       event.source.value = block.country;
       return;
     }
@@ -238,10 +245,7 @@ export class TeacherSchoolsPage implements OnInit, OnDestroy {
     if (!block || schoolId === block.schoolId) {
       return;
     }
-    if (this.blocked(key) || this.onSavedSchool(block)) {
-      if (!this.blocked(key) && this.onSavedSchool(block)) {
-        this.openImpact(block, 'school', null, { type: 'replace-school', schoolId });
-      }
+    if (this.blocked(key)) {
       event.source.value = block.schoolId;
       return;
     }
@@ -249,11 +253,33 @@ export class TeacherSchoolsPage implements OnInit, OnDestroy {
   }
 
   onGradeChange(key: number, grade: string, event: MatCheckboxChange): void {
-    if (!event.checked && this.holdGrade(key, grade)) {
-      event.source.checked = true;
+    this.toggleGrade(key, grade, event.checked);
+  }
+
+  /** Aperçu au survol : qui est inscrit dans cette année. Enregistrer applique le retrait. */
+  showGradeTip(block: SchoolBlock, grade: string): void {
+    if (!this.onSavedSchool(block)) {
       return;
     }
-    this.toggleGrade(key, grade, event.checked);
+    this.showTip(block, grade);
+  }
+
+  /** Aperçu au survol de Supprimer : qui est inscrit dans cette école. */
+  showSchoolTip(block: SchoolBlock): void {
+    if (block.savedSchoolId == null) {
+      return;
+    }
+    this.showTip(block, null);
+  }
+
+  hideTip(): void {
+    this.tipSeq += 1;
+    this.tip.set(null);
+  }
+
+  tipMatches(key: number, grade: string | null): boolean {
+    const tip = this.tip();
+    return tip != null && tip.key === key && tip.grade === grade;
   }
 
   keep(impact: RemovalImpact): void {
@@ -603,21 +629,45 @@ export class TeacherSchoolsPage implements OnInit, OnDestroy {
     return block.savedSchoolId != null && block.schoolId === block.savedSchoolId;
   }
 
-  private holdGrade(key: number, grade: string): boolean {
-    const block = this.block(key);
-    if (!block || this.blocked(key)) {
-      return this.blocked(key);
+  private showTip(block: SchoolBlock, grade: string | null): void {
+    if (block.savedSchoolId == null) {
+      return;
     }
-    const saved =
-      this.onSavedSchool(block) && block.savedGrades.includes(grade) && block.grades.includes(grade);
-    if (!saved) {
-      return false;
+    const schoolId = block.savedSchoolId;
+    const cacheKey = `${schoolId}|${grade ?? ''}`;
+    const seq = ++this.tipSeq;
+    const cached = this.previewCache.get(cacheKey);
+    this.tip.set({
+      key: block.key,
+      grade,
+      loading: cached == null,
+      error: null,
+      view: cached ?? null,
+    });
+    if (cached) {
+      return;
     }
-    if (this.impacts().some((item) => item.blockKey === key && item.kind === 'grade' && item.grade === grade)) {
-      return true;
-    }
-    this.openImpact(block, 'grade', grade, { type: 'uncheck-grade', grade });
-    return true;
+    this.api.preview(schoolId, grade ?? undefined).subscribe({
+      next: (view) => {
+        this.previewCache.set(cacheKey, view);
+        if (this.tipSeq !== seq) {
+          return;
+        }
+        this.tip.set({ key: block.key, grade, loading: false, error: null, view });
+      },
+      error: (err: HttpErrorResponse) => {
+        if (this.tipSeq !== seq) {
+          return;
+        }
+        this.tip.set({
+          key: block.key,
+          grade,
+          loading: false,
+          error: this.message(err, 'Aperçu indisponible.'),
+          view: null,
+        });
+      },
+    });
   }
 
   private openImpact(
