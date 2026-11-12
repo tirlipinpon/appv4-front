@@ -4,12 +4,14 @@
       <span class="face" aria-hidden="true">{{ face }}</span>
     }
     <span class="who" data-testid="account-name">{{ displayName() }}</span>
+    @if (showSpaceActions()) {
+      <app-role-switch />
+    }
     <span class="spacer"></span>
     <button mat-button class="logout" type="button" data-testid="account-logout" (click)="logout()">Déconnexion</button>
   </mat-toolbar>
   @if (showSpaceActions()) {
     <div class="spaces">
-      <app-role-switch />
       <span class="spacer"></span>
       <app-space-access />
     </div>

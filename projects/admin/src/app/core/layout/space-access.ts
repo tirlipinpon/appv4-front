@@ -21,6 +21,9 @@ import { httpErrorMessage } from '../../shared/http-error-message/http-error-mes
   templateUrl: './space-access.html',
   styleUrl: './space-access.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.is-empty]': 'isEmpty()',
+  },
 })
 export class SpaceAccess implements OnInit {
   private readonly auth = inject(AuthService);
@@ -66,6 +69,11 @@ export class SpaceAccess implements OnInit {
       current.teacherRequest === 'pending'
     );
   });
+
+  /** Rien à proposer : le bandeau peut masquer cette ligne. */
+  readonly isEmpty = computed(
+    () => !this.showOpenParent() && !this.showRequestTeacher() && !this.showViewRequest() && this.error() === null,
+  );
 
   ngOnInit(): void {
     this.spaces

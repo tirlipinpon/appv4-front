@@ -23,6 +23,15 @@
   font-weight: 500;
 }
 
+.identity app-role-switch,
+.logout {
+  flex: 0 0 auto;
+}
+
+.spaces:has(app-space-access.is-empty) {
+  display: none;
+}
+
 .spaces {
   display: flex;
   flex-wrap: wrap;

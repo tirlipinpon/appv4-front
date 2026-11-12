@@ -97,6 +97,12 @@ describe('SpaceHeader', () => {
       token: { activeRole: SpaceRoles.teacher, roles: [SpaceRoles.parent, SpaceRoles.teacher] },
     });
 
+    const name: HTMLElement = fixture.nativeElement.querySelector('.who');
+    const switcher: HTMLElement = fixture.nativeElement.querySelector('.identity app-role-switch');
+    expect(switcher).not.toBeNull();
+    expect(name.compareDocumentPosition(switcher) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(getComputedStyle(fixture.nativeElement.querySelector('.spaces')).display).toBe('none');
+
     const tabs = tabButtons();
     expect(tabs.map((tab) => tab.textContent?.trim())).toEqual(['Parent', 'Professeur']);
     expect(tabs[0].getAttribute('aria-current')).toBeNull();
@@ -181,6 +187,7 @@ describe('SpaceHeader', () => {
     const action: HTMLButtonElement = fixture.nativeElement.querySelector('.space-action');
     expect(action.textContent?.trim()).toBe("Demander l'espace professeur");
     expect(action.closest('.subnav')).toBeNull();
+    expect(getComputedStyle(action.closest('.spaces') as HTMLElement).display).not.toBe('none');
     expect(fixture.nativeElement.textContent).not.toContain('Professeur');
     expect(fixture.nativeElement.textContent).not.toContain('Passer en');
   });
