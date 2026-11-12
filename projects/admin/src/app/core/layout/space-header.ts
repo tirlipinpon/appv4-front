@@ -28,8 +28,8 @@ interface SpaceMenuItem {
 
 /**
  * Bandeau des pages déjà connectées (SCRUM-166).
- * Deux étages pour le parent et le professeur : l'onglet dit l'espace, le sous-menu dit la page.
- * La file du compte admin ne montre ni ces onglets ni ce sous-menu.
+ * Trois étages : le nom et la déconnexion, puis l'espace (parent ou professeur), puis la page.
+ * La file du compte admin ne montre ni l'espace ni le sous-menu.
  * Le titre du bandeau est le nom du compte, parent ou professeur.
  */
 @Component({

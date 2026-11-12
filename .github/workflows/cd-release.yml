@@ -32,6 +32,9 @@ jobs:
       - name: Lint (ESLint)
         run: npm run lint
 
+      - name: Test design tokens
+        run: npm run test:tokens
+
       # Même couple front ↔ contrat backend qu'en CI develop, avant build/deploy.
       - name: Checkout backend OpenAPI contract
         uses: actions/checkout@v4

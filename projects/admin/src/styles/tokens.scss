@@ -1,0 +1,26 @@
+// Contrat d'interface admin.
+// Les mêmes valeurs sont dans design/tokens.json pour une future app Android ou iPhone.
+// Le web les expose en variables CSS. Le mobile relit le JSON, pas ces fichiers Angular.
+
+:root {
+  --app-primary: #1a3d7c;
+  --app-on-primary: #ffffff;
+  --app-primary-soft: #e8eef8;
+  --app-surface: #f5f7fb;
+  --app-surface-muted: #eef2f8;
+  --app-surface-card: #ffffff;
+  --app-text: #1c2b3a;
+  --app-text-muted: #3e4a59;
+  --app-error: #b3261e;
+  --app-success: #1b5e20;
+  --app-outline: #d5deea;
+  --app-space-1: 8px;
+  --app-space-2: 16px;
+  --app-space-3: 24px;
+  --app-space-4: 32px;
+  --app-radius-card: 8px;
+  --app-radius-pill: 999px;
+  --app-content-form: 40rem;
+  --app-content-list: 72rem;
+  --app-font: Roboto, "Helvetica Neue", sans-serif;
+}

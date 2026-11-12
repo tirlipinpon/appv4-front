@@ -1,19 +1,5 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f5f7fb;
-}
-
-.content {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  padding: 2rem 1rem 3rem;
-}
-
 .card {
-  width: min(100%, 40rem);
+  width: 100%;
   height: fit-content;
 }
 
@@ -21,16 +7,16 @@
 .count,
 .age {
   margin: 0.35rem 0 0;
-  color: #5f6368;
+  color: var(--app-text-muted);
 }
 
 .error {
-  color: #b3261e;
+  color: var(--app-error);
   margin: 0.35rem 0 0;
 }
 
 .school {
-  border: 1px solid #dadce0;
+  border: 1px solid var(--app-outline);
   border-radius: 8px;
   padding: 0.75rem 1rem 1rem;
   margin-top: 1rem;
@@ -44,7 +30,7 @@
 .grade {
   margin-top: 1rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #e6e8ee;
+  border-top: 1px solid var(--app-outline);
 }
 
 .grade-name {

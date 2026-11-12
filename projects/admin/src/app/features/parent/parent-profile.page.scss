@@ -1,19 +1,5 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f5f7fb;
-}
-
-.content {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  padding: 2rem 1rem 3rem;
-}
-
 .card {
-  width: min(100%, 40rem);
+  width: 100%;
   height: fit-content;
 }
 
@@ -29,23 +15,23 @@
 .label {
   display: block;
   font-size: 0.75rem;
-  color: #5f6368;
+  color: var(--app-text-muted);
 }
 
 .error,
 .field-error {
-  color: #b3261e;
+  color: var(--app-error);
   margin: 0 0 0.75rem;
 }
 
 .ok {
-  color: #1b7f3a;
+  color: var(--app-success);
   margin: 0 0 0.75rem;
 }
 
 .hint {
   margin: 0.35rem 0 0;
-  color: #5f6368;
+  color: var(--app-text-muted);
 }
 
 .avatars {
@@ -64,7 +50,7 @@
 }
 
 .avatars button.is-on {
-  border-color: #3f51b5;
-  background: #e8eaf6;
+  border-color: var(--app-primary);
+  background: var(--app-primary-soft);
   font-weight: 700;
 }

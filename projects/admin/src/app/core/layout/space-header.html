@@ -1,18 +1,19 @@
 <div class="banner">
-  <mat-toolbar color="primary">
+  <mat-toolbar class="identity" color="primary">
     @if (avatarFace(); as face) {
       <span class="face" aria-hidden="true">{{ face }}</span>
     }
     <span class="who" data-testid="account-name">{{ displayName() }}</span>
-    @if (showSpaceActions()) {
-      <app-role-switch />
-    }
     <span class="spacer"></span>
-    @if (showSpaceActions()) {
-      <app-space-access />
-    }
     <button mat-button class="logout" type="button" data-testid="account-logout" (click)="logout()">Déconnexion</button>
   </mat-toolbar>
+  @if (showSpaceActions()) {
+    <div class="spaces">
+      <app-role-switch />
+      <span class="spacer"></span>
+      <app-space-access />
+    </div>
+  }
   @if (showSpaceActions() && menu(); as section) {
     <nav class="subnav" data-testid="space-nav" [attr.aria-label]="section.label">
       @for (item of section.items; track item.path) {

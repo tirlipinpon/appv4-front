@@ -1,18 +1,5 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f5f7fb;
-}
-
-.content {
-  padding: 1.5rem 1rem 3rem;
-  display: flex;
-  justify-content: center;
-}
-
 .panel {
-  width: min(100%, 46rem);
+  width: 100%;
 }
 
 .heading h1 {
@@ -23,11 +10,11 @@
 .lead,
 .hint {
   margin: 0.35rem 0 0;
-  color: #5f6368;
+  color: var(--app-text-muted);
 }
 
 .error {
-  color: #b3261e;
+  color: var(--app-error);
   margin: 0.35rem 0 0;
 }
 
@@ -43,9 +30,9 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 0.1rem;
-  border: 1px solid #d0d7e2;
-  background: white;
-  border-radius: 8px;
+  border: 1px solid var(--app-outline);
+  background: var(--app-surface-card);
+  border-radius: var(--app-radius-card);
   padding: 0.55rem 0.75rem;
   cursor: pointer;
   font: inherit;
@@ -57,23 +44,23 @@
 }
 
 .pick-place {
-  color: #5f6368;
+  color: var(--app-text-muted);
   font-size: 0.85rem;
 }
 
 .pick-count {
-  color: #5f6368;
+  color: var(--app-text-muted);
   font-size: 0.85rem;
 }
 
 .pick.selected {
-  border-color: #1a3d7c;
-  background: #e8eef8;
+  border-color: var(--app-primary);
+  background: var(--app-primary-soft);
 }
 
 .subject {
   margin-top: 1rem;
-  background: white;
+  background: var(--app-surface-card);
   border-radius: 8px;
   padding: 0.85rem 1rem 1rem;
 }

@@ -1,11 +1,14 @@
 <div class="page">
   <mat-toolbar color="primary">
-    <span>appv4 · admin</span>
+    <span>appv4</span>
   </mat-toolbar>
-  <main class="content">
+  <main class="content content-center">
     <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Choisis ton espace</mat-card-title>
+        <mat-card-subtitle>Parent ou professeur, sur le même compte</mat-card-subtitle>
+      </mat-card-header>
       <mat-card-content>
-        <p>Choisis ton espace</p>
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
         }
