@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import type { ParentSubjectsResponse } from '../../core/api/api-models';
 import { ParentSubjectsPage } from './parent-subjects.page';
@@ -167,4 +167,73 @@ describe('ParentSubjectsPage', () => {
     del.flush(loaded.children![0].chosen![0]);
     expect(page.children()[0].chosen).toEqual([]);
   });
+
+  it('propose des matières après deux lettres, puis retient le choix', fakeAsync(() => {
+    boot(loaded);
+    const query = field('parent-subject-query');
+    const grade = field('parent-subject-grade');
+
+    query.value = 'm';
+    query.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    tick(300);
+    http.expectNone((request) => request.url === `${url}/3/offers`);
+    expect(fixture.nativeElement.textContent).toContain('Tape au moins deux lettres');
+
+    query.value = 'ma';
+    query.dispatchEvent(new Event('input'));
+    grade.value = 'CE2';
+    grade.dispatchEvent(new Event('input'));
+    tick(300);
+    const search = http.expectOne((request) => request.url === `${url}/3/offers`);
+    expect(search.request.params.get('query')).toBe('ma');
+    expect(search.request.params.get('grade')).toBe('CE2');
+    expect(search.request.params.get('limit')).toBe('8');
+    search.flush({ offers: loaded.children![0].proposed, nextCursor: 99 });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Mathématiques · Extra-scolaire · Prof A · École française · CE2',
+    );
+    expect(fixture.nativeElement.textContent).toContain("D'autres matières correspondent.");
+
+    const suggestion: HTMLButtonElement = fixture.nativeElement.querySelector(
+      '[data-testid="parent-subject-suggestion-12"]',
+    );
+    suggestion.click();
+    fixture.detectChanges();
+
+    expect(query.value).toBe('Mathématiques');
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-subject-suggestion-12"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-offer-add"]')).not.toBeNull();
+  }));
+
+  it('ignore une suggestion plus ancienne que la dernière frappe', fakeAsync(() => {
+    boot(loaded);
+    const query = field('parent-subject-query');
+
+    query.value = 'ma';
+    query.dispatchEvent(new Event('input'));
+    tick(300);
+    const stale = http.expectOne((request) => request.url === `${url}/3/offers`);
+
+    query.value = 'mat';
+    query.dispatchEvent(new Event('input'));
+    tick(300);
+    const current = http.expectOne((request) => request.url === `${url}/3/offers`);
+    expect(current.request.params.get('query')).toBe('mat');
+    stale.flush({
+      offers: [{ subjectId: 8, name: 'Ancienne', scolaire: false, teacherName: 'Prof B', schoolName: 'Autre', grade: 'CM1' }],
+      nextCursor: null,
+    });
+    current.flush({ offers: [], nextCursor: null });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Ancienne');
+    expect(fixture.nativeElement.textContent).toContain('Aucune matière pour ce nom.');
+  }));
+
+  function field(testId: string): HTMLInputElement {
+    return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
+  }
 });

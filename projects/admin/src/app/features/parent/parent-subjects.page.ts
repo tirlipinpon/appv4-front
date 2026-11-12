@@ -20,10 +20,16 @@ import { sexLabel } from './child-sex';
 import { ChildSubjectsService } from './data-access/child-subjects.service';
 import { ParentChildrenService } from './data-access/parent-children.service';
 
+/** Pause après la dernière lettre avant de proposer des matières. */
+const SUBJECT_PAUSE_MS = 300;
+const SUBJECT_MIN_QUERY = 2;
+const SUBJECT_SUGGEST_LIMIT = 8;
+
 /**
  * Chaque enfant avec ses matières (SCRUM-162).
  * Celles de son école et de son année sont déjà dans la liste.
  * Le portrait vient de la fiche enfant, comme sur la page Mes enfants.
+ * Le nom de la matière propose le catalogue après deux lettres.
  */
 @Component({
   selector: 'app-parent-subjects-page',
@@ -43,6 +49,11 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
   readonly children = signal<ChildSubjectsResponse[]>([]);
   readonly searchQueries = signal<Readonly<Record<number, string>>>({});
   readonly searchGrades = signal<Readonly<Record<number, string>>>({});
+  readonly nameSuggestions = signal<Readonly<Record<number, ChildSubjectOffer[]>>>({});
+  readonly suggestionMore = signal<Readonly<Record<number, boolean>>>({});
+  readonly suggestionSettled = signal<Readonly<Record<number, boolean>>>({});
+  private readonly suggestTimers = new Map<number, ReturnType<typeof setTimeout>>();
+  private readonly suggestSeq = new Map<number, number>();
   readonly searchResults = signal<Readonly<Record<number, ChildSubjectOffer[]>>>({});
   readonly searchCursors = signal<Readonly<Record<number, number | null>>>({});
   readonly searchHistory = signal<Readonly<Record<number, number[]>>>({});
@@ -84,6 +95,8 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     for (const [childId, seq] of this.searchSeq) this.searchSeq.set(childId, seq + 1);
+    for (const childId of this.suggestTimers.keys()) this.clearSuggestTimer(childId);
+    for (const [childId, seq] of this.suggestSeq) this.suggestSeq.set(childId, seq + 1);
     this.photoBag.destroy();
     this.photos.set({});
   }
@@ -206,7 +219,51 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
     this.invalidateSearch(childId);
   }
 
+  onQueryInput(childId: number, event: Event): void {
+    this.setSearchQuery(childId, event);
+    this.armSuggestions(childId);
+  }
+
+  onGradeInput(childId: number, event: Event): void {
+    this.setSearchGrade(childId, event);
+    this.armSuggestions(childId);
+  }
+
+  suggestionsFor(childId: number): ChildSubjectOffer[] {
+    return this.nameSuggestions()[childId] ?? [];
+  }
+
+  nameTooShort(childId: number): boolean {
+    const text = (this.searchQueries()[childId] ?? '').trim();
+    return text.length > 0 && text.length < SUBJECT_MIN_QUERY;
+  }
+
+  suggestionMiss(childId: number): boolean {
+    const text = (this.searchQueries()[childId] ?? '').trim();
+    return text.length >= SUBJECT_MIN_QUERY
+      && this.suggestionSettled()[childId] === true
+      && this.suggestionsFor(childId).length === 0
+      && this.searchLoading()[childId] !== true;
+  }
+
+  suggestionLabel(offer: ChildSubjectOffer): string {
+    const kind = offer.scolaire === true ? 'Scolaire' : offer.scolaire === false ? 'Extra-scolaire' : '';
+    return [offer.name, kind, offer.teacherName, offer.schoolName, offer.grade]
+      .filter((part) => part != null && part.trim() !== '')
+      .join(' · ');
+  }
+
+  pickSuggestion(childId: number, offer: ChildSubjectOffer): void {
+    this.silenceSuggestions(childId);
+    this.searchQueries.update((rows) => ({ ...rows, [childId]: offer.name ?? '' }));
+    this.searchResults.update((rows) => ({ ...rows, [childId]: [offer] }));
+    this.searchCursors.update((rows) => ({ ...rows, [childId]: null }));
+    this.searchHistory.update((rows) => ({ ...rows, [childId]: [0] }));
+    this.searched.update((rows) => ({ ...rows, [childId]: true }));
+  }
+
   search(childId: number, afterId = 0): void {
+    this.silenceSuggestions(childId);
     if (afterId === 0) this.searchHistory.update((rows) => ({ ...rows, [childId]: [0] }));
     const seq = (this.searchSeq.get(childId) ?? 0) + 1;
     this.searchSeq.set(childId, seq);
@@ -246,6 +303,61 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
     const previous = history.slice(0, -1);
     this.searchHistory.update((rows) => ({ ...rows, [childId]: previous }));
     this.search(childId, previous[previous.length - 1]);
+  }
+
+  private armSuggestions(childId: number): void {
+    this.silenceSuggestions(childId);
+    this.scheduleSuggestions(childId);
+  }
+
+  private scheduleSuggestions(childId: number): void {
+    this.clearSuggestTimer(childId);
+    const timer = setTimeout(() => {
+      this.suggestTimers.delete(childId);
+      this.loadSuggestions(childId);
+    }, SUBJECT_PAUSE_MS);
+    this.suggestTimers.set(childId, timer);
+  }
+
+  private loadSuggestions(childId: number): void {
+    const query = (this.searchQueries()[childId] ?? '').trim();
+    const seq = (this.suggestSeq.get(childId) ?? 0) + 1;
+    this.suggestSeq.set(childId, seq);
+    if (query.length < SUBJECT_MIN_QUERY) {
+      return;
+    }
+    this.api.search(childId, query, this.searchGrades()[childId] ?? '', 0, SUBJECT_SUGGEST_LIMIT)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          if (this.suggestSeq.get(childId) !== seq) return;
+          const offers = page.offers ?? [];
+          this.nameSuggestions.update((rows) => ({ ...rows, [childId]: offers }));
+          this.suggestionMore.update((rows) => ({ ...rows, [childId]: page.nextCursor != null }));
+          this.suggestionSettled.update((rows) => ({ ...rows, [childId]: true }));
+        },
+        error: (err: HttpErrorResponse) => {
+          if (this.suggestSeq.get(childId) !== seq) return;
+          this.suggestionSettled.update((rows) => ({ ...rows, [childId]: true }));
+          this.error.set(httpErrorMessage(err, 'Recherche impossible.'));
+        },
+      });
+  }
+
+  private silenceSuggestions(childId: number): void {
+    this.clearSuggestTimer(childId);
+    this.suggestSeq.set(childId, (this.suggestSeq.get(childId) ?? 0) + 1);
+    this.nameSuggestions.update((rows) => ({ ...rows, [childId]: [] }));
+    this.suggestionMore.update((rows) => ({ ...rows, [childId]: false }));
+    this.suggestionSettled.update((rows) => ({ ...rows, [childId]: false }));
+  }
+
+  private clearSuggestTimer(childId: number): void {
+    const timer = this.suggestTimers.get(childId);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      this.suggestTimers.delete(childId);
+    }
   }
 
   private invalidateSearch(childId: number): void {

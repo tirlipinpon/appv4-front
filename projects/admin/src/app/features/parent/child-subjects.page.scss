@@ -98,6 +98,33 @@
   color: var(--app-text-muted);
 }
 
+.suggestions {
+  list-style: none;
+  margin: -0.35rem 0 0.35rem;
+  padding: 0.25rem 0;
+  background: var(--app-surface-card);
+  border: 1px solid var(--app-outline);
+  border-radius: 8px;
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.suggestions button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  color: var(--app-text);
+}
+
+.suggestions button:hover,
+.suggestions button:focus-visible {
+  background: var(--app-primary-soft);
+}
+
 .error,
 .confirm {
   color: var(--app-error);
