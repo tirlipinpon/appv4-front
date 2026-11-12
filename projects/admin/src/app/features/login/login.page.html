@@ -16,16 +16,34 @@
 
         @if (showDevProfiles) {
           <mat-form-field appearance="outline" class="full">
-            <mat-label>Profil de test</mat-label>
+            <mat-label>Rechercher un profil de test</mat-label>
+            <input matInput [ngModel]="profileSearch()" (ngModelChange)="profileSearch.set($event)"
+              placeholder="Nom, email ou rôle" data-testid="dev-profile-search" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Profil de test ({{ filteredDevProfiles().length }})</mat-label>
             <mat-select
+              data-testid="dev-profile-select"
+              [disabled]="busy() || profilesLoading()"
               [ngModel]="selectedDevProfile()"
               (ngModelChange)="selectDevProfile($event)"
             >
-              @for (profile of devProfiles; track profile.email) {
-                <mat-option [value]="profile.email">{{ profile.label }}</mat-option>
+              @for (profile of filteredDevProfiles(); track profile.email) {
+                <mat-option [value]="profile.email" [disabled]="profile.active === false">{{ profile.label }}</mat-option>
+              } @empty {
+                <mat-option disabled>Aucun profil trouvé</mat-option>
               }
             </mat-select>
           </mat-form-field>
+          @if (profilesLoading()) {
+            <p role="status">Chargement des profils…</p>
+          }
+          @if (profilesError()) {
+            <p class="error" role="alert">{{ profilesError() }}</p>
+          }
+          <button mat-button type="button" [disabled]="profilesLoading() || busy()" (click)="loadDevProfiles()">
+            Actualiser les profils
+          </button>
         }
 
         <mat-form-field appearance="outline" class="full">
