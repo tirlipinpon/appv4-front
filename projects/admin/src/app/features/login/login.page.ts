@@ -21,11 +21,12 @@ import { FacebookOAuthService } from './data-access/facebook-oauth.service';
 import { GoogleOAuthService } from './data-access/google-oauth.service';
 import { LoginService } from './data-access/login.service';
 
-/** Profils locaux pour basculer rapidement en dev (liste statique, pas d’API). */
+/** Mots de passe connus des profils locaux historiques. */
 interface DevLoginProfile {
   readonly label: string;
   readonly email: string;
   readonly password: string;
+  readonly active?: boolean;
 }
 
 const DEV_LOGIN_PROFILES: readonly DevLoginProfile[] = environment.production
@@ -86,8 +87,16 @@ export class LoginPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   /** Affiche le sélecteur de profils uniquement hors prod. */
-  readonly showDevProfiles = !environment.production && DEV_LOGIN_PROFILES.length > 0;
-  readonly devProfiles = DEV_LOGIN_PROFILES;
+  readonly showDevProfiles = !environment.production;
+  readonly devProfiles = signal<readonly DevLoginProfile[]>(DEV_LOGIN_PROFILES);
+  readonly profilesLoading = signal(false);
+  readonly profilesError = signal<string | null>(null);
+  readonly profileSearch = signal('');
+  readonly filteredDevProfiles = computed(() => {
+    const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const query = normalize(this.profileSearch().trim());
+    return this.devProfiles().filter((profile) => normalize(profile.label).includes(query));
+  });
   readonly selectedDevProfile = signal(DEV_DEFAULT_PROFILE?.email ?? '');
 
   readonly email = signal(DEV_DEFAULT_PROFILE?.email ?? '');
@@ -113,10 +122,33 @@ export class LoginPage implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadDevProfiles();
     const fromQuery = this.route.snapshot.queryParamMap.get('error');
     if (fromQuery) {
       this.error.set(fromQuery);
     }
+  }
+
+  loadDevProfiles(): void {
+    if (!this.showDevProfiles || this.profilesLoading()) return;
+    this.profilesLoading.set(true);
+    this.profilesError.set(null);
+    this.loginApi.localProfiles().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (profiles) => {
+        this.devProfiles.set(profiles.map((profile) => ({
+          label: `${profile.displayName} — ${profile.email} — ${profile.roles || 'sans rôle'}${profile.active ? '' : ' (désactivé)'}`,
+          email: profile.email,
+          active: profile.active,
+          password: DEV_LOGIN_PROFILES.find((known) => known.email === profile.email)?.password
+            ?? (profile.email.endsWith('@front-demo.example.test') ? 'FrontDemo2026!' : environment.devLoginPassword),
+        })));
+        this.profilesLoading.set(false);
+      },
+      error: () => {
+        this.profilesLoading.set(false);
+        this.profilesError.set('Impossible de charger les comptes locaux.');
+      },
+    });
   }
 
   togglePasswordVisibility(): void {
@@ -125,8 +157,8 @@ export class LoginPage implements OnInit {
 
   /** Préremplit email + mot de passe depuis la liste locale de test. */
   selectDevProfile(email: string): void {
-    const profile = DEV_LOGIN_PROFILES.find((item) => item.email === email);
-    if (!profile) {
+    const profile = this.devProfiles().find((item) => item.email === email);
+    if (!profile || profile.active === false || this.busy()) {
       return;
     }
     this.selectedDevProfile.set(profile.email);
