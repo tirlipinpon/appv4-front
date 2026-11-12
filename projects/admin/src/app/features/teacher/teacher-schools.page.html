@@ -1,7 +1,7 @@
 <div class="page">
   <app-space-header />
 
-  <main class="content">
+  <main class="content content-wide">
     <mat-card class="card">
       <mat-card-header>
         <mat-card-title>Écoles</mat-card-title>
@@ -9,7 +9,7 @@
       </mat-card-header>
       <mat-card-content>
         @if (loading()) {
-          <p>Chargement…</p>
+          <p class="status" role="status">Chargement…</p>
         }
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
@@ -89,7 +89,7 @@
                 @for (impact of impactsFor(block.key); track impact.kind + (impact.grade ?? '')) {
                   <aside class="impact" role="region">
                     @if (impact.loading) {
-                      <p>Chargement…</p>
+                      <p class="status" role="status">Chargement…</p>
                     }
                     @if (impact.error) {
                       <p class="field-error" role="alert">{{ impact.error }}</p>

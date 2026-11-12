@@ -9,7 +9,7 @@
       </mat-card-header>
       <mat-card-content>
         @if (loading()) {
-          <p>Chargement…</p>
+          <p class="status" role="status">Chargement…</p>
         }
         @if (error()) {
           <p class="error" role="alert" data-testid="profile-alert">{{ error() }}</p>

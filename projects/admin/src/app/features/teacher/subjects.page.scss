@@ -1,31 +1,17 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f5f7fb;
-}
-
-.content {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  padding: 2rem 1rem 3rem;
-}
-
 .card {
-  width: min(100%, 40rem);
+  width: 100%;
   height: fit-content;
 }
 
 .hint {
   margin: 0.5rem 0 0;
-  color: #5f6368;
+  color: var(--app-text-muted);
 }
 
 .error,
 .field-error,
 .confirm {
-  color: #b3261e;
+  color: var(--app-error);
   margin: 0.35rem 0 0;
 }
 
@@ -35,7 +21,7 @@
 }
 
 .school {
-  border: 1px solid #dadce0;
+  border: 1px solid var(--app-outline);
   border-radius: 8px;
   padding: 0.75rem 1rem 1rem;
   margin-top: 1rem;
@@ -49,7 +35,7 @@
 .grade {
   margin-top: 1rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #e6e8ee;
+  border-top: 1px solid var(--app-outline);
 }
 
 .grade-name {
@@ -70,7 +56,7 @@
   gap: 0.15rem;
   margin-top: 0.65rem;
   padding: 0.55rem 0.75rem 0.4rem;
-  border: 1px solid #dadce0;
+  border: 1px solid var(--app-outline);
   border-radius: 8px;
 }
 
@@ -88,13 +74,13 @@
 }
 
 .question-count {
-  color: #5f6368;
+  color: var(--app-text-muted);
   font-size: 0.9rem;
   font-weight: 400;
 }
 
 .name.inactive {
-  color: #5f6368;
+  color: var(--app-text-muted);
   font-weight: 500;
 }
 
@@ -121,7 +107,7 @@
 .invites {
   margin: 0.75rem 0 1.25rem;
   padding: 0.75rem 1rem;
-  border: 1px solid #dadce0;
+  border: 1px solid var(--app-outline);
   border-radius: 8px;
   background: #f8fafc;
 }

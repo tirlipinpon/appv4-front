@@ -18,7 +18,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
   template: `
     <div class="page">
       <app-space-header />
-      <main class="content">
+      <main class="content content-center">
         <mat-card class="card">
           <mat-card-header>
             <mat-card-title data-testid="teacher-pending-title">Demande en attente</mat-card-title>
@@ -42,18 +42,6 @@ import { SpaceHeader } from '../../core/layout/space-header';
     </div>
   `,
   styles: `
-    .page {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #f5f7fb;
-    }
-    .content {
-      flex: 1;
-      display: grid;
-      place-items: center;
-      padding: 2rem 1rem;
-    }
     .card {
       width: min(100%, 32rem);
     }

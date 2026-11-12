@@ -1,19 +1,21 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f5f7fb;
-}
-
-.content {
-  width: min(100%, 40rem);
-  margin: 0 auto;
-  padding: 2rem 1rem 3rem;
-}
-
 h1 {
-  margin: 0 0 1.5rem;
-  font-size: 1.6rem;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.queue-count {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-space-2);
+  margin: var(--app-space-2) 0 var(--app-space-3);
+  padding: 0;
+  list-style: none;
+  color: var(--app-text-muted);
+}
+
+.queue-count strong {
+  color: var(--app-text);
 }
 
 h2 {
@@ -27,13 +29,14 @@ section + section {
 
 .row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 1rem;
-  margin-bottom: 0.5rem;
-  background: #fff;
-  border-radius: 8px;
+  gap: var(--app-space-2);
+  padding: 0.85rem var(--app-space-2);
+  margin-bottom: var(--app-space-1);
+  background: var(--app-surface-card);
+  border-radius: var(--app-radius-card);
 }
 
 .actions {
@@ -44,20 +47,20 @@ section + section {
 
 .row span {
   display: block;
-  color: #5f6368;
+  color: var(--app-text-muted);
   font-size: 0.9rem;
 }
 
 .empty {
   margin: 0;
-  color: #5f6368;
+  color: var(--app-text-muted);
 }
 
 .hint {
   margin: 0 0 1.25rem;
-  color: #5f6368;
+  color: var(--app-text-muted);
 }
 
 .error {
-  color: #b3261e;
+  color: var(--app-error);
 }

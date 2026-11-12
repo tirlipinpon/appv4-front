@@ -1,6 +1,6 @@
 <section class="panel" aria-label="Questions">
   @if (loading()) {
-    <p>Chargement…</p>
+    <p class="status" role="status">Chargement…</p>
   }
   @if (error(); as message) {
     <p class="field-error" role="alert">{{ message }}</p>
@@ -58,7 +58,7 @@
       @if (pendingIds().length) {
         <div class="warning" role="alertdialog" aria-label="Suppression">
           @if (followersLoading()) {
-            <p>Chargement…</p>
+            <p class="status" role="status">Chargement…</p>
           } @else if (followers(); as people) {
             <p>{{ people.warning }}</p>
             <ul class="names">

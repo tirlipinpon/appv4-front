@@ -62,7 +62,7 @@ svg.editing ellipse {
 svg.editing polygon.selected,
 svg.editing rect.selected,
 svg.editing ellipse.selected {
-  stroke: #1a3d7c;
+  stroke: var(--app-primary);
   stroke-width: 0.014;
 }
 
@@ -98,7 +98,7 @@ svg.editing polygon.piece,
 svg.editing rect.piece,
 svg.editing ellipse.piece {
   fill: rgb(26 61 124 / 2%);
-  stroke: #1a3d7c;
+  stroke: var(--app-primary);
   stroke-width: 0.002;
 }
 
@@ -109,13 +109,13 @@ svg.editing ellipse.piece.selected {
 }
 
 .zone-list li.selected {
-  outline: 2px solid #1a3d7c;
+  outline: 2px solid var(--app-primary);
   background: #e4ecf8;
 }
 
 polyline.draft {
   fill: none;
-  stroke: #1a3d7c;
+  stroke: var(--app-primary);
   stroke-width: 0.005;
   pointer-events: none;
 }
@@ -128,23 +128,23 @@ circle {
 }
 
 circle.draft-point {
-  fill: #1a3d7c;
+  fill: var(--app-primary);
   cursor: pointer;
 }
 
 circle.draft-point.active {
   fill: #fff;
-  stroke: #1a3d7c;
+  stroke: var(--app-primary);
   stroke-width: 0.008;
 }
 
 circle.draft-point.origin {
-  stroke: #1a3d7c;
+  stroke: var(--app-primary);
   stroke-width: 0.008;
 }
 
 circle.active {
-  fill: #1a3d7c;
+  fill: var(--app-primary);
 }
 
 .tools,
@@ -164,14 +164,14 @@ circle.active {
 .zone-list li {
   margin-top: 0.5rem;
   padding: 0.5rem;
-  background: #f5f7fb;
+  background: var(--app-surface);
   border-radius: 8px;
 }
 
 
 button.pick.selected {
-  border-color: #1a3d7c;
-  background: #1a3d7c;
+  border-color: var(--app-primary);
+  background: var(--app-primary);
   color: #fff;
   font-weight: 700;
 }
@@ -194,9 +194,9 @@ button.side.vrai.selected {
 }
 
 button.side.faux.selected {
-  border-color: #b3261e;
+  border-color: var(--app-error);
   background: #fce8e6;
-  color: #b3261e;
+  color: var(--app-error);
   font-weight: 700;
 }
 
@@ -207,7 +207,7 @@ button.side.faux.selected {
 
 .hint {
   margin: 0.35rem 0 0;
-  color: #5f6368;
+  color: var(--app-text-muted);
 }
 
 .pieces {

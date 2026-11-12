@@ -1,8 +1,13 @@
 <div class="page">
   <app-space-header [showSpaceActions]="false" />
 
-  <main class="content">
+  <main class="content content-wide">
     <h1>Demandes professeur</h1>
+    <ul class="queue-count">
+      <li><strong>{{ pending().length }}</strong> en attente</li>
+      <li><strong>{{ approved().length }}</strong> {{ approved().length === 1 ? 'traitée' : 'traitées' }}</li>
+      <li><strong>{{ revoked().length }}</strong> {{ revoked().length === 1 ? 'révoquée' : 'révoquées' }}</li>
+    </ul>
     @if (error()) {
       <p class="error" role="alert">{{ error() }}</p>
     }
@@ -58,6 +63,7 @@
           </div>
           <button
             mat-stroked-button
+            color="warn"
             type="button"
             data-testid="request-revoke"
             [disabled]="approvingId() === item.id"

@@ -1,33 +1,31 @@
 :host {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  margin-left: 0.75rem;
+  gap: var(--app-space-1);
 }
 
 .tabs {
   display: inline-flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: var(--app-space-1);
 }
 
 .tab {
   appearance: none;
   background: transparent;
-  color: inherit;
+  color: var(--app-text);
   border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0.4rem 0.4rem 0 0;
+  border-radius: var(--app-radius-pill);
   font: inherit;
   font-size: 0.95rem;
-  padding: 0.35rem 0.7rem;
+  padding: 0.35rem 0.85rem;
   cursor: pointer;
 }
 
 .tab.is-current {
   font-weight: 700;
-  background: rgba(63, 81, 181, 0.14);
-  border-bottom-color: #3f51b5;
+  color: var(--app-primary);
+  background: var(--app-primary-soft);
 }
 
 .tab:disabled {
@@ -37,4 +35,5 @@
 
 .switch-error {
   font-size: 0.85rem;
+  color: var(--app-error);
 }

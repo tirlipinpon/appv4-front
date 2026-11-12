@@ -14,9 +14,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
   template: `
     <div class="page">
       <mat-toolbar color="primary">
-        <span>appv4 · admin · récupération</span>
+        <span>appv4</span>
       </mat-toolbar>
-      <main class="content">
+      <main class="content content-center">
         <mat-card class="card">
           <mat-card-header>
             <mat-card-title>Je ne me souviens plus de mon email</mat-card-title>
@@ -34,18 +34,6 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     </div>
   `,
   styles: `
-    .page {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #f5f7fb;
-    }
-    .content {
-      flex: 1;
-      display: grid;
-      place-items: center;
-      padding: 2rem 1rem;
-    }
     .card {
       width: min(100%, 32rem);
     }

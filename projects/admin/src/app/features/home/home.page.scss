@@ -1,24 +1,10 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #f5f7fb;
-}
-
-.content {
-  flex: 1;
-  display: grid;
-  place-items: center;
-  padding: 2rem 1rem;
-}
-
 .hello-card {
   width: min(100%, 28rem);
 }
 
 .cd-check {
   margin: 0.75rem 1rem 0;
-  color: #2e7d32;
+  color: var(--app-success);
   font-size: 0.875rem;
 }
 
@@ -36,10 +22,10 @@ h1 {
 
 .error {
   margin: 0.75rem 0 0;
-  color: #b3261e;
+  color: var(--app-error);
 }
 
 .hint {
   margin: 0.5rem 0 0;
-  opacity: 0.75;
+  color: var(--app-text-muted);
 }

@@ -25,11 +25,15 @@ export class ChildSubjectsService {
     return this.http.delete<ChildSubjectOffer>(`${this.url()}/${childId}/${subjectId}`);
   }
 
-  search(childId: number, query: string, grade: string, afterId = 0): Observable<{
+  search(childId: number, query: string, grade: string, afterId = 0, limit?: number): Observable<{
     offers: ChildSubjectOffer[]; nextCursor: number | null;
   }> {
+    const params: Record<string, string | number> = { query, grade, afterId };
+    if (limit !== undefined) {
+      params['limit'] = limit;
+    }
     return this.http.get<{ offers: ChildSubjectOffer[]; nextCursor: number | null }>(
-      `${this.url()}/${childId}/offers`, { params: { query, grade, afterId } },
+      `${this.url()}/${childId}/offers`, { params },
     );
   }
 

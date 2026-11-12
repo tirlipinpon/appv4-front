@@ -5,10 +5,11 @@
 }
 
 .space-action {
-  border: 1px solid currentColor;
-  border-radius: 999px;
+  border: 1px solid var(--app-outline);
+  border-radius: var(--app-radius-pill);
 }
 
 .space-error {
   font-size: 0.85rem;
+  color: var(--app-error);
 }

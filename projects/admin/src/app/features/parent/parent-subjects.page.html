@@ -1,14 +1,14 @@
 <div class="page">
   <app-space-header />
 
-  <main class="content">
+  <main class="content content-wide">
     <section class="panel">
       <header class="heading">
         <h1 data-testid="parent-subjects-heading">Matières</h1>
       </header>
 
       @if (loading()) {
-        <p>Chargement…</p>
+        <p class="status" role="status">Chargement…</p>
       }
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
@@ -106,11 +106,45 @@
             @if (child.childId; as childId) {
               <mat-form-field appearance="outline">
                 <mat-label>Nom de la matière</mat-label>
-                <input matInput data-testid="parent-subject-query" [value]="searchQueries()[childId] ?? ''" (input)="setSearchQuery(childId, $event)" />
+                <input
+                  matInput
+                  data-testid="parent-subject-query"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  autocomplete="off"
+                  [attr.aria-expanded]="suggestionsFor(childId).length > 0 ? 'true' : 'false'"
+                  [attr.aria-controls]="'subject-suggestions-' + childId"
+                  [value]="searchQueries()[childId] ?? ''"
+                  (input)="onQueryInput(childId, $event)"
+                />
               </mat-form-field>
+              @if (suggestionsFor(childId).length > 0) {
+                <ul class="suggestions" role="listbox" [id]="'subject-suggestions-' + childId">
+                  @for (offer of suggestionsFor(childId); track offer.subjectId) {
+                    <li role="option" aria-selected="false">
+                      <button
+                        type="button"
+                        [attr.data-testid]="'parent-subject-suggestion-' + offer.subjectId"
+                        (click)="pickSuggestion(childId, offer)"
+                      >
+                        {{ suggestionLabel(offer) }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+              @if (suggestionMore()[childId]) {
+                <p class="hint">D'autres matières correspondent.</p>
+              }
+              @if (nameTooShort(childId)) {
+                <p class="hint">Tape au moins deux lettres du nom pour voir les matières.</p>
+              }
+              @if (suggestionMiss(childId)) {
+                <p class="hint">Aucune matière pour ce nom.</p>
+              }
               <mat-form-field appearance="outline">
                 <mat-label>Classe (facultatif)</mat-label>
-                <input matInput data-testid="parent-subject-grade" [value]="searchGrades()[childId] ?? ''" (input)="setSearchGrade(childId, $event)" />
+                <input matInput data-testid="parent-subject-grade" [value]="searchGrades()[childId] ?? ''" (input)="onGradeInput(childId, $event)" />
               </mat-form-field>
               <button mat-button type="button" data-testid="parent-subject-search" [disabled]="saving() || searchLoading()[childId]" (click)="search(childId)">Rechercher</button>
               @if ((searchHistory()[childId]?.length ?? 0) > 1) {
