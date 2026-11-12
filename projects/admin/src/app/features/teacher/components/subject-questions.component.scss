@@ -55,8 +55,12 @@
   font-weight: 600;
 }
 
+.composer {
+  margin-bottom: 1.25rem;
+}
+
 .zone {
-  margin-top: 1.25rem;
+  margin: 0 0 0.5rem;
 }
 
 li.editing .prompt {
@@ -98,26 +102,68 @@ li.editing .prompt {
 }
 
 .warning {
-  margin-top: 0.75rem;
+  margin: 0;
   padding: 0.75rem;
   background: #fff4e5;
   border-radius: 8px;
 }
 
+.warning p {
+  margin: 0;
+}
+
 .names {
-  margin: 0.35rem 0 0.5rem;
-  padding-left: 1.2rem;
+  display: flex;
+  flex-flow: row wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .forms,
 .choice,
 .editor,
-.copy,
 .question-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem 0.5rem;
+}
+
+.copy {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--app-primary);
+  border-left: 4px solid var(--app-primary);
+  border-radius: var(--app-radius-card);
+  background: var(--app-primary-soft);
+  box-shadow: 0 4px 16px rgb(26 61 124 / 16%);
+}
+
+.copy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.copy-count {
+  margin: 0;
+  color: var(--app-primary);
+  font-weight: 600;
+}
+
+.copy .field {
+  margin: 0;
+  min-width: 16rem;
 }
 
 button.form-chip {

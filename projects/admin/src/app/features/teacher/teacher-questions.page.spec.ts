@@ -86,7 +86,7 @@ describe('TeacherQuestionsPage', () => {
     expect(text).toContain('Bonne réponse');
     expect(text).toContain('Énoncé');
     expect(text).toContain('Sélectionner');
-    expect(text).toContain('Copier');
+    expect(text).not.toContain('Copier');
     expect(text).not.toContain('Transférer');
   });
 
@@ -152,6 +152,58 @@ describe('TeacherQuestionsPage', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Quelle date ?');
     expect(text).not.toContain('Combien font 2 + 2 ?');
+  });
+
+  it('groupe les matières par école', () => {
+    fixture.detectChanges();
+    http.expectOne(subjectsUrl).flush({
+      schools: [
+        {
+          schoolId: 1,
+          schoolName: 'École française',
+          grades: [
+            {
+              grade: 'CE1',
+              subjects: [{ id: 3, name: 'Mathématiques', active: true, ownedByMe: true, sharedWith: [] }],
+            },
+            {
+              grade: 'CE2',
+              subjects: [{ id: 4, name: 'Histoire', active: true, ownedByMe: true, sharedWith: [] }],
+            },
+          ],
+        },
+        {
+          schoolId: 2,
+          schoolName: 'École belge',
+          grades: [
+            {
+              grade: '3e primaire',
+              subjects: [{ id: 8, name: 'Français', active: true, ownedByMe: true, sharedWith: [] }],
+            },
+          ],
+        },
+      ],
+    });
+    http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }] });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const schools = Array.from(
+      fixture.nativeElement.querySelectorAll('.picker-school') as NodeListOf<HTMLElement>,
+    );
+    expect(schools.length).toBe(2);
+    expect(schools[0].textContent).toContain('École française');
+    expect(schools[0].textContent).toContain('CE1');
+    expect(schools[0].textContent).toContain('Mathématiques');
+    expect(schools[0].textContent).toContain('CE2');
+    expect(schools[0].textContent).toContain('Histoire');
+    expect(schools[0].textContent).not.toContain('Français');
+    expect(schools[1].textContent).toContain('École belge');
+    expect(schools[1].textContent).toContain('3e primaire');
+    expect(schools[1].textContent).toContain('Français');
   });
 
   it('ne propose pas une matière suivie seulement par un collègue', () => {

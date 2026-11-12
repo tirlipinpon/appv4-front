@@ -47,6 +47,15 @@ export class TeacherQuestionsPage implements OnInit {
   readonly subjectChoices = computed(() =>
     this.schools().flatMap((school) => school.grades.flatMap((grade) => grade.subjects)),
   );
+  /** Écoles qui ont au moins une matière, pour le choix groupé. */
+  readonly pickerSchools = computed(() =>
+    this.schools()
+      .map((school) => ({
+        ...school,
+        grades: school.grades.filter((grade) => grade.subjects.length > 0),
+      }))
+      .filter((school) => school.grades.length > 0),
+  );
   readonly openSubject = computed(() => this.subjectChoices().find((subject) => subject.id === this.openId()) ?? null);
   /** Un tableau d'un seul élément, pour recréer l'écran quand la matière change. */
   readonly openList = computed(() => {

@@ -39,6 +39,7 @@ const ui = {
   reuse: 'subject-reuse',
   colleagueRefused: 'subject-colleague-refused',
   colleagueList: 'subject-colleague-list',
+  list: 'subject-list',
 } as const;
 
 function subjectCard(page: Page, id: number) {
@@ -409,6 +410,7 @@ test.describe("Déplacer", () => {
       },
     ];
     await page.reload();
+    await expandSubjectLists(page);
     await page.getByTestId(ui.inviteAccept).click();
     await expect(page.getByTestId(ui.inboxTitle)).toHaveCount(0);
     // Destinataire : la matière reste, sans co-prof (seul accès après move).
@@ -611,6 +613,7 @@ test.describe("Partager", () => {
       },
     ];
     await page.reload();
+    await expandSubjectLists(page);
     await expect(page.getByTestId(ui.inviteText)).toContainText('Anne');
     await expect(page.getByTestId(ui.inviteText)).toContainText('Lecture');
     await page.getByTestId(ui.inviteAccept).click();
@@ -645,6 +648,7 @@ test.describe("Partager", () => {
       },
     ];
     await page.reload();
+    await expandSubjectLists(page);
     await expect(page.getByTestId(ui.inviteText)).toContainText('Camille');
     await expect(page.getByTestId(ui.inviteText)).toContainText('Calcul');
     await page.getByTestId(ui.inviteAccept).click();
@@ -828,12 +832,28 @@ function createState(partial?: {
   };
 }
 
+/** Les matières sont repliées. Les scénarios existants agissent dans la liste ouverte. */
+async function expandSubjectLists(page: Page): Promise<void> {
+  await expect
+    .poll(async () =>
+      (await page.locator('article.grade').count()) +
+      (await page.getByText("Il n'y a pas encore de classe.").count()),
+    )
+    .toBeGreaterThan(0);
+  await page.getByTestId(ui.list).evaluateAll((nodes) => {
+    for (const node of nodes) {
+      (node as HTMLDetailsElement).open = true;
+    }
+  });
+}
+
 async function openMatieres(page: Page): Promise<void> {
   await page.addInitScript((token) => {
     sessionStorage.setItem('admin.jwt', token);
   }, teacherJwt());
   await page.goto('/teacher/matieres');
   await expect(page.getByTestId(ui.subtitle)).toBeVisible();
+  await expandSubjectLists(page);
 }
 
 async function mockTeacherApis(page: Page, state: MockState): Promise<void> {

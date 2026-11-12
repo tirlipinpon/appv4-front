@@ -73,6 +73,13 @@
                 @if (grade.subjects.length === 0) {
                   <p class="hint">Aucune matière</p>
                 } @else {
+                  <details class="subject-list" data-testid="subject-list">
+                    <summary>
+                      <span class="summary-row">
+                        <span class="list-label">Liste matières</span>
+                        <span class="count">{{ subjectCountLabel(grade.subjects.length) }}</span>
+                      </span>
+                    </summary>
                   <ul class="subjects">
                     @for (subject of grade.subjects; track subject.id) {
                       <li class="subject" [attr.data-testid]="'subject-' + subject.id">
@@ -323,6 +330,7 @@
                       </li>
                     }
                   </ul>
+                  </details>
                 }
 
                 <div class="add">

@@ -197,6 +197,76 @@ describe('TeacherSchoolsPage retrait enregistré', () => {
     http.verify();
   });
 
+  it('affiche une école déjà choisie, et place Ajouter une école au-dessus', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Ecole Nouvelle');
+    expect(root.textContent).toContain('Belgique');
+    expect(root.textContent).toContain('Modifier');
+    expect(root.textContent).toContain('Supprimer');
+    expect(root.textContent).not.toContain('Rechercher une école');
+    expect(root.textContent).not.toContain('Enregistrer');
+    expect(root.querySelector('mat-card-actions')).toBeNull();
+
+    const add = [...root.querySelectorAll('button')].find((button) =>
+      button.textContent?.includes('Ajouter une école'),
+    );
+    const school = root.querySelector('article.school');
+    expect(add).withContext('bouton ajouter').not.toBeNull();
+    expect(school).withContext('école').not.toBeNull();
+    expect(Boolean(add!.compareDocumentPosition(school!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTrue();
+
+    const grades = root.querySelector('.grades') as HTMLElement;
+    expect(getComputedStyle(grades).flexDirection).toBe('row');
+    expect(getComputedStyle(grades).flexWrap).toBe('wrap');
+    expect(grades.textContent).toContain('1e primaire');
+    expect(grades.textContent).toContain('2e primaire');
+    expect(grades.querySelector('mat-checkbox')).toBeNull();
+  });
+
+  it('ouvre le formulaire et aligne les classes après Modifier', () => {
+    page.editSchool(page.blocks()[0].key);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Rechercher une école');
+    const article = root.querySelector('article.school') as HTMLElement;
+    expect(article.textContent).toContain('Annuler');
+    expect(article.textContent).toContain('Enregistrer');
+    expect(root.querySelector('mat-card-actions')).toBeNull();
+    const grades = root.querySelector('.grades') as HTMLElement;
+    expect(getComputedStyle(grades).flexDirection).toBe('row');
+    expect(getComputedStyle(grades).flexWrap).toBe('wrap');
+    expect(grades.querySelectorAll('mat-checkbox').length).toBe(2);
+  });
+
+  it('annule la modification et retrouve l’école enregistrée', () => {
+    const block = page.blocks()[0];
+    page.editSchool(block.key);
+    page.onGradeChange(block.key, '1e primaire', { checked: false, source: { checked: false } } as MatCheckboxChange);
+    http.expectOne((call) => call.url === previewUrl).flush(preview);
+    page.confirmRemoval(page.impactsFor(block.key)[0]);
+    expect(page.blocks()[0].grades).not.toContain('1e primaire');
+
+    page.cancelEdit(block.key);
+    fixture.detectChanges();
+
+    expect(page.blocks()[0].grades).toEqual(['1e primaire', '2e primaire']);
+    expect(page.blocks()[0].editing).toBeFalse();
+    expect(fixture.nativeElement.textContent).not.toContain('Rechercher une école');
+    http.expectNone(profileUrl);
+  });
+
+  it('annule une école nouvelle sans l’enregistrer', () => {
+    page.addSchool();
+    expect(page.blocks().length).toBe(2);
+
+    page.cancelEdit(page.blocks()[1].key);
+
+    expect(page.blocks().length).toBe(1);
+    expect(page.blocks()[0].schoolId).toBe(1);
+    http.expectNone(profileUrl);
+  });
+
   it('conserve une ecole enregistree absente des resultats de recherche', fakeAsync(() => {
     const block = page.blocks()[0];
     page.onSchoolSearch(block.key, { target: { value: 'autre' } } as unknown as Event);

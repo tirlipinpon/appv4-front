@@ -16,26 +16,77 @@
 }
 
 .school {
+  margin-top: 1.5rem;
+  padding: 0 0 1rem;
   border: 1px solid var(--app-outline);
-  border-radius: 8px;
-  padding: 0.75rem 1rem 1rem;
-  margin-top: 1rem;
+  border-left: 4px solid var(--app-primary);
+  border-radius: var(--app-radius-card);
+  background: var(--app-surface-card);
+  box-shadow: 0 1px 2px rgb(26 61 124 / 8%);
 }
 
 .school-name {
   margin: 0;
-  font-size: 1.15rem;
+  padding: 0.7rem 1rem;
+  background: var(--app-primary-soft);
+  color: var(--app-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--app-outline);
 }
 
 .grade {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
+  margin: 0 1rem;
+  padding-top: 0.85rem;
   border-top: 1px solid var(--app-outline);
+}
+
+.grade:first-of-type {
+  border-top: 0;
 }
 
 .grade-name {
   margin: 0;
   font-size: 1rem;
+}
+
+.student-list {
+  margin-top: 0.75rem;
+}
+
+.student-list summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.student-list summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--app-outline);
+  border-radius: 8px;
+}
+
+.summary-row::after {
+  content: '▸';
+  color: var(--app-text-muted);
+}
+
+.student-list[open] .summary-row::after {
+  content: '▾';
+}
+
+.list-label {
+  font-weight: 600;
+}
+
+.student-list .count {
+  margin: 0 0 0 auto;
 }
 
 .students {

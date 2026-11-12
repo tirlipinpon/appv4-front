@@ -26,64 +26,107 @@
             <p class="hint">Aucune école n'est proposable pour l'instant.</p>
           } @else {
             <p class="hint">
-              Choisis le pays, puis une école. Les classes affichées sont celles de cette école.
+              Les écoles déjà choisies sont affichées. Modifie, supprime, ou ajoute une école.
             </p>
           }
+
+            @if (canAdd()) {
+              <button mat-stroked-button class="add-school" type="button" [disabled]="saving()" (click)="addSchool()">
+                Ajouter une école
+              </button>
+            }
 
             @for (block of blocks(); track block.key) {
               <article class="school">
                 @if (blockError(block.key); as blockMessage) {
                   <p class="field-error" role="alert">{{ blockMessage }}</p>
                 }
-                <mat-form-field appearance="outline" class="full">
-                  <mat-label>Pays</mat-label>
-                  <mat-select
-                    [value]="block.country"
-                    [disabled]="saving() || blocked(block.key)"
-                    (selectionChange)="onCountryChange(block.key, $event)"
-                    placeholder="Choisir un pays"
-                  >
-                    @for (country of countries(); track country) {
-                      <mat-option [value]="country">{{ country }}</mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
 
-                <mat-form-field appearance="outline" class="full">
-                  <mat-label>Rechercher une école</mat-label>
-                  <input matInput [disabled]="!block.country || saving() || blocked(block.key)"
-                    [value]="schoolQueries()[block.key] ?? ''" (input)="onSchoolSearch(block.key, $event)" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="full">
-                  <mat-label>École</mat-label>
-                  <mat-select
-                    [value]="block.schoolId"
-                    [disabled]="saving() || !block.country || blocked(block.key)"
-                    (selectionChange)="onSchoolChange(block.key, $event)"
-                    placeholder="Choisir une école"
-                  >
-                    @for (school of optionsFor(block); track school.id) {
-                      <mat-option [value]="school.id">{{ school.name }}</mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
+                @if (showsForm(block)) {
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>Pays</mat-label>
+                    <mat-select
+                      [value]="block.country"
+                      [disabled]="saving() || blocked(block.key)"
+                      (selectionChange)="onCountryChange(block.key, $event)"
+                      placeholder="Choisir un pays"
+                    >
+                      @for (country of countries(); track country) {
+                        <mat-option [value]="country">{{ country }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
 
-                @if (schoolCursors()[block.key] !== null && schoolCursors()[block.key] !== undefined) {
-                  <button mat-button type="button" (click)="moreSchools(block.key)">Voir plus d'écoles</button>
-                }
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>Rechercher une école</mat-label>
+                    <input matInput [disabled]="!block.country || saving() || blocked(block.key)"
+                      [value]="schoolQueries()[block.key] ?? ''" (input)="onSchoolSearch(block.key, $event)" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>École</mat-label>
+                    <mat-select
+                      [value]="block.schoolId"
+                      [disabled]="saving() || !block.country || blocked(block.key)"
+                      (selectionChange)="onSchoolChange(block.key, $event)"
+                      placeholder="Choisir une école"
+                    >
+                      @for (school of optionsFor(block); track school.id) {
+                        <mat-option [value]="school.id">{{ school.name }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
 
-                @if (gradesFor(block).length) {
-                  <div class="grades">
-                    @for (grade of gradesFor(block); track grade) {
-                      <mat-checkbox
-                        [checked]="block.grades.includes(grade)"
+                  @if (schoolCursors()[block.key] !== null && schoolCursors()[block.key] !== undefined) {
+                    <button mat-button type="button" (click)="moreSchools(block.key)">Voir plus d'écoles</button>
+                  }
+
+                  @if (gradesFor(block).length) {
+                    <div class="grades">
+                      @for (grade of gradesFor(block); track grade) {
+                        <mat-checkbox
+                          [checked]="block.grades.includes(grade)"
+                          [disabled]="saving() || blocked(block.key)"
+                          (change)="onGradeChange(block.key, grade, $event)"
+                        >
+                          {{ grade }}
+                        </mat-checkbox>
+                      }
+                    </div>
+                  }
+                } @else {
+                  <div class="school-head">
+                    <div>
+                      <p class="school-name">{{ schoolLabel(block) }}</p>
+                      @if (block.country) {
+                        <p class="hint">{{ block.country }}</p>
+                      }
+                    </div>
+                    <div class="school-actions">
+                      <button
+                        mat-stroked-button
+                        type="button"
                         [disabled]="saving() || blocked(block.key)"
-                        (change)="onGradeChange(block.key, grade, $event)"
+                        (click)="editSchool(block.key)"
                       >
-                        {{ grade }}
-                      </mat-checkbox>
-                    }
+                        Modifier
+                      </button>
+                      <button
+                        mat-button
+                        type="button"
+                        [disabled]="saving() || blocked(block.key)"
+                        (click)="removeSchool(block.key)"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   </div>
+                  @if (block.grades.length) {
+                    <div class="grades">
+                      @for (grade of block.grades; track grade) {
+                        <span class="grade-chip">{{ grade }}</span>
+                      }
+                    </div>
+                  }
                 }
 
                 @for (impact of impactsFor(block.key); track impact.kind + (impact.grade ?? '')) {
@@ -161,26 +204,33 @@
                   </aside>
                 }
 
-                <button mat-button type="button" [disabled]="saving() || blocked(block.key)" (click)="removeSchool(block.key)">
-                  Retirer cette école
-                </button>
+                @if (showsForm(block)) {
+                  <div class="form-actions">
+                    @if (block.savedSchoolId !== null) {
+                      <button mat-button type="button" [disabled]="saving() || blocked(block.key)" (click)="removeSchool(block.key)">
+                        Supprimer
+                      </button>
+                    }
+                    <span class="form-actions-end">
+                      <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit(block.key)">
+                        Annuler
+                      </button>
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="button"
+                        [disabled]="saving() || blocked(block.key)"
+                        (click)="saveSchool(block.key)"
+                      >
+                        {{ savingKey() === block.key ? 'Enregistrement…' : 'Enregistrer' }}
+                      </button>
+                    </span>
+                  </div>
+                }
               </article>
-            }
-
-            @if (canAdd()) {
-              <button mat-stroked-button type="button" [disabled]="saving()" (click)="addSchool()">
-                Ajouter une école
-              </button>
             }
         }
       </mat-card-content>
-      @if (ready()) {
-        <mat-card-actions align="end">
-          <button mat-flat-button color="primary" type="button" [disabled]="saving() || awaitingChoice()" (click)="save()">
-            {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
-          </button>
-        </mat-card-actions>
-      }
     </mat-card>
   </main>
 </div>

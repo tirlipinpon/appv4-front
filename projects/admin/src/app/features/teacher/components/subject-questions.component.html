@@ -7,194 +7,7 @@
   }
 
   @if (!loading() && error() === null) {
-    <nav aria-label="Pages de questions">
-      <button mat-button type="button" [disabled]="pageCursors().length <= 1 || saving() || pendingIds().length > 0"
-        (click)="previousPage()">Précédent</button>
-      <span>Page {{ pageCursors().length }}</span>
-      <button mat-button type="button" [disabled]="nextCursor() === null || saving() || pendingIds().length > 0"
-        (click)="nextPage()">Suivant</button>
-    </nav>
-    @if (questions().length === 0) {
-      <p class="hint">Aucune question</p>
-    } @else {
-      <div class="copy">
-        @if (destinationChoices().length) {
-          <p class="hint">
-            Coche une ou plusieurs questions, choisis la matière, puis copie. Tu peux aussi les supprimer.
-          </p>
-          <mat-form-field appearance="outline" class="field">
-            <mat-label>Matière</mat-label>
-            <mat-select
-              [value]="targetId()"
-              [disabled]="saving() || pendingIds().length > 0"
-              (selectionChange)="setTarget($event.value)"
-            >
-              @for (destination of destinationChoices(); track destination.id) {
-                <mat-option [value]="destination.id">{{ destinationLabel(destination) }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <button
-            mat-flat-button
-            color="primary"
-            type="button"
-            [disabled]="saving() || pendingIds().length > 0 || selectedIds().length === 0 || targetId() === null"
-            (click)="copySelected()"
-          >
-            Copier
-          </button>
-        } @else {
-          <p class="hint">Coche une ou plusieurs questions pour les supprimer.</p>
-        }
-        <button
-          mat-button
-          type="button"
-          [disabled]="saving() || pendingIds().length > 0 || selectedIds().length === 0"
-          (click)="askDeleteSelected()"
-        >
-          Supprimer
-        </button>
-      </div>
-      @if (pendingIds().length) {
-        <div class="warning" role="alertdialog" aria-label="Suppression">
-          @if (followersLoading()) {
-            <p class="status" role="status">Chargement…</p>
-          } @else if (followers(); as people) {
-            <p>{{ people.warning }}</p>
-            <ul class="names">
-              @for (name of people.names; track $index) {
-                <li>{{ name }}</li>
-              }
-            </ul>
-            <button mat-button type="button" [disabled]="saving()" (click)="cancelDelete()">
-              Annuler la suppression
-            </button>
-            <button mat-flat-button color="warn" type="button" [disabled]="saving()" (click)="confirmDelete()">
-              Confirmer la suppression
-            </button>
-          }
-        </div>
-      }
-      <ul class="saved">
-        @for (question of questions(); track question.id) {
-          <li [class.editing]="editingId() === question.id">
-            @if (question.prompt) {
-              <p class="prompt">{{ question.prompt }}</p>
-            }
-            <p class="kind">{{ question.formLabel }}</p>
-            @if (question.formCode === 'memory') {
-              <ul class="answers">
-                @for (pair of question.pairs; track $index) {
-                  <li>{{ pair.questionSide }} — {{ pair.answerSide }}</li>
-                }
-              </ul>
-            } @else if (question.formCode === 'order') {
-              <ol class="answers ordered">
-                @for (item of question.items; track $index) {
-                  <li>{{ item.label }}</li>
-                }
-              </ol>
-            } @else if (question.formCode === 'image_interactive') {
-              <app-click-zone-editor
-                [readonly]="true"
-                [imageDataUrl]="question.imageDataUrl"
-                [zones]="question.zones"
-              />
-              <p class="hint">
-                {{
-                  question.requireAllCorrect
-                    ? 'Toutes les zones correctes sont à cliquer.'
-                    : 'Une partie des zones correctes suffit.'
-                }}
-              </p>
-            } @else if (question.formCode === 'puzzle') {
-              <app-click-zone-editor
-                [readonly]="true"
-                variant="puzzle"
-                [imageDataUrl]="question.imageDataUrl"
-                [zones]="question.zones"
-                [magnet]="question.snapDistance"
-              />
-            } @else if (question.formCode === 'texte') {
-              <p>{{ question.expectedAnswer }}</p>
-            } @else if (question.formCode === 'reponse_libre') {
-              <p>{{ question.expectedAnswer }}</p>
-              <app-letter-boxes
-                [count]="letterCount(question.expectedAnswer)"
-                [message]="letterMessage(question.id)"
-                [busy]="letterBusyId() === question.id"
-                (submitted)="tryLetters(question, $event)"
-              />
-            } @else if (question.formCode === 'case_vide') {
-              <p>{{ question.sentence }}</p>
-              <ul class="answers">
-                @for (answer of question.answers; track $index) {
-                  <li>{{ answer.label }}</li>
-                }
-              </ul>
-              @if (question.decoys.length) {
-                <p class="hint">Leurres</p>
-                <ul class="answers">
-                  @for (decoy of question.decoys; track $index) {
-                    <li>{{ decoy.label }}</li>
-                  }
-                </ul>
-              }
-            } @else if (question.formCode === 'liens') {
-              <ul class="answers">
-                @for (link of question.links; track $index) {
-                  <li>{{ link.leftLabel }} — {{ link.rightLabel }}</li>
-                }
-              </ul>
-            } @else if (question.formCode === 'vrai_faux') {
-              <ul class="answers">
-                @for (statement of question.statements; track $index) {
-                  <li>
-                    {{ statement.label }}
-                    <span class="mark">{{ statement.truthful ? 'Vrai' : 'Faux' }}</span>
-                  </li>
-                }
-              </ul>
-            } @else {
-              <ul class="answers">
-                @for (choice of question.choices; track $index) {
-                  <li [class.correct]="choice.correct">
-                    {{ choice.label }}
-                    @if (choice.correct) {
-                      <span class="mark">Bonne réponse</span>
-                    }
-                  </li>
-                }
-              </ul>
-            }
-            <div class="question-actions">
-              <mat-checkbox
-                [checked]="isSelected(question.id)"
-                [disabled]="saving() || pendingIds().length > 0"
-                (change)="toggleSelected(question.id, $event.checked)"
-              >
-                Sélectionner
-              </mat-checkbox>
-              <button mat-button type="button" [disabled]="saving() || pendingIds().length > 0" (click)="beginEdit(question)">
-                Modifier
-              </button>
-              <button
-                mat-button
-                type="button"
-                [disabled]="saving() || pendingIds().length > 0"
-                (click)="askDelete([question.id])"
-              >
-                Supprimer
-              </button>
-            </div>
-          </li>
-        }
-      </ul>
-    }
-    @if (notice(); as message) {
-      <p class="hint">{{ message }}</p>
-    }
-
+    <div class="composer">
     <h3 class="zone">{{ editingId() ? 'Modifier la question' : 'Nouvelle question' }}</h3>
     @if (formsLoading()) {
       <p class="hint">Chargement des formes…</p>
@@ -623,5 +436,204 @@
         </div>
       }
     }
+    </div>
+
+    <nav aria-label="Pages de questions">
+      <button mat-button type="button" [disabled]="pageCursors().length <= 1 || saving() || pendingIds().length > 0"
+        (click)="previousPage()">Précédent</button>
+      <span>Page {{ pageCursors().length }}</span>
+      <button mat-button type="button" [disabled]="nextCursor() === null || saving() || pendingIds().length > 0"
+        (click)="nextPage()">Suivant</button>
+    </nav>
+    @if (questions().length === 0) {
+      <p class="hint">Aucune question</p>
+    } @else {
+      @if (selectedIds().length > 0 || pendingIds().length > 0) {
+        <div class="copy" role="region" aria-label="Copier ou supprimer">
+          @if (selectedIds().length > 0) {
+            <div class="copy-actions">
+              <p class="copy-count">{{ selectionLabel() }}</p>
+              @if (destinationChoices().length) {
+                <mat-form-field appearance="outline" class="field">
+                  <mat-label>Matière</mat-label>
+                  <mat-select
+                    [value]="targetId()"
+                    [disabled]="saving() || pendingIds().length > 0"
+                    (selectionChange)="setTarget($event.value)"
+                  >
+                    @for (destination of destinationChoices(); track destination.id) {
+                      <mat-option [value]="destination.id">{{ destinationLabel(destination) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="saving() || pendingIds().length > 0 || targetId() === null"
+                  (click)="copySelected()"
+                >
+                  Copier
+                </button>
+              }
+              <button
+                mat-button
+                type="button"
+                [disabled]="saving() || pendingIds().length > 0"
+                (click)="askDeleteSelected()"
+              >
+                Supprimer
+              </button>
+              <button mat-button type="button" [disabled]="saving()" (click)="clearSelection()">
+                Annuler
+              </button>
+            </div>
+          }
+          @if (pendingIds().length) {
+            <div class="warning" role="alertdialog" aria-label="Suppression">
+              @if (followersLoading()) {
+                <p class="status" role="status">Chargement…</p>
+              } @else if (followers(); as people) {
+                <p>{{ people.warning }}</p>
+                @if (people.names?.length) {
+                  <ul class="names">
+                    @for (name of people.names; track $index) {
+                      <li>{{ name }}</li>
+                    }
+                  </ul>
+                }
+                <div class="copy-actions">
+                  <button mat-button type="button" [disabled]="saving()" (click)="cancelDelete()">
+                    Annuler la suppression
+                  </button>
+                  <button mat-flat-button color="warn" type="button" [disabled]="saving()" (click)="confirmDelete()">
+                    Confirmer la suppression
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+      <ul class="saved">
+        @for (question of questions(); track question.id) {
+          <li [class.editing]="editingId() === question.id">
+            @if (question.prompt) {
+              <p class="prompt">{{ question.prompt }}</p>
+            }
+            <p class="kind">{{ question.formLabel }}</p>
+            @if (question.formCode === 'memory') {
+              <ul class="answers">
+                @for (pair of question.pairs; track $index) {
+                  <li>{{ pair.questionSide }} — {{ pair.answerSide }}</li>
+                }
+              </ul>
+            } @else if (question.formCode === 'order') {
+              <ol class="answers ordered">
+                @for (item of question.items; track $index) {
+                  <li>{{ item.label }}</li>
+                }
+              </ol>
+            } @else if (question.formCode === 'image_interactive') {
+              <app-click-zone-editor
+                [readonly]="true"
+                [imageDataUrl]="question.imageDataUrl"
+                [zones]="question.zones"
+              />
+              <p class="hint">
+                {{
+                  question.requireAllCorrect
+                    ? 'Toutes les zones correctes sont à cliquer.'
+                    : 'Une partie des zones correctes suffit.'
+                }}
+              </p>
+            } @else if (question.formCode === 'puzzle') {
+              <app-click-zone-editor
+                [readonly]="true"
+                variant="puzzle"
+                [imageDataUrl]="question.imageDataUrl"
+                [zones]="question.zones"
+                [magnet]="question.snapDistance"
+              />
+            } @else if (question.formCode === 'texte') {
+              <p>{{ question.expectedAnswer }}</p>
+            } @else if (question.formCode === 'reponse_libre') {
+              <p>{{ question.expectedAnswer }}</p>
+              <app-letter-boxes
+                [count]="letterCount(question.expectedAnswer)"
+                [message]="letterMessage(question.id)"
+                [busy]="letterBusyId() === question.id"
+                (submitted)="tryLetters(question, $event)"
+              />
+            } @else if (question.formCode === 'case_vide') {
+              <p>{{ question.sentence }}</p>
+              <ul class="answers">
+                @for (answer of question.answers; track $index) {
+                  <li>{{ answer.label }}</li>
+                }
+              </ul>
+              @if (question.decoys.length) {
+                <p class="hint">Leurres</p>
+                <ul class="answers">
+                  @for (decoy of question.decoys; track $index) {
+                    <li>{{ decoy.label }}</li>
+                  }
+                </ul>
+              }
+            } @else if (question.formCode === 'liens') {
+              <ul class="answers">
+                @for (link of question.links; track $index) {
+                  <li>{{ link.leftLabel }} — {{ link.rightLabel }}</li>
+                }
+              </ul>
+            } @else if (question.formCode === 'vrai_faux') {
+              <ul class="answers">
+                @for (statement of question.statements; track $index) {
+                  <li>
+                    {{ statement.label }}
+                    <span class="mark">{{ statement.truthful ? 'Vrai' : 'Faux' }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <ul class="answers">
+                @for (choice of question.choices; track $index) {
+                  <li [class.correct]="choice.correct">
+                    {{ choice.label }}
+                    @if (choice.correct) {
+                      <span class="mark">Bonne réponse</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+            <div class="question-actions">
+              <mat-checkbox
+                [checked]="isSelected(question.id)"
+                [disabled]="saving() || pendingIds().length > 0"
+                (change)="toggleSelected(question.id, $event.checked)"
+              >
+                Sélectionner
+              </mat-checkbox>
+              <button mat-button type="button" [disabled]="saving() || pendingIds().length > 0" (click)="beginEdit(question)">
+                Modifier
+              </button>
+              <button
+                mat-button
+                type="button"
+                [disabled]="saving() || pendingIds().length > 0"
+                (click)="askDelete([question.id])"
+              >
+                Supprimer
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+    @if (notice(); as message) {
+      <p class="hint">{{ message }}</p>
+    }
+
   }
 </section>
