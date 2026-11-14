@@ -23,7 +23,14 @@
         <div class="picker">
           @for (school of pickerSchools(); track school.schoolId) {
             <section class="picker-school">
-              <h2 class="picker-school-name">{{ school.schoolName }}</h2>
+              <details class="school-toggle">
+                <summary class="picker-school-name">
+                  <span class="school-title">{{ school.schoolName }}</span>
+                  <span class="school-count">{{ sectionCountLabel(school.grades.length) }}</span>
+                  @if (school.grades.length) {
+                    <span class="section-list">{{ sectionNames(school.grades) }}</span>
+                  }
+                </summary>
               @for (grade of school.grades; track grade.grade) {
                 <h3 class="picker-grade">{{ grade.grade }}</h3>
                 <div class="picker-subjects">
@@ -41,6 +48,7 @@
                   }
                 </div>
               }
+              </details>
             </section>
           }
         </div>

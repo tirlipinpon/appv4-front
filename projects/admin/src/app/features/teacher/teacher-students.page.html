@@ -21,7 +21,11 @@
 
         @for (school of schools(); track school.schoolId) {
           <section class="school">
-            <h2 class="school-name">{{ school.schoolName }}</h2>
+            <details class="school-toggle">
+              <summary class="school-name">
+                <span class="school-title">{{ school.schoolName }}</span>
+                <span class="school-count">{{ classCountLabel(school.grades.length) }}</span>
+              </summary>
             @for (grade of school.grades; track grade.grade) {
               <article class="grade">
                 <h3 class="grade-name">{{ school.curriculumLabel }} — {{ grade.grade }}</h3>
@@ -55,6 +59,7 @@
                 }
               </article>
             }
+            </details>
           </section>
         }
       </mat-card-content>

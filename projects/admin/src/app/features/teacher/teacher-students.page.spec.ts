@@ -107,6 +107,10 @@ describe('TeacherStudentsPage', () => {
     const main: HTMLElement = fixture.nativeElement.querySelector('main');
     const text = main.textContent ?? '';
     expect(text).toContain('École du parc');
+    const school = main.querySelector('details.school-toggle') as HTMLDetailsElement | null;
+    expect(school?.open).toBeFalse();
+    expect(school?.querySelector('summary')?.textContent).toContain('École du parc');
+    expect(school?.querySelector('summary')?.textContent).toContain('2 classes');
     expect(text).toContain('France — CE1');
     expect(text).toContain('2 élèves');
     expect(text).toContain('Liste élèves');

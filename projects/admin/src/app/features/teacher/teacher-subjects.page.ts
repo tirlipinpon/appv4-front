@@ -159,6 +159,16 @@ export class TeacherSubjectsPage implements OnInit {
     return count === 1 ? '1 matière' : `${count} matières`;
   }
 
+  /** Nombre de sections (années) déjà renvoyées pour cette école. */
+  sectionCountLabel(count: number): string {
+    return count === 1 ? '1 section' : `${count} sections`;
+  }
+
+  /** Noms des sections, dans l'ordre renvoyé par l'API. */
+  sectionNames(grades: readonly { grade: string }[]): string {
+    return grades.map((grade) => grade.grade).join(', ');
+  }
+
   /** Saisie libre : on lâche le choix du menu, le nom tapé prime. */
   onNameInput(schoolId: number, grade: string, value: string): void {
     this.clearReuse(schoolId, grade);
