@@ -141,7 +141,18 @@
                   @if (block.grades.length) {
                     <div class="grades">
                       @for (grade of block.grades; track grade) {
-                        <span class="grade-chip">{{ grade }}</span>
+                        <span
+                          class="grade-wrap"
+                          (mouseenter)="showGradeTip(block, grade)"
+                          (mouseleave)="hideTip()"
+                        >
+                          <span class="grade-chip">{{ grade }}</span>
+                          @if (tipMatches(block.key, grade) && tip(); as current) {
+                            <aside class="impact impact-tip" role="tooltip">
+                              <ng-container [ngTemplateOutlet]="impactBody" [ngTemplateOutletContext]="{ tip: current }" />
+                            </aside>
+                          }
+                        </span>
                       }
                     </div>
                   }

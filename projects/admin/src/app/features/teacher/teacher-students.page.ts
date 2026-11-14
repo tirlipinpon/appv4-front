@@ -57,6 +57,11 @@ export class TeacherStudentsPage implements OnInit, OnDestroy {
   readonly photos = signal<Readonly<Record<number, string>>>({});
   readonly emoji = studentAvatar;
 
+  /** Nombre de classes déjà renvoyées pour cette école. */
+  classCountLabel(count: number): string {
+    return count === 1 ? '1 classe' : `${count} classes`;
+  }
+
   ngOnInit(): void {
     this.api
       .load()

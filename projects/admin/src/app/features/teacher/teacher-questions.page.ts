@@ -71,6 +71,16 @@ export class TeacherQuestionsPage implements OnInit {
     this.openId.set(id);
   }
 
+  /** Nombre de sections proposées dans le choix, pour cette école. */
+  sectionCountLabel(count: number): string {
+    return count === 1 ? '1 section' : `${count} sections`;
+  }
+
+  /** Noms des sections, dans l'ordre renvoyé par l'API. */
+  sectionNames(grades: readonly { grade: string }[]): string {
+    return grades.map((grade) => grade.grade).join(', ');
+  }
+
   ngOnInit(): void {
     this.subjectsApi.load().subscribe({
       next: (body) => this.apply(body),

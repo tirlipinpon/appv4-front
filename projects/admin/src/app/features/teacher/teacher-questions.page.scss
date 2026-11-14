@@ -34,12 +34,57 @@
 }
 
 .picker-school-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.75rem;
+  row-gap: 0.15rem;
   margin: 0;
   padding: 0.7rem 1rem;
   background: var(--app-primary-soft);
   color: var(--app-primary);
   font-size: 1.15rem;
   font-weight: 600;
+  border-bottom: 1px solid var(--app-outline);
+  cursor: pointer;
+  list-style: none;
+}
+
+.picker-school-name::-webkit-details-marker {
+  display: none;
+}
+
+.picker-school-name::marker {
+  content: '';
+}
+
+.picker-school-name::before {
+  content: '▸';
+  color: var(--app-text-muted);
+  font-weight: 500;
+}
+
+.school-toggle[open] > .picker-school-name::before {
+  content: '▾';
+}
+
+.school-toggle:not([open]) > .picker-school-name {
+  border-bottom: 0;
+}
+
+.school-count {
+  margin-left: auto;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--app-text-muted);
+}
+
+.section-list {
+  flex: 1 0 100%;
+  padding-left: 1.15rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--app-text-muted);
 }
 
 .picker-grade {

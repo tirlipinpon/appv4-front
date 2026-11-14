@@ -221,6 +221,31 @@ describe('TeacherSchoolsPage retrait enregistré', () => {
     expect(grades.textContent).toContain('1e primaire');
     expect(grades.textContent).toContain('2e primaire');
     expect(grades.querySelector('mat-checkbox')).toBeNull();
+    expect(grades.querySelectorAll('.grade-wrap').length).toBe(2);
+  });
+
+  it('montre le même aperçu au survol d’une classe affichée', () => {
+    const grades = fixture.nativeElement.querySelector('.grades') as HTMLElement;
+    const wrap = grades.querySelector('.grade-wrap') as HTMLElement;
+    expect(wrap.textContent).toContain('1e primaire');
+    wrap.dispatchEvent(new MouseEvent('mouseenter'));
+
+    const request = http.expectOne((call) => call.method === 'GET' && call.url === previewUrl);
+    expect(request.request.params.get('schoolId')).toBe('1');
+    expect(request.request.params.get('grade')).toBe('1e primaire');
+    request.flush(preview);
+    fixture.detectChanges();
+
+    const tip = grades.querySelector('.impact-tip');
+    expect(tip).not.toBeNull();
+    expect(tip?.textContent).toContain('2 élèves');
+    expect(tip?.textContent).toContain('Léa Martin');
+    expect(tip?.textContent).toContain('1 matière');
+    expect(tip?.textContent).toContain('Mathématiques');
+
+    wrap.dispatchEvent(new MouseEvent('mouseleave'));
+    fixture.detectChanges();
+    expect(grades.querySelector('.impact-tip')).toBeNull();
   });
 
   it('ouvre le formulaire et aligne les classes après Modifier', () => {
