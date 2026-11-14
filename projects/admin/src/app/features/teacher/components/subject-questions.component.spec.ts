@@ -94,6 +94,8 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Combien font 2 + 2 ?');
     expect(fixture.nativeElement.textContent).toContain('3');
     expect(fixture.nativeElement.textContent).toContain('Bonne réponse');
+    const html = fixture.nativeElement.innerHTML as string;
+    expect(html.indexOf('class="forms"')).toBeLessThan(html.indexOf('class="saved"'));
   });
 
   it('navigates bounded pages and clears selection', () => {
@@ -576,10 +578,18 @@ describe('SubjectQuestionsComponent', () => {
     });
     fixture.detectChanges();
 
-    expect(buttonNamed('Copier')?.disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('.copy')).toBeNull();
     expect(fixture.componentInstance.destinationLabel({ id: 9, label: 'École — CE2 — Histoire' })).toBe(
       'École — CE2 — Histoire',
     );
+
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.copy')).not.toBeNull();
+    buttonNamed('Annuler')?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.copy')).toBeNull();
+    expect(fixture.componentInstance.selectedIds()).toEqual([]);
 
     fixture.componentInstance.toggleSelected(7, true);
     fixture.componentInstance.toggleSelected(8, true);
@@ -702,6 +712,7 @@ describe('SubjectQuestionsComponent', () => {
     });
     fixture.detectChanges();
 
+    expect(fixture.nativeElement.querySelector('.copy .warning')).not.toBeNull();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('2 enfants suivent ce cours.');
     expect(text).toContain('Léa Martin');
@@ -737,7 +748,7 @@ describe('SubjectQuestionsComponent', () => {
     });
     fixture.detectChanges();
 
-    buttonsNamed('Supprimer')[1]?.click();
+    buttonsNamed('Supprimer')[0]?.click();
     http.expectOne('http://localhost:8080/api/int/teacher/subjects/4/followers').flush({
       childCount: 0,
       warning: 'Aucun enfant ne suit ce cours.',

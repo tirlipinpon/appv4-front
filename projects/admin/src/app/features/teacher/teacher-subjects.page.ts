@@ -154,6 +154,11 @@ export class TeacherSubjectsPage implements OnInit {
     return this.reused()[this.gradeKey(schoolId, grade)] ?? '';
   }
 
+  /** Nombre de matières déjà renvoyées pour cette classe. */
+  subjectCountLabel(count: number): string {
+    return count === 1 ? '1 matière' : `${count} matières`;
+  }
+
   /** Saisie libre : on lâche le choix du menu, le nom tapé prime. */
   onNameInput(schoolId: number, grade: string, value: string): void {
     this.clearReuse(schoolId, grade);

@@ -21,18 +21,27 @@
 
       @if (subjectChoices().length > 1) {
         <div class="picker">
-          @for (item of subjectChoices(); track item.id) {
-            <button
-              type="button"
-              class="pick"
-              [class.selected]="openId() === item.id"
-              [attr.aria-pressed]="openId() === item.id"
-              (click)="open(item.id)"
-            >
-              <span class="pick-name">{{ item.name }}</span>
-              <span class="pick-place">{{ item.place }}</span>
-              <span class="pick-count">{{ item.questionCount }} question{{ item.questionCount === 1 ? '' : 's' }}</span>
-            </button>
+          @for (school of pickerSchools(); track school.schoolId) {
+            <section class="picker-school">
+              <h2 class="picker-school-name">{{ school.schoolName }}</h2>
+              @for (grade of school.grades; track grade.grade) {
+                <h3 class="picker-grade">{{ grade.grade }}</h3>
+                <div class="picker-subjects">
+                  @for (item of grade.subjects; track item.id) {
+                    <button
+                      type="button"
+                      class="pick"
+                      [class.selected]="openId() === item.id"
+                      [attr.aria-pressed]="openId() === item.id"
+                      (click)="open(item.id)"
+                    >
+                      <span class="pick-name">{{ item.name }}</span>
+                      <span class="pick-count">{{ item.questionCount }} question{{ item.questionCount === 1 ? '' : 's' }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </section>
           }
         </div>
       }

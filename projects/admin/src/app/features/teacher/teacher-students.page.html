@@ -25,26 +25,33 @@
             @for (grade of school.grades; track grade.grade) {
               <article class="grade">
                 <h3 class="grade-name">{{ school.curriculumLabel }} — {{ grade.grade }}</h3>
-                <p class="count">{{ grade.countLabel }}</p>
                 @if (grade.students.length === 0) {
-                  <p class="hint">{{ grade.emptyMessage }}</p>
+                  <p class="count">{{ grade.countLabel }}</p>
                 } @else {
-                  <ul class="students">
-                    @for (student of grade.students; track student.id) {
-                      <li class="student">
-                        @if (student.hasPhoto && photos()[student.id]) {
-                          <img
-                            [src]="photos()[student.id]"
-                            [alt]="student.firstName + ' ' + student.lastName"
-                          />
-                        } @else {
-                          <span class="avatar" aria-hidden="true">{{ emoji(student.avatarCode) }}</span>
-                        }
-                        <span class="name">{{ student.lastName }} {{ student.firstName }}</span>
-                        <span class="age">{{ student.age }} ans</span>
-                      </li>
-                    }
-                  </ul>
+                  <details class="student-list">
+                    <summary>
+                      <span class="summary-row">
+                        <span class="list-label">Liste élèves</span>
+                        <span class="count">{{ grade.countLabel }}</span>
+                      </span>
+                    </summary>
+                    <ul class="students">
+                      @for (student of grade.students; track student.id) {
+                        <li class="student">
+                          @if (student.hasPhoto && photos()[student.id]) {
+                            <img
+                              [src]="photos()[student.id]"
+                              [alt]="student.firstName + ' ' + student.lastName"
+                            />
+                          } @else {
+                            <span class="avatar" aria-hidden="true">{{ emoji(student.avatarCode) }}</span>
+                          }
+                          <span class="name">{{ student.lastName }} {{ student.firstName }}</span>
+                          <span class="age">{{ student.age }} ans</span>
+                        </li>
+                      }
+                    </ul>
+                  </details>
                 }
               </article>
             }

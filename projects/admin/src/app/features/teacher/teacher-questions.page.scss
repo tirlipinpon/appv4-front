@@ -20,9 +20,38 @@
 
 .picker {
   display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.picker-school {
+  border: 1px solid var(--app-outline);
+  border-left: 4px solid var(--app-primary);
+  border-radius: var(--app-radius-card);
+  background: var(--app-surface-card);
+  box-shadow: 0 1px 2px rgb(26 61 124 / 8%);
+}
+
+.picker-school-name {
+  margin: 0;
+  padding: 0.7rem 1rem;
+  background: var(--app-primary-soft);
+  color: var(--app-primary);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.picker-grade {
+  margin: 0.85rem 1rem 0.35rem;
+  font-size: 0.95rem;
+}
+
+.picker-subjects {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 1rem;
+  padding: 0 1rem 1rem;
 }
 
 .pick {

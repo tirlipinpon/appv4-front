@@ -197,6 +197,75 @@ describe('TeacherSchoolsPage retrait enregistré', () => {
     http.verify();
   });
 
+  it('affiche une école déjà choisie, et place Ajouter une école au-dessus', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Ecole Nouvelle');
+    expect(root.textContent).toContain('Belgique');
+    expect(root.textContent).toContain('Modifier');
+    expect(root.textContent).toContain('Supprimer');
+    expect(root.textContent).not.toContain('Rechercher une école');
+    expect(root.textContent).not.toContain('Enregistrer');
+    expect(root.querySelector('mat-card-actions')).toBeNull();
+
+    const add = [...root.querySelectorAll('button')].find((button) =>
+      button.textContent?.includes('Ajouter une école'),
+    );
+    const school = root.querySelector('article.school');
+    expect(add).withContext('bouton ajouter').not.toBeNull();
+    expect(school).withContext('école').not.toBeNull();
+    expect(Boolean(add!.compareDocumentPosition(school!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTrue();
+
+    const grades = root.querySelector('.grades') as HTMLElement;
+    expect(getComputedStyle(grades).flexDirection).toBe('row');
+    expect(getComputedStyle(grades).flexWrap).toBe('wrap');
+    expect(grades.textContent).toContain('1e primaire');
+    expect(grades.textContent).toContain('2e primaire');
+    expect(grades.querySelector('mat-checkbox')).toBeNull();
+  });
+
+  it('ouvre le formulaire et aligne les classes après Modifier', () => {
+    page.editSchool(page.blocks()[0].key);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Rechercher une école');
+    const article = root.querySelector('article.school') as HTMLElement;
+    expect(article.textContent).toContain('Annuler');
+    expect(article.textContent).toContain('Enregistrer');
+    expect(root.querySelector('mat-card-actions')).toBeNull();
+    const grades = root.querySelector('.grades') as HTMLElement;
+    expect(getComputedStyle(grades).flexDirection).toBe('row');
+    expect(getComputedStyle(grades).flexWrap).toBe('wrap');
+    expect(grades.querySelectorAll('mat-checkbox').length).toBe(2);
+  });
+
+  it('annule la modification et retrouve l’école enregistrée', () => {
+    const block = page.blocks()[0];
+    page.editSchool(block.key);
+    page.onGradeChange(block.key, '1e primaire', { checked: false, source: { checked: false } } as MatCheckboxChange);
+    expect(page.blocks()[0].grades).not.toContain('1e primaire');
+    http.expectNone(previewUrl);
+
+    page.cancelEdit(block.key);
+    fixture.detectChanges();
+
+    expect(page.blocks()[0].grades).toEqual(['1e primaire', '2e primaire']);
+    expect(page.blocks()[0].editing).toBeFalse();
+    expect(fixture.nativeElement.textContent).not.toContain('Rechercher une école');
+    http.expectNone(profileUrl);
+  });
+
+  it('annule une école nouvelle sans l’enregistrer', () => {
+    page.addSchool();
+    expect(page.blocks().length).toBe(2);
+
+    page.cancelEdit(page.blocks()[1].key);
+
+    expect(page.blocks().length).toBe(1);
+    expect(page.blocks()[0].schoolId).toBe(1);
+    http.expectNone(profileUrl);
+  });
+
   it('conserve une ecole enregistree absente des resultats de recherche', fakeAsync(() => {
     const block = page.blocks()[0];
     page.onSchoolSearch(block.key, { target: { value: 'autre' } } as unknown as Event);
@@ -206,13 +275,12 @@ describe('TeacherSchoolsPage retrait enregistré', () => {
     expect(page.optionsFor(block).some((school) => school.id === 1)).toBeTrue();
   }));
 
-  it('montre les élèves et la matière avant de décocher une année enregistrée', () => {
+  it('montre les élèves et la matière au survol, et décoche sans bouton de confirmation', () => {
     const block = page.blocks()[0];
-    const box = { checked: false };
-    page.onGradeChange(block.key, '1e primaire', { checked: false, source: box } as MatCheckboxChange);
+    page.editSchool(block.key);
+    fixture.detectChanges();
+    page.showGradeTip(block, '1e primaire');
 
-    expect(box.checked).toBe(true);
-    expect(block.grades).toContain('1e primaire');
     const request = http.expectOne(
       (call) => call.method === 'GET' && call.url === previewUrl,
     );
@@ -229,17 +297,16 @@ describe('TeacherSchoolsPage retrait enregistré', () => {
     expect(text).toContain('Noah Bernard');
     expect(text).toContain('1 matière');
     expect(text).toContain('Mathématiques');
-    expect(text).toContain('Garder cette année');
+    expect(text).not.toContain('Garder cette année');
+    expect(text).not.toContain('Retirer quand même');
 
-    page.keep(page.impactsFor(block.key)[0]);
+    page.hideTip();
     fixture.detectChanges();
-    expect(page.impactsFor(block.key).length).toBe(0);
-    http.expectNone(profileUrl);
+    expect(fixture.nativeElement.querySelector('.impact-tip')).toBeNull();
 
     page.onGradeChange(block.key, '1e primaire', { checked: false, source: { checked: false } } as MatCheckboxChange);
-    http.expectOne((call) => call.url === previewUrl).flush(preview);
-    page.confirmRemoval(page.impactsFor(block.key)[0]);
     expect(page.blocks()[0].grades).not.toContain('1e primaire');
+    http.expectNone(previewUrl);
 
     page.save();
     const put = http.expectOne(profileUrl);
@@ -253,24 +320,22 @@ describe('TeacherSchoolsPage retrait enregistré', () => {
     });
   });
 
-  it('demande l’aperçu de l’école avant de la retirer, et garder la laisse', () => {
+  it('montre l’aperçu de l’école au survol de Supprimer, puis la retire sans confirmation', () => {
     const block = page.blocks()[0];
-    page.removeSchool(block.key);
+    page.showSchoolTip(block);
     const request = http.expectOne((call) => call.method === 'GET' && call.url === previewUrl);
     expect(request.request.params.get('schoolId')).toBe('1');
     expect(request.request.params.has('grade')).toBe(false);
     request.flush({ ...preview, grade: undefined, studentCountLabel: '2 élèves', subjectCount: 1 });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Garder cette école');
-    page.keep(page.impactsFor(block.key)[0]);
+    expect(fixture.nativeElement.textContent).toContain('2 élèves');
+    expect(fixture.nativeElement.textContent).not.toContain('Garder cette école');
     expect(page.blocks().length).toBe(1);
-    http.expectNone(profileUrl);
 
-    page.removeSchool(page.blocks()[0].key);
-    http.expectOne((call) => call.url === previewUrl).flush({ ...preview, grade: undefined });
-    page.confirmRemoval(page.impactsFor(page.blocks()[0].key)[0]);
+    page.removeSchool(block.key);
     expect(page.blocks().length).toBe(0);
+    http.expectNone(profileUrl);
   });
 });
 

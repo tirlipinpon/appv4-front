@@ -373,6 +373,23 @@ export class SubjectQuestionsComponent implements OnInit {
     return this.selectedIds().includes(id);
   }
 
+  /** Nombre de questions cochées, affiché dans la barre d'actions. */
+  selectionLabel(): string {
+    const count = this.selectedIds().length;
+    return count === 1 ? '1 question sélectionnée' : `${count} questions sélectionnées`;
+  }
+
+  /** Décoche tout et referme la barre. Une suppression en attente est abandonnée. */
+  clearSelection(): void {
+    if (this.saving()) {
+      return;
+    }
+    this.selectedIds.set([]);
+    if (this.pendingIds().length > 0) {
+      this.cancelDelete();
+    }
+  }
+
   setTarget(value: number): void {
     this.targetId.set(value);
   }

@@ -127,6 +127,11 @@ describe('TeacherSubjectsPage', () => {
     expect(fixture.nativeElement.textContent).toContain('École française');
     expect(fixture.nativeElement.textContent).toContain('Aucune matière');
     expect(fixture.nativeElement.textContent).toContain('Lecture');
+    const lists = fixture.nativeElement.querySelectorAll('details.subject-list') as NodeListOf<HTMLDetailsElement>;
+    expect(lists.length).toBe(2);
+    expect(lists[0].open).toBeFalse();
+    expect(lists[0].querySelector('summary')?.textContent).toContain('Liste matières');
+    expect(lists[0].querySelector('summary')?.textContent).toContain('1 matière');
     expect(fixture.nativeElement.textContent).toContain('Partagée avec Camille');
     expect(fixture.nativeElement.textContent).toContain('Cours déjà existant');
     expect(page.schools()[0].grades[0].addable[0].label).toBe(

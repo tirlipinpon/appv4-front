@@ -24,19 +24,83 @@
   color: var(--app-text-muted);
 }
 
-.school {
-  border: 1px solid var(--app-outline);
-  border-radius: 8px;
-  padding: 0.75rem 1rem 0.5rem;
+.add-school {
   margin-top: 1rem;
+}
+
+.school {
+  margin-top: 1.5rem;
+  padding: 0.85rem 1rem 0.75rem;
+  border: 1px solid var(--app-outline);
+  border-left: 4px solid var(--app-primary);
+  border-radius: var(--app-radius-card);
+  background: var(--app-surface-card);
+  box-shadow: 0 1px 2px rgb(26 61 124 / 8%);
+}
+
+.school-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: -0.85rem -1rem 0.35rem;
+  padding: 0.7rem 1rem;
+  background: var(--app-primary-soft);
+  border-bottom: 1px solid var(--app-outline);
+}
+
+.school-name {
+  margin: 0;
+  color: var(--app-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.school-actions,
+.form-actions,
+.form-actions-end {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.form-actions {
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+}
+
+.form-actions-end {
+  margin-left: auto;
 }
 
 .grades {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
   margin-top: 0.75rem;
+}
+
+.grades mat-checkbox,
+.grade-chip {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.grade-wrap,
+.remove-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.impact-tip {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: min(32rem, 70vw);
 }
 
 .impact {
@@ -55,8 +119,12 @@
 
 .names,
 .subjects {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 0.25rem 0.75rem;
   margin: 0 0 0.5rem;
-  padding-left: 1.2rem;
+  padding: 0;
+  list-style: none;
 }
 
 .impact-actions {

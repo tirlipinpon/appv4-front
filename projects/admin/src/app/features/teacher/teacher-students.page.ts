@@ -23,7 +23,6 @@ interface StudentRow {
 interface GradeBlock {
   grade: string;
   countLabel: string;
-  emptyMessage: string;
   students: StudentRow[];
 }
 
@@ -107,7 +106,6 @@ export class TeacherStudentsPage implements OnInit, OnDestroy {
         grades.push({
           grade: grade.grade,
           countLabel: grade.countLabel ?? '',
-          emptyMessage: grade.emptyMessage ?? '',
           students,
         });
       }
