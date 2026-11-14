@@ -9,7 +9,6 @@ import { MatInputModule } from '@angular/material/input';
 import type {
   ChildSubjectOffer,
   ChildSubjectsResponse,
-  ParentChildResponse,
   ParentSubjectsResponse,
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
@@ -28,7 +27,7 @@ const SUBJECT_SUGGEST_LIMIT = 8;
 /**
  * Chaque enfant avec ses matières (SCRUM-162).
  * Celles de son école et de son année sont déjà dans la liste.
- * Le portrait vient de la fiche enfant, comme sur la page Mes enfants.
+ * Le sexe, l'âge et l'avatar viennent de la même réponse. La photo se charge ensuite.
  * Le nom de la matière propose le catalogue après deux lettres.
  */
 @Component({
@@ -60,7 +59,6 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
   readonly searched = signal<Readonly<Record<number, boolean>>>({});
   readonly searchLoading = signal<Readonly<Record<number, boolean>>>({});
   private readonly searchSeq = new Map<number, number>();
-  readonly profiles = signal<ParentChildResponse[]>([]);
   readonly photos = signal<Record<number, string>>({});
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -78,19 +76,6 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
           this.error.set(httpErrorMessage(err, 'Matières indisponibles.'));
         },
       });
-    this.childrenApi
-      .load()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (body) => {
-          const rows = body.children ?? [];
-          this.profiles.set(rows);
-          this.loadPhotos(rows);
-        },
-        error: () => {
-          this.profiles.set([]);
-        },
-      });
   }
 
   ngOnDestroy(): void {
@@ -101,23 +86,16 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
     this.photos.set({});
   }
 
-  profile(childId: number | undefined): ParentChildResponse | undefined {
-    if (childId === undefined || childId === null) {
-      return undefined;
-    }
-    return this.profiles().find((child) => child.id === childId);
-  }
-
-  photoOf(childId: number | undefined): string | null {
-    const face = this.profile(childId);
-    if (childId === undefined || childId === null || !face?.hasPhoto) {
+  photoOf(child: ChildSubjectsResponse): string | null {
+    const childId = child.childId;
+    if (childId === undefined || childId === null || child.hasPhoto !== true) {
       return null;
     }
     return this.photos()[childId] ?? null;
   }
 
-  showAge(face: ParentChildResponse | undefined): boolean {
-    return face?.age !== undefined && face.age !== null;
+  showAge(child: ChildSubjectsResponse): boolean {
+    return child.age !== undefined && child.age !== null;
   }
 
   hasClass(child: ChildSubjectsResponse): boolean {
@@ -369,20 +347,22 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
   }
 
   private show(body: ParentSubjectsResponse): void {
-    this.children.set(body.children ?? []);
+    const rows = body.children ?? [];
+    this.children.set(rows);
     this.pending.set(null);
     this.loading.set(false);
     this.saving.set(false);
+    this.loadPhotos(rows);
   }
 
   private lines(offers: ChildSubjectOffer[] | undefined, scolaire: boolean): ChildSubjectOffer[] {
     return (offers ?? []).filter((offer) => offer.scolaire === scolaire);
   }
 
-  private loadPhotos(rows: ParentChildResponse[]): void {
+  private loadPhotos(rows: ChildSubjectsResponse[]): void {
     const ticket = this.photoBag.invalidate();
     this.photos.set({});
-    const ids = rows.flatMap((child) => child.hasPhoto && child.id != null ? [child.id] : []);
+    const ids = rows.flatMap((child) => child.hasPhoto === true && child.childId != null ? [child.childId] : []);
     from([...new Set(ids)]).pipe(
       mergeMap((id) => this.childrenApi.photo(id).pipe(
         map((blob) => ({ id, blob })),

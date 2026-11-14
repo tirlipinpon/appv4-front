@@ -19,22 +19,21 @@
 
       <ul class="list">
         @for (child of children(); track child.childId) {
-          @let face = profile(child.childId);
           <li class="child">
             <div class="identity">
-              @if (photoOf(child.childId); as src) {
+              @if (photoOf(child); as src) {
                 <img class="portrait" [src]="src" [alt]="child.firstName + ' ' + child.lastName" />
               } @else {
-                <span class="portrait" [attr.aria-label]="face?.avatarCode">{{ emoji(face?.avatarCode) }}</span>
+                <span class="portrait" [attr.aria-label]="child.avatarCode">{{ emoji(child.avatarCode) }}</span>
               }
               <div>
                 <strong>{{ child.firstName }} {{ child.lastName }}</strong>
-                @if (face?.sex) {
-                  <span class="badge">{{ sexLabel(face?.sex) }}</span>
+                @if (child.sex) {
+                  <span class="badge">{{ sexLabel(child.sex) }}</span>
                 }
                 <p>
-                  @if (showAge(face)) {
-                    {{ face?.age }} ans ·
+                  @if (showAge(child)) {
+                    {{ child.age }} ans ·
                   }
                   {{ child.schoolName || 'École non renseignée' }} · {{ child.grade }}
                 </p>

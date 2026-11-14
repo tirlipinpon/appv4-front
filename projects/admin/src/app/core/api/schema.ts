@@ -1540,6 +1540,13 @@ export interface components {
             childId?: number;
             firstName?: string;
             lastName?: string;
+            /** @description GARCON, FILLE ou NON_GENRE */
+            sex?: string;
+            /** Format: int32 */
+            age?: number;
+            avatarCode?: string;
+            /** @description Vrai si une photo est enregistrée. Le fichier se lit à part. */
+            hasPhoto?: boolean;
             /** Format: int64 */
             schoolId?: number;
             schoolName?: string;
