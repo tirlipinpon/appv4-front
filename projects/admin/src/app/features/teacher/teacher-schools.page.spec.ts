@@ -280,6 +280,23 @@ describe('TeacherSchoolsPage retrait enregistré', () => {
     http.expectNone(profileUrl);
   });
 
+  it('place le formulaire d’une nouvelle école juste sous le bouton', () => {
+    page.addSchool();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const add = [...root.querySelectorAll('button')].find((button) =>
+      button.textContent?.includes('Ajouter une école'),
+    );
+    const articles = [...root.querySelectorAll('article.school')];
+    expect(add).not.toBeNull();
+    expect(articles.length).toBe(2);
+    expect(articles[0].textContent).toContain('Rechercher une école');
+    expect(articles[1].textContent).toContain('Ecole Nouvelle');
+    expect(Boolean(add!.compareDocumentPosition(articles[0]) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTrue();
+    expect(Boolean(articles[0].compareDocumentPosition(articles[1]) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTrue();
+  });
+
   it('annule une école nouvelle sans l’enregistrer', () => {
     page.addSchool();
     expect(page.blocks().length).toBe(2);

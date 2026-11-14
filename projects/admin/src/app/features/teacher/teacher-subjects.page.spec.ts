@@ -701,7 +701,11 @@ describe('TeacherSubjectsPage', () => {
                   active: true,
                   ownedByMe: false,
                   followedByMe: false,
-                  sharedWith: [{ userId: 10, displayName: 'Camille' }],
+                  sharedWith: [
+                    { userId: 10, displayName: 'Camille' },
+                    { userId: 11, displayName: 'Luc' },
+                  ],
+                  owner: { userId: 10, displayName: 'Camille' },
                 },
               ],
             },
@@ -717,6 +721,8 @@ describe('TeacherSubjectsPage', () => {
     expect(lecture?.textContent).toContain('Retirer');
     expect(lecture?.textContent).not.toContain('Désactiver');
     expect(maths?.textContent).toContain('Suivie par Camille');
+    expect(maths?.querySelector('[data-testid="subject-followed-by"] strong')?.textContent).toBe('Camille');
+    expect(maths?.textContent).toContain('Luc');
     expect(maths?.textContent).not.toContain('Renommer');
     expect(maths?.textContent).not.toContain('Retirer');
     expect(maths?.textContent).not.toContain('Transférer');

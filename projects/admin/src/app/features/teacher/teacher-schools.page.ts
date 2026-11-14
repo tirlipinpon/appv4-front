@@ -126,6 +126,20 @@ export class TeacherSchoolsPage implements OnInit, OnDestroy {
   readonly catalogEmpty = computed(() => false);
   readonly countries = computed(() => ['Belgique', 'France']);
   readonly canAdd = computed(() => true);
+  /** Une école pas encore enregistrée s'affiche juste sous le bouton, pas en bas de la liste. */
+  readonly displayBlocks = computed(() => {
+    const drafts: SchoolBlock[] = [];
+    const saved: SchoolBlock[] = [];
+    for (const block of this.blocks()) {
+      if (block.savedSchoolId == null) {
+        drafts.push(block);
+      } else {
+        saved.push(block);
+      }
+    }
+    drafts.reverse();
+    return [...drafts, ...saved];
+  });
 
   ngOnInit(): void {
     this.api.load().subscribe({

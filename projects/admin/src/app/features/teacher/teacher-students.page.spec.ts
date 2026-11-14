@@ -109,9 +109,12 @@ describe('TeacherStudentsPage', () => {
     expect(text).toContain('École du parc');
     const school = main.querySelector('details.school-toggle') as HTMLDetailsElement | null;
     expect(school?.open).toBeFalse();
+    expect(school?.querySelector('summary')?.textContent).toContain('France');
     expect(school?.querySelector('summary')?.textContent).toContain('École du parc');
+    expect(school?.querySelector('.school-country')?.nextElementSibling?.textContent).toContain('École du parc');
     expect(school?.querySelector('summary')?.textContent).toContain('2 classes');
-    expect(text).toContain('France — CE1');
+    expect(text).toContain('CE1');
+    expect(text).not.toContain('France — CE1');
     expect(text).toContain('2 élèves');
     expect(text).toContain('Liste élèves');
     const list = main.querySelector('details.student-list') as HTMLDetailsElement | null;
@@ -123,7 +126,8 @@ describe('TeacherStudentsPage', () => {
     expect(text).toContain('Martin Léa');
     expect(text).toContain('Martin Tom');
     expect(text).toContain('7 ans');
-    expect(text).toContain('France — CE2');
+    expect(text).toContain('CE2');
+    expect(text).not.toContain('France — CE2');
     expect(text).toContain('0 élève');
     expect(text).not.toContain('Aucun élève inscrit dans cette classe.');
     expect(text).not.toContain('PIN');

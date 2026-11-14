@@ -23,12 +23,15 @@
           <section class="school">
             <details class="school-toggle">
               <summary class="school-name">
+                @if (school.curriculumLabel) {
+                  <span class="school-country">{{ school.curriculumLabel }}</span>
+                }
                 <span class="school-title">{{ school.schoolName }}</span>
                 <span class="school-count">{{ classCountLabel(school.grades.length) }}</span>
               </summary>
             @for (grade of school.grades; track grade.grade) {
               <article class="grade">
-                <h3 class="grade-name">{{ school.curriculumLabel }} — {{ grade.grade }}</h3>
+                <h3 class="grade-name">{{ grade.grade }}</h3>
                 @if (grade.students.length === 0) {
                   <p class="count">{{ grade.countLabel }}</p>
                 } @else {
