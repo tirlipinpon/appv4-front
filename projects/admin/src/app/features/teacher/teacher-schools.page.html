@@ -3,10 +3,6 @@
 
   <main class="content content-wide">
     <mat-card class="card">
-      <mat-card-header>
-        <mat-card-title>Écoles</mat-card-title>
-        <mat-card-subtitle>Écoles et classes</mat-card-subtitle>
-      </mat-card-header>
       <mat-card-content>
         @if (loading()) {
           <p class="status" role="status">Chargement…</p>
@@ -24,10 +20,6 @@
         @if (ready()) {
           @if (catalogEmpty()) {
             <p class="hint">Aucune école n'est proposable pour l'instant.</p>
-          } @else {
-            <p class="hint">
-              Les écoles déjà choisies sont affichées. Modifie, supprime, ou ajoute une école.
-            </p>
           }
 
             @if (canAdd()) {
@@ -36,7 +28,7 @@
               </button>
             }
 
-            @for (block of blocks(); track block.key) {
+            @for (block of displayBlocks(); track block.key) {
               <article class="school">
                 @if (blockError(block.key); as blockMessage) {
                   <p class="field-error" role="alert">{{ blockMessage }}</p>

@@ -278,8 +278,10 @@
                           <div class="headline">
                             <span class="name" data-testid="subject-name">{{ subject.name }}</span>
                             <span class="question-count" data-testid="subject-question-count">{{ subject.questionCount }} question{{ subject.questionCount === 1 ? '' : 's' }}</span>
-                            @if (sharedLabel(subject); as shared) {
-                              <p class="hint shared" data-testid="subject-followed-by">{{ shared }}</p>
+                            @if (!subject.followedByMe && subject.sharedWith.length > 0) {
+                              <p class="hint shared" data-testid="subject-followed-by">
+                                Suivie par @for (holder of subject.sharedWith; track holder.userId; let last = $last) {@if (owns(subject, holder)) {<strong>{{ holder.displayName }}</strong>}@else {{{ holder.displayName }}}@if (!last) {, }}
+                              </p>
                             }
                           </div>
                           @if (shareAskedLabel(subject); as asked) {

@@ -210,14 +210,6 @@ export class TeacherSubjectsPage implements OnInit {
       .filter((name): name is string => !!name);
   }
 
-  sharedLabel(subject: SubjectRow): string | null {
-    const names = this.sharedNames(subject);
-    if (names.length === 0 || subject.followedByMe) {
-      return null;
-    }
-    return `Suivie par ${names.join(', ')}`;
-  }
-
   /**
    * Propriétaire hors de sharedWith (souvent sans accès) : libellé explicite.
    * Évite d'afficher juste un prénom orphelin à côté du nom de matière.
