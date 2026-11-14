@@ -23,7 +23,7 @@
         <div class="picker">
           @for (school of pickerSchools(); track school.schoolId) {
             <section class="picker-school">
-              <details class="school-toggle" open>
+              <details class="school-toggle">
                 <summary class="picker-school-name">
                   <span class="school-title">{{ school.schoolName }}</span>
                   <span class="school-count">{{ sectionCountLabel(school.grades.length) }}</span>

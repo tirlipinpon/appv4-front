@@ -66,7 +66,7 @@
 
         @for (school of schools(); track school.schoolId) {
           <section class="school">
-            <details class="school-toggle" open>
+            <details class="school-toggle">
               <summary class="school-name">
                 <span class="school-title">{{ school.schoolName }}</span>
                 <span class="school-count">{{ sectionCountLabel(school.grades.length) }}</span>

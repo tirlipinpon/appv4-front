@@ -197,7 +197,7 @@ describe('TeacherQuestionsPage', () => {
     expect(schools.length).toBe(2);
     expect(schools[0].textContent).toContain('École française');
     const summary = schools[0].querySelector('summary');
-    expect((schools[0].querySelector('details.school-toggle') as HTMLDetailsElement | null)?.open).toBeTrue();
+    expect((schools[0].querySelector('details.school-toggle') as HTMLDetailsElement | null)?.open).toBeFalse();
     expect(summary?.textContent).toContain('2 sections');
     expect(summary?.textContent).toContain('CE1, CE2');
     expect(schools[1].querySelector('summary')?.textContent).toContain('1 section');
