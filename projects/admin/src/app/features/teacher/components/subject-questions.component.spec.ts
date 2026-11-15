@@ -1017,6 +1017,7 @@ describe('SubjectQuestionsComponent', () => {
       formCode: 'puzzle',
       prompt: 'Reconstitue le dessin',
       imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      boardMode: 'fond',
       boardImageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
       snapDistance: 0.08,
       pieces: [
@@ -1044,6 +1045,7 @@ describe('SubjectQuestionsComponent', () => {
       formLabel: 'Puzzle',
       prompt: 'Reconstitue le dessin',
       imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      boardMode: 'fond',
       boardImageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
       pieces: [
         {

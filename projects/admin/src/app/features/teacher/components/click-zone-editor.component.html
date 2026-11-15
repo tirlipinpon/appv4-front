@@ -1,8 +1,8 @@
 @if (!readonly()) {
   @if (variant() === 'puzzle') {
     <p class="hint">
-      1) Image à découper = les éléments. 2) Image de fond = le plateau où l'enfant les repose (même
-      cadrage / même scène).
+      1) Image à découper = les éléments. 2) Choisis le plateau : trous dans l'image, cadre blanc, ou
+      fond dédié (même cadrage).
     </p>
   }
   <label class="upload">
@@ -18,23 +18,56 @@
     <img class="board-thumb" [src]="imageDataUrl()" alt="Image à découper" />
   }
   @if (variant() === 'puzzle') {
-    <label class="upload">
-      2. Image de fond (plateau de jeu)
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/gif,image/webp"
+    <div class="board-modes" role="radiogroup" aria-label="Plateau de jeu">
+      <span class="board-modes-label">2. Plateau de jeu</span>
+      <button
+        type="button"
+        class="mode"
+        [class.selected]="boardMode() === boardModes.TROUS"
         [disabled]="disabled()"
-        (change)="onFile($event, 'board')"
-      />
-    </label>
-    @if (hasDistinctBoard()) {
-      <p class="hint">Fond prêt. Les pièces découpées se posent sur ce plateau.</p>
-      <img class="board-thumb" [src]="boardImageDataUrl()" alt="Fond de jeu" />
+        (click)="setBoardMode(boardModes.TROUS)"
+      >
+        Trous
+      </button>
+      <button
+        type="button"
+        class="mode"
+        [class.selected]="boardMode() === boardModes.BLANC"
+        [disabled]="disabled()"
+        (click)="setBoardMode(boardModes.BLANC)"
+      >
+        Cadre blanc
+      </button>
+      <button
+        type="button"
+        class="mode"
+        [class.selected]="boardMode() === boardModes.FOND"
+        [disabled]="disabled()"
+        (click)="setBoardMode(boardModes.FOND)"
+      >
+        Fond dédié
+      </button>
+    </div>
+    @if (boardMode() === boardModes.TROUS) {
+      <p class="hint">L'enfant pose les pièces sur l'image de découpe trouée.</p>
+    } @else if (boardMode() === boardModes.BLANC) {
+      <p class="hint">L'enfant pose les pièces sur un cadre blanc (même taille que la découpe).</p>
     } @else {
-      <p class="hint">
-        Sans fond dédié, l'enfant joue sur l'image de découpe trouée. Avec un fond, les pièces vont
-        sur le fond.
-      </p>
+      <label class="upload">
+        Image de fond (plateau)
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          [disabled]="disabled()"
+          (change)="onFile($event, 'board')"
+        />
+      </label>
+      @if (hasDistinctBoard()) {
+        <p class="hint">Fond prêt. Les pièces découpées se posent sur ce plateau.</p>
+        <img class="board-thumb" [src]="boardImageDataUrl()" alt="Fond de jeu" />
+      } @else {
+        <p class="hint">Ajoute une image de fond distincte (même cadrage / même scène).</p>
+      }
     }
   }
 }
@@ -44,7 +77,9 @@
     <p class="stage-label">
       @if (showingBoard() && usingCustomBoard()) {
         Plateau de jeu (fond) — glisse les pièces ici
-      } @else if (showingBoard()) {
+      } @else if (showingBoard() && usingBlankBoard()) {
+        Plateau de jeu (cadre blanc) — glisse les pièces ici
+      } @else if (showingBoard() && usingPunchedBoard()) {
         Plateau de jeu (image trouée)
       } @else {
         Découpe — trace les pièces sur les éléments
@@ -55,9 +90,15 @@
     class="stage"
     #stage
     [class.board-play]="showingBoard()"
-    [class.holed]="showingBoard() && !usingCustomBoard()"
+    [class.holed]="showingBoard() && usingPunchedBoard()"
+    [class.blank-board]="showingBoard() && usingBlankBoard()"
   >
-    <img [src]="stageSrc()" alt="" draggable="false" />
+    <img
+      [src]="stageSrc()"
+      alt=""
+      draggable="false"
+      [class.stage-size-only]="showingBoard() && usingBlankBoard()"
+    />
     <svg
       #surface
       viewBox="0 0 1 1"
@@ -276,26 +317,32 @@
     <button
       mat-button
       type="button"
-      [disabled]="disabled() || (!hasDistinctBoard() && !punchedUrl())"
+      [disabled]="disabled() || (!playPreview() && !playBoardReady())"
       (click)="togglePlayPreview()"
     >
       {{
         playPreview()
           ? 'Éditer les découpes'
-          : hasDistinctBoard()
+          : boardMode() === boardModes.FOND
             ? 'Voir le plateau (fond)'
-            : 'Aperçu enfant (trous)'
+            : boardMode() === boardModes.BLANC
+              ? 'Voir le plateau (blanc)'
+              : 'Aperçu enfant (trous)'
       }}
     </button>
   }
   @if (showingBoard() && usingCustomBoard()) {
     <p class="hint">Les vignettes viennent de l'image à découper ; tu les poses sur le fond.</p>
-  } @else if (showingBoard()) {
-    <p class="hint">Pas de fond dédié : plateau = image de découpe trouée.</p>
-  } @else if (hasDistinctBoard()) {
+  } @else if (showingBoard() && usingBlankBoard()) {
+    <p class="hint">Cadre blanc : les pièces se posent sur un plateau vide.</p>
+  } @else if (showingBoard() && usingPunchedBoard()) {
+    <p class="hint">Plateau = image de découpe trouée.</p>
+  } @else if (boardMode() === boardModes.FOND && hasDistinctBoard()) {
     <p class="hint">Trace les pièces ici, puis « Voir le plateau (fond) » pour les y glisser.</p>
+  } @else if (boardMode() === boardModes.FOND) {
+    <p class="hint">Ajoute un fond dédié plus haut, puis aperçois le plateau.</p>
   } @else {
-    <p class="hint">Trace les pièces ici, ou ajoute un fond plus haut pour un vrai plateau de jeu.</p>
+    <p class="hint">Trace les pièces ici, puis ouvre l'aperçu plateau.</p>
   }
   <ul class="pieces">
     @for (zone of zones(); track $index; let pieceIndex = $index) {

@@ -9,6 +9,7 @@ import {
   input,
   output,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -40,13 +41,14 @@ import {
   zoneContains,
 } from './click-zone';
 import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage, punchPieces } from './puzzle-piece';
+import { PuzzleBoardMode, PUZZLE_BOARD_MODE } from './question-form.model';
 
 /**
  * Dessin des zones sur l'image (SCRUM-181).
  * Les points sont en proportion du dessin : si l'écran change, les formes restent dessus.
  * L'image déposée passe par la même préparation WebP que les photos.
- * En puzzle (SCRUM-183) : image de découpe pour tracer les pièces ; en jeu, fond dédié
- * s'il est fourni, sinon l'image de découpe trouée.
+ * En puzzle : image de découpe pour tracer les pièces ; plateau de jeu selon
+ * {@link boardMode} (fond dédié, cadre blanc, ou image trouée).
  */
 @Component({
   selector: 'app-click-zone-editor',
@@ -57,7 +59,9 @@ import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage, punchPieces } 
 })
 export class ClickZoneEditorComponent {
   readonly imageDataUrl = input('');
-  /** Fond de jeu puzzle : l'enfant y glisse les pièces découpées. */
+  /** Plateau de jeu : fond | blanc | trous. */
+  readonly boardMode = input<PuzzleBoardMode>(PUZZLE_BOARD_MODE.TROUS);
+  /** Fond de jeu puzzle : utilisé seulement en mode fond. */
   readonly boardImageDataUrl = input('');
   readonly zones = input<ClickZone[]>([]);
   readonly disabled = input(false);
@@ -68,10 +72,13 @@ export class ClickZoneEditorComponent {
   readonly magnet = input(0.08);
 
   readonly imageSelected = output<string>();
+  readonly boardModeChange = output<PuzzleBoardMode>();
   readonly boardImageSelected = output<string>();
   readonly zonesChange = output<ClickZone[]>();
   readonly imageError = output<string>();
   readonly magnetChange = output<number>();
+
+  readonly boardModes = PUZZLE_BOARD_MODE;
 
   readonly draft = signal<ClickPoint[]>([]);
   /** Point bleu du tracé en cours que « Supprimer le point » retire. */
@@ -85,33 +92,58 @@ export class ClickZoneEditorComponent {
   readonly punchedUrl = signal('');
   /**
    * En édition : image de découpe pleine.
-   * En jeu (aperçu / lecture seule) : fond dédié, sinon plateau troué.
+   * En jeu (aperçu / lecture seule) : plateau selon {@link boardMode}.
    */
   readonly playPreview = signal(false);
   readonly inPlayView = computed(
     () => this.variant() === 'puzzle' && (this.readonly() || this.playPreview()),
   );
   /**
-   * Fond dédié seulement s'il diffère de l'image de découpe.
-   * Sinon (copie migration / même fichier) : on joue sur l'image trouée.
+   * Mode fond : image de plateau distincte de la découpe.
+   * Sinon (même fichier / migration) : pas de vrai fond dédié.
    */
   readonly hasDistinctBoard = computed(() => {
+    if (this.boardMode() !== PUZZLE_BOARD_MODE.FOND) {
+      return false;
+    }
     const board = this.boardImageDataUrl();
     const cut = this.imageDataUrl();
     return !!board && !!cut && board !== cut;
   });
-  readonly showingBoard = computed(
-    () => this.inPlayView() && (this.hasDistinctBoard() || !!this.punchedUrl()),
+  /** Plateau prêt pour l'aperçu enfant selon le mode choisi. */
+  readonly playBoardReady = computed(() => {
+    switch (this.boardMode()) {
+      case PUZZLE_BOARD_MODE.FOND:
+        return this.hasDistinctBoard();
+      case PUZZLE_BOARD_MODE.BLANC:
+        return !!this.imageDataUrl();
+      case PUZZLE_BOARD_MODE.TROUS:
+        return !!this.punchedUrl();
+    }
+  });
+  readonly showingBoard = computed(() => this.inPlayView() && this.playBoardReady());
+  readonly usingCustomBoard = computed(
+    () => this.inPlayView() && this.boardMode() === PUZZLE_BOARD_MODE.FOND && this.hasDistinctBoard(),
   );
-  readonly usingCustomBoard = computed(() => this.inPlayView() && this.hasDistinctBoard());
+  readonly usingBlankBoard = computed(
+    () => this.inPlayView() && this.boardMode() === PUZZLE_BOARD_MODE.BLANC,
+  );
+  readonly usingPunchedBoard = computed(
+    () => this.inPlayView() && this.boardMode() === PUZZLE_BOARD_MODE.TROUS,
+  );
   readonly stageSrc = computed(() => {
     if (!this.inPlayView()) {
       return this.imageDataUrl();
     }
-    if (this.hasDistinctBoard()) {
-      return this.boardImageDataUrl();
+    switch (this.boardMode()) {
+      case PUZZLE_BOARD_MODE.FOND:
+        return this.hasDistinctBoard() ? this.boardImageDataUrl() : this.imageDataUrl();
+      case PUZZLE_BOARD_MODE.BLANC:
+        // Garde le ratio de la découpe ; le CSS blanchit le plateau.
+        return this.imageDataUrl();
+      case PUZZLE_BOARD_MODE.TROUS:
+        return this.punchedUrl() || this.imageDataUrl();
     }
-    return this.punchedUrl() || this.imageDataUrl();
   });
   /** En mode jeu, index des formes déjà révélées par un clic. */
   readonly shown = signal<number[]>([]);
@@ -178,6 +210,7 @@ export class ClickZoneEditorComponent {
       const ready =
         this.variant() === 'puzzle' &&
         !this.readonly() &&
+        this.boardMode() === PUZZLE_BOARD_MODE.FOND &&
         this.hasDistinctBoard() &&
         this.zones().length >= 2;
       if (!ready) {
@@ -189,6 +222,17 @@ export class ClickZoneEditorComponent {
         this.playPreview.set(true);
         this.clearPlacements();
       }
+    });
+
+    effect(() => {
+      // Changer de mode plateau ramène à l'édition pour éviter un aperçu incohérent.
+      this.boardMode();
+      untracked(() => {
+        if (this.playPreview()) {
+          this.playPreview.set(false);
+          this.clearPlacements();
+        }
+      });
     });
 
     effect(() => {
@@ -260,12 +304,19 @@ export class ClickZoneEditorComponent {
     this.placements.set(this.zones().map(() => null));
   }
 
-  /** Passe en aperçu enfant (fond / trous) ou revient à l'édition (image de découpe). */
+  setBoardMode(mode: PuzzleBoardMode): void {
+    if (this.disabled() || this.readonly() || this.variant() !== 'puzzle') {
+      return;
+    }
+    this.boardModeChange.emit(mode);
+  }
+
+  /** Passe en aperçu enfant (fond / blanc / trous) ou revient à l'édition. */
   togglePlayPreview(): void {
     if (this.readonly() || this.variant() !== 'puzzle') {
       return;
     }
-    if (!this.boardImageDataUrl() && !this.punchedUrl()) {
+    if (!this.playPreview() && !this.playBoardReady()) {
       return;
     }
     const next = !this.playPreview();

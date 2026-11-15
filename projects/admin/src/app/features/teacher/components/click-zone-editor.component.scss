@@ -11,6 +11,39 @@
   font-weight: 600;
 }
 
+.board-modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.board-modes-label {
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.board-modes .mode {
+  border: 1px solid #c5cdd8;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.board-modes .mode.selected {
+  border-color: var(--app-primary);
+  background: color-mix(in srgb, var(--app-primary) 12%, #fff);
+  font-weight: 600;
+}
+
+.board-modes .mode:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .stage {
   position: relative;
   width: 100%;
@@ -37,7 +70,7 @@
   outline-offset: 2px;
 }
 
-/* Damier derrière les trous quand on joue sans fond dédié. */
+/* Damier derrière les trous (mode trous). */
 .stage.holed {
   background-color: #d9d3c6;
   background-image:
@@ -53,11 +86,20 @@
     -0.625rem 0;
 }
 
+/* Cadre blanc : l'img garde le ratio, le plateau reste blanc. */
+.stage.blank-board {
+  background: #fff;
+}
+
 .stage > img {
   display: block;
   width: 100%;
   height: auto;
   pointer-events: none;
+}
+
+.stage > img.stage-size-only {
+  opacity: 0;
 }
 
 .stage svg {
