@@ -950,6 +950,7 @@ export interface components {
             decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
             expectedAnswer?: string;
             imageWebp?: string;
+            boardImageWebp?: string;
             requireAllCorrect?: boolean;
             zones?: components["schemas"]["TeacherQuestionZoneInput"][];
             pieces?: components["schemas"]["TeacherQuestionPieceInput"][];
@@ -1070,6 +1071,7 @@ export interface components {
             decoys?: components["schemas"]["TeacherQuestionGapWordItem"][];
             expectedAnswer?: string;
             imageWebp?: string;
+            boardImageWebp?: string;
             requireAllCorrect?: boolean;
             zones?: components["schemas"]["TeacherQuestionZoneItem"][];
             pieces?: components["schemas"]["TeacherQuestionPieceItem"][];

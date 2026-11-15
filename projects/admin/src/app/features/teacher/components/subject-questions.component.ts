@@ -105,6 +105,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly sentence = signal('');
   readonly expectedAnswer = signal('');
   readonly clickImage = signal('');
+  readonly boardImage = signal('');
   readonly requireAllCorrect = signal(true);
   readonly clickZones = signal<ClickZone[]>([]);
   readonly puzzleMagnet = signal(defaultMagnet());
@@ -203,6 +204,11 @@ export class SubjectQuestionsComponent implements OnInit {
         this.error.set(httpErrorMessage(err, 'Vérification impossible.'));
       },
     });
+  }
+
+  setBoardImage(dataUrl: string): void {
+    this.boardImage.set(dataUrl);
+    this.error.set(null);
   }
 
   setClickImage(dataUrl: string): void {
@@ -357,6 +363,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.sentence.set(question.sentence);
     this.expectedAnswer.set(question.expectedAnswer);
     this.clickImage.set(question.imageDataUrl);
+    this.boardImage.set(question.boardImageDataUrl);
     this.requireAllCorrect.set(question.requireAllCorrect);
     this.clickZones.set(question.zones.map((zone) => ({ ...zone, points: zone.points.map((point) => ({ ...point })) })));
     this.puzzleMagnet.set(question.snapDistance);
@@ -527,6 +534,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.sentence.set('');
     this.expectedAnswer.set('');
     this.clickImage.set('');
+    this.boardImage.set('');
     this.requireAllCorrect.set(true);
     this.clickZones.set([]);
     this.puzzleMagnet.set(defaultMagnet());
@@ -553,6 +561,7 @@ export class SubjectQuestionsComponent implements OnInit {
       decoys: this.decoys(),
       expectedAnswer: this.expectedAnswer(),
       clickImage: this.clickImage(),
+      boardImage: this.boardImage(),
       requireAllCorrect: this.requireAllCorrect(),
       clickZones: this.clickZones(),
       puzzleMagnet: this.puzzleMagnet(),

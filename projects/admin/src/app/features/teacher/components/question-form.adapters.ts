@@ -75,6 +75,10 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     decoys,
     expectedAnswer: question.expectedAnswer ?? '',
     imageDataUrl: question.imageWebp ? `data:image/webp;base64,${question.imageWebp}` : '',
+    boardImageDataUrl:
+      formCode === FORM.PUZZLE && question.boardImageWebp
+        ? `data:image/webp;base64,${question.boardImageWebp}`
+        : '',
     requireAllCorrect: question.requireAllCorrect === true,
     zones: formCode === FORM.PUZZLE ? savedPieces(question.pieces) : savedZones(question.zones),
     snapDistance:
@@ -174,6 +178,7 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         formCode: code,
         prompt: draft.prompt,
         imageWebp: webpPayload(draft.clickImage),
+        boardImageWebp: webpPayload(draft.boardImage),
         snapDistance: draft.puzzleMagnet,
         pieces: draft.clickZones.map((zone) => ({
           label: zone.label,

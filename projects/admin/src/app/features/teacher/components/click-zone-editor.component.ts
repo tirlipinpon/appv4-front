@@ -39,12 +39,14 @@ import {
   translateZone,
   zoneContains,
 } from './click-zone';
-import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage } from './puzzle-piece';
+import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage, punchPieces } from './puzzle-piece';
 
 /**
  * Dessin des zones sur l'image (SCRUM-181).
  * Les points sont en proportion du dessin : si l'écran change, les formes restent dessus.
  * L'image déposée passe par la même préparation WebP que les photos.
+ * En puzzle (SCRUM-183) : image de découpe pour tracer les pièces ; en jeu, fond dédié
+ * s'il est fourni, sinon l'image de découpe trouée.
  */
 @Component({
   selector: 'app-click-zone-editor',
@@ -55,6 +57,8 @@ import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage } from './puzzl
 })
 export class ClickZoneEditorComponent {
   readonly imageDataUrl = input('');
+  /** Fond de jeu puzzle : l'enfant y glisse les pièces découpées. */
+  readonly boardImageDataUrl = input('');
   readonly zones = input<ClickZone[]>([]);
   readonly disabled = input(false);
   readonly readonly = input(false);
@@ -64,6 +68,7 @@ export class ClickZoneEditorComponent {
   readonly magnet = input(0.08);
 
   readonly imageSelected = output<string>();
+  readonly boardImageSelected = output<string>();
   readonly zonesChange = output<ClickZone[]>();
   readonly imageError = output<string>();
   readonly magnetChange = output<number>();
@@ -76,6 +81,38 @@ export class ClickZoneEditorComponent {
   readonly adding = signal(false);
   /** Vignettes découpées dans les pixels de l'image, dans le même ordre que les pièces. */
   readonly pieceUrls = signal<string[]>([]);
+  /** Image de découpe avec les emplacements des pièces en transparent (secours sans fond). */
+  readonly punchedUrl = signal('');
+  /**
+   * En édition : image de découpe pleine.
+   * En jeu (aperçu / lecture seule) : fond dédié, sinon plateau troué.
+   */
+  readonly playPreview = signal(false);
+  readonly inPlayView = computed(
+    () => this.variant() === 'puzzle' && (this.readonly() || this.playPreview()),
+  );
+  /**
+   * Fond dédié seulement s'il diffère de l'image de découpe.
+   * Sinon (copie migration / même fichier) : on joue sur l'image trouée.
+   */
+  readonly hasDistinctBoard = computed(() => {
+    const board = this.boardImageDataUrl();
+    const cut = this.imageDataUrl();
+    return !!board && !!cut && board !== cut;
+  });
+  readonly showingBoard = computed(
+    () => this.inPlayView() && (this.hasDistinctBoard() || !!this.punchedUrl()),
+  );
+  readonly usingCustomBoard = computed(() => this.inPlayView() && this.hasDistinctBoard());
+  readonly stageSrc = computed(() => {
+    if (!this.inPlayView()) {
+      return this.imageDataUrl();
+    }
+    if (this.hasDistinctBoard()) {
+      return this.boardImageDataUrl();
+    }
+    return this.punchedUrl() || this.imageDataUrl();
+  });
   /** En mode jeu, index des formes déjà révélées par un clic. */
   readonly shown = signal<number[]>([]);
   /** Coin haut-gauche de chaque pièce posée. Vide = la vignette reste en bas. */
@@ -88,6 +125,8 @@ export class ClickZoneEditorComponent {
   private readonly destroyRef = inject(DestroyRef);
   private paintToken = 0;
   private geometryKey = '';
+  /** Évite de forcer le plateau à chaque tick une fois l'utilisateur revenu à la découpe. */
+  private autoPlayArmed = false;
   private stopPieceListeners: (() => void) | null = null;
   private pieceDrag: {
     index: number;
@@ -118,6 +157,8 @@ export class ClickZoneEditorComponent {
       const puzzle = this.variant() === 'puzzle';
       if (!puzzle || !url || zones.length === 0) {
         this.pieceUrls.set([]);
+        this.punchedUrl.set('');
+        this.playPreview.set(false);
         return;
       }
       const token = ++this.paintToken;
@@ -131,6 +172,23 @@ export class ClickZoneEditorComponent {
 
     effect(() => {
       this.magnetLive.set(clampMagnet(this.magnet()));
+    });
+
+    effect(() => {
+      const ready =
+        this.variant() === 'puzzle' &&
+        !this.readonly() &&
+        this.hasDistinctBoard() &&
+        this.zones().length >= 2;
+      if (!ready) {
+        this.autoPlayArmed = false;
+        return;
+      }
+      if (!this.autoPlayArmed) {
+        this.autoPlayArmed = true;
+        this.playPreview.set(true);
+        this.clearPlacements();
+      }
     });
 
     effect(() => {
@@ -200,6 +258,31 @@ export class ClickZoneEditorComponent {
     this.dragIndex.set(null);
     this.ghost.set(null);
     this.placements.set(this.zones().map(() => null));
+  }
+
+  /** Passe en aperçu enfant (fond / trous) ou revient à l'édition (image de découpe). */
+  togglePlayPreview(): void {
+    if (this.readonly() || this.variant() !== 'puzzle') {
+      return;
+    }
+    if (!this.boardImageDataUrl() && !this.punchedUrl()) {
+      return;
+    }
+    const next = !this.playPreview();
+    this.playPreview.set(next);
+    if (next) {
+      this.selected.set(null);
+      this.selectedHandle.set(null);
+      this.draft.set([]);
+      this.draftHandle.set(null);
+      this.adding.set(false);
+      this.clearPlacements();
+    }
+  }
+
+  /** Édition des formes : pas en lecture seule ni en aperçu trous. */
+  canEditShapes(): boolean {
+    return !this.readonly() && !this.playPreview();
   }
 
   onPieceDown(event: PointerEvent, index: number): void {
@@ -312,9 +395,10 @@ export class ClickZoneEditorComponent {
       if (token !== this.paintToken) {
         return;
       }
-      this.pieceUrls.set(
-        zones.map((zone) => cutPiece(image, image.naturalWidth, image.naturalHeight, zone)),
-      );
+      const width = image.naturalWidth;
+      const height = image.naturalHeight;
+      this.pieceUrls.set(zones.map((zone) => cutPiece(image, width, height, zone)));
+      this.punchedUrl.set(punchPieces(image, width, height, zones));
     };
     image.src = url;
   }
@@ -326,7 +410,7 @@ export class ClickZoneEditorComponent {
     return this.variant() === 'puzzle' ? `Pièce ${index + 1}` : `Zone ${index + 1}`;
   }
 
-  async onFile(event: Event): Promise<void> {
+  async onFile(event: Event, kind: 'cut' | 'board' = 'cut'): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
@@ -335,7 +419,11 @@ export class ClickZoneEditorComponent {
     }
     try {
       const prepared = await preparePhoto(file);
-      this.imageSelected.emit(prepared.dataUrl);
+      if (kind === 'board') {
+        this.boardImageSelected.emit(prepared.dataUrl);
+      } else {
+        this.imageSelected.emit(prepared.dataUrl);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       if (message) {
@@ -345,7 +433,7 @@ export class ClickZoneEditorComponent {
   }
 
   onShapeDown(event: PointerEvent, zoneIndex: number): void {
-    if (this.readonly() || this.disabled() || this.drag) {
+    if (!this.canEditShapes() || this.disabled() || this.drag) {
       return;
     }
     const point = this.eventPoint(event);
@@ -398,7 +486,8 @@ export class ClickZoneEditorComponent {
     if (this.disabled() || this.drag || this.shapeDrag) {
       return;
     }
-    if (this.readonly() && this.variant() !== 'click') {
+    // Édition des formes, ou clic en lecture seule pour révéler une zone.
+    if (!this.canEditShapes() && !(this.readonly() && this.variant() === 'click')) {
       return;
     }
     try {
@@ -423,6 +512,9 @@ export class ClickZoneEditorComponent {
       if (point) {
         this.revealAt(point);
       }
+      return;
+    }
+    if (!this.canEditShapes()) {
       return;
     }
     if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 4) {
@@ -454,7 +546,7 @@ export class ClickZoneEditorComponent {
   }
 
   onDraftDown(event: PointerEvent, index: number): void {
-    if (this.readonly() || this.disabled()) {
+    if (!this.canEditShapes() || this.disabled()) {
       return;
     }
     event.stopPropagation();
@@ -465,7 +557,7 @@ export class ClickZoneEditorComponent {
   }
 
   onHandleDown(event: PointerEvent, zoneIndex: number, handleIndex: number): void {
-    if (this.readonly() || this.disabled()) {
+    if (!this.canEditShapes() || this.disabled()) {
       return;
     }
     event.stopPropagation();

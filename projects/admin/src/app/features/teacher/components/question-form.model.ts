@@ -78,6 +78,7 @@ export interface SavedQuestion {
   decoys: GapWordDraft[];
   expectedAnswer: string;
   imageDataUrl: string;
+  boardImageDataUrl: string;
   requireAllCorrect: boolean;
   zones: ClickZone[];
   snapDistance: number;
@@ -96,6 +97,7 @@ export interface QuestionDraftSnapshot {
   decoys: GapWordDraft[];
   expectedAnswer: string;
   clickImage: string;
+  boardImage: string;
   requireAllCorrect: boolean;
   clickZones: ClickZone[];
   puzzleMagnet: number;

@@ -18,6 +18,41 @@
   background: #e6e1d6;
 }
 
+.board-thumb {
+  display: block;
+  width: 100%;
+  max-width: 12rem;
+  margin: 0.35rem 0 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #d0d7e2;
+}
+
+.stage-label {
+  margin: 0.75rem 0 0.35rem;
+  font-weight: 700;
+}
+
+.stage.board-play {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
+
+/* Damier derrière les trous quand on joue sans fond dédié. */
+.stage.holed {
+  background-color: #d9d3c6;
+  background-image:
+    linear-gradient(45deg, #cfc8b8 25%, transparent 25%),
+    linear-gradient(-45deg, #cfc8b8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #cfc8b8 75%),
+    linear-gradient(-45deg, transparent 75%, #cfc8b8 75%);
+  background-size: 1.25rem 1.25rem;
+  background-position:
+    0 0,
+    0 0.625rem,
+    0.625rem -0.625rem,
+    -0.625rem 0;
+}
+
 .stage > img {
   display: block;
   width: 100%;

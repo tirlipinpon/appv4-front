@@ -387,10 +387,12 @@
           <app-click-zone-editor
             variant="puzzle"
             [imageDataUrl]="clickImage()"
+            [boardImageDataUrl]="boardImage()"
             [zones]="clickZones()"
             [disabled]="saving()"
             [magnet]="puzzleMagnet()"
             (imageSelected)="setClickImage($event)"
+            (boardImageSelected)="setBoardImage($event)"
             (imageError)="setClickImageError($event)"
             (zonesChange)="setClickZones($event)"
             (magnetChange)="setPuzzleMagnet($event)"
@@ -552,6 +554,7 @@
                 [readonly]="true"
                 variant="puzzle"
                 [imageDataUrl]="question.imageDataUrl"
+                [boardImageDataUrl]="question.boardImageDataUrl"
                 [zones]="question.zones"
                 [magnet]="question.snapDistance"
               />

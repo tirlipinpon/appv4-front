@@ -14,6 +14,7 @@ function emptyDraft(overrides: Partial<QuestionDraftSnapshot> = {}): QuestionDra
     decoys: emptyDecoys(),
     expectedAnswer: '',
     clickImage: '',
+    boardImage: '',
     requireAllCorrect: true,
     clickZones: [],
     puzzleMagnet: 0.08,
@@ -153,6 +154,7 @@ describe('question-form.adapters', () => {
         emptyDraft({
           prompt: 'Assemble',
           clickImage: 'data:image/webp;base64,BBB',
+          boardImage: 'data:image/webp;base64,CCC',
           clickZones: zones,
           puzzleMagnet: 0.12,
         }),
@@ -161,6 +163,7 @@ describe('question-form.adapters', () => {
       jasmine.objectContaining({
         formCode: FORM.PUZZLE,
         imageWebp: 'BBB',
+        boardImageWebp: 'CCC',
         snapDistance: 0.12,
         pieces: [
           {

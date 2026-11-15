@@ -1,23 +1,68 @@
 @if (!readonly()) {
+  @if (variant() === 'puzzle') {
+    <p class="hint">
+      1) Image à découper = les éléments. 2) Image de fond = le plateau où l'enfant les repose (même
+      cadrage / même scène).
+    </p>
+  }
   <label class="upload">
-    Image
+    {{ variant() === 'puzzle' ? '1. Image à découper (éléments)' : 'Image' }}
     <input
       type="file"
       accept="image/jpeg,image/png,image/gif,image/webp"
       [disabled]="disabled()"
-      (change)="onFile($event)"
+      (change)="onFile($event, 'cut')"
     />
   </label>
+  @if (variant() === 'puzzle' && imageDataUrl()) {
+    <img class="board-thumb" [src]="imageDataUrl()" alt="Image à découper" />
+  }
+  @if (variant() === 'puzzle') {
+    <label class="upload">
+      2. Image de fond (plateau de jeu)
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        [disabled]="disabled()"
+        (change)="onFile($event, 'board')"
+      />
+    </label>
+    @if (hasDistinctBoard()) {
+      <p class="hint">Fond prêt. Les pièces découpées se posent sur ce plateau.</p>
+      <img class="board-thumb" [src]="boardImageDataUrl()" alt="Fond de jeu" />
+    } @else {
+      <p class="hint">
+        Sans fond dédié, l'enfant joue sur l'image de découpe trouée. Avec un fond, les pièces vont
+        sur le fond.
+      </p>
+    }
+  }
 }
 
-@if (imageDataUrl()) {
-  <div class="stage" #stage>
-    <img [src]="imageDataUrl()" alt="" draggable="false" />
+@if (imageDataUrl() || (variant() === 'puzzle' && showingBoard())) {
+  @if (variant() === 'puzzle') {
+    <p class="stage-label">
+      @if (showingBoard() && usingCustomBoard()) {
+        Plateau de jeu (fond) — glisse les pièces ici
+      } @else if (showingBoard()) {
+        Plateau de jeu (image trouée)
+      } @else {
+        Découpe — trace les pièces sur les éléments
+      }
+    </p>
+  }
+  <div
+    class="stage"
+    #stage
+    [class.board-play]="showingBoard()"
+    [class.holed]="showingBoard() && !usingCustomBoard()"
+  >
+    <img [src]="stageSrc()" alt="" draggable="false" />
     <svg
       #surface
       viewBox="0 0 1 1"
       preserveAspectRatio="none"
-      [class.editing]="!readonly()"
+      [class.editing]="canEditShapes()"
       (pointerdown)="onSurfaceDown($event)"
       (pointerup)="onSurfaceUp($event)"
     >
@@ -66,7 +111,7 @@
             (pointerup)="onShapeUp($event)"
           />
         }
-        @if (!readonly() && zoneIndex === selected()) {
+        @if (canEditShapes() && zoneIndex === selected()) {
           @for (handle of handles(zone); track $index; let handleIndex = $index) {
             <circle
               [attr.cx]="handle.x"
@@ -133,7 +178,7 @@
   }
 }
 
-@if (!readonly()) {
+@if (!readonly() && !playPreview()) {
   <div class="tools">
     <button mat-button type="button" [disabled]="disabled() || draft().length < 3" (click)="finishDraft()">
       {{ variant() === 'puzzle' ? 'Terminer la pièce' : 'Terminer la zone' }}
@@ -227,7 +272,31 @@
 }
 
 @if (variant() === 'puzzle' && zones().length) {
-  <p class="hint">Glisse une vignette sur l'image : elle reste où tu la poses. Près de sa découpe, elle se colle.</p>
+  @if (!readonly()) {
+    <button
+      mat-button
+      type="button"
+      [disabled]="disabled() || (!hasDistinctBoard() && !punchedUrl())"
+      (click)="togglePlayPreview()"
+    >
+      {{
+        playPreview()
+          ? 'Éditer les découpes'
+          : hasDistinctBoard()
+            ? 'Voir le plateau (fond)'
+            : 'Aperçu enfant (trous)'
+      }}
+    </button>
+  }
+  @if (showingBoard() && usingCustomBoard()) {
+    <p class="hint">Les vignettes viennent de l'image à découper ; tu les poses sur le fond.</p>
+  } @else if (showingBoard()) {
+    <p class="hint">Pas de fond dédié : plateau = image de découpe trouée.</p>
+  } @else if (hasDistinctBoard()) {
+    <p class="hint">Trace les pièces ici, puis « Voir le plateau (fond) » pour les y glisser.</p>
+  } @else {
+    <p class="hint">Trace les pièces ici, ou ajoute un fond plus haut pour un vrai plateau de jeu.</p>
+  }
   <ul class="pieces">
     @for (zone of zones(); track $index; let pieceIndex = $index) {
       @if (inTray(pieceIndex)) {
