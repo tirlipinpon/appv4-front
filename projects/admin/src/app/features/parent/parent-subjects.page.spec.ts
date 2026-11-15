@@ -8,7 +8,6 @@ import type { ParentSubjectsResponse } from '../../core/api/api-models';
 import { ParentSubjectsPage } from './parent-subjects.page';
 
 const url = 'http://localhost:8080/api/int/parent/subjects';
-const childrenUrl = 'http://localhost:8080/api/int/parent/children';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
 const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
@@ -18,6 +17,10 @@ const loaded: ParentSubjectsResponse = {
       childId: 3,
       firstName: 'Léa',
       lastName: 'Martin',
+      sex: 'FILLE',
+      age: 8,
+      avatarCode: 'fox',
+      hasPhoto: false,
       schoolId: 1,
       schoolName: 'École française',
       grade: 'CE1',
@@ -75,9 +78,6 @@ describe('ParentSubjectsPage', () => {
   function boot(body: ParentSubjectsResponse): void {
     fixture.detectChanges();
     http.expectOne(url).flush(body);
-    http.expectOne(childrenUrl).flush({
-      children: [{ id: 3, firstName: 'Léa', lastName: 'Martin', sex: 'FILLE', age: 8, avatarCode: 'fox' }],
-    });
     http.expectOne(spacesUrl).flush({ roles: ['parent'], teacherRequest: 'none' });
     http.expectOne(accountUrl).flush({ displayName: 'Tony' });
     fixture.detectChanges();
