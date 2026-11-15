@@ -209,6 +209,35 @@ describe('question-form.adapters', () => {
         boardImageWebp: '',
       }),
     );
+
+    expect(
+      buildSaveBody(
+        FORM.PUZZLE,
+        emptyDraft({
+          prompt: 'Blanc',
+          clickImage: 'data:image/webp;base64,BBB',
+          boardMode: PUZZLE_BOARD_MODE.BLANC,
+          clickZones: [
+            {
+              ...zones[0],
+              slot: { x: 0.3, y: 0.4 },
+            },
+          ],
+        }),
+      ),
+    ).toEqual(
+      jasmine.objectContaining({
+        boardMode: 'blanc',
+        boardImageWebp: '',
+        pieces: [
+          jasmine.objectContaining({
+            label: 'zone',
+            slotX: 0.3,
+            slotY: 0.4,
+          }),
+        ],
+      }),
+    );
   });
 
   it('returns null for an unknown form code', () => {

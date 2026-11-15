@@ -331,6 +331,25 @@ button.side.faux.selected {
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
 }
 
+/** Contour vert qui suit la forme (transparence PNG), ~2 s après un bon placement. */
+.token.fit {
+  animation: token-fit 2s ease-out forwards;
+}
+
+@keyframes token-fit {
+  0%,
+  65% {
+    filter:
+      drop-shadow(0 0 0.75px #1f9d4a)
+      drop-shadow(0 0 2px #1f9d4a)
+      drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+  }
+
+  100% {
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+  }
+}
+
 .ghost {
   position: fixed;
   z-index: 30;

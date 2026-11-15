@@ -194,6 +194,9 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
           label: zone.label,
           shape: zone.shape,
           points: zone.points.map((point) => ({ x: point.x, y: point.y })),
+          ...(draft.boardMode === PUZZLE_BOARD_MODE.BLANC && zone.slot
+            ? { slotX: zone.slot.x, slotY: zone.slot.y }
+            : {}),
         })),
       };
     case FORM.QCM:
@@ -224,7 +227,14 @@ function savedPieces(pieces: ApiQuestion['pieces']): ClickZone[] {
     if (!points.length) {
       return [];
     }
-    return [{ label: piece.label, correct: true, shape: piece.shape, points }];
+    const slot =
+      typeof piece.slotX === 'number' &&
+      Number.isFinite(piece.slotX) &&
+      typeof piece.slotY === 'number' &&
+      Number.isFinite(piece.slotY)
+        ? { x: piece.slotX, y: piece.slotY }
+        : null;
+    return [{ label: piece.label, correct: true, shape: piece.shape, points, slot }];
   });
 }
 

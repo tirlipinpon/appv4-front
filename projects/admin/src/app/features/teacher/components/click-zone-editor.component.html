@@ -51,7 +51,10 @@
     @if (boardMode() === boardModes.TROUS) {
       <p class="hint">L'enfant pose les pièces sur l'image de découpe trouée.</p>
     } @else if (boardMode() === boardModes.BLANC) {
-      <p class="hint">L'enfant pose les pièces sur un cadre blanc (même taille que la découpe).</p>
+      <p class="hint">
+        Cadre blanc : après la découpe, ouvre l'aperçu plateau et pose chaque pièce où l'enfant devra
+        la retrouver (sans silhouette visible pour lui).
+      </p>
     } @else {
       <label class="upload">
         Image de fond (plateau)
@@ -188,6 +191,7 @@
             @if (pieceUrls()[pieceIndex]; as url) {
               <img
                 class="token"
+                [class.fit]="isFitFlash(pieceIndex)"
                 [src]="url"
                 alt=""
                 draggable="false"
@@ -197,6 +201,7 @@
                 [style.left.%]="spot.x * 100"
                 [style.top.%]="spot.y * 100"
                 [style.width.%]="pieceWidth(zone)"
+                [style.z-index]="dragIndex() === pieceIndex ? 1000 : pieceIndex + 1"
                 (pointerdown)="onPieceDown($event, pieceIndex)"
               />
             }
@@ -255,6 +260,9 @@
     </p>
   }
 
+  @if (variant() === 'puzzle' && zones().length > 1) {
+    <p class="hint">Ordre : le haut de la liste est derrière, le bas est devant.</p>
+  }
   <ul #zoneList class="zone-list">
     @for (zone of zones(); track $index) {
       <li [class.selected]="$index === selected()">
@@ -265,7 +273,7 @@
           [disabled]="disabled()"
           (click)="selectZone($index)"
         >
-          {{ zone.label || 'Zone ' + ($index + 1) }}
+          {{ zone.label || (variant() === 'puzzle' ? 'Pièce ' : 'Zone ') + ($index + 1) }}
         </button>
         <mat-form-field appearance="outline" class="name">
           <mat-label>Nom</mat-label>
@@ -308,6 +316,24 @@
             <mat-option value="ellipse">Ellipse</mat-option>
           </mat-select>
         </mat-form-field>
+        @if (variant() === 'puzzle') {
+          <button
+            mat-button
+            type="button"
+            [disabled]="!canMoveLayer($index, -1)"
+            (click)="moveLayer($index, -1)"
+          >
+            Derrière
+          </button>
+          <button
+            mat-button
+            type="button"
+            [disabled]="!canMoveLayer($index, 1)"
+            (click)="moveLayer($index, 1)"
+          >
+            Devant
+          </button>
+        }
         <button mat-button type="button" [disabled]="disabled()" (click)="removeZone($index)">Supprimer</button>
       </li>
     }
@@ -336,7 +362,13 @@
   @if (showingBoard() && usingCustomBoard()) {
     <p class="hint">Les vignettes viennent de l'image à découper ; tu les poses sur le fond.</p>
   } @else if (showingBoard() && usingBlankBoard()) {
-    <p class="hint">Cadre blanc : les pièces se posent sur un plateau vide.</p>
+    <p class="hint">
+      @if (readonly()) {
+        Plateau blanc : aucune silhouette — retrouve la place de chaque pièce.
+      } @else {
+        Pose chaque pièce sur le blanc pour fixer son emplacement, puis enregistre.
+      }
+    </p>
   } @else if (showingBoard() && usingPunchedBoard()) {
     <p class="hint">Plateau = image de découpe trouée.</p>
   } @else if (boardMode() === boardModes.FOND && hasDistinctBoard()) {

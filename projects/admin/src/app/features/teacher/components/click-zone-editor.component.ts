@@ -154,6 +154,8 @@ export class ClickZoneEditorComponent {
   readonly magnetLive = signal(0.08);
   readonly magnetPercent = computed(() => Math.round(this.magnetLive() * 100));
   readonly ghost = signal<{ url: string; left: number; top: number; width: number } | null>(null);
+  /** Index des pièces qui viennent de coller à l'emplacement (contour vert ~2 s). */
+  readonly fitFlash = signal<ReadonlySet<number>>(new Set());
 
   private readonly destroyRef = inject(DestroyRef);
   private paintToken = 0;
@@ -161,6 +163,7 @@ export class ClickZoneEditorComponent {
   /** Évite de forcer le plateau à chaque tick une fois l'utilisateur revenu à la découpe. */
   private autoPlayArmed = false;
   private stopPieceListeners: (() => void) | null = null;
+  private readonly fitFlashTimers = new Map<number, ReturnType<typeof setTimeout>>();
   private pieceDrag: {
     index: number;
     pointer: number;
@@ -183,7 +186,10 @@ export class ClickZoneEditorComponent {
   private press: { x: number; y: number; pointer: number } | null = null;
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.stopPieceListeners?.());
+    this.destroyRef.onDestroy(() => {
+      this.stopPieceListeners?.();
+      this.clearFitFlash();
+    });
     effect((onCleanup) => {
       const url = this.imageDataUrl();
       const zones = this.zones();
@@ -251,6 +257,7 @@ export class ClickZoneEditorComponent {
       this.pieceDrag = null;
       this.dragIndex.set(null);
       this.ghost.set(null);
+      this.clearFitFlash();
       this.placements.set(this.zones().map(() => null));
     });
   }
@@ -302,7 +309,13 @@ export class ClickZoneEditorComponent {
     this.pieceDrag = null;
     this.dragIndex.set(null);
     this.ghost.set(null);
+    this.clearFitFlash();
     this.placements.set(this.zones().map(() => null));
+  }
+
+  /** True pendant ~2 s après un lâcher collé sur l'emplacement. */
+  isFitFlash(index: number): boolean {
+    return this.fitFlash().has(index);
   }
 
   setBoardMode(mode: PuzzleBoardMode): void {
@@ -328,8 +341,53 @@ export class ClickZoneEditorComponent {
       this.draft.set([]);
       this.draftHandle.set(null);
       this.adding.set(false);
-      this.clearPlacements();
+      if (this.boardMode() === PUZZLE_BOARD_MODE.BLANC) {
+        // En édition : montrer les emplacements déjà posés par le prof.
+        this.placements.set(this.zones().map((zone) => (zone.slot ? { ...zone.slot } : null)));
+      } else {
+        this.clearPlacements();
+      }
     }
+  }
+
+  /**
+   * Cible du magnétisme : découpe (trous/fond), ou slot posé par le prof (blanc).
+   * Sans slot en mode blanc : hors plateau pour ne pas coller sur la découpe.
+   */
+  private pieceHome(zone: ClickZone): { x: number; y: number; width: number; height: number } {
+    const frame = pieceFrame(zone);
+    if (this.boardMode() !== PUZZLE_BOARD_MODE.BLANC) {
+      return frame;
+    }
+    if (zone.slot) {
+      return { x: zone.slot.x, y: zone.slot.y, width: frame.width, height: frame.height };
+    }
+    return { x: -1, y: -1, width: frame.width, height: frame.height };
+  }
+
+  /**
+   * Pose des emplacements en cadre blanc (édition professeur).
+   * Pas de magnétisme : sinon la pièce recolle sur l'ancien slot et on ne peut plus la décaler.
+   */
+  private placingBlancSlots(): boolean {
+    return (
+      !this.readonly() &&
+      this.variant() === 'puzzle' &&
+      this.boardMode() === PUZZLE_BOARD_MODE.BLANC
+    );
+  }
+
+  /** Lâcher libre sur le plateau (sans coller) : reste si la pièce touche encore l'image. */
+  private freePlaceOnImage(
+    raw: { x: number; y: number },
+    frame: { width: number; height: number },
+  ): { x: number; y: number } | null {
+    const onImage =
+      raw.x < 1 && raw.y < 1 && raw.x + frame.width > 0 && raw.y + frame.height > 0;
+    if (!onImage) {
+      return null;
+    }
+    return { x: raw.x, y: raw.y };
   }
 
   /** Édition des formes : pas en lecture seule ni en aperçu trous. */
@@ -391,16 +449,21 @@ export class ClickZoneEditorComponent {
     if (event.cancelable) {
       event.preventDefault();
     }
-    const home = pieceFrame(this.zones()[drag.index]);
     const left = event.clientX - drag.offsetX;
     const top = event.clientY - drag.offsetY;
+    const url = this.pieceUrls()[drag.index] ?? '';
+    // Pose libre des slots : le fantôme suit le doigt, sans coller à l'ancien emplacement.
+    if (this.placingBlancSlots()) {
+      this.ghost.set({ url, left, top, width: drag.width });
+      return;
+    }
+    const home = this.pieceHome(this.zones()[drag.index]);
     const spot = magnetizedPosition(
       { x: (left - stage.left) / stage.width, y: (top - stage.top) / stage.height },
       home,
       this.magnetLive(),
       stage,
     );
-    const url = this.pieceUrls()[drag.index] ?? '';
     this.ghost.set(
       spot.snapped
         ? {
@@ -420,16 +483,26 @@ export class ClickZoneEditorComponent {
     }
     const stage = this.stage()?.nativeElement.getBoundingClientRect();
     const ghost = this.ghost();
-    const home = pieceFrame(this.zones()[drag.index]);
-    const placed =
+    const zone = this.zones()[drag.index];
+    const home = this.pieceHome(zone);
+    const raw =
       stage != null && stage.width > 0 && stage.height > 0 && ghost != null
-        ? placeOnImage(
-            { x: (ghost.left - stage.left) / stage.width, y: (ghost.top - stage.top) / stage.height },
-            home,
-            this.magnetLive(),
-            stage,
-          )
+        ? {
+            x: (ghost.left - stage.left) / stage.width,
+            y: (ghost.top - stage.top) / stage.height,
+          }
         : null;
+    const placingSlots = this.placingBlancSlots();
+    const snap =
+      raw != null && stage != null && !placingSlots
+        ? magnetizedPosition(raw, home, this.magnetLive(), stage)
+        : null;
+    const placed =
+      raw == null
+        ? null
+        : placingSlots
+          ? this.freePlaceOnImage(raw, home)
+          : placeOnImage(raw, home, this.magnetLive(), stage!);
     this.stopPieceListeners?.();
     this.pieceDrag = null;
     this.dragIndex.set(null);
@@ -439,6 +512,47 @@ export class ClickZoneEditorComponent {
       next[drag.index] = placed;
       return next;
     });
+    // Cadre blanc en édition : la pose du prof devient l'emplacement cible enregistré.
+    // Pas de clamp 0–1 : une pièce déjà au bord gauche (ex. roue arrière) doit pouvoir déborder un peu.
+    if (placed && placingSlots) {
+      const slot = { x: placed.x, y: placed.y };
+      this.placements.update((rows) => {
+        const next = this.zones().map((_, index) => rows[index] ?? null);
+        next[drag.index] = slot;
+        return next;
+      });
+      this.zonesChange.emit(
+        this.zones().map((row, index) => (index === drag.index ? { ...row, slot } : row)),
+      );
+    } else if (placed && snap?.snapped) {
+      this.flashFit(drag.index);
+    }
+  }
+
+  /** Contour vert ~2 s quand la pièce colle sur son emplacement. */
+  private flashFit(index: number): void {
+    const previous = this.fitFlashTimers.get(index);
+    if (previous != null) {
+      clearTimeout(previous);
+    }
+    this.fitFlash.update((rows) => new Set([...rows, index]));
+    const timer = setTimeout(() => {
+      this.fitFlashTimers.delete(index);
+      this.fitFlash.update((rows) => {
+        const next = new Set(rows);
+        next.delete(index);
+        return next;
+      });
+    }, 2000);
+    this.fitFlashTimers.set(index, timer);
+  }
+
+  private clearFitFlash(): void {
+    for (const timer of this.fitFlashTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.fitFlashTimers.clear();
+    this.fitFlash.set(new Set());
   }
 
   private paintPieces(url: string, zones: ClickZone[], token: number): void {
@@ -694,6 +808,40 @@ export class ClickZoneEditorComponent {
     this.zonesChange.emit(this.zones().filter((_, current) => current !== index));
     this.selected.set(null);
     this.selectedHandle.set(null);
+  }
+
+  /**
+   * Change la superposition : index bas = derrière, index haut = devant.
+   * {@code delta} −1 = derrière, +1 = devant.
+   */
+  moveLayer(index: number, delta: -1 | 1): void {
+    const next = index + delta;
+    const zones = this.zones();
+    if (next < 0 || next >= zones.length || this.disabled() || !this.canEditShapes()) {
+      return;
+    }
+    const reordered = [...zones];
+    const [piece] = reordered.splice(index, 1);
+    reordered.splice(next, 0, piece);
+    const placements = this.zones().map((_, i) => this.placements()[i] ?? null);
+    const [spot] = placements.splice(index, 1);
+    placements.splice(next, 0, spot ?? null);
+    this.placements.set(placements);
+    // Aligne la clé géométrie pour que l'effet ne vide pas les poses après le reorder.
+    this.geometryKey = reordered
+      .map((zone) => {
+        const frame = pieceFrame(zone);
+        return `${zone.shape}:${frame.x}:${frame.y}:${frame.width}:${frame.height}`;
+      })
+      .join('|');
+    this.selected.set(next);
+    this.selectedHandle.set(null);
+    this.zonesChange.emit(reordered);
+  }
+
+  canMoveLayer(index: number, delta: -1 | 1): boolean {
+    const next = index + delta;
+    return next >= 0 && next < this.zones().length && this.canEditShapes() && !this.disabled();
   }
 
   startAdding(): void {

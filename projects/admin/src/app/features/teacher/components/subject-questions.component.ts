@@ -16,6 +16,7 @@ import { ClickZone } from './click-zone';
 import { buildSaveBody, parseSavedQuestion, requireSavedQuestion } from './question-form.adapters';
 import {
   ChoiceDraft,
+  FORM,
   GapWordDraft,
   ItemDraft,
   LinkDraft,
@@ -213,6 +214,9 @@ export class SubjectQuestionsComponent implements OnInit {
     this.boardMode.set(mode);
     if (mode !== PUZZLE_BOARD_MODE.FOND) {
       this.boardImage.set('');
+    }
+    if (mode !== PUZZLE_BOARD_MODE.BLANC) {
+      this.clickZones.update((zones) => zones.map((zone) => ({ ...zone, slot: null })));
     }
     this.error.set(null);
   }
@@ -561,6 +565,16 @@ export class SubjectQuestionsComponent implements OnInit {
     const code = this.selectedCode();
     const editingId = this.editingId();
     if (!isKnownFormCode(code) || this.saving()) {
+      return;
+    }
+    if (
+      code === FORM.PUZZLE &&
+      this.boardMode() === PUZZLE_BOARD_MODE.BLANC &&
+      this.clickZones().some((zone) => zone.slot == null)
+    ) {
+      this.error.set(
+        'Sur le cadre blanc, ouvre l’aperçu plateau et pose chaque pièce pour fixer son emplacement.',
+      );
       return;
     }
     const body = buildSaveBody(code, {

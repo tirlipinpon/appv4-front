@@ -980,6 +980,16 @@ export interface components {
             label?: string;
             shape?: string;
             points?: components["schemas"]["TeacherQuestionPointInput"][];
+            /**
+             * Format: double
+             * @description Emplacement cible X (0-1), mode blanc
+             */
+            slotX?: number;
+            /**
+             * Format: double
+             * @description Emplacement cible Y (0-1), mode blanc
+             */
+            slotY?: number;
         };
         TeacherQuestionPointInput: {
             /** Format: double */
@@ -1035,6 +1045,16 @@ export interface components {
             label?: string;
             shape?: string;
             points?: components["schemas"]["TeacherQuestionPointItem"][];
+            /**
+             * Format: double
+             * @description Emplacement cible X (0-1), mode blanc
+             */
+            slotX?: number;
+            /**
+             * Format: double
+             * @description Emplacement cible Y (0-1), mode blanc
+             */
+            slotY?: number;
         };
         TeacherQuestionPointItem: {
             /** Format: double */
