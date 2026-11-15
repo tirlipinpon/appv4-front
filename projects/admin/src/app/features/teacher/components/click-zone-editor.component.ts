@@ -16,6 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { preparePhoto } from '../../../shared/prepare-photo/prepare-photo';
 import {
@@ -52,7 +53,7 @@ import { PuzzleBoardMode, PUZZLE_BOARD_MODE } from './question-form.model';
  */
 @Component({
   selector: 'app-click-zone-editor',
-  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatTooltipModule],
   templateUrl: './click-zone-editor.component.html',
   styleUrl: './click-zone-editor.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -499,7 +499,7 @@
                 <p class="status" role="status">Chargement…</p>
               } @else if (followers(); as people) {
                 <p>{{ people.warning }}</p>
-                @if (people.names?.length) {
+                @if (people.names.length) {
                   <ul class="names">
                     @for (name of people.names; track $index) {
                       <li>{{ name }}</li>

@@ -192,6 +192,8 @@
                 alt=""
                 draggable="false"
                 [attr.aria-label]="shapeName(zone, pieceIndex)"
+                [matTooltip]="shapeName(zone, pieceIndex)"
+                matTooltipShowDelay="200"
                 [style.left.%]="spot.x * 100"
                 [style.top.%]="spot.y * 100"
                 [style.width.%]="pieceWidth(zone)"
@@ -354,6 +356,8 @@
               alt=""
               draggable="false"
               [attr.aria-label]="shapeName(zone, pieceIndex)"
+              [matTooltip]="shapeName(zone, pieceIndex)"
+              matTooltipShowDelay="200"
               (pointerdown)="onPieceDown($event, pieceIndex)"
             />
           }
