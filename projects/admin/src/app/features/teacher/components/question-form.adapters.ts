@@ -4,10 +4,12 @@ import { ClickZone } from './click-zone';
 import {
   FORM,
   KnownFormCode,
+  PUZZLE_BOARD_MODE,
   QuestionDraftSnapshot,
   SavedQuestion,
   defaultMagnet,
   isKnownFormCode,
+  isPuzzleBoardMode,
 } from './question-form.model';
 
 type ApiQuestion = components['schemas']['TeacherSubjectQuestionItem'];
@@ -75,6 +77,10 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     decoys,
     expectedAnswer: question.expectedAnswer ?? '',
     imageDataUrl: question.imageWebp ? `data:image/webp;base64,${question.imageWebp}` : '',
+    boardMode:
+      formCode === FORM.PUZZLE && isPuzzleBoardMode(question.boardMode)
+        ? question.boardMode
+        : PUZZLE_BOARD_MODE.TROUS,
     boardImageDataUrl:
       formCode === FORM.PUZZLE && question.boardImageWebp
         ? `data:image/webp;base64,${question.boardImageWebp}`
@@ -178,7 +184,11 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         formCode: code,
         prompt: draft.prompt,
         imageWebp: webpPayload(draft.clickImage),
-        boardImageWebp: webpPayload(draft.boardImage),
+        boardMode: draft.boardMode,
+        boardImageWebp:
+          draft.boardMode === PUZZLE_BOARD_MODE.FOND && draft.boardImage
+            ? webpPayload(draft.boardImage)
+            : '',
         snapDistance: draft.puzzleMagnet,
         pieces: draft.clickZones.map((zone) => ({
           label: zone.label,

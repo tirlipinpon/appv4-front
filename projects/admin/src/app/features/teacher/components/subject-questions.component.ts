@@ -20,6 +20,8 @@ import {
   ItemDraft,
   LinkDraft,
   PairDraft,
+  PuzzleBoardMode,
+  PUZZLE_BOARD_MODE,
   SavedQuestion,
   StatementDraft,
   defaultMagnet,
@@ -105,6 +107,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly sentence = signal('');
   readonly expectedAnswer = signal('');
   readonly clickImage = signal('');
+  readonly boardMode = signal<PuzzleBoardMode>(PUZZLE_BOARD_MODE.TROUS);
   readonly boardImage = signal('');
   readonly requireAllCorrect = signal(true);
   readonly clickZones = signal<ClickZone[]>([]);
@@ -206,8 +209,17 @@ export class SubjectQuestionsComponent implements OnInit {
     });
   }
 
+  setBoardMode(mode: PuzzleBoardMode): void {
+    this.boardMode.set(mode);
+    if (mode !== PUZZLE_BOARD_MODE.FOND) {
+      this.boardImage.set('');
+    }
+    this.error.set(null);
+  }
+
   setBoardImage(dataUrl: string): void {
     this.boardImage.set(dataUrl);
+    this.boardMode.set(PUZZLE_BOARD_MODE.FOND);
     this.error.set(null);
   }
 
@@ -363,6 +375,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.sentence.set(question.sentence);
     this.expectedAnswer.set(question.expectedAnswer);
     this.clickImage.set(question.imageDataUrl);
+    this.boardMode.set(question.boardMode);
     this.boardImage.set(question.boardImageDataUrl);
     this.requireAllCorrect.set(question.requireAllCorrect);
     this.clickZones.set(question.zones.map((zone) => ({ ...zone, points: zone.points.map((point) => ({ ...point })) })));
@@ -534,6 +547,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.sentence.set('');
     this.expectedAnswer.set('');
     this.clickImage.set('');
+    this.boardMode.set(PUZZLE_BOARD_MODE.TROUS);
     this.boardImage.set('');
     this.requireAllCorrect.set(true);
     this.clickZones.set([]);
@@ -561,6 +575,7 @@ export class SubjectQuestionsComponent implements OnInit {
       decoys: this.decoys(),
       expectedAnswer: this.expectedAnswer(),
       clickImage: this.clickImage(),
+      boardMode: this.boardMode(),
       boardImage: this.boardImage(),
       requireAllCorrect: this.requireAllCorrect(),
       clickZones: this.clickZones(),
