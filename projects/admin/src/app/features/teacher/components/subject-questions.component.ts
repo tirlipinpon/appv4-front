@@ -16,10 +16,13 @@ import { ClickZone } from './click-zone';
 import { buildSaveBody, parseSavedQuestion, requireSavedQuestion } from './question-form.adapters';
 import {
   ChoiceDraft,
+  FORM,
   GapWordDraft,
   ItemDraft,
   LinkDraft,
   PairDraft,
+  PuzzleBoardMode,
+  PUZZLE_BOARD_MODE,
   SavedQuestion,
   StatementDraft,
   defaultMagnet,
@@ -105,6 +108,8 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly sentence = signal('');
   readonly expectedAnswer = signal('');
   readonly clickImage = signal('');
+  readonly boardMode = signal<PuzzleBoardMode>(PUZZLE_BOARD_MODE.TROUS);
+  readonly boardImage = signal('');
   readonly requireAllCorrect = signal(true);
   readonly clickZones = signal<ClickZone[]>([]);
   readonly puzzleMagnet = signal(defaultMagnet());
@@ -203,6 +208,23 @@ export class SubjectQuestionsComponent implements OnInit {
         this.error.set(httpErrorMessage(err, 'Vérification impossible.'));
       },
     });
+  }
+
+  setBoardMode(mode: PuzzleBoardMode): void {
+    this.boardMode.set(mode);
+    if (mode !== PUZZLE_BOARD_MODE.FOND) {
+      this.boardImage.set('');
+    }
+    if (mode !== PUZZLE_BOARD_MODE.BLANC) {
+      this.clickZones.update((zones) => zones.map((zone) => ({ ...zone, slot: null })));
+    }
+    this.error.set(null);
+  }
+
+  setBoardImage(dataUrl: string): void {
+    this.boardImage.set(dataUrl);
+    this.boardMode.set(PUZZLE_BOARD_MODE.FOND);
+    this.error.set(null);
   }
 
   setClickImage(dataUrl: string): void {
@@ -357,6 +379,8 @@ export class SubjectQuestionsComponent implements OnInit {
     this.sentence.set(question.sentence);
     this.expectedAnswer.set(question.expectedAnswer);
     this.clickImage.set(question.imageDataUrl);
+    this.boardMode.set(question.boardMode);
+    this.boardImage.set(question.boardImageDataUrl);
     this.requireAllCorrect.set(question.requireAllCorrect);
     this.clickZones.set(question.zones.map((zone) => ({ ...zone, points: zone.points.map((point) => ({ ...point })) })));
     this.puzzleMagnet.set(question.snapDistance);
@@ -527,6 +551,8 @@ export class SubjectQuestionsComponent implements OnInit {
     this.sentence.set('');
     this.expectedAnswer.set('');
     this.clickImage.set('');
+    this.boardMode.set(PUZZLE_BOARD_MODE.TROUS);
+    this.boardImage.set('');
     this.requireAllCorrect.set(true);
     this.clickZones.set([]);
     this.puzzleMagnet.set(defaultMagnet());
@@ -541,6 +567,16 @@ export class SubjectQuestionsComponent implements OnInit {
     if (!isKnownFormCode(code) || this.saving()) {
       return;
     }
+    if (
+      code === FORM.PUZZLE &&
+      this.boardMode() === PUZZLE_BOARD_MODE.BLANC &&
+      this.clickZones().some((zone) => zone.slot == null)
+    ) {
+      this.error.set(
+        'Sur le cadre blanc, ouvre l’aperçu plateau et pose chaque pièce pour fixer son emplacement.',
+      );
+      return;
+    }
     const body = buildSaveBody(code, {
       prompt: this.prompt(),
       choices: this.choices(),
@@ -553,6 +589,8 @@ export class SubjectQuestionsComponent implements OnInit {
       decoys: this.decoys(),
       expectedAnswer: this.expectedAnswer(),
       clickImage: this.clickImage(),
+      boardMode: this.boardMode(),
+      boardImage: this.boardImage(),
       requireAllCorrect: this.requireAllCorrect(),
       clickZones: this.clickZones(),
       puzzleMagnet: this.puzzleMagnet(),

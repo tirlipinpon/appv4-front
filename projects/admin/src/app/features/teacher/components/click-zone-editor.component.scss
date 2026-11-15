@@ -11,6 +11,39 @@
   font-weight: 600;
 }
 
+.board-modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.board-modes-label {
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.board-modes .mode {
+  border: 1px solid #c5cdd8;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.board-modes .mode.selected {
+  border-color: var(--app-primary);
+  background: color-mix(in srgb, var(--app-primary) 12%, #fff);
+  font-weight: 600;
+}
+
+.board-modes .mode:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .stage {
   position: relative;
   width: 100%;
@@ -18,11 +51,55 @@
   background: #e6e1d6;
 }
 
+.board-thumb {
+  display: block;
+  width: 100%;
+  max-width: 12rem;
+  margin: 0.35rem 0 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #d0d7e2;
+}
+
+.stage-label {
+  margin: 0.75rem 0 0.35rem;
+  font-weight: 700;
+}
+
+.stage.board-play {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
+
+/* Damier derrière les trous (mode trous). */
+.stage.holed {
+  background-color: #d9d3c6;
+  background-image:
+    linear-gradient(45deg, #cfc8b8 25%, transparent 25%),
+    linear-gradient(-45deg, #cfc8b8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #cfc8b8 75%),
+    linear-gradient(-45deg, transparent 75%, #cfc8b8 75%);
+  background-size: 1.25rem 1.25rem;
+  background-position:
+    0 0,
+    0 0.625rem,
+    0.625rem -0.625rem,
+    -0.625rem 0;
+}
+
+/* Cadre blanc : l'img garde le ratio, le plateau reste blanc. */
+.stage.blank-board {
+  background: #fff;
+}
+
 .stage > img {
   display: block;
   width: 100%;
   height: auto;
   pointer-events: none;
+}
+
+.stage > img.stage-size-only {
+  opacity: 0;
 }
 
 .stage svg {
@@ -252,6 +329,25 @@ button.side.faux.selected {
   touch-action: none;
   cursor: grab;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+}
+
+/** Contour vert qui suit la forme (transparence PNG), ~2 s après un bon placement. */
+.token.fit {
+  animation: token-fit 2s ease-out forwards;
+}
+
+@keyframes token-fit {
+  0%,
+  65% {
+    filter:
+      drop-shadow(0 0 0.75px #1f9d4a)
+      drop-shadow(0 0 2px #1f9d4a)
+      drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+  }
+
+  100% {
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+  }
 }
 
 .ghost {

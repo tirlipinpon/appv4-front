@@ -4,10 +4,12 @@ import { ClickZone } from './click-zone';
 import {
   FORM,
   KnownFormCode,
+  PUZZLE_BOARD_MODE,
   QuestionDraftSnapshot,
   SavedQuestion,
   defaultMagnet,
   isKnownFormCode,
+  isPuzzleBoardMode,
 } from './question-form.model';
 
 type ApiQuestion = components['schemas']['TeacherSubjectQuestionItem'];
@@ -75,6 +77,14 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     decoys,
     expectedAnswer: question.expectedAnswer ?? '',
     imageDataUrl: question.imageWebp ? `data:image/webp;base64,${question.imageWebp}` : '',
+    boardMode:
+      formCode === FORM.PUZZLE && isPuzzleBoardMode(question.boardMode)
+        ? question.boardMode
+        : PUZZLE_BOARD_MODE.TROUS,
+    boardImageDataUrl:
+      formCode === FORM.PUZZLE && question.boardImageWebp
+        ? `data:image/webp;base64,${question.boardImageWebp}`
+        : '',
     requireAllCorrect: question.requireAllCorrect === true,
     zones: formCode === FORM.PUZZLE ? savedPieces(question.pieces) : savedZones(question.zones),
     snapDistance:
@@ -174,11 +184,19 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         formCode: code,
         prompt: draft.prompt,
         imageWebp: webpPayload(draft.clickImage),
+        boardMode: draft.boardMode,
+        boardImageWebp:
+          draft.boardMode === PUZZLE_BOARD_MODE.FOND && draft.boardImage
+            ? webpPayload(draft.boardImage)
+            : '',
         snapDistance: draft.puzzleMagnet,
         pieces: draft.clickZones.map((zone) => ({
           label: zone.label,
           shape: zone.shape,
           points: zone.points.map((point) => ({ x: point.x, y: point.y })),
+          ...(draft.boardMode === PUZZLE_BOARD_MODE.BLANC && zone.slot
+            ? { slotX: zone.slot.x, slotY: zone.slot.y }
+            : {}),
         })),
       };
     case FORM.QCM:
@@ -209,7 +227,14 @@ function savedPieces(pieces: ApiQuestion['pieces']): ClickZone[] {
     if (!points.length) {
       return [];
     }
-    return [{ label: piece.label, correct: true, shape: piece.shape, points }];
+    const slot =
+      typeof piece.slotX === 'number' &&
+      Number.isFinite(piece.slotX) &&
+      typeof piece.slotY === 'number' &&
+      Number.isFinite(piece.slotY)
+        ? { x: piece.slotX, y: piece.slotY }
+        : null;
+    return [{ label: piece.label, correct: true, shape: piece.shape, points, slot }];
   });
 }
 

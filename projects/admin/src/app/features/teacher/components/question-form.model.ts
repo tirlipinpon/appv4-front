@@ -78,9 +78,24 @@ export interface SavedQuestion {
   decoys: GapWordDraft[];
   expectedAnswer: string;
   imageDataUrl: string;
+  boardMode: PuzzleBoardMode;
+  boardImageDataUrl: string;
   requireAllCorrect: boolean;
   zones: ClickZone[];
   snapDistance: number;
+}
+
+/** Plateau de jeu du puzzle : fond dédié, cadre blanc, ou image trouée. */
+export type PuzzleBoardMode = 'fond' | 'blanc' | 'trous';
+
+export const PUZZLE_BOARD_MODE = {
+  FOND: 'fond',
+  BLANC: 'blanc',
+  TROUS: 'trous',
+} as const satisfies Record<string, PuzzleBoardMode>;
+
+export function isPuzzleBoardMode(value: string | null | undefined): value is PuzzleBoardMode {
+  return value === 'fond' || value === 'blanc' || value === 'trous';
 }
 
 /** Instantané des champs de saisie pour construire la requête create/update. */
@@ -96,6 +111,8 @@ export interface QuestionDraftSnapshot {
   decoys: GapWordDraft[];
   expectedAnswer: string;
   clickImage: string;
+  boardMode: PuzzleBoardMode;
+  boardImage: string;
   requireAllCorrect: boolean;
   clickZones: ClickZone[];
   puzzleMagnet: number;

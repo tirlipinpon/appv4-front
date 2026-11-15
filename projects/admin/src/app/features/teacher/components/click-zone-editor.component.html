@@ -1,23 +1,112 @@
 @if (!readonly()) {
+  @if (variant() === 'puzzle') {
+    <p class="hint">
+      1) Image à découper = les éléments. 2) Choisis le plateau : trous dans l'image, cadre blanc, ou
+      fond dédié (même cadrage).
+    </p>
+  }
   <label class="upload">
-    Image
+    {{ variant() === 'puzzle' ? '1. Image à découper (éléments)' : 'Image' }}
     <input
       type="file"
       accept="image/jpeg,image/png,image/gif,image/webp"
       [disabled]="disabled()"
-      (change)="onFile($event)"
+      (change)="onFile($event, 'cut')"
     />
   </label>
+  @if (variant() === 'puzzle' && imageDataUrl()) {
+    <img class="board-thumb" [src]="imageDataUrl()" alt="Image à découper" />
+  }
+  @if (variant() === 'puzzle') {
+    <div class="board-modes" role="radiogroup" aria-label="Plateau de jeu">
+      <span class="board-modes-label">2. Plateau de jeu</span>
+      <button
+        type="button"
+        class="mode"
+        [class.selected]="boardMode() === boardModes.TROUS"
+        [disabled]="disabled()"
+        (click)="setBoardMode(boardModes.TROUS)"
+      >
+        Trous
+      </button>
+      <button
+        type="button"
+        class="mode"
+        [class.selected]="boardMode() === boardModes.BLANC"
+        [disabled]="disabled()"
+        (click)="setBoardMode(boardModes.BLANC)"
+      >
+        Cadre blanc
+      </button>
+      <button
+        type="button"
+        class="mode"
+        [class.selected]="boardMode() === boardModes.FOND"
+        [disabled]="disabled()"
+        (click)="setBoardMode(boardModes.FOND)"
+      >
+        Fond dédié
+      </button>
+    </div>
+    @if (boardMode() === boardModes.TROUS) {
+      <p class="hint">L'enfant pose les pièces sur l'image de découpe trouée.</p>
+    } @else if (boardMode() === boardModes.BLANC) {
+      <p class="hint">
+        Cadre blanc : après la découpe, ouvre l'aperçu plateau et pose chaque pièce où l'enfant devra
+        la retrouver (sans silhouette visible pour lui).
+      </p>
+    } @else {
+      <label class="upload">
+        Image de fond (plateau)
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          [disabled]="disabled()"
+          (change)="onFile($event, 'board')"
+        />
+      </label>
+      @if (hasDistinctBoard()) {
+        <p class="hint">Fond prêt. Les pièces découpées se posent sur ce plateau.</p>
+        <img class="board-thumb" [src]="boardImageDataUrl()" alt="Fond de jeu" />
+      } @else {
+        <p class="hint">Ajoute une image de fond distincte (même cadrage / même scène).</p>
+      }
+    }
+  }
 }
 
-@if (imageDataUrl()) {
-  <div class="stage" #stage>
-    <img [src]="imageDataUrl()" alt="" draggable="false" />
+@if (imageDataUrl() || (variant() === 'puzzle' && showingBoard())) {
+  @if (variant() === 'puzzle') {
+    <p class="stage-label">
+      @if (showingBoard() && usingCustomBoard()) {
+        Plateau de jeu (fond) — glisse les pièces ici
+      } @else if (showingBoard() && usingBlankBoard()) {
+        Plateau de jeu (cadre blanc) — glisse les pièces ici
+      } @else if (showingBoard() && usingPunchedBoard()) {
+        Plateau de jeu (image trouée)
+      } @else {
+        Découpe — trace les pièces sur les éléments
+      }
+    </p>
+  }
+  <div
+    class="stage"
+    #stage
+    [class.board-play]="showingBoard()"
+    [class.holed]="showingBoard() && usingPunchedBoard()"
+    [class.blank-board]="showingBoard() && usingBlankBoard()"
+  >
+    <img
+      [src]="stageSrc()"
+      alt=""
+      draggable="false"
+      [class.stage-size-only]="showingBoard() && usingBlankBoard()"
+    />
     <svg
       #surface
       viewBox="0 0 1 1"
       preserveAspectRatio="none"
-      [class.editing]="!readonly()"
+      [class.editing]="canEditShapes()"
       (pointerdown)="onSurfaceDown($event)"
       (pointerup)="onSurfaceUp($event)"
     >
@@ -66,7 +155,7 @@
             (pointerup)="onShapeUp($event)"
           />
         }
-        @if (!readonly() && zoneIndex === selected()) {
+        @if (canEditShapes() && zoneIndex === selected()) {
           @for (handle of handles(zone); track $index; let handleIndex = $index) {
             <circle
               [attr.cx]="handle.x"
@@ -102,13 +191,17 @@
             @if (pieceUrls()[pieceIndex]; as url) {
               <img
                 class="token"
+                [class.fit]="isFitFlash(pieceIndex)"
                 [src]="url"
                 alt=""
                 draggable="false"
                 [attr.aria-label]="shapeName(zone, pieceIndex)"
+                [matTooltip]="shapeName(zone, pieceIndex)"
+                matTooltipShowDelay="200"
                 [style.left.%]="spot.x * 100"
                 [style.top.%]="spot.y * 100"
                 [style.width.%]="pieceWidth(zone)"
+                [style.z-index]="dragIndex() === pieceIndex ? 1000 : pieceIndex + 1"
                 (pointerdown)="onPieceDown($event, pieceIndex)"
               />
             }
@@ -133,7 +226,7 @@
   }
 }
 
-@if (!readonly()) {
+@if (!readonly() && !playPreview()) {
   <div class="tools">
     <button mat-button type="button" [disabled]="disabled() || draft().length < 3" (click)="finishDraft()">
       {{ variant() === 'puzzle' ? 'Terminer la pièce' : 'Terminer la zone' }}
@@ -167,6 +260,9 @@
     </p>
   }
 
+  @if (variant() === 'puzzle' && zones().length > 1) {
+    <p class="hint">Ordre : le haut de la liste est derrière, le bas est devant.</p>
+  }
   <ul #zoneList class="zone-list">
     @for (zone of zones(); track $index) {
       <li [class.selected]="$index === selected()">
@@ -177,7 +273,7 @@
           [disabled]="disabled()"
           (click)="selectZone($index)"
         >
-          {{ zone.label || 'Zone ' + ($index + 1) }}
+          {{ zone.label || (variant() === 'puzzle' ? 'Pièce ' : 'Zone ') + ($index + 1) }}
         </button>
         <mat-form-field appearance="outline" class="name">
           <mat-label>Nom</mat-label>
@@ -220,6 +316,24 @@
             <mat-option value="ellipse">Ellipse</mat-option>
           </mat-select>
         </mat-form-field>
+        @if (variant() === 'puzzle') {
+          <button
+            mat-button
+            type="button"
+            [disabled]="!canMoveLayer($index, -1)"
+            (click)="moveLayer($index, -1)"
+          >
+            Derrière
+          </button>
+          <button
+            mat-button
+            type="button"
+            [disabled]="!canMoveLayer($index, 1)"
+            (click)="moveLayer($index, 1)"
+          >
+            Devant
+          </button>
+        }
         <button mat-button type="button" [disabled]="disabled()" (click)="removeZone($index)">Supprimer</button>
       </li>
     }
@@ -227,7 +341,43 @@
 }
 
 @if (variant() === 'puzzle' && zones().length) {
-  <p class="hint">Glisse une vignette sur l'image : elle reste où tu la poses. Près de sa découpe, elle se colle.</p>
+  @if (!readonly()) {
+    <button
+      mat-button
+      type="button"
+      [disabled]="disabled() || (!playPreview() && !playBoardReady())"
+      (click)="togglePlayPreview()"
+    >
+      {{
+        playPreview()
+          ? 'Éditer les découpes'
+          : boardMode() === boardModes.FOND
+            ? 'Voir le plateau (fond)'
+            : boardMode() === boardModes.BLANC
+              ? 'Voir le plateau (blanc)'
+              : 'Aperçu enfant (trous)'
+      }}
+    </button>
+  }
+  @if (showingBoard() && usingCustomBoard()) {
+    <p class="hint">Les vignettes viennent de l'image à découper ; tu les poses sur le fond.</p>
+  } @else if (showingBoard() && usingBlankBoard()) {
+    <p class="hint">
+      @if (readonly()) {
+        Plateau blanc : aucune silhouette — retrouve la place de chaque pièce.
+      } @else {
+        Pose chaque pièce sur le blanc pour fixer son emplacement, puis enregistre.
+      }
+    </p>
+  } @else if (showingBoard() && usingPunchedBoard()) {
+    <p class="hint">Plateau = image de découpe trouée.</p>
+  } @else if (boardMode() === boardModes.FOND && hasDistinctBoard()) {
+    <p class="hint">Trace les pièces ici, puis « Voir le plateau (fond) » pour les y glisser.</p>
+  } @else if (boardMode() === boardModes.FOND) {
+    <p class="hint">Ajoute un fond dédié plus haut, puis aperçois le plateau.</p>
+  } @else {
+    <p class="hint">Trace les pièces ici, puis ouvre l'aperçu plateau.</p>
+  }
   <ul class="pieces">
     @for (zone of zones(); track $index; let pieceIndex = $index) {
       @if (inTray(pieceIndex)) {
@@ -238,6 +388,8 @@
               alt=""
               draggable="false"
               [attr.aria-label]="shapeName(zone, pieceIndex)"
+              [matTooltip]="shapeName(zone, pieceIndex)"
+              matTooltipShowDelay="200"
               (pointerdown)="onPieceDown($event, pieceIndex)"
             />
           }

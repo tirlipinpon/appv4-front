@@ -950,6 +950,8 @@ export interface components {
             decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
             expectedAnswer?: string;
             imageWebp?: string;
+            boardMode?: string;
+            boardImageWebp?: string;
             requireAllCorrect?: boolean;
             zones?: components["schemas"]["TeacherQuestionZoneInput"][];
             pieces?: components["schemas"]["TeacherQuestionPieceInput"][];
@@ -978,6 +980,10 @@ export interface components {
             label?: string;
             shape?: string;
             points?: components["schemas"]["TeacherQuestionPointInput"][];
+            /** Format: double */
+            slotX?: number;
+            /** Format: double */
+            slotY?: number;
         };
         TeacherQuestionPointInput: {
             /** Format: double */
@@ -1033,6 +1039,10 @@ export interface components {
             label?: string;
             shape?: string;
             points?: components["schemas"]["TeacherQuestionPointItem"][];
+            /** Format: double */
+            slotX?: number;
+            /** Format: double */
+            slotY?: number;
         };
         TeacherQuestionPointItem: {
             /** Format: double */
@@ -1070,6 +1080,8 @@ export interface components {
             decoys?: components["schemas"]["TeacherQuestionGapWordItem"][];
             expectedAnswer?: string;
             imageWebp?: string;
+            boardMode?: string;
+            boardImageWebp?: string;
             requireAllCorrect?: boolean;
             zones?: components["schemas"]["TeacherQuestionZoneItem"][];
             pieces?: components["schemas"]["TeacherQuestionPieceItem"][];

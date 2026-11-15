@@ -12,6 +12,12 @@ export interface ClickZone {
   correct: boolean;
   shape: ClickShape;
   points: ClickPoint[];
+  /**
+   * Emplacement cible sur le plateau (mode blanc) : coin haut-gauche.
+   * Peut légèrement sortir de [0, 1] pour déborder du bord tout en restant visible.
+   * Absent / null hors cadre blanc.
+   */
+  slot?: ClickPoint | null;
 }
 
 const MIN_SPAN = 0.02;

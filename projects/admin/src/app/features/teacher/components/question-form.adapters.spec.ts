@@ -1,5 +1,15 @@
 import { buildSaveBody, parseSavedQuestion, requireSavedQuestion } from './question-form.adapters';
-import { FORM, QuestionDraftSnapshot, emptyChoices, emptyDecoys, emptyItems, emptyLinks, emptyPairs, emptyStatements } from './question-form.model';
+import {
+  FORM,
+  PUZZLE_BOARD_MODE,
+  QuestionDraftSnapshot,
+  emptyChoices,
+  emptyDecoys,
+  emptyItems,
+  emptyLinks,
+  emptyPairs,
+  emptyStatements,
+} from './question-form.model';
 
 function emptyDraft(overrides: Partial<QuestionDraftSnapshot> = {}): QuestionDraftSnapshot {
   return {
@@ -14,6 +24,8 @@ function emptyDraft(overrides: Partial<QuestionDraftSnapshot> = {}): QuestionDra
     decoys: emptyDecoys(),
     expectedAnswer: '',
     clickImage: '',
+    boardMode: PUZZLE_BOARD_MODE.TROUS,
+    boardImage: '',
     requireAllCorrect: true,
     clickZones: [],
     puzzleMagnet: 0.08,
@@ -153,6 +165,8 @@ describe('question-form.adapters', () => {
         emptyDraft({
           prompt: 'Assemble',
           clickImage: 'data:image/webp;base64,BBB',
+          boardMode: PUZZLE_BOARD_MODE.FOND,
+          boardImage: 'data:image/webp;base64,CCC',
           clickZones: zones,
           puzzleMagnet: 0.12,
         }),
@@ -161,6 +175,8 @@ describe('question-form.adapters', () => {
       jasmine.objectContaining({
         formCode: FORM.PUZZLE,
         imageWebp: 'BBB',
+        boardMode: 'fond',
+        boardImageWebp: 'CCC',
         snapDistance: 0.12,
         pieces: [
           {
@@ -172,6 +188,53 @@ describe('question-form.adapters', () => {
               { x: 0.2, y: 0.2 },
             ],
           },
+        ],
+      }),
+    );
+
+    expect(
+      buildSaveBody(
+        FORM.PUZZLE,
+        emptyDraft({
+          prompt: 'Trous',
+          clickImage: 'data:image/webp;base64,BBB',
+          boardMode: PUZZLE_BOARD_MODE.TROUS,
+          boardImage: 'data:image/webp;base64,CCC',
+          clickZones: zones,
+        }),
+      ),
+    ).toEqual(
+      jasmine.objectContaining({
+        boardMode: 'trous',
+        boardImageWebp: '',
+      }),
+    );
+
+    expect(
+      buildSaveBody(
+        FORM.PUZZLE,
+        emptyDraft({
+          prompt: 'Blanc',
+          clickImage: 'data:image/webp;base64,BBB',
+          boardMode: PUZZLE_BOARD_MODE.BLANC,
+          clickZones: [
+            {
+              ...zones[0],
+              slot: { x: 0.3, y: 0.4 },
+            },
+          ],
+        }),
+      ),
+    ).toEqual(
+      jasmine.objectContaining({
+        boardMode: 'blanc',
+        boardImageWebp: '',
+        pieces: [
+          jasmine.objectContaining({
+            label: 'zone',
+            slotX: 0.3,
+            slotY: 0.4,
+          }),
         ],
       }),
     );

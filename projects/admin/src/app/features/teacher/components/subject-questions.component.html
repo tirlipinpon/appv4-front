@@ -387,10 +387,14 @@
           <app-click-zone-editor
             variant="puzzle"
             [imageDataUrl]="clickImage()"
+            [boardMode]="boardMode()"
+            [boardImageDataUrl]="boardImage()"
             [zones]="clickZones()"
             [disabled]="saving()"
             [magnet]="puzzleMagnet()"
             (imageSelected)="setClickImage($event)"
+            (boardModeChange)="setBoardMode($event)"
+            (boardImageSelected)="setBoardImage($event)"
             (imageError)="setClickImageError($event)"
             (zonesChange)="setClickZones($event)"
             (magnetChange)="setPuzzleMagnet($event)"
@@ -495,7 +499,7 @@
                 <p class="status" role="status">Chargement…</p>
               } @else if (followers(); as people) {
                 <p>{{ people.warning }}</p>
-                @if (people.names?.length) {
+                @if (people.names.length) {
                   <ul class="names">
                     @for (name of people.names; track $index) {
                       <li>{{ name }}</li>
@@ -552,6 +556,8 @@
                 [readonly]="true"
                 variant="puzzle"
                 [imageDataUrl]="question.imageDataUrl"
+                [boardMode]="question.boardMode"
+                [boardImageDataUrl]="question.boardImageDataUrl"
                 [zones]="question.zones"
                 [magnet]="question.snapDistance"
               />
