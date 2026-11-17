@@ -191,6 +191,15 @@ export class SubjectQuestionsComponent implements OnInit {
     return Array.from(answer).length;
   }
 
+  /** Zones justes, dans l'ordre des clics : « 1. soleil, 2. lune ». */
+  clickSequenceLabel(zones: ClickZone[]): string {
+    return zones
+      .filter((zone) => zone.correct && zone.clickOrder != null)
+      .sort((a, b) => (a.clickOrder ?? 0) - (b.clickOrder ?? 0))
+      .map((zone) => `${zone.clickOrder}. ${zone.label}`)
+      .join(', ');
+  }
+
   letterMessage(id: number): string {
     return this.letterMessages()[id] ?? '';
   }

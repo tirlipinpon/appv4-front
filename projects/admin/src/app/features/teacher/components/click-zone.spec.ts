@@ -1,13 +1,17 @@
 import {
+  appendClickZone,
   appendDraftPoint,
   appendPoint,
   closesDraft,
+  compactClickOrders,
   dropDraftPoint,
+  moveClickOrder,
   moveHandle,
   pieceFrame,
   POLYGON_POINTS_MAX,
   relativePoint,
   translateZone,
+  withClickSide,
   zoneContains,
 } from './click-zone';
 
@@ -140,5 +144,62 @@ describe('click zones stay on the image', () => {
     expect(zoneContains(rect, { x: 0.2, y: 0.2 })).toBe(false);
     expect(zoneContains(ellipse, { x: 0.2, y: 0.2 })).toBe(true);
     expect(zoneContains(ellipse, { x: 0.9, y: 0.9 })).toBe(false);
+  });
+
+  it('keeps a dense click order on the correct zones only', () => {
+    const sun = {
+      label: 'soleil',
+      correct: true,
+      shape: 'rect' as const,
+      points: [
+        { x: 0, y: 0 },
+        { x: 0.2, y: 0.2 },
+      ],
+      clickOrder: 1,
+    };
+    const moon = {
+      label: 'lune',
+      correct: true,
+      shape: 'rect' as const,
+      points: [
+        { x: 0.3, y: 0.3 },
+        { x: 0.5, y: 0.5 },
+      ],
+      clickOrder: 2,
+    };
+    const cloud = {
+      label: 'nuage',
+      correct: false,
+      shape: 'rect' as const,
+      points: [
+        { x: 0.6, y: 0.6 },
+        { x: 0.8, y: 0.8 },
+      ],
+    };
+
+    const swapped = moveClickOrder([sun, cloud, moon], 0, 1);
+    expect(swapped[0].clickOrder).toBe(2);
+    expect(swapped[1].clickOrder ?? null).toBeNull();
+    expect(swapped[2].clickOrder).toBe(1);
+
+    const marked = withClickSide(swapped, 1, true);
+    expect(marked.map((zone) => zone.clickOrder)).toEqual([2, 3, 1]);
+
+    const withoutMoon = compactClickOrders(marked.filter((zone) => zone.label !== 'lune'));
+    expect(withoutMoon.map((zone) => [zone.label, zone.clickOrder])).toEqual([
+      ['soleil', 1],
+      ['nuage', 2],
+    ]);
+
+    const added = appendClickZone(withoutMoon, {
+      label: 'étoile',
+      correct: true,
+      shape: 'ellipse',
+      points: [
+        { x: 0.1, y: 0.1 },
+        { x: 0.2, y: 0.2 },
+      ],
+    });
+    expect(added[2].clickOrder).toBe(3);
   });
 });

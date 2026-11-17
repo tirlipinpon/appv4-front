@@ -1000,6 +1000,8 @@ export interface components {
             correct?: boolean;
             shape?: string;
             points?: components["schemas"]["TeacherQuestionPointInput"][];
+            /** Format: int32 */
+            clickOrder?: number;
         };
         AuthErrorBody: {
             message?: string;
@@ -1063,6 +1065,8 @@ export interface components {
             correct?: boolean;
             shape?: string;
             points?: components["schemas"]["TeacherQuestionPointItem"][];
+            /** Format: int32 */
+            clickOrder?: number;
         };
         TeacherSubjectQuestionItem: {
             /** Format: int64 */

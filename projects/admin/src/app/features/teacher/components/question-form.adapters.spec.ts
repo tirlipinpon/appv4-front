@@ -154,6 +154,7 @@ describe('question-form.adapters', () => {
               { x: 0.2, y: 0.1 },
               { x: 0.2, y: 0.2 },
             ],
+            clickOrder: 1,
           },
         ],
       }),

@@ -551,6 +551,9 @@
                     : 'Une partie des zones correctes suffit.'
                 }}
               </p>
+              @if (clickSequenceLabel(question.zones); as order) {
+                <p class="hint">Ordre des clics : {{ order }}</p>
+              }
             } @else if (question.formCode === 'puzzle') {
               <app-click-zone-editor
                 [readonly]="true"

@@ -924,6 +924,7 @@ describe('SubjectQuestionsComponent', () => {
             { x: 0.3, y: 0.2 },
             { x: 0.2, y: 0.4 },
           ],
+          clickOrder: 1,
         },
         {
           label: 'le nuage',
@@ -954,6 +955,7 @@ describe('SubjectQuestionsComponent', () => {
             { x: 0.3, y: 0.2 },
             { x: 0.2, y: 0.4 },
           ],
+          clickOrder: 1,
         },
       ],
       choices: [],
@@ -968,6 +970,7 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('le soleil');
     expect(fixture.nativeElement.querySelector('polygon.correct')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Toutes les zones correctes sont à cliquer.');
+    expect(fixture.nativeElement.textContent).toContain('Ordre des clics : 1. le soleil');
   });
 
   it('posts a puzzle with named pieces and no correct side', () => {
