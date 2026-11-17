@@ -18,6 +18,11 @@ export interface ClickZone {
    * Absent / null hors cadre blanc.
    */
   slot?: ClickPoint | null;
+  /**
+   * Rang du clic parmi les zones correctes : 1, puis 2, puis 3.
+   * Absent ou null si la zone est incorrecte, ou si ce n'est pas une image à cliquer.
+   */
+  clickOrder?: number | null;
 }
 
 const MIN_SPAN = 0.02;
@@ -386,6 +391,98 @@ export function pieceFrame(zone: ClickZone): { x: number; y: number; width: numb
     width: Math.max(MIN_SPAN, Math.max(...xs) - x),
     height: Math.max(MIN_SPAN, Math.max(...ys) - y),
   };
+}
+
+/** Prochain rang libre : une nouvelle zone correcte se clique en dernier. */
+export function nextClickOrder(zones: ClickZone[]): number {
+  let max = 0;
+  for (const zone of zones) {
+    if (zone.correct && zone.clickOrder != null && zone.clickOrder > max) {
+      max = zone.clickOrder;
+    }
+  }
+  return max + 1;
+}
+
+/** Ajoute une zone correcte, avec le rang de clic qui suit les autres. */
+export function appendClickZone(zones: ClickZone[], zone: ClickZone): ClickZone[] {
+  return [...zones, { ...zone, correct: true, clickOrder: nextClickOrder(zones) }];
+}
+
+/**
+ * Les zones correctes portent 1, 2, 3… dans l'ordre de leurs rangs actuels.
+ * Une zone sans rang passe après les autres. Une zone incorrecte n'a pas de rang.
+ */
+export function compactClickOrders(zones: ClickZone[]): ClickZone[] {
+  const ranked = zones
+    .map((zone, index) => ({ zone, index }))
+    .filter((row) => row.zone.correct)
+    .sort(
+      (a, b) =>
+        (a.zone.clickOrder ?? Number.MAX_SAFE_INTEGER) - (b.zone.clickOrder ?? Number.MAX_SAFE_INTEGER) ||
+        a.index - b.index,
+    );
+  const orderByIndex = new Map<number, number>();
+  ranked.forEach((row, position) => orderByIndex.set(row.index, position + 1));
+  return zones.map((zone, index) =>
+    zone.correct ? { ...zone, clickOrder: orderByIndex.get(index) ?? null } : { ...zone, clickOrder: null },
+  );
+}
+
+/** Passe une zone du côté juste ou faux, puis resserre les rangs de clic. */
+export function withClickSide(zones: ClickZone[], index: number, correct: boolean): ClickZone[] {
+  const next = zones.map((zone, current) => {
+    if (current !== index) {
+      return zone;
+    }
+    if (!correct) {
+      return { ...zone, correct: false, clickOrder: null };
+    }
+    if (zone.correct && zone.clickOrder != null) {
+      return zone;
+    }
+    return { ...zone, correct: true, clickOrder: nextClickOrder(zones) };
+  });
+  return compactClickOrders(next);
+}
+
+/** Échange le rang de clic avec la zone correcte juste avant ou juste après. */
+export function moveClickOrder(zones: ClickZone[], index: number, delta: -1 | 1): ClickZone[] {
+  const zone = zones[index];
+  if (!zone?.correct || zone.clickOrder == null) {
+    return zones;
+  }
+  const target = zone.clickOrder + delta;
+  const other = zones.findIndex((row) => row.correct && row.clickOrder === target);
+  if (other < 0) {
+    return zones;
+  }
+  return zones.map((row, current) => {
+    if (current === index) {
+      return { ...row, clickOrder: target };
+    }
+    if (current === other) {
+      return { ...row, clickOrder: zone.clickOrder };
+    }
+    return row;
+  });
+}
+
+/** Centre de la forme, pour poser le numéro de clic sur l'image. */
+export function zoneCenter(zone: ClickZone): ClickPoint {
+  if (zone.shape === 'rect') {
+    const box = rectangleBox(zone.points);
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  }
+  if (zone.shape === 'ellipse') {
+    const box = ellipseBox(zone.points);
+    return { x: box.cx, y: box.cy };
+  }
+  if (zone.points.length === 0) {
+    return { x: 0.5, y: 0.5 };
+  }
+  const sum = zone.points.reduce((acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }), { x: 0, y: 0 });
+  return { x: sum.x / zone.points.length, y: sum.y / zone.points.length };
 }
 
 function wideEnough(x: number, y: number, width: number, height: number): { x: number; y: number; width: number; height: number } {

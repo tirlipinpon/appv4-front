@@ -184,6 +184,17 @@
         }
       }
     </svg>
+    @if (variant() === 'click') {
+      @for (zone of zones(); track $index) {
+        @if (showClickOrder(zone)) {
+          <span
+            class="click-order"
+            [style.left.%]="orderSpot(zone).x * 100"
+            [style.top.%]="orderSpot(zone).y * 100"
+          >{{ zone.clickOrder }}</span>
+        }
+      }
+    }
     @if (variant() === 'puzzle') {
       <div class="board">
         @for (zone of zones(); track $index; let pieceIndex = $index) {
@@ -263,6 +274,11 @@
   @if (variant() === 'puzzle' && zones().length > 1) {
     <p class="hint">Ordre : le haut de la liste est derrière, le bas est devant.</p>
   }
+  @if (variant() === 'click' && zones().length) {
+    <p class="hint">
+      Les numéros disent dans quel ordre cliquer les zones correctes. Une zone incorrecte n'a pas de numéro.
+    </p>
+  }
   <ul #zoneList class="zone-list">
     @for (zone of zones(); track $index) {
       <li [class.selected]="$index === selected()">
@@ -303,6 +319,25 @@
           >
             Incorrecte
           </button>
+          @if (zone.correct) {
+            <span class="click-rank">Clic {{ zone.clickOrder }}</span>
+            <button
+              mat-button
+              type="button"
+              [disabled]="!canMoveClick($index, -1)"
+              (click)="moveClick($index, -1)"
+            >
+              Plus tôt
+            </button>
+            <button
+              mat-button
+              type="button"
+              [disabled]="!canMoveClick($index, 1)"
+              (click)="moveClick($index, 1)"
+            >
+              Plus tard
+            </button>
+          }
         }
         <mat-form-field appearance="outline" class="shape">
           <mat-label>Forme</mat-label>

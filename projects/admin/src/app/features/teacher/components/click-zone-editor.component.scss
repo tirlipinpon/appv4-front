@@ -102,6 +102,29 @@
   opacity: 0;
 }
 
+.click-order {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #0d652d;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+}
+
+.click-rank {
+  font-weight: 700;
+  color: #0d652d;
+}
+
 .stage svg {
   position: absolute;
   inset: 0;

@@ -1,6 +1,6 @@
 import type { components } from '../../../core/api/schema';
 import type { CreateTeacherSubjectQuestionRequest } from '../../../core/api/api-models';
-import { ClickZone } from './click-zone';
+import { ClickZone, compactClickOrders } from './click-zone';
 import {
   FORM,
   KnownFormCode,
@@ -172,11 +172,12 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         prompt: draft.prompt,
         imageWebp: webpPayload(draft.clickImage),
         requireAllCorrect: draft.requireAllCorrect,
-        zones: draft.clickZones.map((zone) => ({
+        zones: compactClickOrders(draft.clickZones).map((zone) => ({
           label: zone.label,
           correct: zone.correct,
           shape: zone.shape,
           points: zone.points.map((point) => ({ x: point.x, y: point.y })),
+          ...(zone.correct && zone.clickOrder != null ? { clickOrder: zone.clickOrder } : {}),
         })),
       };
     case FORM.PUZZLE:
@@ -252,6 +253,10 @@ function savedZones(zones: ApiQuestion['zones']): ClickZone[] {
     if (!points.length) {
       return [];
     }
-    return [{ label: zone.label, correct: zone.correct, shape: zone.shape, points }];
+    const clickOrder =
+      zone.correct === true && typeof zone.clickOrder === 'number' && Number.isFinite(zone.clickOrder)
+        ? zone.clickOrder
+        : null;
+    return [{ label: zone.label, correct: zone.correct, shape: zone.shape, points, clickOrder }];
   });
 }

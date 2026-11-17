@@ -22,15 +22,18 @@ import { preparePhoto } from '../../../shared/prepare-photo/prepare-photo';
 import {
   ClickPoint,
   ClickZone,
+  appendClickZone,
   appendDraftPoint,
   appendPoint,
   changeShape,
   closesDraft,
+  compactClickOrders,
   defaultEllipse,
   defaultRectangle,
   dropDraftPoint,
   ellipseBox,
   handles,
+  moveClickOrder,
   moveHandle,
   polygonAttribute,
   POLYGON_POINTS_MAX,
@@ -39,6 +42,8 @@ import {
   removePoint,
   pieceFrame,
   translateZone,
+  withClickSide,
+  zoneCenter,
   zoneContains,
 } from './click-zone';
 import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage, punchPieces } from './puzzle-piece';
@@ -762,10 +767,8 @@ export class ClickZoneEditorComponent {
     if (points.length < 3 || points.length > POLYGON_POINTS_MAX || this.disabled()) {
       return;
     }
-    this.zonesChange.emit([
-      ...this.zones(),
-      { label: '', correct: true, shape: 'polygon', points },
-    ]);
+    const zone: ClickZone = { label: '', correct: true, shape: 'polygon', points };
+    this.zonesChange.emit(this.variant() === 'click' ? appendClickZone(this.zones(), zone) : [...this.zones(), zone]);
     this.draft.set([]);
     this.draftHandle.set(null);
     this.selectedHandle.set(null);
@@ -794,7 +797,33 @@ export class ClickZoneEditorComponent {
   }
 
   mark(index: number, correct: boolean): void {
-    this.zonesChange.emit(this.zones().map((zone, current) => (current === index ? { ...zone, correct } : zone)));
+    this.zonesChange.emit(withClickSide(this.zones(), index, correct));
+  }
+
+  /** Échange le rang de clic avec la zone correcte précédente ou suivante. */
+  moveClick(index: number, delta: -1 | 1): void {
+    if (!this.canMoveClick(index, delta)) {
+      return;
+    }
+    this.zonesChange.emit(moveClickOrder(this.zones(), index, delta));
+  }
+
+  canMoveClick(index: number, delta: -1 | 1): boolean {
+    const zone = this.zones()[index];
+    const order = zone?.clickOrder;
+    if (!zone?.correct || order == null || this.disabled() || !this.canEditShapes()) {
+      return false;
+    }
+    const target = order + delta;
+    return this.zones().some((row) => row.correct && row.clickOrder === target);
+  }
+
+  showClickOrder(zone: ClickZone): boolean {
+    return this.variant() === 'click' && zone.correct && zone.clickOrder != null;
+  }
+
+  orderSpot(zone: ClickZone): ClickPoint {
+    return zoneCenter(zone);
   }
 
   setShape(index: number, shape: string): void {
@@ -805,7 +834,8 @@ export class ClickZoneEditorComponent {
   }
 
   removeZone(index: number): void {
-    this.zonesChange.emit(this.zones().filter((_, current) => current !== index));
+    const remaining = this.zones().filter((_, current) => current !== index);
+    this.zonesChange.emit(this.variant() === 'click' ? compactClickOrders(remaining) : remaining);
     this.selected.set(null);
     this.selectedHandle.set(null);
   }
@@ -895,7 +925,8 @@ export class ClickZoneEditorComponent {
     if (this.disabled()) {
       return;
     }
-    this.zonesChange.emit([...this.zones(), zone]);
+    const next = this.variant() === 'click' ? appendClickZone(this.zones(), zone) : [...this.zones(), zone];
+    this.zonesChange.emit(next);
     this.selected.set(this.zones().length);
     this.selectedHandle.set(null);
     this.draft.set([]);
