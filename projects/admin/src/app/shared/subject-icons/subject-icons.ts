@@ -1,144 +1,60 @@
 /**
- * Affichage des codes matières : legacy emoji ou Iconify `prefix:name`.
- * Les libellés / la recherche viennent de l'API Iconify ; le back valide le format.
+ * Affichage des codes matières :
+ * - Icons8 `icons8:{id}` (recherche multilangue)
+ * - legacy emoji court
+ * - éventuels anciens codes Iconify `prefix:name`
  */
 
+const ICONS8_IMG = 'https://img.icons8.com';
 const ICONIFY_SVG = 'https://api.iconify.design';
 
-/** Anciens codes encore éventuellement en base. */
 export const SUBJECT_ICON_GLYPHS: Readonly<Record<string, string>> = {
   math: '➗',
   numbers: '🔢',
-  counting: '☝️',
-  geometry: '📐',
-  shapes: '⬛',
-  fractions: '½',
-  algebra: '𝑥',
-  calculator: '🧮',
-  clock: '🕐',
-  measure: '📏',
-  money: '💶',
   alphabet: '🔤',
-  letters: 'Abc',
   reading: '👀',
   writing: '✍️',
   words: '💬',
-  vocabulary: '📝',
-  grammar: '📖',
-  spelling: '✏️',
-  poetry: '🪶',
-  story: '📕',
   books: '📚',
-  library: '🏛️',
-  language: '🗣️',
-  english: '🇬🇧',
-  dutch: '🇳🇱',
-  spanish: '🇪🇸',
-  german: '🇩🇪',
-  science: '🔬',
-  nature: '🌿',
-  plants: '🌱',
   animals: '🦁',
-  insects: '🐛',
-  ocean: '🌊',
-  space: '🚀',
-  weather: '⛅',
-  earth: '🌎',
-  globe: '🌐',
-  map: '🗺️',
-  history: '🏺',
-  geography: '🧭',
-  civics: '⚖️',
+  science: '🔬',
   knowledge: '💡',
-  discovery: '🔍',
-  experiment: '🧪',
-  lab: '🥼',
-  music: '🎵',
-  singing: '🎤',
-  instrument: '🎻',
-  art: '🎨',
-  drawing: '🖌️',
-  painting: '🖼️',
-  craft: '✂️',
-  colors: '🌈',
-  sport: '⚽',
-  football: '🏈',
-  basketball: '🏀',
-  swim: '🏊',
-  dance: '💃',
-  yoga: '🧘',
-  run: '🏃',
-  bike: '🚲',
-  body: '🧍',
-  health: '❤️',
-  food: '🍽️',
-  fruit: '🍎',
-  vegetables: '🥕',
-  kitchen: '👨‍🍳',
-  home: '🏠',
-  family: '👨‍👩‍👧',
-  friends: '🤝',
-  emotions: '😊',
   opposites: '↕️',
-  seasons: '🍂',
-  calendar: '📅',
+  globe: '🌐',
+  music: '🎵',
+  sport: '⚽',
+  art: '🎨',
   school: '🏫',
-  pencil: '✏️',
-  backpack: '🎒',
-  computer: '💻',
-  tablet: '📱',
-  robot: '🤖',
-  code: '💻',
-  puzzle: '🧩',
-  memory: '🧠',
-  logic: '♟️',
-  chess: '♛',
-  games: '🎮',
-  trophy: '🏆',
-  star: '⭐',
-  heart: '💖',
-  flag: '🚩',
-  transport: '🚌',
-  car: '🚗',
-  train: '🚆',
-  plane: '✈️',
-  boat: '⛵',
-  city: '🏙️',
-  farm: '🐄',
-  forest: '🌲',
-  mountain: '⛰️',
-  beach: '🏖️',
-  fire: '🔥',
-  water: '💧',
-  air: '💨',
-  recycle: '♻️',
-  light: '💡',
-  sound: '🔊',
-  touch: '✋',
-  sight: '👁️',
-  smell: '👃',
-  taste: '👅',
 };
 
-export function isIconifyCode(code: string | null | undefined): boolean {
-  return !!code && code.includes(':');
+export function isIcons8Code(code: string | null | undefined): boolean {
+  return !!code && code.startsWith('icons8:');
 }
 
-/** URL SVG Iconify, ou null si ce n'est pas un code Iconify. */
+/** URL image Icons8 / Iconify, ou null si emoji legacy. */
 export function subjectIconSrc(code: string | null | undefined): string | null {
-  if (!code || !code.includes(':')) {
+  if (!code) {
     return null;
   }
-  const sep = code.indexOf(':');
-  const prefix = code.slice(0, sep);
-  const name = code.slice(sep + 1);
-  if (!prefix || !name) {
-    return null;
+  if (code.startsWith('icons8:')) {
+    const id = code.slice('icons8:'.length).trim();
+    if (!id) {
+      return null;
+    }
+    return `${ICONS8_IMG}/?id=${encodeURIComponent(id)}&format=png&size=96`;
   }
-  return `${ICONIFY_SVG}/${encodeURIComponent(prefix)}/${encodeURIComponent(name)}.svg`;
+  if (code.includes(':')) {
+    const sep = code.indexOf(':');
+    const prefix = code.slice(0, sep);
+    const name = code.slice(sep + 1);
+    if (!prefix || !name) {
+      return null;
+    }
+    return `${ICONIFY_SVG}/${encodeURIComponent(prefix)}/${encodeURIComponent(name)}.svg`;
+  }
+  return null;
 }
 
-/** Emoji legacy, ou null (utiliser {@link subjectIconSrc} pour Iconify). */
 export function subjectIconGlyph(code: string | null | undefined): string | null {
   if (!code || code.includes(':')) {
     return null;
@@ -146,10 +62,12 @@ export function subjectIconGlyph(code: string | null | undefined): string | null
   return SUBJECT_ICON_GLYPHS[code] ?? null;
 }
 
-/** Libellé court à partir du code Iconify (ex. open-book → Open book). */
 export function subjectIconLabel(code: string | null | undefined): string {
   if (!code) {
     return '';
+  }
+  if (code.startsWith('icons8:')) {
+    return code.slice('icons8:'.length);
   }
   if (!code.includes(':')) {
     return code;

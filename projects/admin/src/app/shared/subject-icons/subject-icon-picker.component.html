@@ -16,7 +16,7 @@
       [attr.data-testid]="testId() + '-search'"
       [value]="query()"
       [disabled]="disabled()"
-      placeholder="Ex. chimie, maths, livre…"
+      placeholder="Rechercher en français (chimie, maths…)"
       (focus)="onFocus()"
       (blur)="onBlur()"
       (input)="onQuery(inputValue($event))"
@@ -50,7 +50,7 @@
             [class.selected]="value() === hit.code"
             [disabled]="disabled()"
             (mousedown)="$event.preventDefault()"
-            (click)="pick(hit.code)"
+            (click)="pick(hit)"
           >
             <app-subject-icon-view [code]="hit.code" />
             <span class="name">{{ hit.label }}</span>

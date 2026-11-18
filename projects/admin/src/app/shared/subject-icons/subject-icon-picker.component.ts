@@ -2,15 +2,15 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, effect, inject,
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { Subject, debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 
 import type { AvatarChoice } from '../../core/api/api-models';
-import { IconifyHit, IconifySearchService } from './iconify-search.service';
+import { Icons8Hit, Icons8SearchService } from './icons8-search.service';
 import { SubjectIconViewComponent } from './subject-icon-view.component';
 import { subjectIconLabel } from './subject-icons';
 
 /**
- * Champ unique : recherche Iconify → dropdown nom + icône.
+ * Champ unique : recherche Icons8 (FR) → dropdown nom + icône.
  */
 @Component({
   selector: 'app-subject-icon-picker',
@@ -20,11 +20,10 @@ import { subjectIconLabel } from './subject-icons';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SubjectIconPickerComponent implements OnInit {
-  private readonly iconify = inject(IconifySearchService);
+  private readonly icons8 = inject(Icons8SearchService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly queries = new Subject<string>();
 
-  /** Suggestions API (optionnel) quand la recherche est vide. */
   readonly choices = input<readonly AvatarChoice[]>([]);
   readonly value = input<string>('');
   readonly disabled = input(false);
@@ -35,9 +34,8 @@ export class SubjectIconPickerComponent implements OnInit {
 
   readonly query = signal('');
   readonly open = signal(false);
-  readonly hits = signal<IconifyHit[]>([]);
+  readonly hits = signal<Icons8Hit[]>([]);
   readonly searching = signal(false);
-  readonly labelOf = subjectIconLabel;
 
   constructor() {
     effect(() => {
@@ -60,7 +58,7 @@ export class SubjectIconPickerComponent implements OnInit {
             return of(this.seedHits());
           }
           this.searching.set(true);
-          return this.iconify.search(text).pipe(map((rows) => rows));
+          return this.icons8.search(text);
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -80,7 +78,6 @@ export class SubjectIconPickerComponent implements OnInit {
   }
 
   onBlur(): void {
-    // Laisse le clic sur une option se faire avant de fermer.
     window.setTimeout(() => this.open.set(false), 150);
   }
 
@@ -90,12 +87,12 @@ export class SubjectIconPickerComponent implements OnInit {
     this.queries.next(raw);
   }
 
-  pick(code: string): void {
+  pick(hit: Icons8Hit): void {
     if (this.disabled()) {
       return;
     }
-    this.valueChange.emit(code);
-    this.query.set(subjectIconLabel(code));
+    this.valueChange.emit(hit.code);
+    this.query.set(hit.label);
     this.open.set(false);
   }
 
@@ -113,7 +110,7 @@ export class SubjectIconPickerComponent implements OnInit {
     return (event.target as HTMLInputElement).value;
   }
 
-  private seedHits(): IconifyHit[] {
+  private seedHits(): Icons8Hit[] {
     return this.choices()
       .filter((c) => !!c.code)
       .map((c) => ({
