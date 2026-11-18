@@ -1,0 +1,98 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.learn-shell {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  width: min(100%, 26rem);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.learn-shell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 8px;
+}
+
+.learn-shell-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.learn-shell-avatar {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--app-surface-card);
+  border: 1px solid var(--app-outline);
+  font-size: 1.5rem;
+}
+
+.learn-shell-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.learn-shell-avatar-empty {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--app-outline);
+}
+
+.learn-shell-hello {
+  min-width: 0;
+}
+
+.learn-shell-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learn-shell-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.learn-shell-logout {
+  border: 1px solid var(--app-outline);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-surface-card);
+  color: var(--app-text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.learn-shell-error {
+  margin: 0 16px;
+  color: var(--app-error);
+}
+
+.learn-shell-main {
+  flex: 1;
+  padding: 8px 16px 16px;
+  min-height: 0;
+}

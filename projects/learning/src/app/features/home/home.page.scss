@@ -2,55 +2,18 @@
   display: block;
 }
 
-.learn-home {
-  min-height: 100dvh;
-  box-sizing: border-box;
-  width: min(100%, 26rem);
-  margin-inline: auto;
-  padding: 20px 20px 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 16px;
+.learn-panel {
   text-align: center;
-}
-
-.learn-top {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.learn-top-spacer {
-  flex: 1;
-}
-
-.learn-mascot {
-  width: 88px;
-  height: 88px;
-  margin: 0 auto;
-}
-
-.learn-mascot svg {
-  width: 100%;
-  height: 100%;
+  padding: 24px 8px;
 }
 
 h1 {
-  margin: 0;
-  font-size: 1.85rem;
+  margin: 0 0 8px;
+  font-size: 1.6rem;
   font-weight: 800;
 }
 
-.learn-lead,
-.learn-error {
+p {
   margin: 0;
-}
-
-.learn-lead {
   color: var(--app-text-muted);
-}
-
-.learn-error {
-  color: var(--app-error);
 }
