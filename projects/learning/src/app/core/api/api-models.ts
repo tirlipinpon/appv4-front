@@ -26,3 +26,6 @@ export type ChildProgressResponse = Required<
     'xpTotal' | 'currentStreak' | 'leagueLabel' | 'weekDays'
   >
 >;
+export type ChildTodayTask = components['schemas']['ChildTodayTask'];
+export type ChildTodayMission = components['schemas']['ChildTodayMission'];
+export type ChildTodayResponse = components['schemas']['ChildTodayResponse'];
