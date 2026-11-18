@@ -21,6 +21,11 @@ export const routes: Routes = [
       {
         path: 'learn/:subjectId',
         loadComponent: () =>
+          import('./features/learn/subject-board.page').then((m) => m.SubjectBoardPage),
+      },
+      {
+        path: 'learn/:subjectId/questions',
+        loadComponent: () =>
           import('./features/learn/subject-questions.page').then((m) => m.SubjectQuestionsPage),
       },
       {

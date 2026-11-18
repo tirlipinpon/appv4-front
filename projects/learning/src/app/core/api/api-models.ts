@@ -29,3 +29,6 @@ export type ChildProgressResponse = Required<
 export type ChildTodayTask = components['schemas']['ChildTodayTask'];
 export type ChildTodayMission = components['schemas']['ChildTodayMission'];
 export type ChildTodayResponse = components['schemas']['ChildTodayResponse'];
+export type ChildSubjectBoardResponse = components['schemas']['ChildSubjectBoardResponse'];
+export type ChildSubjectContinueLesson = components['schemas']['ChildSubjectContinueLesson'];
+export type ChildSubjectTopicCard = components['schemas']['ChildSubjectTopicCard'];
