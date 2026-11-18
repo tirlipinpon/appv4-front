@@ -16,7 +16,7 @@
       [attr.data-testid]="testId() + '-search'"
       [value]="query()"
       [disabled]="disabled()"
-      placeholder="Rechercher une icône (livre, maths…)"
+      placeholder="Ex. chimie, maths, livre…"
       (focus)="onFocus()"
       (blur)="onBlur()"
       (input)="onQuery(inputValue($event))"
