@@ -53,6 +53,7 @@ export type TeacherSubjectAddableCourse = components['schemas']['TeacherSubjectA
 export type TeacherSubjectItem = components['schemas']['TeacherSubjectItem'];
 export type TeacherSubjectSharedHolder = components['schemas']['TeacherSubjectSharedHolder'];
 export type CreateTeacherSubjectRequest = components['schemas']['CreateTeacherSubjectRequest'];
+export type SetTeacherSubjectIconRequest = components['schemas']['SetTeacherSubjectIconRequest'];
 export type RenameTeacherSubjectRequest = components['schemas']['RenameTeacherSubjectRequest'];
 export type DeactivateTeacherSubjectRequest = components['schemas']['DeactivateTeacherSubjectRequest'];
 export type TransferTeacherSubjectRequest = components['schemas']['TransferTeacherSubjectRequest'];

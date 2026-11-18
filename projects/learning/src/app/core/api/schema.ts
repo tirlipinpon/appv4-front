@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/{subjectId}/icon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choisir l'icône d'une matière */
+        put: operations["setTeacherSubjectIcon"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects/{id}": {
         parameters: {
             query?: never;
@@ -933,6 +950,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les matières de l'enfant connecté */
+        get: operations["listChildLearningSubjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ext/subjects/{subjectId}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lister les questions d'une matière liée */
+        get: operations["listChildLearningSubjectQuestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/me": {
         parameters: {
             query?: never;
@@ -1160,8 +1211,8 @@ export interface components {
             /** Format: double */
             snapDistance?: number;
         };
-        RenameTeacherSubjectRequest: {
-            name?: string;
+        SetTeacherSubjectIconRequest: {
+            iconCode?: string;
         };
         TeacherSubjectItem: {
             /** Format: int64 */
@@ -1181,6 +1232,8 @@ export interface components {
              * @description Nombre total de questions enregistrées sur cette matière.
              */
             questionCount?: number;
+            /** @description Code d'icône de la librairie, ou null. */
+            iconCode?: string;
         };
         TeacherSubjectSharedHolder: {
             /** Format: int64 */
@@ -1188,6 +1241,9 @@ export interface components {
             displayName?: string;
             /** @description Nom de l'action déjà refusée par ce collègue au professeur connecté. Vide s'il peut encore être sollicité. Exemple : Demander la reprise. */
             refusedAction?: string;
+        };
+        RenameTeacherSubjectRequest: {
+            name?: string;
         };
         TeacherSchoolInput: {
             /** Format: int64 */
@@ -1322,6 +1378,7 @@ export interface components {
             schoolId?: number;
             grade?: string;
             name?: string;
+            iconCode?: string;
         };
         LetterAttemptRequest: {
             attempt?: string;
@@ -1383,6 +1440,8 @@ export interface components {
              * @description Nombre total de questions enregistrées sur cette matière.
              */
             questionCount?: number;
+            /** @description Code d'icône de la librairie matières, ou null. */
+            iconCode?: string;
         };
         SwitchRoleRequest: {
             role: string;
@@ -1496,6 +1555,8 @@ export interface components {
         };
         TeacherSubjectsResponse: {
             schools?: components["schemas"]["TeacherSubjectSchool"][];
+            /** @description Librairie d'icônes pour les matières. */
+            iconChoices?: components["schemas"]["AvatarChoice"][];
         };
         TeacherSubjectFollowersResponse: {
             /** Format: int32 */
@@ -1686,6 +1747,30 @@ export interface components {
             requests?: components["schemas"]["TeacherRequestItem"][];
             truncated?: boolean;
         };
+        ChildLearningSubjectItem: {
+            /** Format: int64 */
+            subjectId?: number;
+            name?: string;
+            grade?: string;
+            /** Format: int64 */
+            questionCount?: number;
+            iconCode?: string;
+        };
+        ChildLearningSubjectsResponse: {
+            subjects?: components["schemas"]["ChildLearningSubjectItem"][];
+        };
+        ChildLearningQuestionItem: {
+            /** Format: int64 */
+            questionId?: number;
+            formCode?: string;
+            prompt?: string;
+        };
+        ChildLearningQuestionsResponse: {
+            /** Format: int64 */
+            subjectId?: number;
+            subjectName?: string;
+            questions?: components["schemas"]["ChildLearningQuestionItem"][];
+        };
         ChildProfileResponse: {
             /** Format: int64 */
             childId?: number;
@@ -1751,6 +1836,50 @@ export interface operations {
                 };
             };
             /** @description Matière ou question absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    setTeacherSubjectIcon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTeacherSubjectIconRequest"];
+            };
+        };
+        responses: {
+            /** @description Icône enregistrée */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectItem"];
+                };
+            };
+            /** @description Code d'icône inconnu */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière introuvable ou pas propriétaire */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -3878,6 +4007,79 @@ export interface operations {
             };
             /** @description Le compte n'est pas admin */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listChildLearningSubjects: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matières liées, actives */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildLearningSubjectsResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listChildLearningSubjectQuestions: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Questions en lecture seule */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildLearningQuestionsResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière absente ou non liée */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

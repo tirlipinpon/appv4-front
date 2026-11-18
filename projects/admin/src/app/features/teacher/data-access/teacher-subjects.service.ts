@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import type {
   CreateTeacherSubjectRequest,
   RenameTeacherSubjectRequest,
+  SetTeacherSubjectIconRequest,
   TeacherDeactivateNoticesResponse,
   TeacherSubjectColleaguesResponse,
   TeacherSubjectFollowersResponse,
@@ -47,6 +48,14 @@ export class TeacherSubjectsService {
 
   rename(id: number, body: RenameTeacherSubjectRequest): Observable<TeacherSubjectItem> {
     return this.http.put<TeacherSubjectItem>(`${environment.apiBaseUrl}/teacher/subjects/${id}`, body);
+  }
+
+  /** Change l'icône d'une matière (code de la librairie API). */
+  setIcon(id: number, body: SetTeacherSubjectIconRequest): Observable<TeacherSubjectItem> {
+    return this.http.put<TeacherSubjectItem>(
+      `${environment.apiBaseUrl}/teacher/subjects/${id}/icon`,
+      body,
+    );
   }
 
   /** Retire la matière de la liste de ce professeur. */
