@@ -1,0 +1,115 @@
+:host {
+  display: block;
+}
+
+.child-play-view {
+  color: var(--app-text, #1c2b3a);
+  font-family: var(--app-font, Nunito, 'Segoe UI', sans-serif);
+}
+
+.child-play-view-form {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--app-form-vrai-faux, #2bb673);
+}
+
+.child-play-view-prompt {
+  margin: 0 0 0.85rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--app-text-muted, #6b7385);
+}
+
+.child-play-view-empty {
+  margin: 0;
+  color: var(--app-text-muted, #6b7385);
+}
+
+.child-play-view-options,
+.child-play-view-statements {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.child-play-view-option {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--app-outline, #e4e7ee);
+  background: var(--app-surface-card, #fff);
+  border-radius: 0.9rem;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.child-play-view-option.selected {
+  border-color: var(--app-primary, #7c5cff);
+  background: color-mix(in srgb, var(--app-primary, #7c5cff) 12%, #fff);
+}
+
+.child-play-view-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 1.25rem;
+  background: var(--app-surface-card, #fff);
+  box-shadow: var(--app-shadow-soft, 0 8px 20px rgba(28, 43, 58, 0.08));
+}
+
+.child-play-view-statement-label {
+  margin: 0;
+  flex: 1 1 12rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.child-play-view-tf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.child-play-view-tf-btn {
+  min-width: 5.5rem;
+  border: 0;
+  border-radius: 0.75rem;
+  padding: 0.7rem 1.35rem;
+  background: #e8eaf5;
+  color: var(--app-text, #1c2b3a);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(28, 43, 58, 0.06);
+}
+
+.child-play-view-tf-btn.selected {
+  background: var(--app-form-vrai-faux-soft, #e3f7ec);
+  color: var(--app-form-vrai-faux, #2bb673);
+  box-shadow: inset 0 0 0 2px var(--app-form-vrai-faux, #2bb673);
+}
+
+.child-play-view-tf-btn:disabled,
+.child-play-view-option:disabled {
+  cursor: default;
+  opacity: 0.95;
+}
+
+@media (max-width: 560px) {
+  .child-play-view-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .child-play-view-tf-btn {
+    flex: 1 1 auto;
+  }
+}

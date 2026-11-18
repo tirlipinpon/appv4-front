@@ -7,6 +7,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
+import { ChildQuestionPlayViewComponent, type ChildPlayViewQuestion } from '@appv4/ui';
+
 import type { TeacherSubjectFollowersResponse } from '../../../core/api/api-models';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherQuestionsService } from '../data-access/teacher-questions.service';
@@ -72,6 +74,7 @@ interface FormChoice {
     MatSelectModule,
     ClickZoneEditorComponent,
     LetterBoxesComponent,
+    ChildQuestionPlayViewComponent,
   ],
   templateUrl: './subject-questions.component.html',
   styleUrl: './subject-questions.component.scss',
@@ -128,7 +131,29 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly followers = signal<TeacherSubjectFollowersResponse | null>(null);
   readonly letterMessages = signal<Readonly<Record<number, string>>>({});
   readonly letterBusyId = signal<number | null>(null);
+  /** Aperçu rendu enfant (popup). */
+  readonly preview = signal<ChildPlayViewQuestion | null>(null);
   private followSeq = 0;
+
+  openChildPreview(question: SavedQuestion): void {
+    this.preview.set({
+      formCode: question.formCode,
+      formLabel: question.formLabel,
+      prompt: question.prompt || undefined,
+      choices: question.choices.map((choice, index) => ({
+        choiceId: index + 1,
+        label: choice.label,
+      })),
+      statements: question.statements.map((row, index) => ({
+        statementId: index + 1,
+        label: row.label,
+      })),
+    });
+  }
+
+  closeChildPreview(): void {
+    this.preview.set(null);
+  }
 
   ngOnInit(): void {
     this.api.copiedToSubject$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((subjectId) => {
