@@ -319,22 +319,14 @@
                           }
                           <div class="actions">
                             @if (subject.ownedByMe) {
-                              <mat-form-field appearance="outline" class="icon-field">
-                                <mat-label>Icône</mat-label>
-                                <mat-select
-                                  data-testid="subject-icon-select"
-                                  [value]="subject.iconCode ?? ''"
-                                  [disabled]="saving()"
-                                  (selectionChange)="setSubjectIcon(subject, $event.value)"
-                                >
-                                  <mat-option value="">Sans icône</mat-option>
-                                  @for (choice of iconChoices(); track choice.code) {
-                                    <mat-option [value]="choice.code">
-                                      {{ iconGlyph(choice.code) }} {{ choice.label }}
-                                    </mat-option>
-                                  }
-                                </mat-select>
-                              </mat-form-field>
+                              <app-subject-icon-picker
+                                class="icon-picker"
+                                testId="subject-icon-select"
+                                [choices]="iconChoices()"
+                                [value]="subject.iconCode ?? ''"
+                                [disabled]="saving()"
+                                (valueChange)="setSubjectIcon(subject, $event)"
+                              />
                               <button mat-button type="button" data-testid="subject-rename" [disabled]="saving()" (click)="startRename(subject)">
                                 Renommer
                               </button>
@@ -386,22 +378,14 @@
                       (input)="onNameInput(school.schoolId, grade.grade, inputValue($event))"
                     />
                   </mat-form-field>
-                  <mat-form-field appearance="outline" class="add-field">
-                    <mat-label>Icône</mat-label>
-                    <mat-select
-                      data-testid="subject-new-icon"
-                      [value]="iconDraft(school.schoolId, grade.grade)"
-                      [disabled]="saving()"
-                      (selectionChange)="onIconDraft(school.schoolId, grade.grade, $event.value)"
-                    >
-                      <mat-option value="">Sans icône</mat-option>
-                      @for (choice of iconChoices(); track choice.code) {
-                        <mat-option [value]="choice.code">
-                          {{ iconGlyph(choice.code) }} {{ choice.label }}
-                        </mat-option>
-                      }
-                    </mat-select>
-                  </mat-form-field>
+                  <app-subject-icon-picker
+                    class="icon-picker add-icon"
+                    testId="subject-new-icon"
+                    [choices]="iconChoices()"
+                    [value]="iconDraft(school.schoolId, grade.grade)"
+                    [disabled]="saving()"
+                    (valueChange)="onIconDraft(school.schoolId, grade.grade, $event)"
+                  />
                   <button
                     mat-flat-button
                     color="primary"

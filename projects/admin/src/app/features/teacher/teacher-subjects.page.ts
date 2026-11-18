@@ -19,6 +19,7 @@ import type {
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
+import { SubjectIconPickerComponent } from '../../shared/subject-icons/subject-icon-picker.component';
 import { subjectIconGlyph } from '../../shared/subject-icons/subject-icons';
 import { TeacherSubjectsService } from './data-access/teacher-subjects.service';
 
@@ -108,7 +109,15 @@ const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
  */
 @Component({
   selector: 'app-teacher-subjects-page',
-  imports: [MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule, SpaceHeader],
+  imports: [
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    SpaceHeader,
+    SubjectIconPickerComponent,
+  ],
   templateUrl: './teacher-subjects.page.html',
   styleUrl: './subjects.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

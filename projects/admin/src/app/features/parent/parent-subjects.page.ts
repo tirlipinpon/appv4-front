@@ -15,6 +15,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { avatarEmoji } from '../../shared/avatars/account-avatars';
 import { PhotoObjectUrlBag } from '../../shared/photos/photo-object-url-bag';
+import { subjectIconGlyph } from '../../shared/subject-icons/subject-icons';
 import { sexLabel } from './child-sex';
 import { ChildSubjectsService } from './data-access/child-subjects.service';
 import { ParentChildrenService } from './data-access/parent-children.service';
@@ -44,6 +45,7 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
   private readonly photoBag = new PhotoObjectUrlBag();
 
   readonly emoji = avatarEmoji;
+  readonly iconGlyph = subjectIconGlyph;
   readonly sexLabel = sexLabel;
   readonly children = signal<ChildSubjectsResponse[]>([]);
   readonly searchQueries = signal<Readonly<Record<number, string>>>({});

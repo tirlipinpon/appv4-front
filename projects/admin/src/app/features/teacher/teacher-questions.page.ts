@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import type { TeacherSubjectsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
+import { subjectIconGlyph } from '../../shared/subject-icons/subject-icons';
 import { QuestionDestination, SubjectQuestionsComponent } from './components/subject-questions.component';
 import { TeacherSubjectsService } from './data-access/teacher-subjects.service';
 import { TeacherQuestionsService } from './data-access/teacher-questions.service';
@@ -13,6 +14,7 @@ interface SubjectRow {
   name: string;
   place: string;
   questionCount: number;
+  iconCode?: string | null;
 }
 
 interface GradeBlock {
@@ -42,6 +44,7 @@ interface SchoolBlock {
 export class TeacherQuestionsPage implements OnInit {
   private readonly subjectsApi = inject(TeacherSubjectsService);
 
+  readonly iconGlyph = subjectIconGlyph;
   readonly schools = signal<SchoolBlock[]>([]);
   readonly openId = signal<number | null>(null);
   readonly subjectChoices = computed(() =>
@@ -113,6 +116,7 @@ export class TeacherQuestionsPage implements OnInit {
             name: subject.name,
             place,
             questionCount: subject.questionCount ?? 0,
+            iconCode: subject.iconCode ?? null,
           });
         }
         grades.push({ grade: grade.grade, subjects });

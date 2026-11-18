@@ -194,9 +194,13 @@
   margin: 0.1rem 0 0 -0.5rem;
 }
 
-.icon-field {
-  width: 10rem;
-  margin: 0 0.25rem 0 0;
+.icon-picker {
+  flex: 1 1 100%;
+  margin: 0.35rem 0;
+}
+
+.add-icon {
+  flex: 1 1 100%;
 }
 
 .subject-icon {
