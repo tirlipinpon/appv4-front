@@ -19,6 +19,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/learn/learn.page').then((m) => m.LearnPage),
       },
       {
+        path: 'learn/:subjectId',
+        loadComponent: () =>
+          import('./features/learn/subject-questions.page').then((m) => m.SubjectQuestionsPage),
+      },
+      {
+        path: 'learn/:subjectId/play/:questionId',
+        loadComponent: () =>
+          import('./features/learn/play-question.page').then((m) => m.PlayQuestionPage),
+      },
+      {
         path: 'rewards',
         loadComponent: () => import('./features/rewards/rewards.page').then((m) => m.RewardsPage),
       },

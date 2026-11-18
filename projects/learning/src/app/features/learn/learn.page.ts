@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { knownSubjectIcon, subjectCardTint, subjectIconSrc } from '../../shared/subject-icons/subject-icons';
@@ -11,6 +12,7 @@ import { ChildSubjectsService } from './data-access/child-subjects.service';
  */
 @Component({
   selector: 'app-learn-page',
+  imports: [RouterLink],
   templateUrl: './learn.page.html',
   styleUrl: './learn.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

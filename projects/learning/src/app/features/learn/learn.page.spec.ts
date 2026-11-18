@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { ChildAuthService } from '../../core/auth/child-auth.service';
 import { LearnPage } from './learn.page';
@@ -12,6 +13,7 @@ describe('LearnPage', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
         {
           provide: ChildAuthService,
           useValue: {

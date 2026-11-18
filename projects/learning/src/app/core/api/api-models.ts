@@ -15,3 +15,8 @@ export type ChildProfileResponse = Required<
 
 export type ChildLearningSubjectItem = components['schemas']['ChildLearningSubjectItem'];
 export type ChildLearningSubjectsResponse = components['schemas']['ChildLearningSubjectsResponse'];
+export type ChildLearningQuestionsResponse = components['schemas']['ChildLearningQuestionsResponse'];
+export type ChildLearningQuestionItem = components['schemas']['ChildLearningQuestionItem'];
+export type ChildPlayQuestionResponse = components['schemas']['ChildPlayQuestionResponse'];
+export type SubmitChildAttemptRequest = components['schemas']['SubmitChildAttemptRequest'];
+export type ChildAttemptResultResponse = components['schemas']['ChildAttemptResultResponse'];

@@ -1,0 +1,90 @@
+<section class="play" data-testid="play-question-panel">
+  <header class="play-top">
+    <a [routerLink]="['/learn', subjectId()]" class="back" data-testid="play-back">← Questions</a>
+    <h1 data-testid="play-title">Jouer</h1>
+  </header>
+
+  @if (loading()) {
+    <p class="status" data-testid="play-loading">Chargement…</p>
+  } @else if (error(); as message) {
+    <p class="status error" role="alert" data-testid="play-error">{{ message }}</p>
+  }
+
+  @if (question(); as q) {
+    <p class="prompt" data-testid="play-prompt">{{ q.prompt || 'Réponds aux propositions.' }}</p>
+
+    @if (isQcm()) {
+      <ul class="options" data-testid="play-qcm">
+        @for (choice of q.choices ?? []; track choice.choiceId) {
+          <li>
+            <button
+              type="button"
+              class="option"
+              [class.selected]="choiceSelected(choice.choiceId!)"
+              [disabled]="saving() || !!result()"
+              [attr.data-testid]="'play-choice-' + choice.choiceId"
+              (click)="toggleChoice(choice.choiceId!)"
+            >
+              {{ choice.label }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (isTrueFalse()) {
+      <ul class="statements" data-testid="play-true-false">
+        @for (statement of q.statements ?? []; track statement.statementId) {
+          <li class="statement">
+            <p>{{ statement.label }}</p>
+            <div class="tf-actions">
+              <button
+                type="button"
+                class="option"
+                [class.selected]="statementValue(statement.statementId!) === true"
+                [disabled]="saving() || !!result()"
+                [attr.data-testid]="'play-statement-' + statement.statementId + '-true'"
+                (click)="setStatement(statement.statementId!, true)"
+              >
+                Vrai
+              </button>
+              <button
+                type="button"
+                class="option"
+                [class.selected]="statementValue(statement.statementId!) === false"
+                [disabled]="saving() || !!result()"
+                [attr.data-testid]="'play-statement-' + statement.statementId + '-false'"
+                (click)="setStatement(statement.statementId!, false)"
+              >
+                Faux
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (!result()) {
+      <button
+        type="button"
+        class="submit"
+        data-testid="play-submit"
+        [disabled]="!canSubmit()"
+        (click)="submit()"
+      >
+        Valider
+      </button>
+    }
+
+    @if (result(); as verdict) {
+      <div class="verdict" [class.ok]="verdict.passed === true" [class.ko]="verdict.passed !== true" data-testid="play-result">
+        <p class="verdict-title">{{ verdict.passed === true ? 'Bravo !' : 'Pas encore' }}</p>
+        <p data-testid="play-score">Score : {{ verdict.scorePercent }} %</p>
+      </div>
+      <div class="after">
+        <button type="button" class="submit secondary" data-testid="play-replay" (click)="replay()">Rejouer</button>
+        <a [routerLink]="['/learn', subjectId()]" class="submit secondary link" data-testid="play-to-list">Retour aux questions</a>
+      </div>
+    }
+  }
+</section>
