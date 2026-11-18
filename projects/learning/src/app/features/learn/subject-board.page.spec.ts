@@ -34,60 +34,13 @@ describe('SubjectBoardPage', () => {
     return { fixture, http };
   }
 
-  it('affiche hero, Continuer et thèmes renvoyés par /api/ext/subjects/{id}', () => {
+  it('affiche nom, grade et lien questions depuis /api/ext/subjects/{id}', () => {
     const { fixture, http } = setup();
     const req = http.expectOne('http://localhost:8080/api/ext/subjects/5');
     expect(req.request.headers.get('Authorization')).toBe('Bearer child-token');
     req.flush({
       subjectId: 5,
       name: 'Mathématiques',
-      iconCode: 'math',
-      grade: 'CE1',
-      description: 'Nombres et formes',
-      tagline: 'On compte',
-      worldLabel: 'MONDE MATHS',
-      ageLabel: '5–9 ans',
-      levelLabel: 'Facile',
-      xpEarned: 120,
-      badgeCount: 0,
-      lessonsCompleted: 1,
-      lessonsTotal: 4,
-      minutesLeft: 12,
-      continueLesson: {
-        lessonId: 21,
-        title: "Compter jusqu'à 20",
-        progressPercent: 50,
-        minutesLeft: 3,
-        rewardXp: 50,
-        playQuestionId: 102,
-      },
-      topics: [
-        { topicId: 1, name: 'Nombres', iconCode: 'math', lessonsCompleted: 1, lessonsTotal: 2 },
-        { topicId: 2, name: 'Calcul', iconCode: 'knowledge', lessonsCompleted: 0, lessonsTotal: 2 },
-      ],
-    });
-    fixture.detectChanges();
-
-    const root = fixture.nativeElement as HTMLElement;
-    expect(root.querySelector('[data-testid="subject-board-title"]')?.textContent).toContain('Mathématiques');
-    expect(root.querySelector('[data-testid="subject-board-world"]')?.textContent).toContain('MONDE MATHS');
-    expect(root.querySelector('[data-testid="subject-board-progress"]')).toBeTruthy();
-    expect(root.textContent).toContain('1 / 4 leçons');
-    expect(root.querySelector('[data-testid="subject-board-resume-title"]')?.textContent).toContain(
-      "Compter jusqu'à 20",
-    );
-    const continueLink: HTMLAnchorElement | null = root.querySelector('[data-testid="subject-board-continue"]');
-    expect(continueLink?.getAttribute('href')).toBe('/learn/5/play/102');
-    expect(root.textContent).toContain('Nombres');
-    expect(root.textContent).toContain('1 / 2 leçons');
-    http.verify();
-  });
-
-  it('masque Continuer quand continueLesson est absent', () => {
-    const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5').flush({
-      subjectId: 5,
-      name: 'Maths',
       iconCode: 'math',
       grade: 'CE1',
       xpEarned: 0,
@@ -99,8 +52,28 @@ describe('SubjectBoardPage', () => {
     });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="subject-board-continue"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-testid="subject-board-topics-empty"]')).toBeTruthy();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="subject-board-title"]')?.textContent).toContain('Mathématiques');
+    expect(root.querySelector('[data-testid="subject-board-grade"]')?.textContent).toContain('CE1');
+    expect(root.querySelector('[data-testid="subject-board-world"]')).toBeNull();
+    expect(root.querySelector('[data-testid="subject-board-topics"]')).toBeNull();
+    expect(root.querySelector('[data-testid="subject-board-continue"]')).toBeNull();
+    const questionsLink: HTMLAnchorElement | null = root.querySelector('[data-testid="subject-board-questions"]');
+    expect(questionsLink?.getAttribute('href')).toBe('/learn/5/questions');
+    http.verify();
+  });
+
+  it('affiche une erreur API 404', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5').flush(
+      { message: 'Matière introuvable.' },
+      { status: 404, statusText: 'Not Found' },
+    );
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="subject-board-error"]')?.textContent).toContain(
+      'Matière introuvable.',
+    );
     http.verify();
   });
 });
