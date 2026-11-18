@@ -933,6 +933,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire le profil de l'enfant connecté */
+        get: operations["readChildProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ext/me/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la photo de l'enfant connecté */
+        get: operations["readChildProfilePhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/auth/session": {
         parameters: {
             query?: never;
@@ -1651,6 +1685,13 @@ export interface components {
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
             truncated?: boolean;
+        };
+        ChildProfileResponse: {
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
+            avatarCode?: string;
+            hasPhoto?: boolean;
         };
         ChildSessionResponse: {
             /** Format: int64 */
@@ -3837,6 +3878,77 @@ export interface operations {
             };
             /** @description Le compte n'est pas admin */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildProfile: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Profil de la fiche active */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildProfileResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildProfilePhoto: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Octets de la photo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Pas de photo sur la fiche */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
