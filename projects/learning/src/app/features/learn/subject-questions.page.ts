@@ -61,10 +61,15 @@ export class SubjectQuestionsPage implements OnInit {
     if (code === 'order') {
       return 'Ordre';
     }
+    if (code === 'classement') {
+      return 'Classement';
+    }
     return code ?? '';
   }
 
   protected canPlay(code: string | undefined): boolean {
-    return code === 'vrai_faux' || code === 'qcm' || code === 'memory' || code === 'order';
+    return (
+      code === 'vrai_faux' || code === 'qcm' || code === 'memory' || code === 'order' || code === 'classement'
+    );
   }
 }

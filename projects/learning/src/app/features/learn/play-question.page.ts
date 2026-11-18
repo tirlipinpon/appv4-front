@@ -60,6 +60,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'order') {
       return view.hasOrderItems();
     }
+    if (q.formCode === 'classement') {
+      return view.allCardsPlaced();
+    }
     return false;
   });
 
@@ -81,7 +84,8 @@ export class PlayQuestionPage implements OnInit {
           body.formCode !== 'qcm' &&
           body.formCode !== 'vrai_faux' &&
           body.formCode !== 'memory' &&
-          body.formCode !== 'order'
+          body.formCode !== 'order' &&
+          body.formCode !== 'classement'
         ) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
@@ -112,7 +116,9 @@ export class PlayQuestionPage implements OnInit {
           ? { matchedPairIds: view.matchedPairIds() }
           : q.formCode === 'order'
             ? { orderedItemIds: view.orderedItemIds() }
-            : { statements: view.statementAnswers() };
+            : q.formCode === 'classement'
+              ? { placements: view.placements() }
+              : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -160,6 +166,13 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
       })),
     items: (body.items ?? [])
       .filter((i) => i.label != null)
-      .map((i) => ({ itemId: i.itemId, label: i.label! })),
+      .map((i) => ({ itemId: i.itemId, label: i.label!, axisLabel: i.axisLabel })),
+    timelineEnabled: body.timelineEnabled,
+    columns: (body.columns ?? [])
+      .filter((c) => c.label != null)
+      .map((c) => ({ columnId: c.columnId, label: c.label! })),
+    cards: (body.cards ?? [])
+      .filter((c) => c.label != null)
+      .map((c) => ({ cardId: c.cardId, label: c.label! })),
   };
 }

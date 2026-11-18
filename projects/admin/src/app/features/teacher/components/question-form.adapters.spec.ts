@@ -3,7 +3,9 @@ import {
   FORM,
   PUZZLE_BOARD_MODE,
   QuestionDraftSnapshot,
+  emptyCards,
   emptyChoices,
+  emptyColumns,
   emptyDecoys,
   emptyItems,
   emptyLinks,
@@ -19,6 +21,8 @@ function emptyDraft(overrides: Partial<QuestionDraftSnapshot> = {}): QuestionDra
     items: emptyItems(),
     statements: emptyStatements(),
     links: emptyLinks(),
+    columns: emptyColumns(),
+    cards: emptyCards(),
     sentence: '',
     answers: [],
     decoys: emptyDecoys(),
@@ -29,6 +33,7 @@ function emptyDraft(overrides: Partial<QuestionDraftSnapshot> = {}): QuestionDra
     requireAllCorrect: true,
     clickZones: [],
     puzzleMagnet: 0.08,
+    timelineEnabled: false,
     ...overrides,
   };
 }
@@ -74,7 +79,30 @@ describe('question-form.adapters', () => {
         formCode: FORM.ORDER,
         items: [{ label: 'un' }, { label: 'deux' }],
       })?.items,
-    ).toEqual([{ label: 'un' }, { label: 'deux' }]);
+    ).toEqual([
+      { label: 'un', axisLabel: '' },
+      { label: 'deux', axisLabel: '' },
+    ]);
+
+    expect(
+      parseSavedQuestion({
+        id: 22,
+        formCode: FORM.ORDER,
+        timelineEnabled: true,
+        items: [
+          { label: 'un', axisLabel: '20 minutes' },
+          { label: 'deux', axisLabel: '1 heure' },
+        ],
+      }),
+    ).toEqual(
+      jasmine.objectContaining({
+        timelineEnabled: true,
+        items: [
+          { label: 'un', axisLabel: '20 minutes' },
+          { label: 'deux', axisLabel: '1 heure' },
+        ],
+      }),
+    );
 
     expect(
       parseSavedQuestion({
@@ -83,6 +111,47 @@ describe('question-form.adapters', () => {
         expectedAnswer: 'Paris',
       })?.expectedAnswer,
     ).toBe('Paris');
+  });
+
+  it('maps classement columns and cards with columnIndex', () => {
+    const saved = parseSavedQuestion({
+      id: 21,
+      formCode: FORM.CLASSIFICATION,
+      columns: [
+        { id: 10, label: 'Oui' },
+        { id: 11, label: 'Non' },
+      ],
+      cards: [
+        { id: 1, label: 'A', correctColumnId: 10 },
+        { id: 2, label: 'B', correctColumnId: 11 },
+      ],
+    });
+    expect(saved?.columns).toEqual([{ label: 'Oui' }, { label: 'Non' }]);
+    expect(saved?.cards).toEqual([
+      { label: 'A', columnIndex: 0 },
+      { label: 'B', columnIndex: 1 },
+    ]);
+
+    expect(
+      buildSaveBody(
+        FORM.CLASSIFICATION,
+        emptyDraft({
+          columns: [{ label: 'Oui' }, { label: 'Non' }],
+          cards: [
+            { label: 'A', columnIndex: 0 },
+            { label: 'B', columnIndex: 1 },
+          ],
+        }),
+      ),
+    ).toEqual({
+      formCode: FORM.CLASSIFICATION,
+      prompt: '',
+      columns: [{ label: 'Oui' }, { label: 'Non' }],
+      cards: [
+        { label: 'A', columnIndex: 0 },
+        { label: 'B', columnIndex: 1 },
+      ],
+    });
   });
 
   it('rejects a missing or zero id instead of inventing 0', () => {
@@ -111,6 +180,29 @@ describe('question-form.adapters', () => {
       choices: [
         { label: '3', correct: false },
         { label: '4', correct: true },
+      ],
+    });
+  });
+
+  it('builds an order body with timeline jalons', () => {
+    const body = buildSaveBody(
+      FORM.ORDER,
+      emptyDraft({
+        timelineEnabled: true,
+        items: [
+          { label: 'Circulation', axisLabel: '20 minutes' },
+          { label: 'Monoxyde', axisLabel: '12 heures' },
+        ],
+      }),
+    );
+
+    expect(body).toEqual({
+      formCode: FORM.ORDER,
+      prompt: '',
+      timelineEnabled: true,
+      items: [
+        { label: 'Circulation', axisLabel: '20 minutes' },
+        { label: 'Monoxyde', axisLabel: '12 heures' },
       ],
     });
   });

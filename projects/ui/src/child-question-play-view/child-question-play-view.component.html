@@ -97,6 +97,7 @@
     </p>
     <ul
       class="child-play-view-order"
+      [class.timeline]="isTimeline()"
       cdkDropList
       data-testid="child-play-view-order"
       [cdkDropListDisabled]="disabled() || !interactive()"
@@ -110,7 +111,14 @@
           [attr.data-testid]="'child-play-view-order-item-' + item.key"
         >
           <span class="child-play-view-order-index">{{ i + 1 }}</span>
-          <span class="child-play-view-order-label">{{ item.label }}</span>
+          <span class="child-play-view-order-label">
+            @if (isTimeline() && item.axisLabel) {
+              <span class="child-play-view-order-axis" [attr.data-testid]="'child-play-view-order-axis-' + item.key">
+                {{ item.axisLabel }}
+              </span>
+            }
+            {{ item.label }}
+          </span>
           <div class="child-play-view-order-actions">
             <button
               type="button"
@@ -144,5 +152,89 @@
         </li>
       }
     </ul>
+  }
+
+  @if (isClassification()) {
+    <div class="child-play-view-class" data-testid="child-play-view-classement">
+      <section class="child-play-view-class-pile">
+        <header class="child-play-view-class-head">
+          <h3>Cartes à classer</h3>
+          <span class="child-play-view-class-badge" data-testid="child-play-view-class-remaining">
+            {{ remainingCount() }} restante{{ remainingCount() === 1 ? '' : 's' }}
+          </span>
+        </header>
+        <div
+          class="child-play-view-class-drop"
+          id="source"
+          cdkDropList
+          role="button"
+          tabindex="0"
+          [cdkDropListData]="sourceCards()"
+          [cdkDropListConnectedTo]="classListIds()"
+          [cdkDropListDisabled]="disabled() || !interactive()"
+          data-testid="child-play-view-class-source"
+          (cdkDropListDropped)="onClassDrop($event, 'source')"
+          (click)="onSourceTap()"
+          (keydown.enter)="onSourceTap()"
+          (keydown.space)="$event.preventDefault(); onSourceTap()"
+        >
+          @for (card of sourceCards(); track card.key) {
+            <button
+              type="button"
+              class="child-play-view-class-card"
+              cdkDrag
+              [cdkDragDisabled]="disabled() || !interactive()"
+              [class.selected]="selectedClassCardKey() === card.key"
+              [attr.data-testid]="'child-play-view-class-card-' + card.key"
+              (click)="$event.stopPropagation(); onClassCardTap(card)"
+            >
+              {{ card.label }}
+            </button>
+          } @empty {
+            <p class="child-play-view-class-empty">Toutes les cartes sont placées</p>
+          }
+        </div>
+      </section>
+
+      @for (column of classColumns(); track column.key; let colIndex = $index) {
+        <section class="child-play-view-class-column" [attr.data-accent]="colIndex % 4">
+          <header class="child-play-view-class-head">
+            <h3>{{ column.label }}</h3>
+            <span class="child-play-view-class-count">{{ column.cards.length }}</span>
+          </header>
+          <div
+            class="child-play-view-class-drop"
+            [id]="column.key"
+            cdkDropList
+            role="button"
+            tabindex="0"
+            [cdkDropListData]="column.cards"
+            [cdkDropListConnectedTo]="classListIds()"
+            [cdkDropListDisabled]="disabled() || !interactive()"
+            [attr.data-testid]="'child-play-view-class-column-' + column.key"
+            (cdkDropListDropped)="onClassDrop($event, column.key)"
+            (click)="onColumnTap(column)"
+            (keydown.enter)="onColumnTap(column)"
+            (keydown.space)="$event.preventDefault(); onColumnTap(column)"
+          >
+            @for (card of column.cards; track card.key) {
+              <button
+                type="button"
+                class="child-play-view-class-card"
+                cdkDrag
+                [cdkDragDisabled]="disabled() || !interactive()"
+                [class.selected]="selectedClassCardKey() === card.key"
+                [attr.data-testid]="'child-play-view-class-card-' + card.key"
+                (click)="$event.stopPropagation(); onClassCardTap(card)"
+              >
+                {{ card.label }}
+              </button>
+            } @empty {
+              <p class="child-play-view-class-empty">Déposez les cartes ici</p>
+            }
+          </div>
+        </section>
+      }
+    </div>
   }
 </div>

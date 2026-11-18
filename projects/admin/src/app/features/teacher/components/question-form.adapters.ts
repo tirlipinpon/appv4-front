@@ -45,7 +45,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     if (!item.label) {
       return [];
     }
-    return [{ label: item.label }];
+    return [{ label: item.label, axisLabel: item.axisLabel ?? '' }];
   });
   const statements = (question.statements ?? []).flatMap((row) => {
     if (!row.label || row.truthful == null) {
@@ -58,6 +58,25 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
       return [];
     }
     return [{ leftLabel: row.leftLabel, rightLabel: row.rightLabel }];
+  });
+  const columns = (question.columns ?? []).flatMap((row) => {
+    if (!row.label) {
+      return [];
+    }
+    return [{ label: row.label }];
+  });
+  const columnIds = (question.columns ?? [])
+    .map((row) => row.id)
+    .filter((id): id is number => typeof id === 'number');
+  const cards = (question.cards ?? []).flatMap((row) => {
+    if (!row.label || row.correctColumnId == null) {
+      return [];
+    }
+    const columnIndex = columnIds.indexOf(row.correctColumnId);
+    if (columnIndex < 0) {
+      return [];
+    }
+    return [{ label: row.label, columnIndex }];
   });
   const answers = (question.answers ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
   const decoys = (question.decoys ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
@@ -72,6 +91,8 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     items,
     statements,
     links,
+    columns,
+    cards,
     sentence: question.sentence ?? '',
     answers,
     decoys,
@@ -91,6 +112,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
       formCode === FORM.PUZZLE && typeof question.snapDistance === 'number'
         ? question.snapDistance
         : defaultMagnet(),
+    timelineEnabled: formCode === FORM.ORDER && question.timelineEnabled === true,
   };
 }
 
@@ -131,7 +153,11 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
       return {
         formCode: code,
         prompt: draft.prompt,
-        items: draft.items.map((item) => ({ label: item.label })),
+        timelineEnabled: draft.timelineEnabled,
+        items: draft.items.map((item) => ({
+          label: item.label,
+          ...(draft.timelineEnabled ? { axisLabel: item.axisLabel } : {}),
+        })),
       };
     case FORM.TRUE_FALSE:
       return {
@@ -149,6 +175,16 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         links: draft.links.map((row) => ({
           leftLabel: row.leftLabel,
           rightLabel: row.rightLabel,
+        })),
+      };
+    case FORM.CLASSIFICATION:
+      return {
+        formCode: code,
+        prompt: draft.prompt,
+        columns: draft.columns.map((row) => ({ label: row.label })),
+        cards: draft.cards.map((row) => ({
+          label: row.label,
+          columnIndex: row.columnIndex,
         })),
       };
     case FORM.CASE_VIDE:

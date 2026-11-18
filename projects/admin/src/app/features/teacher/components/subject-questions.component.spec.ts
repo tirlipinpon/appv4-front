@@ -268,6 +268,7 @@ describe('SubjectQuestionsComponent', () => {
     expect(req.request.body).toEqual({
       formCode: 'order',
       prompt: '',
+      timelineEnabled: false,
       items: [{ label: 'Lundi' }, { label: 'Mardi' }],
     });
     req.flush({
@@ -277,6 +278,7 @@ describe('SubjectQuestionsComponent', () => {
       prompt: '',
       choices: [],
       pairs: [],
+      timelineEnabled: false,
       items: [
         { id: 1, label: 'Lundi' },
         { id: 2, label: 'Mardi' },

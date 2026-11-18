@@ -16,6 +16,7 @@ export const FORM = {
   TRUE_FALSE: 'vrai_faux',
   LINKS: 'liens',
   CASE_VIDE: 'case_vide',
+  CLASSIFICATION: 'classement',
   TEXTE: 'texte',
   REPONSE_LIBRE: 'reponse_libre',
   IMAGE_CLICK: 'image_interactive',
@@ -43,6 +44,8 @@ export interface PairDraft {
 
 export interface ItemDraft {
   label: string;
+  /** Jalon de frise (ex. « 20 minutes »). Vide si timeline désactivée. */
+  axisLabel: string;
 }
 
 export interface StatementDraft {
@@ -53,6 +56,16 @@ export interface StatementDraft {
 export interface LinkDraft {
   leftLabel: string;
   rightLabel: string;
+}
+
+export interface ColumnDraft {
+  label: string;
+}
+
+/** Carte rattachée à une colonne via l'index 0-based dans `columns`. */
+export interface CardDraft {
+  label: string;
+  columnIndex: number;
 }
 
 export interface GapWordDraft {
@@ -73,6 +86,8 @@ export interface SavedQuestion {
   items: ItemDraft[];
   statements: StatementDraft[];
   links: LinkDraft[];
+  columns: ColumnDraft[];
+  cards: CardDraft[];
   sentence: string;
   answers: GapWordDraft[];
   decoys: GapWordDraft[];
@@ -83,6 +98,8 @@ export interface SavedQuestion {
   requireAllCorrect: boolean;
   zones: ClickZone[];
   snapDistance: number;
+  /** Frise Ordre active. False hors forme order. */
+  timelineEnabled: boolean;
 }
 
 /** Plateau de jeu du puzzle : fond dédié, cadre blanc, ou image trouée. */
@@ -106,6 +123,8 @@ export interface QuestionDraftSnapshot {
   items: ItemDraft[];
   statements: StatementDraft[];
   links: LinkDraft[];
+  columns: ColumnDraft[];
+  cards: CardDraft[];
   sentence: string;
   answers: GapWordDraft[];
   decoys: GapWordDraft[];
@@ -116,6 +135,7 @@ export interface QuestionDraftSnapshot {
   requireAllCorrect: boolean;
   clickZones: ClickZone[];
   puzzleMagnet: number;
+  timelineEnabled: boolean;
 }
 
 export function isKnownFormCode(code: string | null | undefined): code is KnownFormCode {
@@ -126,6 +146,7 @@ export function isKnownFormCode(code: string | null | undefined): code is KnownF
     code === FORM.TRUE_FALSE ||
     code === FORM.LINKS ||
     code === FORM.CASE_VIDE ||
+    code === FORM.CLASSIFICATION ||
     code === FORM.TEXTE ||
     code === FORM.REPONSE_LIBRE ||
     code === FORM.IMAGE_CLICK ||
@@ -144,6 +165,17 @@ export function emptyLinks(): LinkDraft[] {
   ];
 }
 
+export function emptyColumns(): ColumnDraft[] {
+  return [{ label: '' }, { label: '' }];
+}
+
+export function emptyCards(): CardDraft[] {
+  return [
+    { label: '', columnIndex: 0 },
+    { label: '', columnIndex: 1 },
+  ];
+}
+
 export function emptyStatements(): StatementDraft[] {
   return [
     { label: '', truthful: null },
@@ -152,7 +184,10 @@ export function emptyStatements(): StatementDraft[] {
 }
 
 export function emptyItems(): ItemDraft[] {
-  return [{ label: '' }, { label: '' }];
+  return [
+    { label: '', axisLabel: '' },
+    { label: '', axisLabel: '' },
+  ];
 }
 
 export function emptyPairs(): PairDraft[] {

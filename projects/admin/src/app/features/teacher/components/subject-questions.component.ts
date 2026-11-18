@@ -27,7 +27,9 @@ import { LetterBoxesComponent } from './letter-boxes.component';
 import { ClickZone } from './click-zone';
 import { buildSaveBody, parseSavedQuestion, requireSavedQuestion } from './question-form.adapters';
 import {
+  CardDraft,
   ChoiceDraft,
+  ColumnDraft,
   FORM,
   GapWordDraft,
   ItemDraft,
@@ -38,7 +40,9 @@ import {
   SavedQuestion,
   StatementDraft,
   defaultMagnet,
+  emptyCards,
   emptyChoices,
+  emptyColumns,
   emptyDecoys,
   emptyItems,
   emptyLinks,
@@ -118,12 +122,15 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly items = signal<ItemDraft[]>(emptyItems());
   readonly statements = signal<StatementDraft[]>(emptyStatements());
   readonly links = signal<LinkDraft[]>(emptyLinks());
+  readonly columns = signal<ColumnDraft[]>(emptyColumns());
+  readonly cards = signal<CardDraft[]>(emptyCards());
   readonly sentence = signal('');
   readonly expectedAnswer = signal('');
   readonly clickImage = signal('');
   readonly boardMode = signal<PuzzleBoardMode>(PUZZLE_BOARD_MODE.TROUS);
   readonly boardImage = signal('');
   readonly requireAllCorrect = signal(true);
+  readonly timelineEnabled = signal(false);
   readonly clickZones = signal<ClickZone[]>([]);
   readonly puzzleMagnet = signal(defaultMagnet());
   readonly answers = signal<GapWordDraft[]>([]);
@@ -168,6 +175,9 @@ export class SubjectQuestionsComponent implements OnInit {
     if (model.formCode === 'order') {
       return view.hasOrderItems();
     }
+    if (model.formCode === 'classement') {
+      return view.allCardsPlaced();
+    }
     return false;
   });
 
@@ -205,6 +215,16 @@ export class SubjectQuestionsComponent implements OnInit {
       items: question.items.map((item, index) => ({
         itemId: index + 1,
         label: item.label,
+        axisLabel: item.axisLabel,
+      })),
+      timelineEnabled: question.timelineEnabled,
+      columns: question.columns.map((column, index) => ({
+        columnId: index + 1,
+        label: column.label,
+      })),
+      cards: question.cards.map((card, index) => ({
+        cardId: index + 1,
+        label: card.label,
       })),
     });
   }
@@ -353,6 +373,10 @@ export class SubjectQuestionsComponent implements OnInit {
     this.requireAllCorrect.set(value);
   }
 
+  setTimelineEnabled(value: boolean): void {
+    this.timelineEnabled.set(value);
+  }
+
   setPuzzleMagnet(value: number): void {
     this.puzzleMagnet.set(value);
   }
@@ -390,11 +414,28 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setItemLabel(index: number, value: string): void {
-    this.items.update((rows) => rows.map((row, i) => (i === index ? { label: value } : row)));
+    this.items.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+  }
+
+  setItemAxisLabel(index: number, value: string): void {
+    this.items.update((rows) => rows.map((row, i) => (i === index ? { ...row, axisLabel: value } : row)));
+  }
+
+  moveItem(index: number, delta: -1 | 1): void {
+    this.items.update((rows) => {
+      const target = index + delta;
+      if (target < 0 || target >= rows.length) {
+        return rows;
+      }
+      const next = [...rows];
+      const [row] = next.splice(index, 1);
+      next.splice(target, 0, row);
+      return next;
+    });
   }
 
   addItem(): void {
-    this.items.update((rows) => [...rows, { label: '' }]);
+    this.items.update((rows) => [...rows, { label: '', axisLabel: '' }]);
   }
 
   removeItem(index: number): void {
@@ -429,6 +470,43 @@ export class SubjectQuestionsComponent implements OnInit {
 
   removeLink(index: number): void {
     this.links.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
+  setColumnLabel(index: number, value: string): void {
+    this.columns.update((rows) => rows.map((row, i) => (i === index ? { label: value } : row)));
+  }
+
+  addColumn(): void {
+    this.columns.update((rows) => [...rows, { label: '' }]);
+  }
+
+  removeColumn(index: number): void {
+    this.columns.update((rows) => rows.filter((_, i) => i !== index));
+    this.cards.update((rows) =>
+      rows
+        .filter((row) => row.columnIndex !== index)
+        .map((row) =>
+          row.columnIndex > index ? { ...row, columnIndex: row.columnIndex - 1 } : row,
+        ),
+    );
+  }
+
+  setCardLabel(index: number, value: string): void {
+    this.cards.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+  }
+
+  setCardColumn(index: number, columnIndex: number): void {
+    this.cards.update((rows) =>
+      rows.map((row, i) => (i === index ? { ...row, columnIndex } : row)),
+    );
+  }
+
+  addCard(): void {
+    this.cards.update((rows) => [...rows, { label: '', columnIndex: 0 }]);
+  }
+
+  removeCard(index: number): void {
+    this.cards.update((rows) => rows.filter((_, i) => i !== index));
   }
 
   setSentence(value: string): void {
@@ -478,7 +556,12 @@ export class SubjectQuestionsComponent implements OnInit {
         ? question.pairs.map((pair) => ({ questionSide: pair.questionSide, answerSide: pair.answerSide }))
         : emptyPairs(),
     );
-    this.items.set(question.items.length ? question.items.map((item) => ({ label: item.label })) : emptyItems());
+    this.items.set(
+      question.items.length
+        ? question.items.map((item) => ({ label: item.label, axisLabel: item.axisLabel }))
+        : emptyItems(),
+    );
+    this.timelineEnabled.set(question.timelineEnabled);
     this.statements.set(
       question.statements.length
         ? question.statements.map((row) => ({ label: row.label, truthful: row.truthful }))
@@ -488,6 +571,16 @@ export class SubjectQuestionsComponent implements OnInit {
       question.links.length
         ? question.links.map((row) => ({ leftLabel: row.leftLabel, rightLabel: row.rightLabel }))
         : emptyLinks(),
+    );
+    this.columns.set(
+      question.columns.length
+        ? question.columns.map((row) => ({ label: row.label }))
+        : emptyColumns(),
+    );
+    this.cards.set(
+      question.cards.length
+        ? question.cards.map((row) => ({ label: row.label, columnIndex: row.columnIndex }))
+        : emptyCards(),
     );
     this.sentence.set(question.sentence);
     this.expectedAnswer.set(question.expectedAnswer);
@@ -661,12 +754,15 @@ export class SubjectQuestionsComponent implements OnInit {
     this.items.set(emptyItems());
     this.statements.set(emptyStatements());
     this.links.set(emptyLinks());
+    this.columns.set(emptyColumns());
+    this.cards.set(emptyCards());
     this.sentence.set('');
     this.expectedAnswer.set('');
     this.clickImage.set('');
     this.boardMode.set(PUZZLE_BOARD_MODE.TROUS);
     this.boardImage.set('');
     this.requireAllCorrect.set(true);
+    this.timelineEnabled.set(false);
     this.clickZones.set([]);
     this.puzzleMagnet.set(defaultMagnet());
     this.answers.set([]);
@@ -697,6 +793,8 @@ export class SubjectQuestionsComponent implements OnInit {
       items: this.items(),
       statements: this.statements(),
       links: this.links(),
+      columns: this.columns(),
+      cards: this.cards(),
       sentence: this.sentence(),
       answers: this.answers(),
       decoys: this.decoys(),
@@ -707,6 +805,7 @@ export class SubjectQuestionsComponent implements OnInit {
       requireAllCorrect: this.requireAllCorrect(),
       clickZones: this.clickZones(),
       puzzleMagnet: this.puzzleMagnet(),
+      timelineEnabled: this.timelineEnabled(),
     });
     if (!body) {
       return;
@@ -850,6 +949,18 @@ function gradePreview(
     const total = source.items.length || 1;
     const scorePercent = Math.round((100 * ok) / total);
     return { passed: ok === source.items.length, scorePercent };
+  }
+  if (source.formCode === 'classement') {
+    const byCard = new Map(view.placements().map((row) => [row.cardId, row.columnId]));
+    let ok = 0;
+    source.cards.forEach((card, index) => {
+      if (byCard.get(index + 1) === card.columnIndex + 1) {
+        ok++;
+      }
+    });
+    const total = source.cards.length || 1;
+    const scorePercent = Math.round((100 * ok) / total);
+    return { passed: ok === source.cards.length, scorePercent };
   }
   return { passed: false, scorePercent: 0 };
 }

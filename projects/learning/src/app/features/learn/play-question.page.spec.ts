@@ -49,6 +49,7 @@ describe('PlayQuestionPage', () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('[data-testid="child-play-view-order"]')).toBeTruthy();
     expect(root.querySelectorAll('[data-testid^="child-play-view-order-item-"]').length).toBe(3);
+    expect(root.querySelector('[data-testid^="child-play-view-order-axis-"]')).toBeNull();
 
     (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
     const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
@@ -57,6 +58,29 @@ describe('PlayQuestionPage', () => {
     attempt.flush({ passed: true, scorePercent: 100 });
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+    http.verify();
+  });
+
+  it('order avec ligne du temps affiche le jalon renvoyé par l’API sur chaque étape', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+      questionId: 42,
+      subjectId: 5,
+      formCode: 'order',
+      prompt: '',
+      timelineEnabled: true,
+      items: [
+        { itemId: 1, label: 'Se lever', axisLabel: '7 h' },
+        { itemId: 2, label: 'Partir à l’école', axisLabel: '8 h' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const list = root.querySelector('[data-testid="child-play-view-order"]');
+    expect(list?.classList.contains('timeline')).toBeTrue();
+    expect(root.querySelector('[data-testid="child-play-view-order-axis-1"]')?.textContent).toContain('7 h');
+    expect(root.querySelector('[data-testid="child-play-view-order-axis-2"]')?.textContent).toContain('8 h');
     http.verify();
   });
 

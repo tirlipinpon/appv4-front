@@ -18,6 +18,18 @@ export interface ChildPlayViewPair {
 export interface ChildPlayViewItem {
   itemId?: number;
   label: string;
+  /** Jalon de frise (ex. « 20 minutes »). Affiché seulement si `timelineEnabled`. */
+  axisLabel?: string;
+}
+
+export interface ChildPlayViewColumn {
+  columnId?: number;
+  label: string;
+}
+
+export interface ChildPlayViewCard {
+  cardId?: number;
+  label: string;
 }
 
 export interface ChildPlayViewQuestion {
@@ -28,4 +40,7 @@ export interface ChildPlayViewQuestion {
   statements?: ChildPlayViewStatement[];
   pairs?: ChildPlayViewPair[];
   items?: ChildPlayViewItem[];
+  timelineEnabled?: boolean;
+  columns?: ChildPlayViewColumn[];
+  cards?: ChildPlayViewCard[];
 }

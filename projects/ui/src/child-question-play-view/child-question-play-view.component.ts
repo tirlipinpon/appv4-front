@@ -1,4 +1,11 @@
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray,
+  transferArrayItem,
+} from '@angular/cdk/drag-drop';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,7 +17,9 @@ import {
 } from '@angular/core';
 
 import type {
+  ChildPlayViewCard,
   ChildPlayViewChoice,
+  ChildPlayViewColumn,
   ChildPlayViewItem,
   ChildPlayViewPair,
   ChildPlayViewQuestion,
@@ -21,6 +30,7 @@ export interface OrderItemView {
   key: string;
   itemId?: number;
   label: string;
+  axisLabel?: string;
 }
 
 export interface MemoryCardView {
@@ -28,6 +38,21 @@ export interface MemoryCardView {
   pairKey: string;
   label: string;
 }
+
+export interface ClassCardView {
+  key: string;
+  cardId?: number;
+  label: string;
+}
+
+export interface ClassColumnView {
+  key: string;
+  columnId?: number;
+  label: string;
+  cards: ClassCardView[];
+}
+
+const SOURCE_KEY = 'source';
 
 function shuffleCopy<T>(items: readonly T[]): T[] {
   const next = [...items];
@@ -63,11 +88,29 @@ function toOrderViews(items: readonly ChildPlayViewItem[]): OrderItemView[] {
     key: item.itemId != null ? String(item.itemId) : `i-${index}-${item.label}`,
     itemId: item.itemId,
     label: item.label,
+    axisLabel: item.axisLabel,
   }));
 }
 
+function toClassCard(card: ChildPlayViewCard, index: number): ClassCardView {
+  return {
+    key: card.cardId != null ? String(card.cardId) : `c-${index}-${card.label}`,
+    cardId: card.cardId,
+    label: card.label,
+  };
+}
+
+function toClassColumn(column: ChildPlayViewColumn, index: number): ClassColumnView {
+  return {
+    key: column.columnId != null ? String(column.columnId) : `col-${index}-${column.label}`,
+    columnId: column.columnId,
+    label: column.label,
+    cards: [],
+  };
+}
+
 /**
- * Rendu partagé Learning + Teacher : présentation visuelle enfant (vrai_faux / qcm / memory / order).
+ * Rendu partagé Learning + Teacher : qcm / vrai_faux / memory / order (frise optionnelle) / classement.
  * Teacher : aperçu. Learning : interaction + envoi géré par la page parente.
  */
 @Component({
@@ -87,6 +130,7 @@ export class ChildQuestionPlayViewComponent {
   readonly statementPick = output<{ statementKey: string; value: boolean }>();
   readonly memoryChange = output<void>();
   readonly orderChange = output<void>();
+  readonly classificationChange = output<void>();
 
   private readonly layoutTick = signal(0);
   private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -95,11 +139,25 @@ export class ChildQuestionPlayViewComponent {
   protected readonly isTrueFalse = computed(() => this.question().formCode === 'vrai_faux');
   protected readonly isMemory = computed(() => this.question().formCode === 'memory');
   protected readonly isOrder = computed(() => this.question().formCode === 'order');
+  protected readonly isTimeline = computed(() => this.isOrder() && this.question().timelineEnabled === true);
+  protected readonly isClassification = computed(() => this.question().formCode === 'classement');
   protected readonly playable = computed(
-    () => this.isQcm() || this.isTrueFalse() || this.isMemory() || this.isOrder(),
+    () =>
+      this.isQcm() || this.isTrueFalse() || this.isMemory() || this.isOrder() || this.isClassification(),
   );
 
   readonly orderedItems = signal<OrderItemView[]>([]);
+
+  readonly sourceCards = signal<ClassCardView[]>([]);
+  readonly classColumns = signal<ClassColumnView[]>([]);
+  readonly selectedClassCardKey = signal<string | null>(null);
+
+  protected readonly classListIds = computed(() => [
+    SOURCE_KEY,
+    ...this.classColumns().map((column) => column.key),
+  ]);
+
+  protected readonly remainingCount = computed(() => this.sourceCards().length);
 
   constructor() {
     effect(() => {
@@ -108,6 +166,17 @@ export class ChildQuestionPlayViewComponent {
       if (this.question().formCode === 'order') {
         this.orderedItems.set(shuffleCopy(toOrderViews(items)));
       }
+    });
+    effect(() => {
+      this.layoutTick();
+      if (this.question().formCode !== 'classement') {
+        return;
+      }
+      const cards = shuffleCopy((this.question().cards ?? []).map(toClassCard));
+      const columns = (this.question().columns ?? []).map(toClassColumn);
+      this.sourceCards.set(cards);
+      this.classColumns.set(columns);
+      this.selectedClassCardKey.set(null);
     });
   }
 
@@ -161,6 +230,7 @@ export class ChildQuestionPlayViewComponent {
     this.matchedPairKeys.set(new Set());
     this.flippedKeys.set([]);
     this.flipBusy.set(false);
+    this.selectedClassCardKey.set(null);
     this.layoutTick.update((n) => n + 1);
   }
 
@@ -224,6 +294,27 @@ export class ChildQuestionPlayViewComponent {
 
   hasOrderItems(): boolean {
     return this.orderedItems().length > 0;
+  }
+
+  placements(): { cardId: number; columnId: number }[] {
+    const out: { cardId: number; columnId: number }[] = [];
+    for (const column of this.classColumns()) {
+      if (column.columnId == null) {
+        continue;
+      }
+      for (const card of column.cards) {
+        if (card.cardId == null) {
+          continue;
+        }
+        out.push({ cardId: card.cardId, columnId: column.columnId });
+      }
+    }
+    return out;
+  }
+
+  allCardsPlaced(): boolean {
+    const total = (this.question().cards ?? []).length;
+    return total > 0 && this.sourceCards().length === 0 && this.placements().length === total;
   }
 
   protected statementKey(statement: ChildPlayViewStatement, index = 0): string {
@@ -340,6 +431,98 @@ export class ChildQuestionPlayViewComponent {
       return next;
     });
     this.orderChange.emit();
+  }
+
+  protected onClassDrop(event: CdkDragDrop<ClassCardView[]>, targetKey: string): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    if (event.previousContainer === event.container) {
+      return;
+    }
+    const previous = [...event.previousContainer.data];
+    const current = [...event.container.data];
+    transferArrayItem(previous, current, event.previousIndex, event.currentIndex);
+    this.writeBucket(event.previousContainer.id, previous);
+    this.writeBucket(targetKey, current);
+    this.selectedClassCardKey.set(null);
+    this.classificationChange.emit();
+  }
+
+  protected onClassCardTap(card: ClassCardView): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    this.selectedClassCardKey.update((current) => (current === card.key ? null : card.key));
+  }
+
+  protected onColumnTap(column: ClassColumnView): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    const selected = this.selectedClassCardKey();
+    if (selected == null) {
+      return;
+    }
+    this.moveCardTo(selected, column.key);
+  }
+
+  protected onSourceTap(): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    const selected = this.selectedClassCardKey();
+    if (selected == null) {
+      return;
+    }
+    this.moveCardTo(selected, SOURCE_KEY);
+  }
+
+  private moveCardTo(cardKey: string, targetKey: string): void {
+    const from = this.findBucketKey(cardKey);
+    if (from == null || from === targetKey) {
+      return;
+    }
+    const previous = [...this.readBucket(from)];
+    const index = previous.findIndex((card) => card.key === cardKey);
+    if (index < 0) {
+      return;
+    }
+    const current = [...this.readBucket(targetKey)];
+    transferArrayItem(previous, current, index, current.length);
+    this.writeBucket(from, previous);
+    this.writeBucket(targetKey, current);
+    this.selectedClassCardKey.set(null);
+    this.classificationChange.emit();
+  }
+
+  private findBucketKey(cardKey: string): string | null {
+    if (this.sourceCards().some((card) => card.key === cardKey)) {
+      return SOURCE_KEY;
+    }
+    for (const column of this.classColumns()) {
+      if (column.cards.some((card) => card.key === cardKey)) {
+        return column.key;
+      }
+    }
+    return null;
+  }
+
+  private readBucket(key: string): ClassCardView[] {
+    if (key === SOURCE_KEY) {
+      return this.sourceCards();
+    }
+    return this.classColumns().find((column) => column.key === key)?.cards ?? [];
+  }
+
+  private writeBucket(key: string, cards: ClassCardView[]): void {
+    if (key === SOURCE_KEY) {
+      this.sourceCards.set(cards);
+      return;
+    }
+    this.classColumns.update((columns) =>
+      columns.map((column) => (column.key === key ? { ...column, cards } : column)),
+    );
   }
 
   private clearMismatchTimer(): void {
