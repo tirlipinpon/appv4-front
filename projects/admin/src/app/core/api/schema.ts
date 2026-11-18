@@ -644,6 +644,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/subjects/{subjectId}/questions/{questionId}/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enregistrer une tentative et renvoyer le score */
+        post: operations["submitChildQuestionAttempt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/auth/login": {
         parameters: {
             query?: never;
@@ -976,6 +993,23 @@ export interface paths {
         };
         /** Lister les questions d'une matière liée */
         get: operations["listChildLearningSubjectQuestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ext/subjects/{subjectId}/questions/{questionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire une question jouable (sans solution) */
+        get: operations["getChildPlayQuestion"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1514,6 +1548,22 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
         };
+        SubmitChildAttemptRequest: {
+            selectedChoiceIds?: number[];
+            statements?: components["schemas"]["SubmitStatementAnswer"][];
+        };
+        SubmitStatementAnswer: {
+            /** Format: int64 */
+            statementId?: number;
+            value?: boolean;
+        };
+        ChildAttemptResultResponse: {
+            /** Format: int64 */
+            attemptId?: number;
+            /** Format: int32 */
+            scorePercent?: number;
+            passed?: boolean;
+        };
         ChildLoginRequest: {
             firstName?: string;
             pin?: string;
@@ -1770,6 +1820,26 @@ export interface components {
             subjectId?: number;
             subjectName?: string;
             questions?: components["schemas"]["ChildLearningQuestionItem"][];
+        };
+        ChildPlayChoiceItem: {
+            /** Format: int64 */
+            choiceId?: number;
+            label?: string;
+        };
+        ChildPlayQuestionResponse: {
+            /** Format: int64 */
+            questionId?: number;
+            /** Format: int64 */
+            subjectId?: number;
+            formCode?: string;
+            prompt?: string;
+            choices?: components["schemas"]["ChildPlayChoiceItem"][];
+            statements?: components["schemas"]["ChildPlayStatementItem"][];
+        };
+        ChildPlayStatementItem: {
+            /** Format: int64 */
+            statementId?: number;
+            label?: string;
         };
         ChildProfileResponse: {
             /** Format: int64 */
@@ -3475,6 +3545,62 @@ export interface operations {
             };
         };
     };
+    submitChildQuestionAttempt: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitChildAttemptRequest"];
+            };
+        };
+        responses: {
+            /** @description Tentative enregistrée */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildAttemptResultResponse"];
+                };
+            };
+            /** @description Réponse invalide ou forme non jouable */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière ou question absente / non liée */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     loginChild: {
         parameters: {
             query?: never;
@@ -4079,6 +4205,49 @@ export interface operations {
                 };
             };
             /** @description Matière absente ou non liée */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getChildPlayQuestion: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Contenu jouable */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildPlayQuestionResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière ou question absente / non liée */
             404: {
                 headers: {
                     [name: string]: unknown;

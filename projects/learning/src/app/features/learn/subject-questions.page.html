@@ -1,0 +1,37 @@
+<section class="subject-questions" data-testid="subject-questions-panel">
+  <header class="subject-questions-top">
+    <a routerLink="/learn" class="back" data-testid="subject-questions-back">← Matières</a>
+    <h1 data-testid="subject-questions-title">{{ subjectName() || 'Questions' }}</h1>
+  </header>
+
+  @if (loading()) {
+    <p class="status" data-testid="subject-questions-loading">Chargement…</p>
+  } @else if (error(); as message) {
+    <p class="status error" role="alert" data-testid="subject-questions-error">{{ message }}</p>
+  } @else if (questions().length === 0) {
+    <p class="status" data-testid="subject-questions-empty">Aucune question pour l’instant.</p>
+  } @else {
+    <ul class="list" data-testid="subject-questions-list">
+      @for (question of questions(); track question.questionId) {
+        <li>
+          @if (canPlay(question.formCode)) {
+            <a
+              class="row playable"
+              [routerLink]="['/learn', subjectId(), 'play', question.questionId]"
+              [attr.data-testid]="'subject-question-' + question.questionId"
+            >
+              <span class="form">{{ formLabel(question.formCode) }}</span>
+              <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
+            </a>
+          } @else {
+            <div class="row locked" [attr.data-testid]="'subject-question-' + question.questionId">
+              <span class="form">{{ formLabel(question.formCode) }}</span>
+              <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
+              <span class="hint">Pas encore jouable</span>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

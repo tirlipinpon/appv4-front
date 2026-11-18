@@ -21,29 +21,32 @@
     } @else {
       <ul class="learn-library-grid" data-testid="learn-subject-grid">
         @for (subject of subjects(); track subject.subjectId) {
-          <li
-            class="learn-subject-card"
-            [style.--card-tint]="cardTint(subject.iconCode)"
-            [attr.data-testid]="'learn-subject-' + subject.subjectId"
-          >
-            <div class="learn-subject-card-top">
-              <span class="learn-subject-pill">{{ questionLabel(subject.questionCount) }}</span>
-            </div>
-            <div class="learn-subject-card-body">
-              <h3>{{ subject.name }}</h3>
-              @if (subject.grade) {
-                <p>{{ subject.grade }}</p>
-              }
-            </div>
-            <div class="learn-subject-card-bottom">
-              @if (iconSrc(subject.iconCode); as src) {
-                <img class="learn-subject-icon" [src]="src" alt="" aria-hidden="true" loading="lazy" />
-              } @else if (iconEmoji(subject.iconCode); as emoji) {
-                <span class="learn-subject-icon" aria-hidden="true">{{ emoji }}</span>
-              } @else {
-                <span class="learn-subject-icon learn-subject-icon-empty" aria-hidden="true"></span>
-              }
-            </div>
+          <li>
+            <a
+              class="learn-subject-card"
+              [style.--card-tint]="cardTint(subject.iconCode)"
+              [routerLink]="['/learn', subject.subjectId]"
+              [attr.data-testid]="'learn-subject-' + subject.subjectId"
+            >
+              <div class="learn-subject-card-top">
+                <span class="learn-subject-pill">{{ questionLabel(subject.questionCount) }}</span>
+              </div>
+              <div class="learn-subject-card-body">
+                <h3>{{ subject.name }}</h3>
+                @if (subject.grade) {
+                  <p>{{ subject.grade }}</p>
+                }
+              </div>
+              <div class="learn-subject-card-bottom">
+                @if (iconSrc(subject.iconCode); as src) {
+                  <img class="learn-subject-icon" [src]="src" alt="" aria-hidden="true" loading="lazy" />
+                } @else if (iconEmoji(subject.iconCode); as emoji) {
+                  <span class="learn-subject-icon" aria-hidden="true">{{ emoji }}</span>
+                } @else {
+                  <span class="learn-subject-icon learn-subject-icon-empty" aria-hidden="true"></span>
+                }
+              </div>
+            </a>
           </li>
         }
       </ul>
