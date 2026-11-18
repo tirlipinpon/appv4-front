@@ -1,0 +1,227 @@
+:host {
+  display: block;
+}
+
+.subject-board {
+  padding: 8px 4px 24px;
+  color: var(--app-text, #f5f5ff);
+}
+
+.subject-board-top {
+  margin-bottom: 16px;
+}
+
+.subject-board-back {
+  display: inline-block;
+  margin-bottom: 6px;
+  color: color-mix(in srgb, var(--app-text, #fff) 70%, transparent);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.subject-board-top h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+}
+
+.subject-board-status {
+  margin: 16px 0 0;
+  color: color-mix(in srgb, var(--app-text, #fff) 70%, transparent);
+}
+
+.subject-board-error {
+  color: #ff8a9a;
+}
+
+.subject-board-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 1.1rem 1rem 1.2rem;
+  border-radius: 1.4rem;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--card-tint, #c1b4ff) 42%, #241f3d), #1c1830 70%);
+  border: 1px solid color-mix(in srgb, var(--card-tint, #c1b4ff) 45%, transparent);
+}
+
+.subject-board-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.subject-board-chip {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #fff 16%, transparent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.subject-board-tagline {
+  margin: 12px 0 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.subject-board-desc {
+  margin: 6px 0 0;
+  max-width: 28rem;
+  color: color-mix(in srgb, var(--app-text, #fff) 78%, transparent);
+  font-size: 0.92rem;
+}
+
+.subject-board-meter {
+  margin-top: 14px;
+  height: 0.7rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, #fff 18%, transparent);
+}
+
+.subject-board-meter-fill {
+  display: block;
+  height: 100%;
+  background: #c1b4ff;
+}
+
+.subject-board-progress-label,
+.subject-board-stat-label,
+.subject-board-resume-meta,
+.subject-board-resume-eyebrow,
+.subject-board-topic p {
+  margin: 0;
+  color: color-mix(in srgb, var(--app-text, #fff) 70%, transparent);
+  font-size: 0.85rem;
+}
+
+.subject-board-progress-label {
+  margin-top: 8px;
+}
+
+.subject-board-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.subject-board-stat-value {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.subject-board-stat-value--text {
+  font-size: 1rem;
+}
+
+.subject-board-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.subject-board-continue,
+.subject-board-play {
+  display: inline-flex;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  background: #6d5efc;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.subject-board-time {
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #fff 14%, transparent);
+  font-size: 0.85rem;
+}
+
+.subject-board-hero-icon {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  font-size: 2.4rem;
+  opacity: 0.85;
+}
+
+.subject-board-hero-icon img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: contain;
+}
+
+.subject-board-resume {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 0.95rem 1rem;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, #2bb7a9 28%, #1c1830);
+  border: 1px solid color-mix(in srgb, #7de8d8 40%, transparent);
+}
+
+.subject-board-resume h2,
+.subject-board-topics h2,
+.subject-board-topic h3 {
+  margin: 0;
+}
+
+.subject-board-resume h2 {
+  margin-top: 4px;
+  font-size: 1.1rem;
+}
+
+.subject-board-resume-meta {
+  margin-top: 4px;
+}
+
+.subject-board-topics {
+  margin-top: 22px;
+}
+
+.subject-board-topics h2 {
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+}
+
+.subject-board-topic-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.subject-board-topic {
+  padding: 0.9rem;
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--app-surface-card, #1c1830) 88%, #6d5efc);
+  border: 1px solid color-mix(in srgb, #c1b4ff 28%, transparent);
+}
+
+.subject-board-topic-icon {
+  margin-bottom: 8px;
+  font-size: 1.4rem;
+}
+
+.subject-board-topic-icon img {
+  width: 1.6rem;
+  height: 1.6rem;
+  object-fit: contain;
+}
+
+.subject-board-topic h3 {
+  font-size: 1rem;
+}
+
+.subject-board-topic p {
+  margin-top: 4px;
+}

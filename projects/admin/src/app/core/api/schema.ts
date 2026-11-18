@@ -1001,6 +1001,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/subjects/{subjectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire le board d'une matière liée */
+        get: operations["readChildSubjectBoard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/subjects/{subjectId}/questions": {
         parameters: {
             query?: never;
@@ -1884,6 +1901,53 @@ export interface components {
         };
         ChildLearningSubjectsResponse: {
             subjects?: components["schemas"]["ChildLearningSubjectItem"][];
+        };
+        ChildSubjectBoardResponse: {
+            /** Format: int64 */
+            subjectId?: number;
+            name?: string;
+            iconCode?: string;
+            grade?: string;
+            description?: string;
+            tagline?: string;
+            worldLabel?: string;
+            ageLabel?: string;
+            levelLabel?: string;
+            /** Format: int32 */
+            xpEarned?: number;
+            /** Format: int32 */
+            badgeCount?: number;
+            /** Format: int32 */
+            lessonsCompleted?: number;
+            /** Format: int32 */
+            lessonsTotal?: number;
+            /** Format: int32 */
+            minutesLeft?: number;
+            continueLesson?: components["schemas"]["ChildSubjectContinueLesson"];
+            topics?: components["schemas"]["ChildSubjectTopicCard"][];
+        };
+        ChildSubjectContinueLesson: {
+            /** Format: int64 */
+            lessonId?: number;
+            title?: string;
+            /** Format: int32 */
+            progressPercent?: number;
+            /** Format: int32 */
+            minutesLeft?: number;
+            /** Format: int32 */
+            rewardXp?: number;
+            /** Format: int64 */
+            playQuestionId?: number;
+        };
+        ChildSubjectTopicCard: {
+            /** Format: int64 */
+            topicId?: number;
+            name?: string;
+            iconCode?: string;
+            /** Format: int32 */
+            lessonsCompleted?: number;
+            /** Format: int32 */
+            lessonsTotal?: number;
         };
         ChildLearningQuestionItem: {
             /** Format: int64 */
@@ -4279,6 +4343,48 @@ export interface operations {
             };
             /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildSubjectBoard: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path: {
+                subjectId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Board de la matière */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildSubjectBoardResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière absente ou non liée */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
