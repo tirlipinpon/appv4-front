@@ -67,6 +67,9 @@
   --app-radius-card: 28px;
   --app-form-vrai-faux: #2bb673;
   --app-form-vrai-faux-soft: #e3f7ec;
+  --app-tf-btn-bg: #e8eaf5;
+  --app-tf-btn-fg: #1c2b3a;
+  --app-tf-btn-border: transparent;
   --app-font: Nunito, "Segoe UI", sans-serif;
   display: block;
   min-height: 100%;
@@ -83,6 +86,11 @@
   --app-error: #ff8a80;
   --app-outline: rgba(255, 255, 255, 0.08);
   --app-shadow-soft: none;
+  /* Pastilles claires + texte sombre : lisible sur carte dark (évite blanc sur #e8eaf5). */
+  --app-tf-btn-bg: #f2f3fb;
+  --app-tf-btn-fg: #1c2b3a;
+  --app-tf-btn-border: rgba(255, 255, 255, 0.35);
+  --app-form-vrai-faux-soft: #d8f5e6;
   color-scheme: dark;
 }
 
@@ -94,5 +102,8 @@
   --app-error: #b3261e;
   --app-outline: #e4e7ee;
   --app-shadow-soft: 0 8px 20px rgba(28, 43, 58, 0.08);
+  --app-tf-btn-bg: #e8eaf5;
+  --app-tf-btn-fg: #1c2b3a;
+  --app-tf-btn-border: transparent;
   color-scheme: light;
 }
