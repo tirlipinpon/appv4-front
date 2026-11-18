@@ -270,6 +270,83 @@
         </div>
       }
 
+      @if (selectedCode() === 'classement') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <p class="hint">Colonnes</p>
+          @for (column of columns(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Colonne {{ $index + 1 }}</mat-label>
+                <input
+                  matInput
+                  [value]="column.label"
+                  [disabled]="saving()"
+                  (input)="setColumnLabel($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeColumn($index)">
+                Enlever
+              </button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addColumn()">
+            Ajouter une colonne
+          </button>
+          <p class="hint">Cartes</p>
+          @for (card of cards(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Carte</mat-label>
+                <input
+                  matInput
+                  [value]="card.label"
+                  [disabled]="saving()"
+                  (input)="setCardLabel($index, inputValue($event))"
+                />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Colonne juste</mat-label>
+                <mat-select
+                  [value]="card.columnIndex"
+                  [disabled]="saving()"
+                  (selectionChange)="setCardColumn($index, $event.value)"
+                >
+                  @for (column of columns(); track $index; let colIndex = $index) {
+                    <mat-option [value]="colIndex">
+                      {{ column.label || 'Colonne ' + (colIndex + 1) }}
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <button mat-button type="button" [disabled]="saving()" (click)="removeCard($index)">
+                Enlever
+              </button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addCard()">
+            Ajouter une carte
+          </button>
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
       @if (selectedCode() === 'case_vide') {
         <div class="editor">
           @if (editingId()) {
@@ -595,6 +672,21 @@
                   <li>{{ link.leftLabel }} — {{ link.rightLabel }}</li>
                 }
               </ul>
+            } @else if (question.formCode === 'classement') {
+              <ul class="answers">
+                @for (column of question.columns; track $index; let colIndex = $index) {
+                  <li>
+                    {{ column.label }}
+                    <ul>
+                      @for (card of question.cards; track $index) {
+                        @if (card.columnIndex === colIndex) {
+                          <li>{{ card.label }}</li>
+                        }
+                      }
+                    </ul>
+                  </li>
+                }
+              </ul>
             } @else if (question.formCode === 'vrai_faux') {
               <ul class="answers">
                 @for (statement of question.statements; track $index) {
@@ -685,6 +777,7 @@
         (choiceToggle)="onPreviewSelectionChange()"
         (statementPick)="onPreviewSelectionChange()"
         (memoryChange)="onPreviewSelectionChange()"
+        (classificationChange)="onPreviewSelectionChange()"
       />
       @if (previewResult() === null) {
         <button

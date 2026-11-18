@@ -1149,6 +1149,8 @@ export interface components {
             items?: components["schemas"]["TeacherQuestionItemInput"][];
             statements?: components["schemas"]["TeacherQuestionStatementInput"][];
             links?: components["schemas"]["TeacherQuestionLinkInput"][];
+            columns?: components["schemas"]["TeacherQuestionColumnInput"][];
+            cards?: components["schemas"]["TeacherQuestionCardInput"][];
             sentence?: string;
             answers?: components["schemas"]["TeacherQuestionGapWordInput"][];
             decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
@@ -1162,9 +1164,17 @@ export interface components {
             /** Format: double */
             snapDistance?: number;
         };
+        TeacherQuestionCardInput: {
+            label?: string;
+            /** Format: int32 */
+            columnIndex?: number;
+        };
         TeacherQuestionChoiceInput: {
             label?: string;
             correct?: boolean;
+        };
+        TeacherQuestionColumnInput: {
+            label?: string;
         };
         TeacherQuestionGapWordInput: {
             label?: string;
@@ -1211,11 +1221,23 @@ export interface components {
             message?: string;
             code?: string;
         };
+        TeacherQuestionCardItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+            /** Format: int64 */
+            correctColumnId?: number;
+        };
         TeacherQuestionChoiceItem: {
             /** Format: int64 */
             id?: number;
             label?: string;
             correct?: boolean;
+        };
+        TeacherQuestionColumnItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
         };
         TeacherQuestionGapWordItem: {
             /** Format: int64 */
@@ -1283,6 +1305,8 @@ export interface components {
             items?: components["schemas"]["TeacherQuestionItem"][];
             statements?: components["schemas"]["TeacherQuestionStatementItem"][];
             links?: components["schemas"]["TeacherQuestionLinkItem"][];
+            columns?: components["schemas"]["TeacherQuestionColumnItem"][];
+            cards?: components["schemas"]["TeacherQuestionCardItem"][];
             sentence?: string;
             answers?: components["schemas"]["TeacherQuestionGapWordItem"][];
             decoys?: components["schemas"]["TeacherQuestionGapWordItem"][];
@@ -1603,6 +1627,14 @@ export interface components {
             selectedChoiceIds?: number[];
             statements?: components["schemas"]["SubmitStatementAnswer"][];
             matchedPairIds?: number[];
+            orderedItemIds?: number[];
+            placements?: components["schemas"]["SubmitPlacementAnswer"][];
+        };
+        SubmitPlacementAnswer: {
+            /** Format: int64 */
+            cardId?: number;
+            /** Format: int64 */
+            columnId?: number;
         };
         SubmitStatementAnswer: {
             /** Format: int64 */
@@ -1962,9 +1994,24 @@ export interface components {
             subjectName?: string;
             questions?: components["schemas"]["ChildLearningQuestionItem"][];
         };
+        ChildPlayCardItem: {
+            /** Format: int64 */
+            cardId?: number;
+            label?: string;
+        };
         ChildPlayChoiceItem: {
             /** Format: int64 */
             choiceId?: number;
+            label?: string;
+        };
+        ChildPlayColumnItem: {
+            /** Format: int64 */
+            columnId?: number;
+            label?: string;
+        };
+        ChildPlayItemItem: {
+            /** Format: int64 */
+            itemId?: number;
             label?: string;
         };
         ChildPlayPairItem: {
@@ -1983,6 +2030,9 @@ export interface components {
             choices?: components["schemas"]["ChildPlayChoiceItem"][];
             statements?: components["schemas"]["ChildPlayStatementItem"][];
             pairs?: components["schemas"]["ChildPlayPairItem"][];
+            items?: components["schemas"]["ChildPlayItemItem"][];
+            columns?: components["schemas"]["ChildPlayColumnItem"][];
+            cards?: components["schemas"]["ChildPlayCardItem"][];
         };
         ChildPlayStatementItem: {
             /** Format: int64 */
