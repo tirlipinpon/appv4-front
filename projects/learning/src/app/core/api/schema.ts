@@ -627,6 +627,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Connexion enfant par prénom et code */
+        post: operations["loginChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects/{subjectId}/followers": {
         parameters: {
             query?: never;
@@ -908,6 +925,23 @@ export interface paths {
         };
         /** Lister les demandes professeur (pending, approved, revoked), lecture bornée */
         get: operations["listTeacherRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ext/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Relire l'enfant de la session */
+        get: operations["readChildSession"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1387,6 +1421,16 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
         };
+        ChildLoginRequest: {
+            firstName?: string;
+            pin?: string;
+        };
+        ChildLoginResponse: {
+            token?: string;
+            /** Format: int64 */
+            expiresAtEpochSeconds?: number;
+            firstName?: string;
+        };
         TeacherSubjectAddableCourse: {
             name?: string;
             /** Format: int64 */
@@ -1607,6 +1651,11 @@ export interface components {
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
             truncated?: boolean;
+        };
+        ChildSessionResponse: {
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
         };
     };
     responses: never;
@@ -3256,6 +3305,39 @@ export interface operations {
             };
         };
     };
+    loginChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChildLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Session enfant ouverte */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildLoginResponse"];
+                };
+            };
+            /** @description Prénom ou code refusé (message unique) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     listTeacherSubjectFollowers: {
         parameters: {
             query?: never;
@@ -3755,6 +3837,37 @@ export interface operations {
             };
             /** @description Le compte n'est pas admin */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildSession: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fiche encore jouable */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildSessionResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

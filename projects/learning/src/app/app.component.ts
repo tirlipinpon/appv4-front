@@ -1,10 +1,17 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+
+import { ThemeService } from './core/theme/theme.service';
 
 @Component({
   selector: 'app-root',
-  imports: [],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
+  host: {
+    '[class]': 'theme.hostClass()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: './app.component.scss',
 })
-export class AppComponent {}
+export class AppComponent {
+  protected readonly theme = inject(ThemeService);
+}

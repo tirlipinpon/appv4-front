@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const tokens = JSON.parse(readFileSync(new URL('../design/tokens.json', import.meta.url), 'utf8'));
-const css = readFileSync(new URL('../projects/admin/src/styles/tokens.scss', import.meta.url), 'utf8');
+const css = readFileSync(new URL('../projects/ui/src/styles/tokens.scss', import.meta.url), 'utf8');
+const adminTokens = readFileSync(new URL('../projects/admin/src/styles/tokens.scss', import.meta.url), 'utf8');
+const learnStyles = readFileSync(new URL('../projects/learning/src/styles.scss', import.meta.url), 'utf8');
 const theme = readFileSync(new URL('../projects/admin/src/styles.scss', import.meta.url), 'utf8');
 
 const declared = {
@@ -28,7 +30,7 @@ const declared = {
   '--app-content-list': `${tokens.content.listRem}rem`,
 };
 
-test('les variables CSS admin reprennent design/tokens.json', () => {
+test('les variables CSS partagées reprennent design/tokens.json', () => {
   for (const [name, value] of Object.entries(declared)) {
     assert.match(css, new RegExp(`${name}:\\s*${escapeRegExp(value)};`));
   }
@@ -38,6 +40,11 @@ test('les variables CSS admin reprennent design/tokens.json', () => {
 test('le thème Material reprend la couleur primaire du contrat', () => {
   assert.match(theme, new RegExp(`primary:\\s*${tokens.color.primary}`));
   assert.match(theme, new RegExp(`on-primary:\\s*${tokens.color.onPrimary}`));
+});
+
+test('admin et learning chargent la même librairie graphique', () => {
+  assert.match(adminTokens, /@forward ['"]\.\.\/\.\.\/\.\.\/ui\/src\/styles\/tokens['"]/);
+  assert.match(learnStyles, /@use ['"]\.\.\/\.\.\/ui\/src\/styles\/ui['"]/);
 });
 
 function escapeRegExp(value) {

@@ -1,0 +1,17 @@
+.ui-theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--app-outline);
+  border-radius: 14px;
+  background: var(--app-surface-card);
+  color: var(--app-text);
+  box-shadow: var(--app-shadow-soft, none);
+  cursor: pointer;
+}
+
+.ui-theme-toggle:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
