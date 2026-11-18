@@ -114,3 +114,107 @@
 .home-week-day--played .home-week-dot {
   background: #c1b4ff;
 }
+
+.home-mission {
+  margin-top: 28px;
+}
+
+.home-mission-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.home-mission-head h2,
+.home-mission-objective,
+.home-mission-remaining,
+.home-mission-count,
+.home-plan-label,
+.home-plan-meta {
+  margin: 0;
+}
+
+.home-mission-head h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.home-mission-status,
+.home-plan-meta,
+.home-mission-remaining,
+.home-mission-count {
+  color: color-mix(in srgb, var(--app-text, #fff) 68%, transparent);
+  font-size: 0.85rem;
+}
+
+.home-mission-objective {
+  margin-top: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.home-mission-remaining,
+.home-mission-count {
+  margin-top: 6px;
+}
+
+.home-mission-meter {
+  margin-top: 12px;
+  height: 0.7rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--app-text, #fff) 16%, transparent);
+}
+
+.home-mission-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #c1b4ff;
+}
+
+.home-play {
+  display: inline-flex;
+  margin-top: 14px;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  background: #6d5efc;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.home-play--small {
+  margin-top: 0;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+.home-plan {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-plan-task {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0.85rem 0.9rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--app-surface-card, #1c1830) 88%, #6d5efc);
+  border: 1px solid color-mix(in srgb, #c1b4ff 28%, transparent);
+}
+
+.home-plan-label {
+  font-weight: 700;
+}
+
+.home-plan-meta {
+  margin-top: 4px;
+}

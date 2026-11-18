@@ -967,6 +967,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la mission et le plan du jour */
+        get: operations["readChildToday"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/subjects": {
         parameters: {
             query?: never;
@@ -1813,6 +1830,48 @@ export interface components {
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
             truncated?: boolean;
+        };
+        ChildTodayMission: {
+            /** Format: int64 */
+            id?: number;
+            objective?: string;
+            /** Format: int32 */
+            progress?: number;
+            /** Format: int32 */
+            target?: number;
+            /** Format: int32 */
+            rewardXp?: number;
+            status?: string;
+            statusLabel?: string;
+            /** Format: int64 */
+            secondsRemaining?: number;
+            /** Format: int64 */
+            playSubjectId?: number;
+            /** Format: int64 */
+            playQuestionId?: number;
+            playable?: boolean;
+            tasks?: components["schemas"]["ChildTodayTask"][];
+        };
+        ChildTodayResponse: {
+            mission?: components["schemas"]["ChildTodayMission"];
+        };
+        ChildTodayTask: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+            /** Format: int32 */
+            progress?: number;
+            /** Format: int32 */
+            target?: number;
+            /** Format: int32 */
+            rewardXp?: number;
+            status?: string;
+            statusLabel?: string;
+            /** Format: int64 */
+            subjectId?: number;
+            /** Format: int64 */
+            questionId?: number;
+            playable?: boolean;
         };
         ChildLearningSubjectItem: {
             /** Format: int64 */
@@ -4158,6 +4217,37 @@ export interface operations {
             };
             /** @description Le compte n'est pas admin */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildToday: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mission du jour, ou mission absente */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildTodayResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
