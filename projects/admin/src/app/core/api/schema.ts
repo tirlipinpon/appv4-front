@@ -1018,6 +1018,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire XP, streak, palier et semaine */
+        get: operations["readChildProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/me": {
         parameters: {
             query?: never;
@@ -1840,6 +1857,14 @@ export interface components {
             /** Format: int64 */
             statementId?: number;
             label?: string;
+        };
+        ChildProgressResponse: {
+            /** Format: int32 */
+            xpTotal?: number;
+            /** Format: int32 */
+            currentStreak?: number;
+            leagueLabel?: string;
+            weekDays?: boolean[];
         };
         ChildProfileResponse: {
             /** Format: int64 */
@@ -4249,6 +4274,37 @@ export interface operations {
             };
             /** @description Matière ou question absente / non liée */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildProgress: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Progression de la fiche active */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildProgressResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

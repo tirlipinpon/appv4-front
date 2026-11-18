@@ -20,3 +20,9 @@ export type ChildLearningQuestionItem = components['schemas']['ChildLearningQues
 export type ChildPlayQuestionResponse = components['schemas']['ChildPlayQuestionResponse'];
 export type SubmitChildAttemptRequest = components['schemas']['SubmitChildAttemptRequest'];
 export type ChildAttemptResultResponse = components['schemas']['ChildAttemptResultResponse'];
+export type ChildProgressResponse = Required<
+  Pick<
+    components['schemas']['ChildProgressResponse'],
+    'xpTotal' | 'currentStreak' | 'leagueLabel' | 'weekDays'
+  >
+>;

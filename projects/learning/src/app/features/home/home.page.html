@@ -1,4 +1,46 @@
-<section class="learn-panel" data-testid="home-panel">
-  <h1>Home</h1>
-  <p>Tu es chez toi.</p>
+<section class="home-progress" data-testid="home-panel">
+  <header class="home-progress-top">
+    <p class="home-progress-eyebrow">Progression</p>
+    <h1>Home</h1>
+  </header>
+
+  @if (loading()) {
+    <p class="home-progress-status" data-testid="home-progress-loading">Chargement…</p>
+  } @else if (error()) {
+    <p class="home-progress-status home-progress-error" data-testid="home-progress-error">{{ error() }}</p>
+  } @else if (progress(); as p) {
+    <div class="home-progress-stats" data-testid="home-progress-stats">
+      <article class="home-stat" data-testid="home-stat-streak">
+        <p class="home-stat-label">Série</p>
+        <p class="home-stat-value">{{ p.currentStreak }}</p>
+        <p class="home-stat-hint">jours</p>
+      </article>
+      <article class="home-stat" data-testid="home-stat-xp">
+        <p class="home-stat-label">XP</p>
+        <p class="home-stat-value">{{ p.xpTotal }}</p>
+        <p class="home-stat-hint">total</p>
+      </article>
+      <article class="home-stat" data-testid="home-stat-league">
+        <p class="home-stat-label">Palier</p>
+        <p class="home-stat-value home-stat-value--text">{{ p.leagueLabel }}</p>
+        <p class="home-stat-hint">ligue</p>
+      </article>
+    </div>
+
+    <section class="home-week" data-testid="home-week">
+      <h2>Cette semaine</h2>
+      <ul class="home-week-grid">
+        @for (cell of weekCells(); track cell.label + $index) {
+          <li
+            class="home-week-day"
+            [class.home-week-day--played]="cell.played"
+            [attr.data-played]="cell.played ? 'true' : 'false'"
+          >
+            <span class="home-week-label">{{ cell.label }}</span>
+            <span class="home-week-dot" aria-hidden="true"></span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
 </section>
