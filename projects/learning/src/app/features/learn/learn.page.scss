@@ -115,6 +115,7 @@
   border-radius: 1rem;
   display: grid;
   place-items: center;
+  object-fit: contain;
   background: color-mix(in srgb, #fff 55%, transparent);
   font-size: 1.55rem;
 }

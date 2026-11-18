@@ -1,134 +1,53 @@
 /**
- * Librairie d'icônes matières (LEARN-29).
- * Codes = contrat API (`iconCode` / `iconChoices`). Pas d'invention hors liste.
+ * Affichage des icônes matières Learn (legacy emoji ou Iconify `prefix:name`).
  */
-export const SUBJECT_ICONS = [
-  { code: 'math', label: 'Mathématiques', emoji: '➗', tint: '#C1B4FF' },
-  { code: 'numbers', label: 'Nombres', emoji: '🔢', tint: '#D4C8FF' },
-  { code: 'counting', label: 'Comptage', emoji: '☝️', tint: '#C8D4FF' },
-  { code: 'geometry', label: 'Géométrie', emoji: '📐', tint: '#B8E0FF' },
-  { code: 'shapes', label: 'Formes', emoji: '⬛', tint: '#BBE4FF' },
-  { code: 'fractions', label: 'Fractions', emoji: '½', tint: '#C1F0D1' },
-  { code: 'algebra', label: 'Algèbre', emoji: '𝑥', tint: '#C1B4FF' },
-  { code: 'calculator', label: 'Calculatrice', emoji: '🧮', tint: '#E2D4FF' },
-  { code: 'clock', label: 'Horloge / temps', emoji: '🕐', tint: '#FFE5A3' },
-  { code: 'measure', label: 'Mesures', emoji: '📏', tint: '#FFE0B8' },
-  { code: 'money', label: 'Argent', emoji: '💶', tint: '#D4F5C8' },
-  { code: 'alphabet', label: 'Alphabet', emoji: '🔤', tint: '#FFE5A3' },
-  { code: 'letters', label: 'Lettres', emoji: 'Abc', tint: '#FFE5A3' },
-  { code: 'reading', label: 'Lecture', emoji: '👀', tint: '#FFB8C1' },
-  { code: 'writing', label: 'Écriture', emoji: '✍️', tint: '#FFC4E1' },
-  { code: 'words', label: 'Mots', emoji: '💬', tint: '#FFB8C1' },
-  { code: 'vocabulary', label: 'Vocabulaire', emoji: '📝', tint: '#FFC4E1' },
-  { code: 'grammar', label: 'Grammaire', emoji: '📖', tint: '#E2D4FF' },
-  { code: 'spelling', label: 'Orthographe', emoji: '✏️', tint: '#FFE0B8' },
-  { code: 'poetry', label: 'Poésie', emoji: '🪶', tint: '#FFC4E1' },
-  { code: 'story', label: 'Histoire / conte', emoji: '📕', tint: '#FFB8C1' },
-  { code: 'books', label: 'Livres', emoji: '📚', tint: '#E2D4FF' },
-  { code: 'library', label: 'Bibliothèque', emoji: '🏛️', tint: '#D7D2FF' },
-  { code: 'language', label: 'Langues', emoji: '🗣️', tint: '#BBE4FF' },
-  { code: 'english', label: 'Anglais', emoji: '🇬🇧', tint: '#B8E0FF' },
-  { code: 'dutch', label: 'Néerlandais', emoji: '🇳🇱', tint: '#FFE5A3' },
-  { code: 'spanish', label: 'Espagnol', emoji: '🇪🇸', tint: '#FFB8C1' },
-  { code: 'german', label: 'Allemand', emoji: '🇩🇪', tint: '#FFE0B8' },
-  { code: 'science', label: 'Sciences', emoji: '🔬', tint: '#C8F0F0' },
-  { code: 'nature', label: 'Nature', emoji: '🌿', tint: '#C1F0D1' },
-  { code: 'plants', label: 'Plantes', emoji: '🌱', tint: '#D4F5C8' },
-  { code: 'animals', label: 'Animaux', emoji: '🦁', tint: '#C1F0D1' },
-  { code: 'insects', label: 'Insectes', emoji: '🐛', tint: '#D4F5C8' },
-  { code: 'ocean', label: 'Océan', emoji: '🌊', tint: '#BBE4FF' },
-  { code: 'space', label: 'Espace', emoji: '🚀', tint: '#C1B4FF' },
-  { code: 'weather', label: 'Météo', emoji: '⛅', tint: '#B8E0FF' },
-  { code: 'earth', label: 'Terre', emoji: '🌎', tint: '#C1F0D1' },
-  { code: 'globe', label: 'Monde', emoji: '🌐', tint: '#BBE4FF' },
-  { code: 'map', label: 'Carte', emoji: '🗺️', tint: '#FFE0B8' },
-  { code: 'history', label: 'Histoire', emoji: '🏺', tint: '#FFE5A3' },
-  { code: 'geography', label: 'Géographie', emoji: '🧭', tint: '#B8E0FF' },
-  { code: 'civics', label: 'Citoyenneté', emoji: '⚖️', tint: '#FFC4E1' },
-  { code: 'knowledge', label: 'Connaissances', emoji: '💡', tint: '#BBE4FF' },
-  { code: 'discovery', label: 'Découverte', emoji: '🔍', tint: '#C8F0F0' },
-  { code: 'experiment', label: 'Expérience', emoji: '🧪', tint: '#C8F0F0' },
-  { code: 'lab', label: 'Laboratoire', emoji: '🥼', tint: '#C8F0F0' },
-  { code: 'music', label: 'Musique', emoji: '🎵', tint: '#FFD0E8' },
-  { code: 'singing', label: 'Chant', emoji: '🎤', tint: '#FFC4E1' },
-  { code: 'instrument', label: 'Instrument', emoji: '🎻', tint: '#FFD0E8' },
-  { code: 'art', label: 'Arts', emoji: '🎨', tint: '#FFE0B8' },
-  { code: 'drawing', label: 'Dessin', emoji: '🖌️', tint: '#FFE5A3' },
-  { code: 'painting', label: 'Peinture', emoji: '🖼️', tint: '#FFE0B8' },
-  { code: 'craft', label: 'Bricolage', emoji: '✂️', tint: '#FFE5A3' },
-  { code: 'colors', label: 'Couleurs', emoji: '🌈', tint: '#FFC4E1' },
-  { code: 'sport', label: 'Sport', emoji: '⚽', tint: '#D4F5C8' },
-  { code: 'football', label: 'Football', emoji: '🏈', tint: '#D4F5C8' },
-  { code: 'basketball', label: 'Basket', emoji: '🏀', tint: '#FFE0B8' },
-  { code: 'swim', label: 'Natation', emoji: '🏊', tint: '#BBE4FF' },
-  { code: 'dance', label: 'Danse', emoji: '💃', tint: '#FFC4E1' },
-  { code: 'yoga', label: 'Yoga', emoji: '🧘', tint: '#C1F0D1' },
-  { code: 'run', label: 'Course', emoji: '🏃', tint: '#D4F5C8' },
-  { code: 'bike', label: 'Vélo', emoji: '🚲', tint: '#C1F0D1' },
-  { code: 'body', label: 'Corps humain', emoji: '🧍', tint: '#FFB8C1' },
-  { code: 'health', label: 'Santé', emoji: '❤️', tint: '#FFB8C1' },
-  { code: 'food', label: 'Alimentation', emoji: '🍽️', tint: '#FFE5A3' },
-  { code: 'fruit', label: 'Fruits', emoji: '🍎', tint: '#FFB8C1' },
-  { code: 'vegetables', label: 'Légumes', emoji: '🥕', tint: '#D4F5C8' },
-  { code: 'kitchen', label: 'Cuisine', emoji: '👨‍🍳', tint: '#FFE0B8' },
-  { code: 'home', label: 'Maison', emoji: '🏠', tint: '#FFE5A3' },
-  { code: 'family', label: 'Famille', emoji: '👨‍👩‍👧', tint: '#FFC4E1' },
-  { code: 'friends', label: 'Amis', emoji: '🤝', tint: '#C1F0D1' },
-  { code: 'emotions', label: 'Émotions', emoji: '😊', tint: '#FFE5A3' },
-  { code: 'opposites', label: 'Contraires', emoji: '↕️', tint: '#FFC4E1' },
-  { code: 'seasons', label: 'Saisons', emoji: '🍂', tint: '#FFE0B8' },
-  { code: 'calendar', label: 'Calendrier', emoji: '📅', tint: '#BBE4FF' },
-  { code: 'school', label: 'École', emoji: '🏫', tint: '#C1B4FF' },
-  { code: 'pencil', label: 'Crayon', emoji: '✏️', tint: '#FFE5A3' },
-  { code: 'backpack', label: 'Cartable', emoji: '🎒', tint: '#B8E0FF' },
-  { code: 'computer', label: 'Ordinateur', emoji: '💻', tint: '#D7D2FF' },
-  { code: 'tablet', label: 'Tablette', emoji: '📱', tint: '#C1B4FF' },
-  { code: 'robot', label: 'Robotique', emoji: '🤖', tint: '#C8F0F0' },
-  { code: 'code', label: 'Code', emoji: '💻', tint: '#D7D2FF' },
-  { code: 'puzzle', label: 'Puzzle', emoji: '🧩', tint: '#FFC4E1' },
-  { code: 'memory', label: 'Mémoire', emoji: '🧠', tint: '#E2D4FF' },
-  { code: 'logic', label: 'Logique', emoji: '♟️', tint: '#C1B4FF' },
-  { code: 'chess', label: 'Échecs', emoji: '♛', tint: '#D7D2FF' },
-  { code: 'games', label: 'Jeux', emoji: '🎮', tint: '#C1B4FF' },
-  { code: 'trophy', label: 'Trophée', emoji: '🏆', tint: '#FFE5A3' },
-  { code: 'star', label: 'Étoile', emoji: '⭐', tint: '#FFE5A3' },
-  { code: 'heart', label: 'Cœur', emoji: '💖', tint: '#FFB8C1' },
-  { code: 'flag', label: 'Drapeau', emoji: '🚩', tint: '#FFB8C1' },
-  { code: 'transport', label: 'Transports', emoji: '🚌', tint: '#BBE4FF' },
-  { code: 'car', label: 'Voiture', emoji: '🚗', tint: '#B8E0FF' },
-  { code: 'train', label: 'Train', emoji: '🚆', tint: '#C1B4FF' },
-  { code: 'plane', label: 'Avion', emoji: '✈️', tint: '#BBE4FF' },
-  { code: 'boat', label: 'Bateau', emoji: '⛵', tint: '#B8E0FF' },
-  { code: 'city', label: 'Ville', emoji: '🏙️', tint: '#D7D2FF' },
-  { code: 'farm', label: 'Ferme', emoji: '🐄', tint: '#C1F0D1' },
-  { code: 'forest', label: 'Forêt', emoji: '🌲', tint: '#D4F5C8' },
-  { code: 'mountain', label: 'Montagne', emoji: '⛰️', tint: '#FFE0B8' },
-  { code: 'beach', label: 'Plage', emoji: '🏖️', tint: '#FFE5A3' },
-  { code: 'fire', label: 'Feu', emoji: '🔥', tint: '#FFB8C1' },
-  { code: 'water', label: 'Eau', emoji: '💧', tint: '#BBE4FF' },
-  { code: 'air', label: 'Air', emoji: '💨', tint: '#C8F0F0' },
-  { code: 'recycle', label: 'Écologie', emoji: '♻️', tint: '#C1F0D1' },
-  { code: 'light', label: 'Lumière', emoji: '💡', tint: '#FFE5A3' },
-  { code: 'sound', label: 'Sons', emoji: '🔊', tint: '#E2D4FF' },
-  { code: 'touch', label: 'Toucher', emoji: '✋', tint: '#FFE0B8' },
-  { code: 'sight', label: 'Vue', emoji: '👁️', tint: '#BBE4FF' },
-  { code: 'smell', label: 'Odorat', emoji: '👃', tint: '#C1F0D1' },
-  { code: 'taste', label: 'Goût', emoji: '👅', tint: '#FFC4E1' },
-] as const;
 
-export type SubjectIconCode = (typeof SUBJECT_ICONS)[number]['code'];
-
+const ICONIFY_SVG = 'https://api.iconify.design';
 const FALLBACK_TINT = '#D7D2FF';
 
-/** Entrée connue pour un code API ; rien si absent ou inconnu. */
-export function knownSubjectIcon(code: string | null | undefined) {
-  if (!code) {
+const LEGACY: Readonly<Record<string, { emoji: string; tint: string }>> = {
+  math: { emoji: '➗', tint: '#C1B4FF' },
+  numbers: { emoji: '🔢', tint: '#D4C8FF' },
+  alphabet: { emoji: '🔤', tint: '#FFE5A3' },
+  reading: { emoji: '👀', tint: '#FFB8C1' },
+  writing: { emoji: '✍️', tint: '#FFC4E1' },
+  words: { emoji: '💬', tint: '#FFB8C1' },
+  books: { emoji: '📚', tint: '#E2D4FF' },
+  animals: { emoji: '🦁', tint: '#C1F0D1' },
+  nature: { emoji: '🌿', tint: '#C1F0D1' },
+  science: { emoji: '🔬', tint: '#C8F0F0' },
+  knowledge: { emoji: '💡', tint: '#BBE4FF' },
+  opposites: { emoji: '↕️', tint: '#FFC4E1' },
+  globe: { emoji: '🌐', tint: '#BBE4FF' },
+  music: { emoji: '🎵', tint: '#FFD0E8' },
+  sport: { emoji: '⚽', tint: '#D4F5C8' },
+  art: { emoji: '🎨', tint: '#FFE0B8' },
+  school: { emoji: '🏫', tint: '#C1B4FF' },
+  space: { emoji: '🚀', tint: '#C1B4FF' },
+  puzzle: { emoji: '🧩', tint: '#FFC4E1' },
+};
+
+export function subjectIconSrc(code: string | null | undefined): string | null {
+  if (!code || !code.includes(':')) {
     return null;
   }
-  return SUBJECT_ICONS.find((icon) => icon.code === code) ?? null;
+  const sep = code.indexOf(':');
+  const prefix = code.slice(0, sep);
+  const name = code.slice(sep + 1);
+  if (!prefix || !name) {
+    return null;
+  }
+  return `${ICONIFY_SVG}/${encodeURIComponent(prefix)}/${encodeURIComponent(name)}.svg`;
 }
 
-/** Couleur de carte : tint de la librairie, ou neutre si pas d'icône. */
+export function knownSubjectIcon(code: string | null | undefined) {
+  if (!code || code.includes(':')) {
+    return null;
+  }
+  const hit = LEGACY[code];
+  return hit ? { code, ...hit } : null;
+}
+
 export function subjectCardTint(code: string | null | undefined): string {
   return knownSubjectIcon(code)?.tint ?? FALLBACK_TINT;
 }

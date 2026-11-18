@@ -20,7 +20,7 @@ import type {
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { SubjectIconPickerComponent } from '../../shared/subject-icons/subject-icon-picker.component';
-import { subjectIconGlyph } from '../../shared/subject-icons/subject-icons';
+import { SubjectIconViewComponent } from '../../shared/subject-icons/subject-icon-view.component';
 import { TeacherSubjectsService } from './data-access/teacher-subjects.service';
 
 interface SubjectRow {
@@ -117,6 +117,7 @@ const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
     MatSelectModule,
     SpaceHeader,
     SubjectIconPickerComponent,
+    SubjectIconViewComponent,
   ],
   templateUrl: './teacher-subjects.page.html',
   styleUrl: './subjects.page.scss',
@@ -374,10 +375,6 @@ export class TeacherSubjectsPage implements OnInit {
   onIconDraft(schoolId: number, grade: string, value: string): void {
     const key = this.gradeKey(schoolId, grade);
     this.iconDrafts.update((current) => ({ ...current, [key]: value }));
-  }
-
-  iconGlyph(code: string | null | undefined): string | null {
-    return subjectIconGlyph(code);
   }
 
   /** Change l'icône d'une matière encore suivie et créée par moi. */

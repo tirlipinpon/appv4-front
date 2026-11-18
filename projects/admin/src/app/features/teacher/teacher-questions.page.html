@@ -43,8 +43,8 @@
                       (click)="open(item.id)"
                     >
                       <span class="pick-title">
-                        @if (iconGlyph(item.iconCode); as glyph) {
-                          <span class="pick-icon" aria-hidden="true">{{ glyph }}</span>
+                        @if (item.iconCode) {
+                          <app-subject-icon-view class="pick-icon" [code]="item.iconCode" />
                         }
                         <span class="pick-name">{{ item.name }}</span>
                       </span>
@@ -62,8 +62,8 @@
       @for (subject of openList(); track subject.id) {
         <section class="subject">
           <h2>
-            @if (iconGlyph(subject.iconCode); as glyph) {
-              <span class="subject-icon" aria-hidden="true">{{ glyph }}</span>
+            @if (subject.iconCode) {
+              <app-subject-icon-view class="subject-icon" [code]="subject.iconCode" />
             }
             {{ subject.name }}
           </h2>

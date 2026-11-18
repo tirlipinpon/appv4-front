@@ -56,8 +56,8 @@
               @for (offer of chosen(child, true); track offer.subjectId) {
                 <article class="line" [attr.data-testid]="'parent-offer-' + offer.subjectId">
                   <p class="name">
-                    @if (iconGlyph(offer.iconCode); as glyph) {
-                      <span class="subject-icon" aria-hidden="true">{{ glyph }}</span>
+                    @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [code]="offer.iconCode" />
                     }
                     {{ offer.name }}
                     <span class="meta" data-testid="parent-offer-class">Scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
@@ -85,9 +85,9 @@
             @for (offer of chosen(child, false); track offer.subjectId) {
               <article class="line" [attr.data-testid]="'parent-offer-' + offer.subjectId">
                 <p class="name">
-                  @if (iconGlyph(offer.iconCode); as glyph) {
-                    <span class="subject-icon" aria-hidden="true">{{ glyph }}</span>
-                  }
+                  @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [code]="offer.iconCode" />
+                    }
                   {{ offer.name }}
                   <span class="meta" data-testid="parent-offer-extra">Extra-scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
                 </p>
@@ -132,9 +132,9 @@
                         [attr.data-testid]="'parent-subject-suggestion-' + offer.subjectId"
                         (click)="pickSuggestion(childId, offer)"
                       >
-                        @if (iconGlyph(offer.iconCode); as glyph) {
-                          <span class="subject-icon" aria-hidden="true">{{ glyph }}</span>
-                        }
+                        @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [code]="offer.iconCode" />
+                    }
                         {{ suggestionLabel(offer) }}
                       </button>
                     </li>
@@ -165,9 +165,9 @@
             @for (offer of proposed(child, false); track offer.subjectId) {
               <article class="line" [attr.data-testid]="'parent-offer-' + offer.subjectId">
                 <p class="name">
-                  @if (iconGlyph(offer.iconCode); as glyph) {
-                    <span class="subject-icon" aria-hidden="true">{{ glyph }}</span>
-                  }
+                  @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [code]="offer.iconCode" />
+                    }
                   {{ offer.name }}
                   <span class="meta" data-testid="parent-offer-extra">Extra-scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
                 </p>
@@ -181,9 +181,9 @@
             @for (offer of proposed(child, true); track offer.subjectId) {
               <article class="line" [attr.data-testid]="'parent-offer-' + offer.subjectId">
                 <p class="name">
-                  @if (iconGlyph(offer.iconCode); as glyph) {
-                    <span class="subject-icon" aria-hidden="true">{{ glyph }}</span>
-                  }
+                  @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [code]="offer.iconCode" />
+                    }
                   {{ offer.name }}
                   <span class="meta" data-testid="parent-offer-class">Scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
                 </p>

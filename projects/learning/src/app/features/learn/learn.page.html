@@ -36,7 +36,9 @@
               }
             </div>
             <div class="learn-subject-card-bottom">
-              @if (iconEmoji(subject.iconCode); as emoji) {
+              @if (iconSrc(subject.iconCode); as src) {
+                <img class="learn-subject-icon" [src]="src" alt="" aria-hidden="true" loading="lazy" />
+              } @else if (iconEmoji(subject.iconCode); as emoji) {
                 <span class="learn-subject-icon" aria-hidden="true">{{ emoji }}</span>
               } @else {
                 <span class="learn-subject-icon learn-subject-icon-empty" aria-hidden="true"></span>

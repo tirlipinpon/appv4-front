@@ -1,54 +1,73 @@
 <div class="picker" [attr.data-testid]="testId()">
-  <div class="toolbar">
-    <mat-form-field appearance="outline" class="search">
-      <mat-label>Rechercher une icône</mat-label>
-      <input
-        matInput
-        type="search"
-        [attr.data-testid]="testId() + '-search'"
-        [value]="query()"
-        [disabled]="disabled()"
-        (input)="onQuery(inputValue($event))"
-        placeholder="ex. maths, livre, sport"
-      />
-    </mat-form-field>
-    <button
-      type="button"
-      class="none"
-      [attr.data-testid]="testId() + '-none'"
-      [class.selected]="!value()"
-      [disabled]="disabled()"
-      (click)="clear()"
-    >
-      Sans icône
-    </button>
-  </div>
-
-  @if (value(); as selected) {
-    <p class="current" [attr.data-testid]="testId() + '-current'">
-      <span class="glyph" aria-hidden="true">{{ glyph(selected) }}</span>
-      <span>{{ label() }} sélectionnée</span>
-    </p>
-  }
-
-  <div class="grid" role="listbox" [attr.aria-label]="label()">
-    @for (choice of filtered(); track choice.code) {
-      <button
-        type="button"
-        class="cell"
-        role="option"
-        [attr.data-testid]="testId() + '-opt-' + choice.code"
-        [attr.aria-selected]="value() === choice.code"
-        [class.selected]="value() === choice.code"
-        [disabled]="disabled()"
-        [title]="choice.label"
-        (click)="pick(choice.code ?? '')"
-      >
-        <span class="glyph" aria-hidden="true">{{ glyph(choice.code) }}</span>
-        <span class="caption">{{ choice.label }}</span>
-      </button>
-    } @empty {
-      <p class="empty" role="status">Aucune icône pour « {{ query() }} ».</p>
+  <mat-form-field appearance="outline" class="field">
+    <mat-label>{{ label() }}</mat-label>
+    @if (value(); as selected) {
+      <span matPrefix class="prefix">
+        <app-subject-icon-view [code]="selected" />
+      </span>
     }
-  </div>
+    <input
+      matInput
+      type="search"
+      autocomplete="off"
+      role="combobox"
+      [attr.aria-expanded]="open()"
+      [attr.aria-controls]="testId() + '-list'"
+      [attr.data-testid]="testId() + '-search'"
+      [value]="query()"
+      [disabled]="disabled()"
+      placeholder="Rechercher une icône (livre, maths…)"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+      (input)="onQuery(inputValue($event))"
+    />
+    @if (value()) {
+      <button
+        matSuffix
+        type="button"
+        class="clear"
+        [attr.data-testid]="testId() + '-none'"
+        [disabled]="disabled()"
+        (mousedown)="$event.preventDefault()"
+        (click)="clear()"
+      >
+        Effacer
+      </button>
+    }
+  </mat-form-field>
+
+  @if (open()) {
+    <ul class="dropdown" role="listbox" [id]="testId() + '-list'" [attr.data-testid]="testId() + '-list'">
+      @if (searching()) {
+        <li class="status" role="status">Recherche…</li>
+      }
+      @for (hit of hits(); track hit.code) {
+        <li role="option" [attr.aria-selected]="value() === hit.code">
+          <button
+            type="button"
+            class="row"
+            [attr.data-testid]="testId() + '-opt-' + hit.code"
+            [class.selected]="value() === hit.code"
+            [disabled]="disabled()"
+            (mousedown)="$event.preventDefault()"
+            (click)="pick(hit.code)"
+          >
+            <app-subject-icon-view [code]="hit.code" />
+            <span class="name">{{ hit.label }}</span>
+            <span class="code">{{ hit.code }}</span>
+          </button>
+        </li>
+      } @empty {
+        @if (!searching()) {
+          <li class="status" role="status">
+            @if (query().trim().length < 2) {
+              Tape au moins 2 lettres, ou choisis une suggestion.
+            } @else {
+              Aucune icône pour « {{ query() }} ».
+            }
+          </li>
+        }
+      }
+    </ul>
+  }
 </div>

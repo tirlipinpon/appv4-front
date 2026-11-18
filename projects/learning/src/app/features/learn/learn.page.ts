@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
-import { knownSubjectIcon, subjectCardTint } from '../../shared/subject-icons/subject-icons';
+import { knownSubjectIcon, subjectCardTint, subjectIconSrc } from '../../shared/subject-icons/subject-icons';
 import { ChildSubjectsService } from './data-access/child-subjects.service';
 
 /**
@@ -41,6 +41,10 @@ export class LearnPage implements OnInit {
 
   protected cardTint(iconCode: string | null | undefined): string {
     return subjectCardTint(iconCode);
+  }
+
+  protected iconSrc(iconCode: string | null | undefined): string | null {
+    return subjectIconSrc(iconCode);
   }
 
   protected iconEmoji(iconCode: string | null | undefined): string | null {
