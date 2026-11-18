@@ -124,6 +124,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly boardMode = signal<PuzzleBoardMode>(PUZZLE_BOARD_MODE.TROUS);
   readonly boardImage = signal('');
   readonly requireAllCorrect = signal(true);
+  readonly timelineEnabled = signal(false);
   readonly clickZones = signal<ClickZone[]>([]);
   readonly puzzleMagnet = signal(defaultMagnet());
   readonly answers = signal<GapWordDraft[]>([]);
@@ -339,6 +340,10 @@ export class SubjectQuestionsComponent implements OnInit {
     this.requireAllCorrect.set(value);
   }
 
+  setTimelineEnabled(value: boolean): void {
+    this.timelineEnabled.set(value);
+  }
+
   setPuzzleMagnet(value: number): void {
     this.puzzleMagnet.set(value);
   }
@@ -376,11 +381,28 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setItemLabel(index: number, value: string): void {
-    this.items.update((rows) => rows.map((row, i) => (i === index ? { label: value } : row)));
+    this.items.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+  }
+
+  setItemAxisLabel(index: number, value: string): void {
+    this.items.update((rows) => rows.map((row, i) => (i === index ? { ...row, axisLabel: value } : row)));
+  }
+
+  moveItem(index: number, delta: -1 | 1): void {
+    this.items.update((rows) => {
+      const target = index + delta;
+      if (target < 0 || target >= rows.length) {
+        return rows;
+      }
+      const next = [...rows];
+      const [row] = next.splice(index, 1);
+      next.splice(target, 0, row);
+      return next;
+    });
   }
 
   addItem(): void {
-    this.items.update((rows) => [...rows, { label: '' }]);
+    this.items.update((rows) => [...rows, { label: '', axisLabel: '' }]);
   }
 
   removeItem(index: number): void {
@@ -464,7 +486,12 @@ export class SubjectQuestionsComponent implements OnInit {
         ? question.pairs.map((pair) => ({ questionSide: pair.questionSide, answerSide: pair.answerSide }))
         : emptyPairs(),
     );
-    this.items.set(question.items.length ? question.items.map((item) => ({ label: item.label })) : emptyItems());
+    this.items.set(
+      question.items.length
+        ? question.items.map((item) => ({ label: item.label, axisLabel: item.axisLabel }))
+        : emptyItems(),
+    );
+    this.timelineEnabled.set(question.timelineEnabled);
     this.statements.set(
       question.statements.length
         ? question.statements.map((row) => ({ label: row.label, truthful: row.truthful }))
@@ -653,6 +680,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.boardMode.set(PUZZLE_BOARD_MODE.TROUS);
     this.boardImage.set('');
     this.requireAllCorrect.set(true);
+    this.timelineEnabled.set(false);
     this.clickZones.set([]);
     this.puzzleMagnet.set(defaultMagnet());
     this.answers.set([]);
@@ -693,6 +721,7 @@ export class SubjectQuestionsComponent implements OnInit {
       requireAllCorrect: this.requireAllCorrect(),
       clickZones: this.clickZones(),
       puzzleMagnet: this.puzzleMagnet(),
+      timelineEnabled: this.timelineEnabled(),
     });
     if (!body) {
       return;

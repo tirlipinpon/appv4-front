@@ -43,6 +43,8 @@ export interface PairDraft {
 
 export interface ItemDraft {
   label: string;
+  /** Jalon de frise (ex. « 20 minutes »). Vide si timeline désactivée. */
+  axisLabel: string;
 }
 
 export interface StatementDraft {
@@ -83,6 +85,8 @@ export interface SavedQuestion {
   requireAllCorrect: boolean;
   zones: ClickZone[];
   snapDistance: number;
+  /** Frise Ordre active. False hors forme order. */
+  timelineEnabled: boolean;
 }
 
 /** Plateau de jeu du puzzle : fond dédié, cadre blanc, ou image trouée. */
@@ -116,6 +120,7 @@ export interface QuestionDraftSnapshot {
   requireAllCorrect: boolean;
   clickZones: ClickZone[];
   puzzleMagnet: number;
+  timelineEnabled: boolean;
 }
 
 export function isKnownFormCode(code: string | null | undefined): code is KnownFormCode {
@@ -152,7 +157,10 @@ export function emptyStatements(): StatementDraft[] {
 }
 
 export function emptyItems(): ItemDraft[] {
-  return [{ label: '' }, { label: '' }];
+  return [
+    { label: '', axisLabel: '' },
+    { label: '', axisLabel: '' },
+  ];
 }
 
 export function emptyPairs(): PairDraft[] {
