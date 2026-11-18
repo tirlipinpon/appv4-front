@@ -3,6 +3,7 @@
     <p
       class="child-play-view-form"
       [class.memory]="isMemory()"
+      [class.order]="isOrder()"
       data-testid="child-play-view-form"
     >
       {{ question().formLabel }}
@@ -88,6 +89,69 @@
         {{ memoryStatus() }}
       </p>
     }
+  }
+
+  @if (isOrder()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-order-hint">
+      Glisse les étapes, ou utilise les flèches haut / bas.
+    </p>
+    <ul
+      class="child-play-view-order"
+      [class.timeline]="isTimeline()"
+      cdkDropList
+      data-testid="child-play-view-order"
+      [cdkDropListDisabled]="disabled() || !interactive()"
+      (cdkDropListDropped)="onOrderDrop($event)"
+    >
+      @for (item of orderedItems(); track item.key; let i = $index) {
+        <li
+          class="child-play-view-order-row"
+          cdkDrag
+          [cdkDragDisabled]="disabled() || !interactive()"
+          [attr.data-testid]="'child-play-view-order-item-' + item.key"
+        >
+          <span class="child-play-view-order-index">{{ i + 1 }}</span>
+          <span class="child-play-view-order-label">
+            @if (isTimeline() && item.axisLabel) {
+              <span class="child-play-view-order-axis" [attr.data-testid]="'child-play-view-order-axis-' + item.key">
+                {{ item.axisLabel }}
+              </span>
+            }
+            {{ item.label }}
+          </span>
+          <div class="child-play-view-order-actions">
+            <button
+              type="button"
+              class="child-play-view-order-move"
+              data-testid="child-play-view-order-up"
+              [disabled]="disabled() || !interactive() || i === 0"
+              (click)="moveOrderItem(i, -1)"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              class="child-play-view-order-move"
+              data-testid="child-play-view-order-down"
+              [disabled]="disabled() || !interactive() || i === orderedItems().length - 1"
+              (click)="moveOrderItem(i, 1)"
+            >
+              ↓
+            </button>
+            <button
+              type="button"
+              class="child-play-view-order-handle"
+              cdkDragHandle
+              data-testid="child-play-view-order-handle"
+              [disabled]="disabled() || !interactive()"
+              aria-label="Glisser"
+            >
+              ⋮⋮
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
   }
 
   @if (isClassification()) {

@@ -1,7 +1,9 @@
 import {
   CdkDrag,
   CdkDragDrop,
+  CdkDragHandle,
   CdkDropList,
+  moveItemInArray,
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
 import {
@@ -18,10 +20,18 @@ import type {
   ChildPlayViewCard,
   ChildPlayViewChoice,
   ChildPlayViewColumn,
+  ChildPlayViewItem,
   ChildPlayViewPair,
   ChildPlayViewQuestion,
   ChildPlayViewStatement,
 } from './child-question-play-view.model';
+
+export interface OrderItemView {
+  key: string;
+  itemId?: number;
+  label: string;
+  axisLabel?: string;
+}
 
 export interface MemoryCardView {
   key: string;
@@ -73,6 +83,15 @@ function buildMemoryCards(pairs: readonly ChildPlayViewPair[]): MemoryCardView[]
   return cards;
 }
 
+function toOrderViews(items: readonly ChildPlayViewItem[]): OrderItemView[] {
+  return items.map((item, index) => ({
+    key: item.itemId != null ? String(item.itemId) : `i-${index}-${item.label}`,
+    itemId: item.itemId,
+    label: item.label,
+    axisLabel: item.axisLabel,
+  }));
+}
+
 function toClassCard(card: ChildPlayViewCard, index: number): ClassCardView {
   return {
     key: card.cardId != null ? String(card.cardId) : `c-${index}-${card.label}`,
@@ -91,12 +110,12 @@ function toClassColumn(column: ChildPlayViewColumn, index: number): ClassColumnV
 }
 
 /**
- * Rendu partagé Learning + Teacher : qcm / vrai_faux / memory / classement.
+ * Rendu partagé Learning + Teacher : qcm / vrai_faux / memory / order (frise optionnelle) / classement.
  * Teacher : aperçu. Learning : interaction + envoi géré par la page parente.
  */
 @Component({
   selector: 'app-child-question-play-view',
-  imports: [CdkDropList, CdkDrag],
+  imports: [CdkDropList, CdkDrag, CdkDragHandle],
   templateUrl: './child-question-play-view.component.html',
   styleUrl: './child-question-play-view.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -110,6 +129,7 @@ export class ChildQuestionPlayViewComponent {
   readonly choiceToggle = output<number>();
   readonly statementPick = output<{ statementKey: string; value: boolean }>();
   readonly memoryChange = output<void>();
+  readonly orderChange = output<void>();
   readonly classificationChange = output<void>();
 
   private readonly layoutTick = signal(0);
@@ -118,10 +138,15 @@ export class ChildQuestionPlayViewComponent {
   protected readonly isQcm = computed(() => this.question().formCode === 'qcm');
   protected readonly isTrueFalse = computed(() => this.question().formCode === 'vrai_faux');
   protected readonly isMemory = computed(() => this.question().formCode === 'memory');
+  protected readonly isOrder = computed(() => this.question().formCode === 'order');
+  protected readonly isTimeline = computed(() => this.isOrder() && this.question().timelineEnabled === true);
   protected readonly isClassification = computed(() => this.question().formCode === 'classement');
   protected readonly playable = computed(
-    () => this.isQcm() || this.isTrueFalse() || this.isMemory() || this.isClassification(),
+    () =>
+      this.isQcm() || this.isTrueFalse() || this.isMemory() || this.isOrder() || this.isClassification(),
   );
+
+  readonly orderedItems = signal<OrderItemView[]>([]);
 
   readonly sourceCards = signal<ClassCardView[]>([]);
   readonly classColumns = signal<ClassColumnView[]>([]);
@@ -135,6 +160,13 @@ export class ChildQuestionPlayViewComponent {
   protected readonly remainingCount = computed(() => this.sourceCards().length);
 
   constructor() {
+    effect(() => {
+      const items = this.question().items ?? [];
+      this.layoutTick();
+      if (this.question().formCode === 'order') {
+        this.orderedItems.set(shuffleCopy(toOrderViews(items)));
+      }
+    });
     effect(() => {
       this.layoutTick();
       if (this.question().formCode !== 'classement') {
@@ -254,6 +286,16 @@ export class ChildQuestionPlayViewComponent {
     return pairs.length > 0 && this.matchedPairKeys().size >= pairs.length;
   }
 
+  orderedItemIds(): number[] {
+    return this.orderedItems()
+      .map((row) => row.itemId)
+      .filter((id): id is number => id != null);
+  }
+
+  hasOrderItems(): boolean {
+    return this.orderedItems().length > 0;
+  }
+
   placements(): { cardId: number; columnId: number }[] {
     const out: { cardId: number; columnId: number }[] = [];
     for (const column of this.classColumns()) {
@@ -357,6 +399,38 @@ export class ChildQuestionPlayViewComponent {
       this.memoryChange.emit();
     }, 700);
     this.memoryChange.emit();
+  }
+
+  protected onOrderDrop(event: CdkDragDrop<OrderItemView[]>): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    this.orderedItems.update((rows) => {
+      const next = [...rows];
+      moveItemInArray(next, event.previousIndex, event.currentIndex);
+      return next;
+    });
+    this.orderChange.emit();
+  }
+
+  protected moveOrderItem(index: number, delta: -1 | 1): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    const target = index + delta;
+    const rows = this.orderedItems();
+    if (target < 0 || target >= rows.length) {
+      return;
+    }
+    this.orderedItems.update((current) => {
+      const next = [...current];
+      moveItemInArray(next, index, target);
+      return next;
+    });
+    this.orderChange.emit();
   }
 
   protected onClassDrop(event: CdkDragDrop<ClassCardView[]>, targetKey: string): void {

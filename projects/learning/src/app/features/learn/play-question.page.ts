@@ -57,6 +57,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'memory') {
       return view.allPairsMatched();
     }
+    if (q.formCode === 'order') {
+      return view.hasOrderItems();
+    }
     if (q.formCode === 'classement') {
       return view.allCardsPlaced();
     }
@@ -81,6 +84,7 @@ export class PlayQuestionPage implements OnInit {
           body.formCode !== 'qcm' &&
           body.formCode !== 'vrai_faux' &&
           body.formCode !== 'memory' &&
+          body.formCode !== 'order' &&
           body.formCode !== 'classement'
         ) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
@@ -110,9 +114,11 @@ export class PlayQuestionPage implements OnInit {
         ? { selectedChoiceIds: view.selectedChoiceIds() }
         : q.formCode === 'memory'
           ? { matchedPairIds: view.matchedPairIds() }
-          : q.formCode === 'classement'
-            ? { placements: view.placements() }
-            : { statements: view.statementAnswers() };
+          : q.formCode === 'order'
+            ? { orderedItemIds: view.orderedItemIds() }
+            : q.formCode === 'classement'
+              ? { placements: view.placements() }
+              : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -134,10 +140,17 @@ export class PlayQuestionPage implements OnInit {
 }
 
 function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
+  const formCode = body.formCode ?? '';
   return {
-    formCode: body.formCode ?? '',
-    formLabel: body.formCode === 'memory' ? 'FORME · memory' : undefined,
-    prompt: body.formCode === 'memory' ? body.prompt || 'Memory' : body.prompt,
+    formCode,
+    formLabel:
+      formCode === 'memory' ? 'FORME · memory' : formCode === 'order' ? 'FORME · order' : undefined,
+    prompt:
+      formCode === 'memory'
+        ? body.prompt || 'Memory'
+        : formCode === 'order'
+          ? body.prompt || 'Ordre'
+          : body.prompt,
     choices: (body.choices ?? [])
       .filter((c) => c.label != null)
       .map((c) => ({ choiceId: c.choiceId, label: c.label! })),
@@ -151,6 +164,10 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
         questionSide: p.questionSide!,
         answerSide: p.answerSide!,
       })),
+    items: (body.items ?? [])
+      .filter((i) => i.label != null)
+      .map((i) => ({ itemId: i.itemId, label: i.label!, axisLabel: i.axisLabel })),
+    timelineEnabled: body.timelineEnabled,
     columns: (body.columns ?? [])
       .filter((c) => c.label != null)
       .map((c) => ({ columnId: c.columnId, label: c.label! })),

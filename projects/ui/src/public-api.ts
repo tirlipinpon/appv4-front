@@ -6,6 +6,7 @@ export { ThemeToggleComponent } from './theme-toggle/theme-toggle.component';
 export { ChildQuestionPlayViewComponent } from './child-question-play-view/child-question-play-view.component';
 export type {
   ChildPlayViewChoice,
+  ChildPlayViewItem,
   ChildPlayViewPair,
   ChildPlayViewQuestion,
   ChildPlayViewStatement,
