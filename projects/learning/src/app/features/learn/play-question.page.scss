@@ -1,4 +1,7 @@
 .play {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
   padding: 1rem 1.1rem 2rem;
   color: var(--app-text, #1c2b3a);
 }
