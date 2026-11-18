@@ -123,6 +123,15 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="home-task-play-1"]')).toBeNull();
     const taskPlay: HTMLAnchorElement = fixture.nativeElement.querySelector('[data-testid="home-task-play-2"]');
     expect(taskPlay.getAttribute('href')).toBe('/learn/5/play/21');
+
+    const cont = fixture.nativeElement.querySelector('[data-testid="home-continue"]');
+    expect(cont).toBeTruthy();
+    expect(cont.textContent).toContain('Mots');
+    expect(cont.textContent).toContain('1 / 2');
+    const continuePlay: HTMLAnchorElement = fixture.nativeElement.querySelector(
+      '[data-testid="home-continue-play"]',
+    );
+    expect(continuePlay.getAttribute('href')).toBe('/learn/5/play/21');
     http.verify();
   });
 
@@ -170,6 +179,7 @@ describe('HomePage', () => {
     );
     expect(fixture.nativeElement.querySelector('[data-testid="home-mission-play"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="home-task-play-3"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="home-continue"]')).toBeNull();
     http.verify();
   });
 });

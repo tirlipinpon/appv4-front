@@ -44,6 +44,20 @@
     </section>
   }
 
+  @if (!todayLoading() && !todayError() && continueModule(); as cont) {
+    <section class="home-continue" data-testid="home-continue">
+      <p class="home-continue-eyebrow">Continuer à apprendre</p>
+      <h2 class="home-continue-title" data-testid="home-continue-title">{{ cont.title }}</h2>
+      <p class="home-continue-meta" data-testid="home-continue-meta">
+        {{ cont.progress }} / {{ cont.target }}
+        @if (cont.statusLabel) {
+          · {{ cont.statusLabel }}
+        }
+      </p>
+      <a class="home-play" data-testid="home-continue-play" [routerLink]="cont.commands">Continuer</a>
+    </section>
+  }
+
   <section class="home-mission" data-testid="home-mission">
     @if (todayLoading()) {
       <p class="home-progress-status" data-testid="home-mission-loading">Chargement…</p>
