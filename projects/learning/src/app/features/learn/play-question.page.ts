@@ -1,19 +1,26 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ChildQuestionPlayViewComponent, type ChildPlayViewQuestion } from '@appv4/ui';
 
 import type { ChildAttemptResultResponse, ChildPlayQuestionResponse } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { ChildPlayService } from './data-access/child-play.service';
-import { randomTrueFalseOrder, shuffleCopy } from './shuffle';
 
 /**
- * Jouer une question — UI charte ; verdict = API uniquement.
- * Ordre des propositions / boutons Vrai-Faux mélangé à chaque affichage (anti-réflexe).
+ * Jouer une question — rendu partagé @appv4/ui ; verdict = API uniquement.
  */
 @Component({
   selector: 'app-play-question-page',
-  imports: [RouterLink],
+  imports: [RouterLink, ChildQuestionPlayViewComponent],
   templateUrl: './play-question.page.html',
   styleUrl: './play-question.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,6 +29,7 @@ export class PlayQuestionPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(ChildPlayService);
+  private readonly playView = viewChild(ChildQuestionPlayViewComponent);
 
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
@@ -29,28 +37,22 @@ export class PlayQuestionPage implements OnInit {
   protected readonly subjectId = signal(0);
   protected readonly questionId = signal(0);
   protected readonly question = signal<ChildPlayQuestionResponse | null>(null);
-  protected readonly displayChoices = signal<NonNullable<ChildPlayQuestionResponse['choices']>>([]);
-  protected readonly displayStatements = signal<NonNullable<ChildPlayQuestionResponse['statements']>>([]);
-  /** Ordre des boutons Vrai/Faux par statementId. */
-  protected readonly tfButtonOrder = signal<Readonly<Record<number, readonly boolean[]>>>({});
-  protected readonly selectedChoices = signal<ReadonlySet<number>>(new Set());
-  protected readonly statementValues = signal<Readonly<Record<number, boolean>>>({});
+  protected readonly playModel = signal<ChildPlayViewQuestion | null>(null);
   protected readonly result = signal<ChildAttemptResultResponse | null>(null);
+  protected readonly selectionTick = signal(0);
 
-  protected readonly isQcm = computed(() => this.question()?.formCode === 'qcm');
-  protected readonly isTrueFalse = computed(() => this.question()?.formCode === 'vrai_faux');
   protected readonly canSubmit = computed(() => {
+    this.selectionTick();
     const q = this.question();
-    if (!q || this.saving() || this.result()) {
+    const view = this.playView();
+    if (!q || !view || this.saving() || this.result()) {
       return false;
     }
     if (q.formCode === 'qcm') {
-      return this.selectedChoices().size > 0;
+      return view.selectedChoiceIds().length > 0;
     }
     if (q.formCode === 'vrai_faux') {
-      const statements = this.displayStatements();
-      const values = this.statementValues();
-      return statements.length > 0 && statements.every((s) => s.statementId != null && values[s.statementId!] !== undefined);
+      return view.allStatementsAnswered();
     }
     return false;
   });
@@ -67,7 +69,7 @@ export class PlayQuestionPage implements OnInit {
     this.api.getQuestion(subjectId, questionId).subscribe({
       next: (body) => {
         this.question.set(body);
-        this.applyPresentationOrder(body);
+        this.playModel.set(toPlayModel(body));
         this.loading.set(false);
         if (body.formCode !== 'qcm' && body.formCode !== 'vrai_faux') {
           this.error.set('Cette forme de question n’est pas encore jouable.');
@@ -80,58 +82,22 @@ export class PlayQuestionPage implements OnInit {
     });
   }
 
-  protected toggleChoice(choiceId: number): void {
-    if (this.result() || this.saving()) {
-      return;
-    }
-    this.selectedChoices.update((current) => {
-      const next = new Set(current);
-      if (next.has(choiceId)) {
-        next.delete(choiceId);
-      } else {
-        next.add(choiceId);
-      }
-      return next;
-    });
-  }
-
-  protected setStatement(statementId: number, value: boolean): void {
-    if (this.result() || this.saving()) {
-      return;
-    }
-    this.statementValues.update((current) => ({ ...current, [statementId]: value }));
-  }
-
-  protected statementValue(statementId: number): boolean | undefined {
-    return this.statementValues()[statementId];
-  }
-
-  protected tfOrderFor(statementId: number): readonly boolean[] {
-    return this.tfButtonOrder()[statementId] ?? [true, false];
-  }
-
-  protected choiceSelected(choiceId: number): boolean {
-    return this.selectedChoices().has(choiceId);
+  protected onSelectionChange(): void {
+    this.selectionTick.update((n) => n + 1);
   }
 
   protected submit(): void {
     const q = this.question();
-    if (!q || !this.canSubmit()) {
+    const view = this.playView();
+    if (!q || !view || !this.canSubmit()) {
       return;
     }
     this.saving.set(true);
     this.error.set(null);
     const body =
       q.formCode === 'qcm'
-        ? { selectedChoiceIds: [...this.selectedChoices()] }
-        : {
-            statements: this.displayStatements()
-              .filter((s) => s.statementId != null)
-              .map((s) => ({
-                statementId: s.statementId!,
-                value: this.statementValues()[s.statementId!] === true,
-              })),
-          };
+        ? { selectedChoiceIds: view.selectedChoiceIds() }
+        : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -146,25 +112,21 @@ export class PlayQuestionPage implements OnInit {
 
   protected replay(): void {
     this.result.set(null);
-    this.selectedChoices.set(new Set());
-    this.statementValues.set({});
     this.error.set(null);
-    const q = this.question();
-    if (q) {
-      this.applyPresentationOrder(q);
-    }
+    this.playView()?.reshuffle();
+    this.selectionTick.update((n) => n + 1);
   }
+}
 
-  private applyPresentationOrder(body: ChildPlayQuestionResponse): void {
-    this.displayChoices.set(shuffleCopy(body.choices ?? []));
-    const statements = shuffleCopy(body.statements ?? []);
-    this.displayStatements.set(statements);
-    const orders: Record<number, readonly boolean[]> = {};
-    for (const statement of statements) {
-      if (statement.statementId != null) {
-        orders[statement.statementId] = randomTrueFalseOrder();
-      }
-    }
-    this.tfButtonOrder.set(orders);
-  }
+function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
+  return {
+    formCode: body.formCode ?? '',
+    prompt: body.prompt,
+    choices: (body.choices ?? [])
+      .filter((c) => c.label != null)
+      .map((c) => ({ choiceId: c.choiceId, label: c.label! })),
+    statements: (body.statements ?? [])
+      .filter((s) => s.label != null)
+      .map((s) => ({ statementId: s.statementId, label: s.label! })),
+  };
 }

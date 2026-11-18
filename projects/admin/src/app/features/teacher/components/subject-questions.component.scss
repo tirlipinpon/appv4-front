@@ -230,3 +230,59 @@ button.form-chip:disabled {
   margin-bottom: -0.75rem;
 }
 
+.child-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(15 18 30 / 45%);
+}
+
+.child-preview-dialog {
+  position: fixed;
+  z-index: 41;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(40rem, calc(100vw - 2rem));
+  max-height: min(90vh, 40rem);
+  overflow: auto;
+  padding: 1rem 1.15rem 1.25rem;
+  border-radius: 1.25rem;
+  /* Tokens Learning pour l’aperçu partagé (même rendu enfant). */
+  --app-primary: #7c5cff;
+  --app-on-primary: #ffffff;
+  --app-surface: #f4f5f8;
+  --app-surface-card: #ffffff;
+  --app-text: #1c2b3a;
+  --app-text-muted: #6b7385;
+  --app-outline: #e4e7ee;
+  --app-shadow-soft: 0 8px 20px rgba(28, 43, 58, 0.08);
+  --app-form-vrai-faux: #2bb673;
+  --app-form-vrai-faux-soft: #e3f7ec;
+  --app-font: Nunito, 'Segoe UI', sans-serif;
+  background: var(--app-surface);
+  color: var(--app-text);
+  font-family: var(--app-font);
+  box-shadow: 0 16px 40px rgb(15 18 30 / 28%);
+}
+
+.child-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.child-preview-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.child-preview-hint {
+  margin: 0 0 0.85rem;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+}
+

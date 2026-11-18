@@ -10,55 +10,14 @@
     <p class="status error" role="alert" data-testid="play-error">{{ message }}</p>
   }
 
-  @if (question(); as q) {
-    @if (q.prompt) {
-      <p class="prompt" data-testid="play-prompt">{{ q.prompt }}</p>
-    }
-
-    @if (isQcm()) {
-      <ul class="options" data-testid="play-qcm">
-        @for (choice of displayChoices(); track choice.choiceId) {
-          <li>
-            <button
-              type="button"
-              class="option"
-              [class.selected]="choiceSelected(choice.choiceId!)"
-              [disabled]="saving() || !!result()"
-              [attr.data-testid]="'play-choice-' + choice.choiceId"
-              (click)="toggleChoice(choice.choiceId!)"
-            >
-              {{ choice.label }}
-            </button>
-          </li>
-        }
-      </ul>
-    }
-
-    @if (isTrueFalse()) {
-      <ul class="statements" data-testid="play-true-false">
-        @for (statement of displayStatements(); track statement.statementId) {
-          <li class="statement-card" [attr.data-testid]="'play-statement-card-' + statement.statementId">
-            <p class="statement-label">{{ statement.label }}</p>
-            <div class="tf-actions">
-              @for (value of tfOrderFor(statement.statementId!); track value) {
-                <button
-                  type="button"
-                  class="tf-btn"
-                  [class.selected]="statementValue(statement.statementId!) === value"
-                  [disabled]="saving() || !!result()"
-                  [attr.data-testid]="
-                    'play-statement-' + statement.statementId + '-' + (value === true ? 'true' : 'false')
-                  "
-                  (click)="setStatement(statement.statementId!, value)"
-                >
-                  {{ value === true ? 'Vrai' : 'Faux' }}
-                </button>
-              }
-            </div>
-          </li>
-        }
-      </ul>
-    }
+  @if (playModel(); as model) {
+    <app-child-question-play-view
+      [question]="model"
+      [interactive]="!result()"
+      [disabled]="saving() || !!result()"
+      (choiceToggle)="onSelectionChange()"
+      (statementPick)="onSelectionChange()"
+    />
 
     @if (!result()) {
       <button

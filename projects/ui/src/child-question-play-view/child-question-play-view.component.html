@@ -1,0 +1,59 @@
+<div class="child-play-view" data-testid="child-question-play-view">
+  @if (question().formLabel) {
+    <p class="child-play-view-form" data-testid="child-play-view-form">{{ question().formLabel }}</p>
+  }
+  @if (question().prompt) {
+    <p class="child-play-view-prompt" data-testid="child-play-view-prompt">{{ question().prompt }}</p>
+  }
+
+  @if (!playable()) {
+    <p class="child-play-view-empty" data-testid="child-play-view-unsupported">
+      Aperçu enfant pas encore disponible pour cette forme.
+    </p>
+  }
+
+  @if (isQcm()) {
+    <ul class="child-play-view-options" data-testid="child-play-view-qcm">
+      @for (choice of displayChoices(); track choice.choiceId ?? choice.label) {
+        <li>
+          <button
+            type="button"
+            class="child-play-view-option"
+            [class.selected]="choiceSelected(choice.choiceId)"
+            [disabled]="disabled() || !interactive()"
+            [attr.data-testid]="'child-play-view-choice-' + (choice.choiceId ?? 'x')"
+            (click)="onChoice(choice)"
+          >
+            {{ choice.label }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (isTrueFalse()) {
+    <ul class="child-play-view-statements" data-testid="child-play-view-true-false">
+      @for (statement of displayStatements(); track statement.statementId ?? statement.label; let i = $index) {
+        <li class="child-play-view-card" [attr.data-testid]="'child-play-view-statement-' + statementKey(statement, i)">
+          <p class="child-play-view-statement-label">{{ statement.label }}</p>
+          <div class="child-play-view-tf">
+            @for (value of tfOrderFor(statementKey(statement, i)); track value) {
+              <button
+                type="button"
+                class="child-play-view-tf-btn"
+                [class.selected]="statementValue(statementKey(statement, i)) === value"
+                [disabled]="disabled() || !interactive()"
+                [attr.data-testid]="
+                  'child-play-view-tf-' + statementKey(statement, i) + '-' + (value === true ? 'true' : 'false')
+                "
+                (click)="onStatement(statementKey(statement, i), value)"
+              >
+                {{ value === true ? 'Vrai' : 'Faux' }}
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>

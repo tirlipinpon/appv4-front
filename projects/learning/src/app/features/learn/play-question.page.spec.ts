@@ -31,7 +31,7 @@ describe('PlayQuestionPage', () => {
     return { fixture, http };
   }
 
-  it('affiche vrai_faux en carte et envoie la réponse API', () => {
+  it('affiche vrai_faux via le composant partagé et envoie la réponse API', () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
       questionId: 42,
@@ -46,13 +46,11 @@ describe('PlayQuestionPage', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    expect(root.querySelector('[data-testid="play-true-false"]')).toBeTruthy();
-    expect(root.querySelector('[data-testid="play-statement-card-1"]')?.textContent).toContain('2 + 2 = 4');
+    expect(root.querySelector('[data-testid="child-question-play-view"]')).toBeTruthy();
+    expect(root.querySelector('[data-testid="child-play-view-true-false"]')).toBeTruthy();
 
-    const trueBtn = root.querySelector('[data-testid="play-statement-1-true"]') as HTMLButtonElement;
-    const falseBtn = root.querySelector('[data-testid="play-statement-2-false"]') as HTMLButtonElement;
-    trueBtn.click();
-    falseBtn.click();
+    (root.querySelector('[data-testid="child-play-view-tf-1-true"]') as HTMLButtonElement).click();
+    (root.querySelector('[data-testid="child-play-view-tf-2-false"]') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();

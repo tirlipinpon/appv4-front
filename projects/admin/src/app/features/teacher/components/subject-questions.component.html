@@ -624,6 +624,15 @@
               >
                 Sélectionner
               </mat-checkbox>
+              <button
+                mat-button
+                type="button"
+                data-testid="teacher-question-preview"
+                [disabled]="saving() || pendingIds().length > 0"
+                (click)="openChildPreview(question)"
+              >
+                Voir comme l’enfant
+              </button>
               <button mat-button type="button" [disabled]="saving() || pendingIds().length > 0" (click)="beginEdit(question)">
                 Modifier
               </button>
@@ -644,5 +653,32 @@
       <p class="hint">{{ message }}</p>
     }
 
+  }
+
+  @if (preview(); as previewQuestion) {
+    <div
+      class="child-preview-backdrop"
+      role="presentation"
+      data-testid="teacher-child-preview-backdrop"
+      (click)="closeChildPreview()"
+    ></div>
+    <div
+      class="child-preview-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Aperçu enfant"
+      data-testid="teacher-child-preview-dialog"
+    >
+      <header class="child-preview-header">
+        <h2>Aperçu enfant</h2>
+        <button mat-button type="button" data-testid="teacher-child-preview-close" (click)="closeChildPreview()">
+          Fermer
+        </button>
+      </header>
+      <p class="child-preview-hint">
+        Même rendu que Learning. Les bonnes réponses ne sont pas indiquées ici.
+      </p>
+      <app-child-question-play-view [question]="previewQuestion" [interactive]="true" />
+    </div>
   }
 </section>
