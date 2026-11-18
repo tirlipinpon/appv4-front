@@ -5,9 +5,10 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { ChildLearningQuestionItem } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { ChildPlayService } from './data-access/child-play.service';
+import { shuffleCopy } from './shuffle';
 
 /**
- * Liste des questions d'une matière (LEARN-30) — entrée vers le jeu.
+ * Liste des questions d'une matière — ordre mélangé à chaque ouverture (anti-réflexe).
  */
 @Component({
   selector: 'app-subject-questions-page',
@@ -37,7 +38,7 @@ export class SubjectQuestionsPage implements OnInit {
     this.api.listQuestions(id).subscribe({
       next: (body) => {
         this.subjectName.set(body.subjectName ?? '');
-        this.questions.set(body.questions ?? []);
+        this.questions.set(shuffleCopy(body.questions ?? []));
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {

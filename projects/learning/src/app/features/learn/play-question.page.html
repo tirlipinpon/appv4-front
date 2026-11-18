@@ -1,6 +1,6 @@
 <section class="play" data-testid="play-question-panel">
   <header class="play-top">
-    <a [routerLink]="['/learn', subjectId()]" class="back" data-testid="play-back">← Questions</a>
+    <a [routerLink]="['/learn', subjectId(), 'questions']" class="back" data-testid="play-back">← Questions</a>
     <h1 data-testid="play-title">Jouer</h1>
   </header>
 
@@ -11,11 +11,13 @@
   }
 
   @if (question(); as q) {
-    <p class="prompt" data-testid="play-prompt">{{ q.prompt || 'Réponds aux propositions.' }}</p>
+    @if (q.prompt) {
+      <p class="prompt" data-testid="play-prompt">{{ q.prompt }}</p>
+    }
 
     @if (isQcm()) {
       <ul class="options" data-testid="play-qcm">
-        @for (choice of q.choices ?? []; track choice.choiceId) {
+        @for (choice of displayChoices(); track choice.choiceId) {
           <li>
             <button
               type="button"
@@ -34,30 +36,24 @@
 
     @if (isTrueFalse()) {
       <ul class="statements" data-testid="play-true-false">
-        @for (statement of q.statements ?? []; track statement.statementId) {
-          <li class="statement">
-            <p>{{ statement.label }}</p>
+        @for (statement of displayStatements(); track statement.statementId) {
+          <li class="statement-card" [attr.data-testid]="'play-statement-card-' + statement.statementId">
+            <p class="statement-label">{{ statement.label }}</p>
             <div class="tf-actions">
-              <button
-                type="button"
-                class="option"
-                [class.selected]="statementValue(statement.statementId!) === true"
-                [disabled]="saving() || !!result()"
-                [attr.data-testid]="'play-statement-' + statement.statementId + '-true'"
-                (click)="setStatement(statement.statementId!, true)"
-              >
-                Vrai
-              </button>
-              <button
-                type="button"
-                class="option"
-                [class.selected]="statementValue(statement.statementId!) === false"
-                [disabled]="saving() || !!result()"
-                [attr.data-testid]="'play-statement-' + statement.statementId + '-false'"
-                (click)="setStatement(statement.statementId!, false)"
-              >
-                Faux
-              </button>
+              @for (value of tfOrderFor(statement.statementId!); track value) {
+                <button
+                  type="button"
+                  class="tf-btn"
+                  [class.selected]="statementValue(statement.statementId!) === value"
+                  [disabled]="saving() || !!result()"
+                  [attr.data-testid]="
+                    'play-statement-' + statement.statementId + '-' + (value === true ? 'true' : 'false')
+                  "
+                  (click)="setStatement(statement.statementId!, value)"
+                >
+                  {{ value === true ? 'Vrai' : 'Faux' }}
+                </button>
+              }
             </div>
           </li>
         }
@@ -83,7 +79,13 @@
       </div>
       <div class="after">
         <button type="button" class="submit secondary" data-testid="play-replay" (click)="replay()">Rejouer</button>
-        <a [routerLink]="['/learn', subjectId()]" class="submit secondary link" data-testid="play-to-list">Retour aux questions</a>
+        <a
+          [routerLink]="['/learn', subjectId(), 'questions']"
+          class="submit secondary link"
+          data-testid="play-to-list"
+        >
+          Retour aux questions
+        </a>
       </div>
     }
   }
