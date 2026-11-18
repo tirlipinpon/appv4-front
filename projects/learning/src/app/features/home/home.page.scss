@@ -2,18 +2,115 @@
   display: block;
 }
 
-.learn-panel {
-  text-align: center;
-  padding: 24px 8px;
+.home-progress {
+  padding: 8px 4px 24px;
+  color: var(--app-text, #f5f5ff);
 }
 
-h1 {
-  margin: 0 0 8px;
-  font-size: 1.6rem;
-  font-weight: 800;
+.home-progress-top {
+  margin-bottom: 18px;
 }
 
-p {
+.home-progress-eyebrow {
+  margin: 0 0 2px;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--app-text, #fff) 60%, transparent);
+}
+
+.home-progress-top h1 {
   margin: 0;
-  color: var(--app-text-muted);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.home-progress-status {
+  margin: 16px 0 0;
+  color: color-mix(in srgb, var(--app-text, #fff) 70%, transparent);
+}
+
+.home-progress-error {
+  color: #ff8a9a;
+}
+
+.home-progress-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.home-stat {
+  border-radius: 1.2rem;
+  padding: 0.9rem 0.7rem;
+  background: color-mix(in srgb, var(--app-surface-card, #1c1830) 88%, #6d5efc);
+  border: 1px solid color-mix(in srgb, #c1b4ff 28%, transparent);
+  text-align: center;
+}
+
+.home-stat-label,
+.home-stat-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--app-text, #fff) 65%, transparent);
+}
+
+.home-stat-value {
+  margin: 0.35rem 0 0.15rem;
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.home-stat-value--text {
+  font-size: 1.05rem;
+  word-break: break-word;
+}
+
+.home-week h2 {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.home-week-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.home-week-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0.55rem 0.2rem;
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--app-surface-card, #1c1830) 92%, #fff);
+  border: 1px solid color-mix(in srgb, var(--app-outline, #3a3555) 80%, transparent);
+}
+
+.home-week-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--app-text, #fff) 70%, transparent);
+}
+
+.home-week-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--app-text, #fff) 22%, transparent);
+}
+
+.home-week-day--played {
+  border-color: color-mix(in srgb, #c1b4ff 55%, transparent);
+  background: color-mix(in srgb, #6d5efc 28%, #1c1830);
+}
+
+.home-week-day--played .home-week-dot {
+  background: #c1b4ff;
 }
