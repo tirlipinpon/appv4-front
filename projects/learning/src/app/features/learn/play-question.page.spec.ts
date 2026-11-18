@@ -31,6 +31,35 @@ describe('PlayQuestionPage', () => {
     return { fixture, http };
   }
 
+  it('affiche order via le composant partagé et envoie orderedItemIds', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+      questionId: 42,
+      subjectId: 5,
+      formCode: 'order',
+      prompt: '',
+      items: [
+        { itemId: 1, label: 'Lundi' },
+        { itemId: 2, label: 'Mardi' },
+        { itemId: 3, label: 'Mercredi' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="child-play-view-order"]')).toBeTruthy();
+    expect(root.querySelectorAll('[data-testid^="child-play-view-order-item-"]').length).toBe(3);
+
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+    expect(attempt.request.body.orderedItemIds.length).toBe(3);
+    expect(new Set(attempt.request.body.orderedItemIds)).toEqual(new Set([1, 2, 3]));
+    attempt.flush({ passed: true, scorePercent: 100 });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+    http.verify();
+  });
+
   it('affiche memory via le composant partagé et envoie les paires trouvées', () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({

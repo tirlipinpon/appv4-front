@@ -18,6 +18,7 @@
       (choiceToggle)="onSelectionChange()"
       (statementPick)="onSelectionChange()"
       (memoryChange)="onSelectionChange()"
+      (orderChange)="onSelectionChange()"
     />
 
     @if (!result()) {
@@ -28,7 +29,7 @@
         [disabled]="!canSubmit()"
         (click)="submit()"
       >
-        Valider
+        {{ question()?.formCode === 'order' ? "Valider l'ordre" : 'Valider' }}
       </button>
     }
 

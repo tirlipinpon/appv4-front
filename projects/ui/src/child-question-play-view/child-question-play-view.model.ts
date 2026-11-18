@@ -15,6 +15,11 @@ export interface ChildPlayViewPair {
   answerSide: string;
 }
 
+export interface ChildPlayViewItem {
+  itemId?: number;
+  label: string;
+}
+
 export interface ChildPlayViewQuestion {
   formCode: string;
   formLabel?: string;
@@ -22,4 +27,5 @@ export interface ChildPlayViewQuestion {
   choices?: ChildPlayViewChoice[];
   statements?: ChildPlayViewStatement[];
   pairs?: ChildPlayViewPair[];
+  items?: ChildPlayViewItem[];
 }

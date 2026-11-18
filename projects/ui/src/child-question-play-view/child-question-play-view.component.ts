@@ -1,7 +1,9 @@
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   input,
   output,
   signal,
@@ -9,10 +11,17 @@ import {
 
 import type {
   ChildPlayViewChoice,
+  ChildPlayViewItem,
   ChildPlayViewPair,
   ChildPlayViewQuestion,
   ChildPlayViewStatement,
 } from './child-question-play-view.model';
+
+export interface OrderItemView {
+  key: string;
+  itemId?: number;
+  label: string;
+}
 
 export interface MemoryCardView {
   key: string;
@@ -49,12 +58,21 @@ function buildMemoryCards(pairs: readonly ChildPlayViewPair[]): MemoryCardView[]
   return cards;
 }
 
+function toOrderViews(items: readonly ChildPlayViewItem[]): OrderItemView[] {
+  return items.map((item, index) => ({
+    key: item.itemId != null ? String(item.itemId) : `i-${index}-${item.label}`,
+    itemId: item.itemId,
+    label: item.label,
+  }));
+}
+
 /**
- * Rendu partagé Learning + Teacher : présentation visuelle enfant (vrai_faux / qcm / memory).
+ * Rendu partagé Learning + Teacher : présentation visuelle enfant (vrai_faux / qcm / memory / order).
  * Teacher : aperçu. Learning : interaction + envoi géré par la page parente.
  */
 @Component({
   selector: 'app-child-question-play-view',
+  imports: [CdkDropList, CdkDrag, CdkDragHandle],
   templateUrl: './child-question-play-view.component.html',
   styleUrl: './child-question-play-view.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,6 +86,7 @@ export class ChildQuestionPlayViewComponent {
   readonly choiceToggle = output<number>();
   readonly statementPick = output<{ statementKey: string; value: boolean }>();
   readonly memoryChange = output<void>();
+  readonly orderChange = output<void>();
 
   private readonly layoutTick = signal(0);
   private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -75,9 +94,22 @@ export class ChildQuestionPlayViewComponent {
   protected readonly isQcm = computed(() => this.question().formCode === 'qcm');
   protected readonly isTrueFalse = computed(() => this.question().formCode === 'vrai_faux');
   protected readonly isMemory = computed(() => this.question().formCode === 'memory');
+  protected readonly isOrder = computed(() => this.question().formCode === 'order');
   protected readonly playable = computed(
-    () => this.isQcm() || this.isTrueFalse() || this.isMemory(),
+    () => this.isQcm() || this.isTrueFalse() || this.isMemory() || this.isOrder(),
   );
+
+  readonly orderedItems = signal<OrderItemView[]>([]);
+
+  constructor() {
+    effect(() => {
+      const items = this.question().items ?? [];
+      this.layoutTick();
+      if (this.question().formCode === 'order') {
+        this.orderedItems.set(shuffleCopy(toOrderViews(items)));
+      }
+    });
+  }
 
   protected readonly displayChoices = computed(() => {
     this.layoutTick();
@@ -184,6 +216,16 @@ export class ChildQuestionPlayViewComponent {
     return pairs.length > 0 && this.matchedPairKeys().size >= pairs.length;
   }
 
+  orderedItemIds(): number[] {
+    return this.orderedItems()
+      .map((row) => row.itemId)
+      .filter((id): id is number => id != null);
+  }
+
+  hasOrderItems(): boolean {
+    return this.orderedItems().length > 0;
+  }
+
   protected statementKey(statement: ChildPlayViewStatement, index = 0): string {
     return statement.statementId != null ? String(statement.statementId) : `i-${index}-${statement.label}`;
   }
@@ -266,6 +308,38 @@ export class ChildQuestionPlayViewComponent {
       this.memoryChange.emit();
     }, 700);
     this.memoryChange.emit();
+  }
+
+  protected onOrderDrop(event: CdkDragDrop<OrderItemView[]>): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    this.orderedItems.update((rows) => {
+      const next = [...rows];
+      moveItemInArray(next, event.previousIndex, event.currentIndex);
+      return next;
+    });
+    this.orderChange.emit();
+  }
+
+  protected moveOrderItem(index: number, delta: -1 | 1): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    const target = index + delta;
+    const rows = this.orderedItems();
+    if (target < 0 || target >= rows.length) {
+      return;
+    }
+    this.orderedItems.update((current) => {
+      const next = [...current];
+      moveItemInArray(next, index, target);
+      return next;
+    });
+    this.orderChange.emit();
   }
 
   private clearMismatchTimer(): void {

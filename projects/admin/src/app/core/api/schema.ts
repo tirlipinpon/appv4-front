@@ -1603,6 +1603,7 @@ export interface components {
             selectedChoiceIds?: number[];
             statements?: components["schemas"]["SubmitStatementAnswer"][];
             matchedPairIds?: number[];
+            orderedItemIds?: number[];
         };
         SubmitStatementAnswer: {
             /** Format: int64 */
@@ -1967,6 +1968,11 @@ export interface components {
             choiceId?: number;
             label?: string;
         };
+        ChildPlayItemItem: {
+            /** Format: int64 */
+            itemId?: number;
+            label?: string;
+        };
         ChildPlayPairItem: {
             /** Format: int64 */
             pairId?: number;
@@ -1983,6 +1989,7 @@ export interface components {
             choices?: components["schemas"]["ChildPlayChoiceItem"][];
             statements?: components["schemas"]["ChildPlayStatementItem"][];
             pairs?: components["schemas"]["ChildPlayPairItem"][];
+            items?: components["schemas"]["ChildPlayItemItem"][];
         };
         ChildPlayStatementItem: {
             /** Format: int64 */

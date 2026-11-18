@@ -685,6 +685,7 @@
         (choiceToggle)="onPreviewSelectionChange()"
         (statementPick)="onPreviewSelectionChange()"
         (memoryChange)="onPreviewSelectionChange()"
+        (orderChange)="onPreviewSelectionChange()"
       />
       @if (previewResult() === null) {
         <button
@@ -694,7 +695,7 @@
           [disabled]="!canPreviewSubmit()"
           (click)="validateChildPreview()"
         >
-          Valider
+          {{ preview()?.formCode === 'order' ? "Valider l'ordre" : 'Valider' }}
         </button>
       } @else if (previewResult(); as verdict) {
         <div

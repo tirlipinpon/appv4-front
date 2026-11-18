@@ -165,6 +165,9 @@ export class SubjectQuestionsComponent implements OnInit {
     if (model.formCode === 'memory') {
       return view.allPairsMatched();
     }
+    if (model.formCode === 'order') {
+      return view.hasOrderItems();
+    }
     return false;
   });
 
@@ -174,11 +177,18 @@ export class SubjectQuestionsComponent implements OnInit {
     this.previewSelectionTick.set(0);
     this.preview.set({
       formCode: question.formCode,
-      formLabel: question.formCode === 'memory' ? 'FORME · memory' : question.formLabel,
+      formLabel:
+        question.formCode === 'memory'
+          ? 'FORME · memory'
+          : question.formCode === 'order'
+            ? 'FORME · order'
+            : question.formLabel,
       prompt:
         question.formCode === 'memory'
           ? question.prompt || 'Memory'
-          : question.prompt || undefined,
+          : question.formCode === 'order'
+            ? question.prompt || 'Ordre'
+            : question.prompt || undefined,
       choices: question.choices.map((choice, index) => ({
         choiceId: index + 1,
         label: choice.label,
@@ -191,6 +201,10 @@ export class SubjectQuestionsComponent implements OnInit {
         pairId: index + 1,
         questionSide: pair.questionSide,
         answerSide: pair.answerSide,
+      })),
+      items: question.items.map((item, index) => ({
+        itemId: index + 1,
+        label: item.label,
       })),
     });
   }
@@ -824,6 +838,18 @@ function gradePreview(
     const total = source.pairs.length || 1;
     const scorePercent = Math.round((100 * matched) / total);
     return { passed: matched === source.pairs.length, scorePercent };
+  }
+  if (source.formCode === 'order') {
+    const ordered = view.orderedItemIds();
+    let ok = 0;
+    source.items.forEach((_, index) => {
+      if (ordered[index] === index + 1) {
+        ok++;
+      }
+    });
+    const total = source.items.length || 1;
+    const scorePercent = Math.round((100 * ok) / total);
+    return { passed: ok === source.items.length, scorePercent };
   }
   return { passed: false, scorePercent: 0 };
 }
