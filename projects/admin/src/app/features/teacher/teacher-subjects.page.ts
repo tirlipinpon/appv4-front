@@ -36,8 +36,8 @@ interface SubjectRow {
   owner?: TeacherSubjectSharedHolder;
   /** Total des questions de la matière, renvoyé par l'API. */
   questionCount: number;
-  /** Code d'icône de la librairie API, ou null. */
-  iconCode: string | null;
+  /** Code d'icône de la librairie API, ou absent. */
+  iconCode?: string | null;
 }
 
 interface AddableCourse {
@@ -376,8 +376,8 @@ export class TeacherSubjectsPage implements OnInit {
     if (this.saving() || !subject.ownedByMe || !subject.followedByMe) {
       return;
     }
-    const next = iconCode || null;
-    if ((subject.iconCode ?? null) === next) {
+    const next = iconCode || '';
+    if ((subject.iconCode || '') === next) {
       return;
     }
     this.saving.set(true);
@@ -404,8 +404,15 @@ export class TeacherSubjectsPage implements OnInit {
     this.clearGradeError(schoolId, grade);
     this.error.set(null);
     this.saving.set(true);
-    const iconCode = this.iconDraft(schoolId, grade) || null;
-    this.api.create({ schoolId, grade, name: raw.trim(), iconCode }).subscribe({
+    const iconCode = this.iconDraft(schoolId, grade);
+    this.api
+      .create({
+        schoolId,
+        grade,
+        name: raw.trim(),
+        ...(iconCode ? { iconCode } : {}),
+      })
+      .subscribe({
       next: () => {
         this.clearReuse(schoolId, grade);
         this.onDraft(schoolId, grade, '');
