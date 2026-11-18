@@ -33,6 +33,7 @@ function emptyDraft(overrides: Partial<QuestionDraftSnapshot> = {}): QuestionDra
     requireAllCorrect: true,
     clickZones: [],
     puzzleMagnet: 0.08,
+    timelineEnabled: false,
     ...overrides,
   };
 }
@@ -78,7 +79,30 @@ describe('question-form.adapters', () => {
         formCode: FORM.ORDER,
         items: [{ label: 'un' }, { label: 'deux' }],
       })?.items,
-    ).toEqual([{ label: 'un' }, { label: 'deux' }]);
+    ).toEqual([
+      { label: 'un', axisLabel: '' },
+      { label: 'deux', axisLabel: '' },
+    ]);
+
+    expect(
+      parseSavedQuestion({
+        id: 22,
+        formCode: FORM.ORDER,
+        timelineEnabled: true,
+        items: [
+          { label: 'un', axisLabel: '20 minutes' },
+          { label: 'deux', axisLabel: '1 heure' },
+        ],
+      }),
+    ).toEqual(
+      jasmine.objectContaining({
+        timelineEnabled: true,
+        items: [
+          { label: 'un', axisLabel: '20 minutes' },
+          { label: 'deux', axisLabel: '1 heure' },
+        ],
+      }),
+    );
 
     expect(
       parseSavedQuestion({
@@ -156,6 +180,29 @@ describe('question-form.adapters', () => {
       choices: [
         { label: '3', correct: false },
         { label: '4', correct: true },
+      ],
+    });
+  });
+
+  it('builds an order body with timeline jalons', () => {
+    const body = buildSaveBody(
+      FORM.ORDER,
+      emptyDraft({
+        timelineEnabled: true,
+        items: [
+          { label: 'Circulation', axisLabel: '20 minutes' },
+          { label: 'Monoxyde', axisLabel: '12 heures' },
+        ],
+      }),
+    );
+
+    expect(body).toEqual({
+      formCode: FORM.ORDER,
+      prompt: '',
+      timelineEnabled: true,
+      items: [
+        { label: 'Circulation', axisLabel: '20 minutes' },
+        { label: 'Monoxyde', axisLabel: '12 heures' },
       ],
     });
   });

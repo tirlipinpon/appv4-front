@@ -139,10 +139,11 @@
               (input)="setPrompt(inputValue($event))"
             />
           </mat-form-field>
+          <p class="hint">Étapes (ordre juste)</p>
           @for (item of items(); track $index) {
             <div class="choice">
               <mat-form-field appearance="outline" class="field">
-                <mat-label>Élément</mat-label>
+                <mat-label>Étape</mat-label>
                 <input
                   matInput
                   [value]="item.label"
@@ -150,10 +151,49 @@
                   (input)="setItemLabel($index, inputValue($event))"
                 />
               </mat-form-field>
+              @if (timelineEnabled()) {
+                <mat-form-field appearance="outline" class="field">
+                  <mat-label>Libellé d'axe</mat-label>
+                  <input
+                    matInput
+                    [value]="item.axisLabel"
+                    [disabled]="saving()"
+                    (input)="setItemAxisLabel($index, inputValue($event))"
+                  />
+                </mat-form-field>
+              }
+              <button
+                mat-button
+                type="button"
+                [disabled]="saving() || $index === 0"
+                (click)="moveItem($index, -1)"
+              >
+                ↑
+              </button>
+              <button
+                mat-button
+                type="button"
+                [disabled]="saving() || $index === items().length - 1"
+                (click)="moveItem($index, 1)"
+              >
+                ↓
+              </button>
               <button mat-button type="button" [disabled]="saving()" (click)="removeItem($index)">Enlever</button>
             </div>
           }
-          <button mat-button type="button" [disabled]="saving()" (click)="addItem()">Ajouter un élément</button>
+          <button mat-button type="button" [disabled]="saving()" (click)="addItem()">Ajouter une étape</button>
+          <mat-checkbox
+            [checked]="timelineEnabled()"
+            [disabled]="saving()"
+            (change)="setTimelineEnabled($event.checked)"
+          >
+            Afficher une ligne du temps (optionnel)
+          </mat-checkbox>
+          @if (timelineEnabled()) {
+            <p class="hint">
+              Chaque étape a un jalon (libellé d'axe). L'ordre des étapes = l'ordre juste sur la frise.
+            </p>
+          }
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
@@ -612,9 +652,17 @@
             } @else if (question.formCode === 'order') {
               <ol class="answers ordered">
                 @for (item of question.items; track $index) {
-                  <li>{{ item.label }}</li>
+                  <li>
+                    @if (question.timelineEnabled === true && item.axisLabel !== '') {
+                      <span class="hint">{{ item.axisLabel }} — </span>
+                    }
+                    {{ item.label }}
+                  </li>
                 }
               </ol>
+              @if (question.timelineEnabled === true) {
+                <p class="hint">Ligne du temps activée.</p>
+              }
             } @else if (question.formCode === 'image_interactive') {
               <app-click-zone-editor
                 [readonly]="true"

@@ -45,7 +45,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     if (!item.label) {
       return [];
     }
-    return [{ label: item.label }];
+    return [{ label: item.label, axisLabel: item.axisLabel ?? '' }];
   });
   const statements = (question.statements ?? []).flatMap((row) => {
     if (!row.label || row.truthful == null) {
@@ -112,6 +112,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
       formCode === FORM.PUZZLE && typeof question.snapDistance === 'number'
         ? question.snapDistance
         : defaultMagnet(),
+    timelineEnabled: formCode === FORM.ORDER && question.timelineEnabled === true,
   };
 }
 
@@ -152,7 +153,11 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
       return {
         formCode: code,
         prompt: draft.prompt,
-        items: draft.items.map((item) => ({ label: item.label })),
+        timelineEnabled: draft.timelineEnabled,
+        items: draft.items.map((item) => ({
+          label: item.label,
+          ...(draft.timelineEnabled ? { axisLabel: item.axisLabel } : {}),
+        })),
       };
     case FORM.TRUE_FALSE:
       return {

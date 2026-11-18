@@ -1163,6 +1163,7 @@ export interface components {
             pieces?: components["schemas"]["TeacherQuestionPieceInput"][];
             /** Format: double */
             snapDistance?: number;
+            timelineEnabled?: boolean;
         };
         TeacherQuestionCardInput: {
             label?: string;
@@ -1181,6 +1182,7 @@ export interface components {
         };
         TeacherQuestionItemInput: {
             label?: string;
+            axisLabel?: string;
         };
         TeacherQuestionLinkInput: {
             leftLabel?: string;
@@ -1248,6 +1250,7 @@ export interface components {
             /** Format: int64 */
             id?: number;
             label?: string;
+            axisLabel?: string;
         };
         TeacherQuestionLinkItem: {
             /** Format: int64 */
@@ -1319,6 +1322,7 @@ export interface components {
             pieces?: components["schemas"]["TeacherQuestionPieceItem"][];
             /** Format: double */
             snapDistance?: number;
+            timelineEnabled?: boolean;
         };
         SetTeacherSubjectIconRequest: {
             iconCode?: string;
@@ -2013,6 +2017,7 @@ export interface components {
             /** Format: int64 */
             itemId?: number;
             label?: string;
+            axisLabel?: string;
         };
         ChildPlayPairItem: {
             /** Format: int64 */
@@ -2033,6 +2038,7 @@ export interface components {
             items?: components["schemas"]["ChildPlayItemItem"][];
             columns?: components["schemas"]["ChildPlayColumnItem"][];
             cards?: components["schemas"]["ChildPlayCardItem"][];
+            timelineEnabled?: boolean;
         };
         ChildPlayStatementItem: {
             /** Format: int64 */
