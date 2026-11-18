@@ -1,0 +1,20 @@
+<main class="learn-home">
+  <div class="learn-mascot" aria-hidden="true">
+    <svg viewBox="0 0 88 88">
+      <circle cx="44" cy="44" r="44" fill="#ffb703" />
+      <circle cx="44" cy="48" r="24" fill="#ffe8a3" />
+      <circle cx="35" cy="46" r="3" fill="#2a2348" />
+      <circle cx="53" cy="46" r="3" fill="#2a2348" />
+    </svg>
+  </div>
+  @if (firstName(); as name) {
+    <h1>Bonjour {{ name }} !</h1>
+  } @else {
+    <h1>Bonjour !</h1>
+  }
+  <p class="learn-lead">Tu es entré.</p>
+  @if (error(); as message) {
+    <p class="learn-error" role="alert">{{ message }}</p>
+  }
+  <app-button testId="logout" kind="button" (click)="logout()">Sortir</app-button>
+</main>

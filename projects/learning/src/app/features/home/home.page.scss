@@ -1,0 +1,46 @@
+:host {
+  display: block;
+}
+
+.learn-home {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  width: min(100%, 26rem);
+  margin-inline: auto;
+  padding: 32px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.learn-mascot {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto;
+}
+
+.learn-mascot svg {
+  width: 100%;
+  height: 100%;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.85rem;
+  font-weight: 800;
+}
+
+.learn-lead,
+.learn-error {
+  margin: 0;
+}
+
+.learn-lead {
+  color: var(--app-text-muted);
+}
+
+.learn-error {
+  color: var(--app-error);
+}

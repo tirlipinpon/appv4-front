@@ -119,7 +119,9 @@
           "options": {
             "lintFilePatterns": [
               "projects/learning/**/*.ts",
-              "projects/learning/**/*.html"
+              "projects/learning/**/*.html",
+              "projects/ui/**/*.ts",
+              "projects/ui/**/*.html"
             ],
             "eslintConfig": "projects/learning/eslint.config.js"
           }

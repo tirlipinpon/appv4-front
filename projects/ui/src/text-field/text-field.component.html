@@ -1,0 +1,39 @@
+<label class="ui-field">
+  <span class="ui-field-icon" aria-hidden="true">
+    @if (icon() === 'lock') {
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.8" />
+        <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+    } @else {
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.8" />
+        <path d="M5 19c1.4-3 3.8-4.5 7-4.5S17.6 16 19 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+    }
+  </span>
+  <input
+    [type]="fieldType()"
+    [value]="value()"
+    [attr.placeholder]="label()"
+    [attr.aria-label]="label()"
+    [attr.data-testid]="testId() || null"
+    [attr.maxlength]="maxlength()"
+    [attr.inputmode]="inputMode() || null"
+    [attr.autocomplete]="autocomplete()"
+    (input)="onInput($event)"
+  />
+  @if (reveal()) {
+    <button
+      type="button"
+      class="ui-field-reveal"
+      [attr.aria-label]="shown() ? 'Masquer le code' : 'Afficher le code'"
+      (click)="toggleShown()"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" stroke="currentColor" stroke-width="1.8" />
+        <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.8" />
+      </svg>
+    </button>
+  }
+</label>

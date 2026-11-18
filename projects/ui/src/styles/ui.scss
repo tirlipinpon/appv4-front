@@ -1,0 +1,80 @@
+@use "tokens";
+
+.ui-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--app-outline);
+  border-radius: 16px;
+  background: var(--app-surface-card);
+  color: var(--app-text-muted);
+}
+
+.ui-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 14px 0;
+  background: transparent;
+  color: var(--app-text);
+  font: inherit;
+  outline: none;
+}
+
+.ui-field input::placeholder {
+  color: var(--app-text-muted);
+}
+
+.ui-field-icon,
+.ui-field-reveal {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--app-text-muted);
+}
+
+.ui-field-reveal {
+  border: 0;
+  padding: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ui-button {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--app-radius-pill);
+  background: linear-gradient(90deg, var(--app-primary), var(--app-primary-end, var(--app-primary)));
+  color: var(--app-on-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ui-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.theme-learn {
+  --app-primary: #7c5cff;
+  --app-primary-end: #b9a6ff;
+  --app-on-primary: #ffffff;
+  --app-surface: #16122c;
+  --app-surface-card: #2a2348;
+  --app-text: #ffffff;
+  --app-text-muted: #b7aed4;
+  --app-error: #ff8a80;
+  --app-outline: transparent;
+  --app-radius-card: 28px;
+  --app-font: Nunito, "Segoe UI", sans-serif;
+  display: block;
+  min-height: 100%;
+  background: var(--app-surface);
+  color: var(--app-text);
+  font-family: var(--app-font);
+}
