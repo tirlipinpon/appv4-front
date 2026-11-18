@@ -58,10 +58,13 @@ export class SubjectQuestionsPage implements OnInit {
     if (code === 'memory') {
       return 'Memory';
     }
+    if (code === 'classement') {
+      return 'Classement';
+    }
     return code ?? '';
   }
 
   protected canPlay(code: string | undefined): boolean {
-    return code === 'vrai_faux' || code === 'qcm' || code === 'memory';
+    return code === 'vrai_faux' || code === 'qcm' || code === 'memory' || code === 'classement';
   }
 }

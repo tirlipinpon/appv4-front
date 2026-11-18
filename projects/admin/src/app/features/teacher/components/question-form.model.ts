@@ -16,6 +16,7 @@ export const FORM = {
   TRUE_FALSE: 'vrai_faux',
   LINKS: 'liens',
   CASE_VIDE: 'case_vide',
+  CLASSIFICATION: 'classement',
   TEXTE: 'texte',
   REPONSE_LIBRE: 'reponse_libre',
   IMAGE_CLICK: 'image_interactive',
@@ -57,6 +58,16 @@ export interface LinkDraft {
   rightLabel: string;
 }
 
+export interface ColumnDraft {
+  label: string;
+}
+
+/** Carte rattachée à une colonne via l'index 0-based dans `columns`. */
+export interface CardDraft {
+  label: string;
+  columnIndex: number;
+}
+
 export interface GapWordDraft {
   label: string;
 }
@@ -75,6 +86,8 @@ export interface SavedQuestion {
   items: ItemDraft[];
   statements: StatementDraft[];
   links: LinkDraft[];
+  columns: ColumnDraft[];
+  cards: CardDraft[];
   sentence: string;
   answers: GapWordDraft[];
   decoys: GapWordDraft[];
@@ -110,6 +123,8 @@ export interface QuestionDraftSnapshot {
   items: ItemDraft[];
   statements: StatementDraft[];
   links: LinkDraft[];
+  columns: ColumnDraft[];
+  cards: CardDraft[];
   sentence: string;
   answers: GapWordDraft[];
   decoys: GapWordDraft[];
@@ -131,6 +146,7 @@ export function isKnownFormCode(code: string | null | undefined): code is KnownF
     code === FORM.TRUE_FALSE ||
     code === FORM.LINKS ||
     code === FORM.CASE_VIDE ||
+    code === FORM.CLASSIFICATION ||
     code === FORM.TEXTE ||
     code === FORM.REPONSE_LIBRE ||
     code === FORM.IMAGE_CLICK ||
@@ -146,6 +162,17 @@ export function emptyLinks(): LinkDraft[] {
   return [
     { leftLabel: '', rightLabel: '' },
     { leftLabel: '', rightLabel: '' },
+  ];
+}
+
+export function emptyColumns(): ColumnDraft[] {
+  return [{ label: '' }, { label: '' }];
+}
+
+export function emptyCards(): CardDraft[] {
+  return [
+    { label: '', columnIndex: 0 },
+    { label: '', columnIndex: 1 },
   ];
 }
 
