@@ -1,0 +1,125 @@
+:host {
+  display: block;
+}
+
+.learn-library {
+  padding: 8px 4px 24px;
+  color: var(--app-text, #f5f5ff);
+}
+
+.learn-library-top {
+  margin-bottom: 18px;
+}
+
+.learn-library-eyebrow {
+  margin: 0 0 2px;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--app-text, #fff) 60%, transparent);
+}
+
+.learn-library-titles h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.learn-library-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.learn-library-section-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.learn-library-section-head span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c1b4ff;
+}
+
+.learn-library-status {
+  margin: 16px 0 0;
+  color: color-mix(in srgb, var(--app-text, #fff) 70%, transparent);
+}
+
+.learn-library-error {
+  color: #ff8a9a;
+}
+
+.learn-library-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.learn-subject-card {
+  --card-tint: #d7d2ff;
+  min-height: 11.5rem;
+  border-radius: 1.4rem;
+  padding: 0.85rem;
+  background: var(--card-tint);
+  color: #1a1630;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+  box-sizing: border-box;
+}
+
+.learn-subject-card-top {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.learn-subject-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #fff 80%, transparent);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.learn-subject-card-body h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.learn-subject-card-body p {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: color-mix(in srgb, #1a1630 65%, transparent);
+}
+
+.learn-subject-card-bottom {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.learn-subject-icon {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 1rem;
+  display: grid;
+  place-items: center;
+  object-fit: contain;
+  background: color-mix(in srgb, #fff 55%, transparent);
+  font-size: 1.55rem;
+}
+
+.learn-subject-icon-empty {
+  opacity: 0.45;
+}

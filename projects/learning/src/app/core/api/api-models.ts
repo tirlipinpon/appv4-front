@@ -12,3 +12,6 @@ export type ChildProfileResponse = Required<
 > & {
   avatarCode?: string | null;
 };
+
+export type ChildLearningSubjectItem = components['schemas']['ChildLearningSubjectItem'];
+export type ChildLearningSubjectsResponse = components['schemas']['ChildLearningSubjectsResponse'];

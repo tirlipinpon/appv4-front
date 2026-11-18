@@ -1,0 +1,84 @@
+.picker {
+  position: relative;
+  width: 100%;
+  max-width: 22rem;
+}
+
+.field {
+  width: 100%;
+}
+
+.prefix {
+  display: inline-flex;
+  margin-right: 0.35rem;
+}
+
+.clear {
+  border: 0;
+  background: transparent;
+  color: var(--app-text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0 0.35rem;
+}
+
+.dropdown {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% - 0.85rem);
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  max-height: 16rem;
+  overflow: auto;
+  border: 1px solid var(--app-outline);
+  border-radius: 8px;
+  background: var(--app-surface-card, #fff);
+  box-shadow: 0 8px 20px rgb(15 23 42 / 12%);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.55rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row app-subject-icon-view {
+  grid-row: 1 / span 2;
+  font-size: 1.25rem;
+}
+
+.row .name {
+  grid-column: 2;
+  font-weight: 600;
+}
+
+.row .code {
+  grid-column: 2;
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+}
+
+.row:hover:not(:disabled),
+.row.selected {
+  background: var(--app-primary-soft, #eef2ff);
+}
+
+.status {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+}

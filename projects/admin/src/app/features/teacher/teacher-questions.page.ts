@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import type { TeacherSubjectsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
+import { SubjectIconViewComponent } from '../../shared/subject-icons/subject-icon-view.component';
 import { QuestionDestination, SubjectQuestionsComponent } from './components/subject-questions.component';
 import { TeacherSubjectsService } from './data-access/teacher-subjects.service';
 import { TeacherQuestionsService } from './data-access/teacher-questions.service';
@@ -13,6 +14,7 @@ interface SubjectRow {
   name: string;
   place: string;
   questionCount: number;
+  iconCode?: string | null;
 }
 
 interface GradeBlock {
@@ -33,7 +35,7 @@ interface SchoolBlock {
  */
 @Component({
   selector: 'app-teacher-questions-page',
-  imports: [SpaceHeader, SubjectQuestionsComponent],
+  imports: [SpaceHeader, SubjectQuestionsComponent, SubjectIconViewComponent],
   providers: [TeacherQuestionsService],
   templateUrl: './teacher-questions.page.html',
   styleUrl: './teacher-questions.page.scss',
@@ -113,6 +115,7 @@ export class TeacherQuestionsPage implements OnInit {
             name: subject.name,
             place,
             questionCount: subject.questionCount ?? 0,
+            iconCode: subject.iconCode ?? null,
           });
         }
         grades.push({ grade: grade.grade, subjects });

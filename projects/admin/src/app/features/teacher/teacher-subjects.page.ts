@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 import type {
+  AvatarChoice,
   TeacherDeactivateNoticeItem,
   TeacherSubjectColleagueItem,
   TeacherSubjectFollowersResponse,
@@ -18,6 +19,8 @@ import type {
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
+import { SubjectIconPickerComponent } from '../../shared/subject-icons/subject-icon-picker.component';
+import { SubjectIconViewComponent } from '../../shared/subject-icons/subject-icon-view.component';
 import { TeacherSubjectsService } from './data-access/teacher-subjects.service';
 
 interface SubjectRow {
@@ -34,6 +37,8 @@ interface SubjectRow {
   owner?: TeacherSubjectSharedHolder;
   /** Total des questions de la matière, renvoyé par l'API. */
   questionCount: number;
+  /** Code d'icône de la librairie API, ou absent. */
+  iconCode?: string | null;
 }
 
 interface AddableCourse {
@@ -104,7 +109,16 @@ const COLLEAGUE_REQUIRED = 'Choisis un collègue.';
  */
 @Component({
   selector: 'app-teacher-subjects-page',
-  imports: [MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule, SpaceHeader],
+  imports: [
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    SpaceHeader,
+    SubjectIconPickerComponent,
+    SubjectIconViewComponent,
+  ],
   templateUrl: './teacher-subjects.page.html',
   styleUrl: './subjects.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -127,6 +141,10 @@ export class TeacherSubjectsPage implements OnInit {
   readonly ready = signal(false);
   readonly error = signal<string | null>(null);
   readonly drafts = signal<Readonly<Record<string, string>>>({});
+  /** Icône choisie à la création, par classe (clé schoolId|grade). */
+  readonly iconDrafts = signal<Readonly<Record<string, string>>>({});
+  /** Librairie fermée renvoyée par GET /teacher/subjects. */
+  readonly iconChoices = signal<AvatarChoice[]>([]);
   /** Matière déjà créée choisie dans le menu, par école et année. */
   readonly reused = signal<Readonly<Record<string, string>>>({});
   readonly gradeErrors = signal<Readonly<Record<string, string>>>({});
@@ -350,6 +368,35 @@ export class TeacherSubjectsPage implements OnInit {
     }
   }
 
+  iconDraft(schoolId: number, grade: string): string {
+    return this.iconDrafts()[this.gradeKey(schoolId, grade)] ?? '';
+  }
+
+  onIconDraft(schoolId: number, grade: string, value: string): void {
+    const key = this.gradeKey(schoolId, grade);
+    this.iconDrafts.update((current) => ({ ...current, [key]: value }));
+  }
+
+  /** Change l'icône d'une matière encore suivie et créée par moi. */
+  setSubjectIcon(subject: SubjectRow, iconCode: string): void {
+    if (this.saving() || !subject.ownedByMe || !subject.followedByMe) {
+      return;
+    }
+    const next = iconCode || '';
+    if ((subject.iconCode || '') === next) {
+      return;
+    }
+    this.saving.set(true);
+    this.error.set(null);
+    this.api.setIcon(subject.id, { iconCode: next }).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => {
+        this.saving.set(false);
+        this.error.set(httpErrorMessage(err, 'Icône non enregistrée.'));
+      },
+    });
+  }
+
   add(schoolId: number, grade: string): void {
     if (this.saving()) {
       return;
@@ -363,10 +410,19 @@ export class TeacherSubjectsPage implements OnInit {
     this.clearGradeError(schoolId, grade);
     this.error.set(null);
     this.saving.set(true);
-    this.api.create({ schoolId, grade, name: raw.trim() }).subscribe({
+    const iconCode = this.iconDraft(schoolId, grade);
+    this.api
+      .create({
+        schoolId,
+        grade,
+        name: raw.trim(),
+        ...(iconCode ? { iconCode } : {}),
+      })
+      .subscribe({
       next: () => {
         this.clearReuse(schoolId, grade);
         this.onDraft(schoolId, grade, '');
+        this.onIconDraft(schoolId, grade, '');
         this.reload();
       },
       error: (err: HttpErrorResponse) => {
@@ -965,6 +1021,7 @@ export class TeacherSubjectsPage implements OnInit {
   }
 
   private apply(body: TeacherSubjectsResponse): void {
+    this.iconChoices.set(body.iconChoices ?? []);
     const schools: SchoolBlock[] = [];
     for (const school of body.schools ?? []) {
       if (school.schoolId == null) {
@@ -990,6 +1047,7 @@ export class TeacherSubjectsPage implements OnInit {
             shareAskedTo: holdersOf(subject.shareAskedTo),
             owner: subject.owner?.userId != null ? holdersOf([subject.owner])[0] : undefined,
             questionCount: subject.questionCount ?? 0,
+            iconCode: subject.iconCode ?? null,
           });
         }
         const addable: AddableCourse[] = [];

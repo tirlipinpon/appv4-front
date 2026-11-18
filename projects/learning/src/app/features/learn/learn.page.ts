@@ -1,19 +1,58 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 
+import { apiErrorMessage } from '../../core/auth/child-auth.service';
+import { knownSubjectIcon, subjectCardTint, subjectIconSrc } from '../../shared/subject-icons/subject-icons';
+import { ChildSubjectsService } from './data-access/child-subjects.service';
+
+/**
+ * Grille des matières de l'enfant (LEARN-29).
+ * Affiche uniquement ce que GET /api/ext/subjects renvoie.
+ */
 @Component({
   selector: 'app-learn-page',
-  template: `
-    <section class="learn-panel" data-testid="learn-panel">
-      <h1>Apprendre</h1>
-      <p>Bientôt des missions ici.</p>
-    </section>
-  `,
-  styles: `
-    :host { display: block; }
-    .learn-panel { text-align: center; padding: 24px 8px; }
-    h1 { margin: 0 0 8px; font-size: 1.6rem; font-weight: 800; }
-    p { margin: 0; color: var(--app-text-muted); }
-  `,
+  templateUrl: './learn.page.html',
+  styleUrl: './learn.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LearnPage {}
+export class LearnPage implements OnInit {
+  private readonly api = inject(ChildSubjectsService);
+
+  protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
+  protected readonly subjects = this.api.subjects;
+  protected readonly totalLabel = computed(() => {
+    const count = this.subjects().length;
+    return `${count} total`;
+  });
+
+  ngOnInit(): void {
+    this.api.load().subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.error.set(null);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.error.set(apiErrorMessage(err, 'Impossible de charger les matières.'));
+      },
+    });
+  }
+
+  protected cardTint(iconCode: string | null | undefined): string {
+    return subjectCardTint(iconCode);
+  }
+
+  protected iconSrc(iconCode: string | null | undefined): string | null {
+    return subjectIconSrc(iconCode);
+  }
+
+  protected iconEmoji(iconCode: string | null | undefined): string | null {
+    return knownSubjectIcon(iconCode)?.emoji ?? null;
+  }
+
+  protected questionLabel(count: number | undefined): string {
+    const n = count ?? 0;
+    return n === 1 ? '1 question' : `${n} questions`;
+  }
+}

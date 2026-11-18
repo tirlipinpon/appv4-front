@@ -15,6 +15,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { avatarEmoji } from '../../shared/avatars/account-avatars';
 import { PhotoObjectUrlBag } from '../../shared/photos/photo-object-url-bag';
+import { SubjectIconViewComponent } from '../../shared/subject-icons/subject-icon-view.component';
 import { sexLabel } from './child-sex';
 import { ChildSubjectsService } from './data-access/child-subjects.service';
 import { ParentChildrenService } from './data-access/parent-children.service';
@@ -32,7 +33,7 @@ const SUBJECT_SUGGEST_LIMIT = 8;
  */
 @Component({
   selector: 'app-parent-subjects-page',
-  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, SpaceHeader],
+  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, SpaceHeader, SubjectIconViewComponent],
   templateUrl: './parent-subjects.page.html',
   styleUrl: './child-subjects.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
