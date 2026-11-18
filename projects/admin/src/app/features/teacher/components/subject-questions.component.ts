@@ -1,5 +1,15 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, Input, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Input,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -133,9 +143,32 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly letterBusyId = signal<number | null>(null);
   /** Aperçu rendu enfant (popup). */
   readonly preview = signal<ChildPlayViewQuestion | null>(null);
+  readonly previewSource = signal<SavedQuestion | null>(null);
+  readonly previewResult = signal<{ passed: boolean; scorePercent: number } | null>(null);
+  readonly previewSelectionTick = signal(0);
+  private readonly previewView = viewChild(ChildQuestionPlayViewComponent);
   private followSeq = 0;
 
+  readonly canPreviewSubmit = computed(() => {
+    this.previewSelectionTick();
+    const view = this.previewView();
+    const model = this.preview();
+    if (!view || !model || this.previewResult()) {
+      return false;
+    }
+    if (model.formCode === 'qcm') {
+      return view.selectedChoiceIds().length > 0;
+    }
+    if (model.formCode === 'vrai_faux') {
+      return view.allStatementsAnswered();
+    }
+    return false;
+  });
+
   openChildPreview(question: SavedQuestion): void {
+    this.previewSource.set(question);
+    this.previewResult.set(null);
+    this.previewSelectionTick.set(0);
     this.preview.set({
       formCode: question.formCode,
       formLabel: question.formLabel,
@@ -153,6 +186,27 @@ export class SubjectQuestionsComponent implements OnInit {
 
   closeChildPreview(): void {
     this.preview.set(null);
+    this.previewSource.set(null);
+    this.previewResult.set(null);
+  }
+
+  onPreviewSelectionChange(): void {
+    this.previewSelectionTick.update((n) => n + 1);
+  }
+
+  validateChildPreview(): void {
+    const view = this.previewView();
+    const source = this.previewSource();
+    if (!view || !source || !this.canPreviewSubmit()) {
+      return;
+    }
+    this.previewResult.set(gradePreview(source, view));
+  }
+
+  replayChildPreview(): void {
+    this.previewResult.set(null);
+    this.previewView()?.reshuffle();
+    this.previewSelectionTick.update((n) => n + 1);
   }
 
   ngOnInit(): void {
@@ -726,4 +780,33 @@ export class SubjectQuestionsComponent implements OnInit {
         },
       });
   }
+}
+
+/** Verdict local d'aperçu (données teacher déjà connues) — pas d'appel API. */
+function gradePreview(
+  source: SavedQuestion,
+  view: ChildQuestionPlayViewComponent,
+): { passed: boolean; scorePercent: number } {
+  if (source.formCode === 'vrai_faux') {
+    const answers = new Map(view.statementAnswers().map((row) => [row.statementId, row.value]));
+    let ok = 0;
+    source.statements.forEach((row, index) => {
+      if (answers.get(index + 1) === row.truthful) {
+        ok++;
+      }
+    });
+    const total = source.statements.length || 1;
+    const scorePercent = Math.round((100 * ok) / total);
+    return { passed: ok === source.statements.length, scorePercent };
+  }
+  if (source.formCode === 'qcm') {
+    const selected = new Set(view.selectedChoiceIds());
+    const expected = new Set(
+      source.choices.flatMap((choice, index) => (choice.correct ? [index + 1] : [])),
+    );
+    const same =
+      selected.size === expected.size && [...selected].every((id) => expected.has(id));
+    return { passed: same, scorePercent: same ? 100 : 0 };
+  }
+  return { passed: false, scorePercent: 0 };
 }

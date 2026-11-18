@@ -286,3 +286,52 @@ button.form-chip:disabled {
   font-size: 0.9rem;
 }
 
+.child-preview-submit {
+  margin-top: 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.75rem 1.25rem;
+  background: var(--app-primary);
+  color: var(--app-on-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.child-preview-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.child-preview-submit.secondary {
+  background: transparent;
+  color: var(--app-primary);
+  border: 1px solid var(--app-primary);
+}
+
+.child-preview-verdict {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+}
+
+.child-preview-verdict.ok {
+  background: #dcfce7;
+}
+
+.child-preview-verdict.ko {
+  background: #fee2e2;
+}
+
+.child-preview-verdict-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.child-preview-verdict-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--app-text-muted);
+}
+

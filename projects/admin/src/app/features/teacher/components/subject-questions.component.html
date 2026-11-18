@@ -676,9 +676,45 @@
         </button>
       </header>
       <p class="child-preview-hint">
-        Même rendu que Learning. Les bonnes réponses ne sont pas indiquées ici.
+        Même rendu que Learning (bouton Valider inclus). Les bonnes réponses ne sont pas affichées sur la carte.
       </p>
-      <app-child-question-play-view [question]="previewQuestion" [interactive]="true" />
+      <app-child-question-play-view
+        [question]="previewQuestion"
+        [interactive]="previewResult() === null"
+        [disabled]="previewResult() !== null"
+        (choiceToggle)="onPreviewSelectionChange()"
+        (statementPick)="onPreviewSelectionChange()"
+      />
+      @if (previewResult() === null) {
+        <button
+          type="button"
+          class="child-preview-submit"
+          data-testid="teacher-child-preview-submit"
+          [disabled]="!canPreviewSubmit()"
+          (click)="validateChildPreview()"
+        >
+          Valider
+        </button>
+      } @else if (previewResult(); as verdict) {
+        <div
+          class="child-preview-verdict"
+          [class.ok]="verdict.passed === true"
+          [class.ko]="verdict.passed !== true"
+          data-testid="teacher-child-preview-result"
+        >
+          <p class="child-preview-verdict-title">{{ verdict.passed === true ? 'Bravo !' : 'Pas encore' }}</p>
+          <p>Score : {{ verdict.scorePercent }} %</p>
+          <p class="child-preview-verdict-note">Aperçu local — rien n’est envoyé à l’API enfant.</p>
+        </div>
+        <button
+          type="button"
+          class="child-preview-submit secondary"
+          data-testid="teacher-child-preview-replay"
+          (click)="replayChildPreview()"
+        >
+          Rejouer
+        </button>
+      }
     </div>
   }
 </section>
