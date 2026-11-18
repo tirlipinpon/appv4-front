@@ -115,6 +115,37 @@
   background: #c1b4ff;
 }
 
+.home-continue {
+  margin-top: 28px;
+  padding: 1rem 1rem 1.1rem;
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, #6d5efc 22%, #1c1830);
+  border: 1px solid color-mix(in srgb, #c1b4ff 40%, transparent);
+}
+
+.home-continue-eyebrow,
+.home-continue-title,
+.home-continue-meta {
+  margin: 0;
+}
+
+.home-continue-eyebrow {
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--app-text, #fff) 68%, transparent);
+}
+
+.home-continue-title {
+  margin-top: 6px;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.home-continue-meta {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--app-text, #fff) 72%, transparent);
+}
+
 .home-mission {
   margin-top: 28px;
 }

@@ -10,7 +10,7 @@ import { ChildTodayService } from './data-access/child-today.service';
 const WEEK_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const;
 
 /**
- * Accueil : progression (LEARN-31) et mission du jour (LEARN-32).
+ * Accueil : progression (LEARN-31), mission (LEARN-32) et reprise (LEARN-33).
  * Affiche uniquement ce que les API progress et today renvoient.
  */
 @Component({
@@ -39,6 +39,29 @@ export class HomePage implements OnInit {
       label,
       played: days[index] === true,
     }));
+  });
+
+  /**
+   * Carte « Continuer » : prochaine tâche jouable de GET /today (LEARN-33).
+   * Absente si la mission est vide ou terminée.
+   */
+  protected readonly continueModule = computed(() => {
+    const mission = this.today()?.mission;
+    if (mission == null || mission.playable !== true) {
+      return null;
+    }
+    const task = (mission.tasks ?? []).find((row) => row.playable === true) ?? null;
+    const commands = this.missionPlayCommands(mission);
+    if (commands === null) {
+      return null;
+    }
+    return {
+      title: task?.label ?? mission.objective ?? 'Continuer',
+      statusLabel: mission.statusLabel ?? null,
+      progress: mission.progress ?? 0,
+      target: mission.target ?? 0,
+      commands,
+    };
   });
 
   ngOnInit(): void {
