@@ -14,47 +14,17 @@
     <p class="subject-board-status subject-board-error" data-testid="subject-board-error">{{ error() }}</p>
   } @else if (board(); as b) {
     <article class="subject-board-hero" [style.--card-tint]="cardTint(b.iconCode)" data-testid="subject-board-hero">
-      <div class="subject-board-chips">
-        @if (b.worldLabel) {
-          <span class="subject-board-chip" data-testid="subject-board-world">{{ b.worldLabel }}</span>
-        }
-        @if (b.ageLabel) {
-          <span class="subject-board-chip" data-testid="subject-board-age">{{ b.ageLabel }}</span>
-        }
-      </div>
-      @if (b.tagline) {
-        <p class="subject-board-tagline" data-testid="subject-board-tagline">{{ b.tagline }}</p>
+      @if (b.grade) {
+        <p class="subject-board-grade" data-testid="subject-board-grade">{{ b.grade }}</p>
       }
-      @if (b.description) {
-        <p class="subject-board-desc" data-testid="subject-board-description">{{ b.description }}</p>
-      }
-      <div class="subject-board-meter" data-testid="subject-board-progress">
-        <span class="subject-board-meter-fill" [style.width.%]="progressPercent()"></span>
-      </div>
-      <p class="subject-board-progress-label">{{ lessonsLabel(b) }} · {{ progressPercent() }}%</p>
-      <div class="subject-board-stats" data-testid="subject-board-stats">
-        <div>
-          <p class="subject-board-stat-value">{{ b.xpEarned }}</p>
-          <p class="subject-board-stat-label">XP</p>
-        </div>
-        <div>
-          <p class="subject-board-stat-value">{{ b.badgeCount }}</p>
-          <p class="subject-board-stat-label">Badges</p>
-        </div>
-        <div>
-          <p class="subject-board-stat-value subject-board-stat-value--text">{{ b.levelLabel }}</p>
-          <p class="subject-board-stat-label">Niveau</p>
-        </div>
-      </div>
       <div class="subject-board-actions">
-        @if (b.continueLesson; as lesson) {
-          @if (continueCommands(lesson, b); as commands) {
-            <a class="subject-board-continue" data-testid="subject-board-continue" [routerLink]="commands">Continuer</a>
-          }
-        }
-        @if (b.minutesLeft !== null && b.minutesLeft !== undefined) {
-          <span class="subject-board-time" data-testid="subject-board-minutes">~{{ b.minutesLeft }} min</span>
-        }
+        <a
+          class="subject-board-questions"
+          data-testid="subject-board-questions"
+          [routerLink]="['/learn', b.subjectId, 'questions']"
+        >
+          Voir les questions
+        </a>
       </div>
       <div class="subject-board-hero-icon" aria-hidden="true">
         @if (iconSrc(b.iconCode); as src) {
@@ -64,43 +34,5 @@
         }
       </div>
     </article>
-
-    @if (b.continueLesson; as lesson) {
-      <section class="subject-board-resume" data-testid="subject-board-resume">
-        <div>
-          <p class="subject-board-resume-eyebrow">Continuer</p>
-          <h2 data-testid="subject-board-resume-title">{{ lesson.title }}</h2>
-          <p class="subject-board-resume-meta">
-            {{ lesson.progressPercent }}% · ~{{ lesson.minutesLeft }} min · +{{ lesson.rewardXp }} XP
-          </p>
-        </div>
-        @if (continueCommands(lesson, b); as commands) {
-          <a class="subject-board-play" data-testid="subject-board-resume-play" [routerLink]="commands">Play</a>
-        }
-      </section>
-    }
-
-    <section class="subject-board-topics" data-testid="subject-board-topics">
-      <h2>Thèmes</h2>
-      @if ((b.topics ?? []).length === 0) {
-        <p class="subject-board-status" data-testid="subject-board-topics-empty">Aucun thème pour l’instant.</p>
-      } @else {
-        <ul class="subject-board-topic-grid">
-          @for (topic of b.topics ?? []; track topic.topicId) {
-            <li class="subject-board-topic" [attr.data-testid]="'subject-board-topic-' + topic.topicId">
-              <div class="subject-board-topic-icon" aria-hidden="true">
-                @if (iconSrc(topic.iconCode); as src) {
-                  <img [src]="src" alt="" loading="lazy" />
-                } @else if (iconEmoji(topic.iconCode); as emoji) {
-                  <span>{{ emoji }}</span>
-                }
-              </div>
-              <h3>{{ topic.name }}</h3>
-              <p>{{ topicLessonsLabel(topic.lessonsCompleted, topic.lessonsTotal) }}</p>
-            </li>
-          }
-        </ul>
-      }
-    </section>
   }
 </section>
