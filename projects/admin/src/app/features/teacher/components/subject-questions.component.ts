@@ -162,6 +162,9 @@ export class SubjectQuestionsComponent implements OnInit {
     if (model.formCode === 'vrai_faux') {
       return view.allStatementsAnswered();
     }
+    if (model.formCode === 'memory') {
+      return view.allPairsMatched();
+    }
     return false;
   });
 
@@ -171,8 +174,11 @@ export class SubjectQuestionsComponent implements OnInit {
     this.previewSelectionTick.set(0);
     this.preview.set({
       formCode: question.formCode,
-      formLabel: question.formLabel,
-      prompt: question.prompt || undefined,
+      formLabel: question.formCode === 'memory' ? 'FORME · memory' : question.formLabel,
+      prompt:
+        question.formCode === 'memory'
+          ? question.prompt || 'Memory'
+          : question.prompt || undefined,
       choices: question.choices.map((choice, index) => ({
         choiceId: index + 1,
         label: choice.label,
@@ -180,6 +186,11 @@ export class SubjectQuestionsComponent implements OnInit {
       statements: question.statements.map((row, index) => ({
         statementId: index + 1,
         label: row.label,
+      })),
+      pairs: question.pairs.map((pair, index) => ({
+        pairId: index + 1,
+        questionSide: pair.questionSide,
+        answerSide: pair.answerSide,
       })),
     });
   }
@@ -807,6 +818,12 @@ function gradePreview(
     const same =
       selected.size === expected.size && [...selected].every((id) => expected.has(id));
     return { passed: same, scorePercent: same ? 100 : 0 };
+  }
+  if (source.formCode === 'memory') {
+    const matched = view.matchedPairIds().length;
+    const total = source.pairs.length || 1;
+    const scorePercent = Math.round((100 * matched) / total);
+    return { passed: matched === source.pairs.length, scorePercent };
   }
   return { passed: false, scorePercent: 0 };
 }

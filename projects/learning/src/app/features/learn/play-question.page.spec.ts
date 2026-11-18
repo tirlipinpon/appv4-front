@@ -31,6 +31,45 @@ describe('PlayQuestionPage', () => {
     return { fixture, http };
   }
 
+  it('affiche memory via le composant partagé et envoie les paires trouvées', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+      questionId: 42,
+      subjectId: 5,
+      formCode: 'memory',
+      prompt: '',
+      pairs: [
+        { pairId: 1, questionSide: 'Chat', answerSide: 'Miaou' },
+        { pairId: 2, questionSide: 'Pomme', answerSide: 'Fruit' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="child-play-view-memory"]')).toBeTruthy();
+
+    const cards = Array.from(
+      root.querySelectorAll('[data-testid^="child-play-view-memory-card-"]'),
+    ) as HTMLButtonElement[];
+    expect(cards.length).toBe(4);
+
+    const byKey = (key: string) =>
+      root.querySelector(`[data-testid="child-play-view-memory-card-${key}"]`) as HTMLButtonElement;
+    byKey('1-q').click();
+    byKey('1-a').click();
+    byKey('2-q').click();
+    byKey('2-a').click();
+    fixture.detectChanges();
+
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+    expect(attempt.request.body.matchedPairIds).toEqual(jasmine.arrayContaining([1, 2]));
+    attempt.flush({ passed: true, scorePercent: 100 });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+    http.verify();
+  });
+
   it('affiche vrai_faux via le composant partagé et envoie la réponse API', () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({

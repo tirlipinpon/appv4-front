@@ -1,6 +1,12 @@
 <div class="child-play-view" data-testid="child-question-play-view">
   @if (question().formLabel) {
-    <p class="child-play-view-form" data-testid="child-play-view-form">{{ question().formLabel }}</p>
+    <p
+      class="child-play-view-form"
+      [class.memory]="isMemory()"
+      data-testid="child-play-view-form"
+    >
+      {{ question().formLabel }}
+    </p>
   }
   @if (question().prompt) {
     <p class="child-play-view-prompt" data-testid="child-play-view-prompt">{{ question().prompt }}</p>
@@ -55,5 +61,32 @@
         </li>
       }
     </ul>
+  }
+
+  @if (isMemory()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-memory-hint">
+      Retourne deux cartes. Les paires vont ensemble.
+    </p>
+    <div class="child-play-view-memory" data-testid="child-play-view-memory">
+      @for (card of displayMemoryCards(); track card.key) {
+        <button
+          type="button"
+          class="child-play-view-memory-card"
+          [class.face-up]="cardFaceUp(card)"
+          [class.matched]="cardMatched(card)"
+          [class.active]="flippedKeys().includes(card.key) && !cardMatched(card)"
+          [disabled]="disabled() || !interactive() || flipBusy() || cardMatched(card)"
+          [attr.data-testid]="'child-play-view-memory-card-' + card.key"
+          (click)="onMemoryCard(card)"
+        >
+          {{ cardFaceUp(card) ? card.label : '?' }}
+        </button>
+      }
+    </div>
+    @if (memoryStatus()) {
+      <p class="child-play-view-memory-status" data-testid="child-play-view-memory-status">
+        {{ memoryStatus() }}
+      </p>
+    }
   }
 </div>

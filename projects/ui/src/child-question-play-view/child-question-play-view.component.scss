@@ -21,6 +21,17 @@
   color: var(--app-form-vrai-faux, #2bb673);
 }
 
+.child-play-view-form.memory {
+  color: var(--app-primary, #7c5cff);
+}
+
+.child-play-view-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--app-text-muted, #6b7385);
+}
+
 .child-play-view-prompt {
   margin: 0 0 0.85rem;
   font-size: 1.05rem;
@@ -120,6 +131,57 @@
 .child-play-view-option:disabled {
   cursor: default;
   opacity: 0.95;
+}
+
+.child-play-view-memory {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.child-play-view-memory-card {
+  box-sizing: border-box;
+  min-height: 6rem;
+  min-width: 0;
+  border: 0;
+  border-radius: 1.35rem;
+  padding: 0.85rem 0.75rem;
+  background: var(--app-memory-card-back, var(--app-surface-card, #2a2348));
+  color: var(--app-text, #f5f1ff);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.child-play-view-memory-card.face-up {
+  background: var(--app-memory-card-face, var(--app-surface-card, #2a2348));
+}
+
+.child-play-view-memory-card.active {
+  background: var(--app-primary, #7c5cff);
+  color: var(--app-on-primary, #fff);
+}
+
+.child-play-view-memory-card.matched {
+  background: color-mix(in srgb, var(--app-primary, #7c5cff) 35%, var(--app-surface-card, #2a2348));
+  color: var(--app-on-primary, #fff);
+  cursor: default;
+}
+
+.child-play-view-memory-card:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.child-play-view-memory-status {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--app-text-muted, #8a82b2);
 }
 
 /* Ligne label | boutons seulement quand le composant est assez large. */
