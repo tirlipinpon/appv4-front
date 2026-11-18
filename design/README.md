@@ -18,7 +18,8 @@ Projet Figma : **Team project** (`458160316`).
 | --- | --- |
 | Shell / nav bas / avatar | LEARN-28 |
 | Home dashboard (mission, XP, explore) | LEARN-27, LEARN-31, LEARN-32 |
-| Learn — matières | LEARN-29 (+ BACK-15) |
+| Learn — matières (grille) | LEARN-29 (+ BACK-15) |
+| Learn — board matière (hero, leçons, extras) | LEARN board stories (+ BACK liés) |
 | Rewards / badges | LEARN-34+ |
 | Ranking / amis | LEARN-36, LEARN-37 |
 
@@ -26,6 +27,8 @@ Projet Figma : **Team project** (`458160316`).
 
 Place PNG validés sous `design/learning/<feature>/` (ex. `learn/01-library-subjects.png`).
 L’agent doit les lire avant de coder la feature correspondante.
+
+Board matière : `design/learning/subject/01-subject-board.png`, `02-lessons-list.png`, `03-minigames-badges.png`.
 
 ## Librairie icônes matières
 
