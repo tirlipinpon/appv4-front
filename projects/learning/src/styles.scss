@@ -6,3 +6,11 @@ body {
   margin: 0;
   background: #16122c;
 }
+
+body:has(.theme-learn-light) {
+  background: #f4f5f8;
+}
+
+body:has(.theme-learn-dark) {
+  background: #16122c;
+}

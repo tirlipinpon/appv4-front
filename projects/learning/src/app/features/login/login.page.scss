@@ -7,10 +7,21 @@
   box-sizing: border-box;
   width: min(100%, 26rem);
   margin-inline: auto;
-  padding: 32px 20px 40px;
+  padding: 20px 20px 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.learn-top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.learn-top-spacer {
+  flex: 1;
 }
 
 .learn-mascot {

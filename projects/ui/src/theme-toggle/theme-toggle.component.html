@@ -1,0 +1,28 @@
+<button
+  type="button"
+  class="ui-theme-toggle"
+  [attr.data-testid]="testId() || null"
+  [attr.aria-label]="dark() ? 'Passer en mode clair' : 'Passer en mode sombre'"
+  (click)="onClick()"
+>
+  @if (dark()) {
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8" />
+      <path
+        d="M12 3v2.2M12 18.8V21M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M3 12h2.2M18.8 12H21M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+      />
+    </svg>
+  } @else {
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M20 14.2A7.6 7.6 0 0 1 9.8 4 7.8 7.8 0 1 0 20 14.2Z"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linejoin="round"
+      />
+    </svg>
+  }
+</button>

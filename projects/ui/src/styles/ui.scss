@@ -64,12 +64,6 @@
   --app-primary: #7c5cff;
   --app-primary-end: #b9a6ff;
   --app-on-primary: #ffffff;
-  --app-surface: #16122c;
-  --app-surface-card: #2a2348;
-  --app-text: #ffffff;
-  --app-text-muted: #b7aed4;
-  --app-error: #ff8a80;
-  --app-outline: transparent;
   --app-radius-card: 28px;
   --app-font: Nunito, "Segoe UI", sans-serif;
   display: block;
@@ -77,4 +71,26 @@
   background: var(--app-surface);
   color: var(--app-text);
   font-family: var(--app-font);
+}
+
+.theme-learn-dark {
+  --app-surface: #16122c;
+  --app-surface-card: #2a2348;
+  --app-text: #ffffff;
+  --app-text-muted: #b7aed4;
+  --app-error: #ff8a80;
+  --app-outline: rgba(255, 255, 255, 0.08);
+  --app-shadow-soft: none;
+  color-scheme: dark;
+}
+
+.theme-learn-light {
+  --app-surface: #f4f5f8;
+  --app-surface-card: #ffffff;
+  --app-text: #1c2b3a;
+  --app-text-muted: #6b7385;
+  --app-error: #b3261e;
+  --app-outline: #e4e7ee;
+  --app-shadow-soft: 0 8px 20px rgba(28, 43, 58, 0.08);
+  color-scheme: light;
 }

@@ -2,13 +2,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { ButtonComponent } from '@appv4/ui';
+import { ButtonComponent, ThemeToggleComponent } from '@appv4/ui';
 
 import { ChildAuthService, apiErrorMessage } from '../../core/auth/child-auth.service';
+import { ThemeService } from '../../core/theme/theme.service';
 
 @Component({
   selector: 'app-home-page',
-  imports: [ButtonComponent],
+  imports: [ButtonComponent, ThemeToggleComponent],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,6 +17,7 @@ import { ChildAuthService, apiErrorMessage } from '../../core/auth/child-auth.se
 export class HomePage implements OnInit {
   private readonly auth = inject(ChildAuthService);
   private readonly router = inject(Router);
+  protected readonly theme = inject(ThemeService);
 
   protected readonly firstName = this.auth.firstName;
   protected readonly error = signal<string | null>(null);

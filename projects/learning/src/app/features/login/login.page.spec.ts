@@ -11,6 +11,7 @@ describe('LoginPage', () => {
 
   beforeEach(async () => {
     sessionStorage.clear();
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [LoginPage],
       providers: [provideRouter(routes), provideHttpClient(withXhr()), provideHttpClientTesting()],
@@ -21,6 +22,7 @@ describe('LoginPage', () => {
   afterEach(() => {
     http.verify();
     sessionStorage.clear();
+    localStorage.clear();
   });
 
   it('shows the child name and pin, and stays put until both are filled', () => {
@@ -29,6 +31,7 @@ describe('LoginPage', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('[data-testid="login-first-name"]')).not.toBeNull();
     expect(element.querySelector('[data-testid="login-pin"]')).not.toBeNull();
+    expect(element.querySelector('[data-testid="theme-toggle"]')).not.toBeNull();
     const button = element.querySelector('[data-testid="login-submit"]') as HTMLButtonElement;
     expect(button.disabled).toBeTrue();
   });

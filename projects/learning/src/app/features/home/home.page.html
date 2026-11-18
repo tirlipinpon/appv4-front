@@ -1,4 +1,12 @@
 <main class="learn-home">
+  <div class="learn-top">
+    <span class="learn-top-spacer" aria-hidden="true"></span>
+    <app-theme-toggle
+      testId="theme-toggle"
+      [dark]="theme.isDark()"
+      (toggled)="theme.toggle()"
+    />
+  </div>
   <div class="learn-mascot" aria-hidden="true">
     <svg viewBox="0 0 88 88">
       <circle cx="44" cy="44" r="44" fill="#ffb703" />
