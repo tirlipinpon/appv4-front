@@ -1602,6 +1602,7 @@ export interface components {
         SubmitChildAttemptRequest: {
             selectedChoiceIds?: number[];
             statements?: components["schemas"]["SubmitStatementAnswer"][];
+            matchedPairIds?: number[];
         };
         SubmitStatementAnswer: {
             /** Format: int64 */
@@ -1966,6 +1967,12 @@ export interface components {
             choiceId?: number;
             label?: string;
         };
+        ChildPlayPairItem: {
+            /** Format: int64 */
+            pairId?: number;
+            questionSide?: string;
+            answerSide?: string;
+        };
         ChildPlayQuestionResponse: {
             /** Format: int64 */
             questionId?: number;
@@ -1975,6 +1982,7 @@ export interface components {
             prompt?: string;
             choices?: components["schemas"]["ChildPlayChoiceItem"][];
             statements?: components["schemas"]["ChildPlayStatementItem"][];
+            pairs?: components["schemas"]["ChildPlayPairItem"][];
         };
         ChildPlayStatementItem: {
             /** Format: int64 */

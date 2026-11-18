@@ -684,6 +684,7 @@
         [disabled]="previewResult() !== null"
         (choiceToggle)="onPreviewSelectionChange()"
         (statementPick)="onPreviewSelectionChange()"
+        (memoryChange)="onPreviewSelectionChange()"
       />
       @if (previewResult() === null) {
         <button

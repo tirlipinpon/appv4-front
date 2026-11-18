@@ -9,10 +9,17 @@ export interface ChildPlayViewStatement {
   label: string;
 }
 
+export interface ChildPlayViewPair {
+  pairId?: number;
+  questionSide: string;
+  answerSide: string;
+}
+
 export interface ChildPlayViewQuestion {
   formCode: string;
   formLabel?: string;
   prompt?: string;
   choices?: ChildPlayViewChoice[];
   statements?: ChildPlayViewStatement[];
+  pairs?: ChildPlayViewPair[];
 }

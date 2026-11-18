@@ -54,6 +54,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'vrai_faux') {
       return view.allStatementsAnswered();
     }
+    if (q.formCode === 'memory') {
+      return view.allPairsMatched();
+    }
     return false;
   });
 
@@ -71,7 +74,7 @@ export class PlayQuestionPage implements OnInit {
         this.question.set(body);
         this.playModel.set(toPlayModel(body));
         this.loading.set(false);
-        if (body.formCode !== 'qcm' && body.formCode !== 'vrai_faux') {
+        if (body.formCode !== 'qcm' && body.formCode !== 'vrai_faux' && body.formCode !== 'memory') {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
       },
@@ -97,7 +100,9 @@ export class PlayQuestionPage implements OnInit {
     const body =
       q.formCode === 'qcm'
         ? { selectedChoiceIds: view.selectedChoiceIds() }
-        : { statements: view.statementAnswers() };
+        : q.formCode === 'memory'
+          ? { matchedPairIds: view.matchedPairIds() }
+          : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -121,12 +126,20 @@ export class PlayQuestionPage implements OnInit {
 function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
   return {
     formCode: body.formCode ?? '',
-    prompt: body.prompt,
+    formLabel: body.formCode === 'memory' ? 'FORME · memory' : undefined,
+    prompt: body.formCode === 'memory' ? body.prompt || 'Memory' : body.prompt,
     choices: (body.choices ?? [])
       .filter((c) => c.label != null)
       .map((c) => ({ choiceId: c.choiceId, label: c.label! })),
     statements: (body.statements ?? [])
       .filter((s) => s.label != null)
       .map((s) => ({ statementId: s.statementId, label: s.label! })),
+    pairs: (body.pairs ?? [])
+      .filter((p) => p.questionSide != null && p.answerSide != null)
+      .map((p) => ({
+        pairId: p.pairId,
+        questionSide: p.questionSide!,
+        answerSide: p.answerSide!,
+      })),
   };
 }

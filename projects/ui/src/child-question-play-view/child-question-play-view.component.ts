@@ -1,10 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 import type {
   ChildPlayViewChoice,
+  ChildPlayViewPair,
   ChildPlayViewQuestion,
   ChildPlayViewStatement,
 } from './child-question-play-view.model';
+
+export interface MemoryCardView {
+  key: string;
+  pairKey: string;
+  label: string;
+}
 
 function shuffleCopy<T>(items: readonly T[]): T[] {
   const next = [...items];
@@ -21,8 +35,22 @@ function randomTrueFalseOrder(): readonly boolean[] {
   return Math.random() < 0.5 ? [true, false] : [false, true];
 }
 
+function pairKeyOf(pair: ChildPlayViewPair, index: number): string {
+  return pair.pairId != null ? String(pair.pairId) : `i-${index}`;
+}
+
+function buildMemoryCards(pairs: readonly ChildPlayViewPair[]): MemoryCardView[] {
+  const cards: MemoryCardView[] = [];
+  pairs.forEach((pair, index) => {
+    const pairKey = pairKeyOf(pair, index);
+    cards.push({ key: `${pairKey}-q`, pairKey, label: pair.questionSide });
+    cards.push({ key: `${pairKey}-a`, pairKey, label: pair.answerSide });
+  });
+  return cards;
+}
+
 /**
- * Rendu partagé Learning + Teacher : présentation visuelle enfant (vrai_faux / qcm).
+ * Rendu partagé Learning + Teacher : présentation visuelle enfant (vrai_faux / qcm / memory).
  * Teacher : aperçu. Learning : interaction + envoi géré par la page parente.
  */
 @Component({
@@ -39,12 +67,17 @@ export class ChildQuestionPlayViewComponent {
 
   readonly choiceToggle = output<number>();
   readonly statementPick = output<{ statementKey: string; value: boolean }>();
+  readonly memoryChange = output<void>();
 
   private readonly layoutTick = signal(0);
+  private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly isQcm = computed(() => this.question().formCode === 'qcm');
   protected readonly isTrueFalse = computed(() => this.question().formCode === 'vrai_faux');
-  protected readonly playable = computed(() => this.isQcm() || this.isTrueFalse());
+  protected readonly isMemory = computed(() => this.question().formCode === 'memory');
+  protected readonly playable = computed(
+    () => this.isQcm() || this.isTrueFalse() || this.isMemory(),
+  );
 
   protected readonly displayChoices = computed(() => {
     this.layoutTick();
@@ -54,6 +87,11 @@ export class ChildQuestionPlayViewComponent {
   protected readonly displayStatements = computed(() => {
     this.layoutTick();
     return shuffleCopy(this.question().statements ?? []);
+  });
+
+  protected readonly displayMemoryCards = computed(() => {
+    this.layoutTick();
+    return shuffleCopy(buildMemoryCards(this.question().pairs ?? []));
   });
 
   protected readonly tfOrders = computed(() => {
@@ -67,11 +105,30 @@ export class ChildQuestionPlayViewComponent {
 
   readonly selectedChoices = signal<ReadonlySet<number>>(new Set());
   readonly statementValues = signal<Readonly<Record<string, boolean>>>({});
+  readonly matchedPairKeys = signal<ReadonlySet<string>>(new Set());
+  readonly flippedKeys = signal<readonly string[]>([]);
+  readonly flipBusy = signal(false);
+
+  protected readonly memoryStatus = computed(() => {
+    const pairs = this.question().pairs ?? [];
+    const matched = this.matchedPairKeys().size;
+    if (pairs.length === 0 || matched === 0) {
+      return '';
+    }
+    if (matched >= pairs.length) {
+      return 'Toutes les paires sont trouvées.';
+    }
+    return `Paires trouvées : ${matched}. Il en reste ${pairs.length - matched}.`;
+  });
 
   /** Relance le mélange (rejouer / nouvel aperçu). */
   reshuffle(): void {
+    this.clearMismatchTimer();
     this.selectedChoices.set(new Set());
     this.statementValues.set({});
+    this.matchedPairKeys.set(new Set());
+    this.flippedKeys.set([]);
+    this.flipBusy.set(false);
     this.layoutTick.update((n) => n + 1);
   }
 
@@ -105,6 +162,28 @@ export class ChildQuestionPlayViewComponent {
     return statements.every((s, i) => values[this.statementKey(s, i)] !== undefined);
   }
 
+  matchedPairIds(): number[] {
+    const matched = this.matchedPairKeys();
+    const out: number[] = [];
+    (this.question().pairs ?? []).forEach((pair, index) => {
+      const key = pairKeyOf(pair, index);
+      if (!matched.has(key)) {
+        return;
+      }
+      if (pair.pairId != null) {
+        out.push(pair.pairId);
+      } else {
+        out.push(index + 1);
+      }
+    });
+    return out;
+  }
+
+  allPairsMatched(): boolean {
+    const pairs = this.question().pairs ?? [];
+    return pairs.length > 0 && this.matchedPairKeys().size >= pairs.length;
+  }
+
   protected statementKey(statement: ChildPlayViewStatement, index = 0): string {
     return statement.statementId != null ? String(statement.statementId) : `i-${index}-${statement.label}`;
   }
@@ -119,6 +198,14 @@ export class ChildQuestionPlayViewComponent {
 
   protected statementValue(key: string): boolean | undefined {
     return this.statementValues()[key];
+  }
+
+  protected cardFaceUp(card: MemoryCardView): boolean {
+    return this.matchedPairKeys().has(card.pairKey) || this.flippedKeys().includes(card.key);
+  }
+
+  protected cardMatched(card: MemoryCardView): boolean {
+    return this.matchedPairKeys().has(card.pairKey);
   }
 
   protected onChoice(choice: ChildPlayViewChoice): void {
@@ -143,5 +230,48 @@ export class ChildQuestionPlayViewComponent {
     }
     this.statementValues.update((current) => ({ ...current, [key]: value }));
     this.statementPick.emit({ statementKey: key, value });
+  }
+
+  protected onMemoryCard(card: MemoryCardView): void {
+    if (!this.interactive() || this.disabled() || this.flipBusy()) {
+      return;
+    }
+    if (this.matchedPairKeys().has(card.pairKey) || this.flippedKeys().includes(card.key)) {
+      return;
+    }
+    const open = this.flippedKeys();
+    if (open.length >= 2) {
+      return;
+    }
+    if (open.length === 0) {
+      this.flippedKeys.set([card.key]);
+      this.memoryChange.emit();
+      return;
+    }
+    const firstKey = open[0]!;
+    const first = this.displayMemoryCards().find((c) => c.key === firstKey);
+    const nextFlipped = [firstKey, card.key];
+    this.flippedKeys.set(nextFlipped);
+    if (first && first.pairKey === card.pairKey) {
+      this.matchedPairKeys.update((current) => new Set([...current, card.pairKey]));
+      this.flippedKeys.set([]);
+      this.memoryChange.emit();
+      return;
+    }
+    this.flipBusy.set(true);
+    this.clearMismatchTimer();
+    this.mismatchTimer = setTimeout(() => {
+      this.flippedKeys.set([]);
+      this.flipBusy.set(false);
+      this.memoryChange.emit();
+    }, 700);
+    this.memoryChange.emit();
+  }
+
+  private clearMismatchTimer(): void {
+    if (this.mismatchTimer != null) {
+      clearTimeout(this.mismatchTimer);
+      this.mismatchTimer = null;
+    }
   }
 }

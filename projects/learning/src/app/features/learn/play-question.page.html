@@ -17,6 +17,7 @@
       [disabled]="saving() || !!result()"
       (choiceToggle)="onSelectionChange()"
       (statementPick)="onSelectionChange()"
+      (memoryChange)="onSelectionChange()"
     />
 
     @if (!result()) {
