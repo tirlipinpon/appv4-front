@@ -3,7 +3,9 @@ import {
   FORM,
   PUZZLE_BOARD_MODE,
   QuestionDraftSnapshot,
+  emptyCards,
   emptyChoices,
+  emptyColumns,
   emptyDecoys,
   emptyItems,
   emptyLinks,
@@ -19,6 +21,8 @@ function emptyDraft(overrides: Partial<QuestionDraftSnapshot> = {}): QuestionDra
     items: emptyItems(),
     statements: emptyStatements(),
     links: emptyLinks(),
+    columns: emptyColumns(),
+    cards: emptyCards(),
     sentence: '',
     answers: [],
     decoys: emptyDecoys(),
@@ -83,6 +87,47 @@ describe('question-form.adapters', () => {
         expectedAnswer: 'Paris',
       })?.expectedAnswer,
     ).toBe('Paris');
+  });
+
+  it('maps classement columns and cards with columnIndex', () => {
+    const saved = parseSavedQuestion({
+      id: 21,
+      formCode: FORM.CLASSIFICATION,
+      columns: [
+        { id: 10, label: 'Oui' },
+        { id: 11, label: 'Non' },
+      ],
+      cards: [
+        { id: 1, label: 'A', correctColumnId: 10 },
+        { id: 2, label: 'B', correctColumnId: 11 },
+      ],
+    });
+    expect(saved?.columns).toEqual([{ label: 'Oui' }, { label: 'Non' }]);
+    expect(saved?.cards).toEqual([
+      { label: 'A', columnIndex: 0 },
+      { label: 'B', columnIndex: 1 },
+    ]);
+
+    expect(
+      buildSaveBody(
+        FORM.CLASSIFICATION,
+        emptyDraft({
+          columns: [{ label: 'Oui' }, { label: 'Non' }],
+          cards: [
+            { label: 'A', columnIndex: 0 },
+            { label: 'B', columnIndex: 1 },
+          ],
+        }),
+      ),
+    ).toEqual({
+      formCode: FORM.CLASSIFICATION,
+      prompt: '',
+      columns: [{ label: 'Oui' }, { label: 'Non' }],
+      cards: [
+        { label: 'A', columnIndex: 0 },
+        { label: 'B', columnIndex: 1 },
+      ],
+    });
   });
 
   it('rejects a missing or zero id instead of inventing 0', () => {

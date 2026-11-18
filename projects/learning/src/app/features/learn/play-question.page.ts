@@ -57,6 +57,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'memory') {
       return view.allPairsMatched();
     }
+    if (q.formCode === 'classement') {
+      return view.allCardsPlaced();
+    }
     return false;
   });
 
@@ -74,7 +77,12 @@ export class PlayQuestionPage implements OnInit {
         this.question.set(body);
         this.playModel.set(toPlayModel(body));
         this.loading.set(false);
-        if (body.formCode !== 'qcm' && body.formCode !== 'vrai_faux' && body.formCode !== 'memory') {
+        if (
+          body.formCode !== 'qcm' &&
+          body.formCode !== 'vrai_faux' &&
+          body.formCode !== 'memory' &&
+          body.formCode !== 'classement'
+        ) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
       },
@@ -102,7 +110,9 @@ export class PlayQuestionPage implements OnInit {
         ? { selectedChoiceIds: view.selectedChoiceIds() }
         : q.formCode === 'memory'
           ? { matchedPairIds: view.matchedPairIds() }
-          : { statements: view.statementAnswers() };
+          : q.formCode === 'classement'
+            ? { placements: view.placements() }
+            : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -141,5 +151,11 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
         questionSide: p.questionSide!,
         answerSide: p.answerSide!,
       })),
+    columns: (body.columns ?? [])
+      .filter((c) => c.label != null)
+      .map((c) => ({ columnId: c.columnId, label: c.label! })),
+    cards: (body.cards ?? [])
+      .filter((c) => c.label != null)
+      .map((c) => ({ cardId: c.cardId, label: c.label! })),
   };
 }

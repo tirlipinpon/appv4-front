@@ -15,6 +15,16 @@ export interface ChildPlayViewPair {
   answerSide: string;
 }
 
+export interface ChildPlayViewColumn {
+  columnId?: number;
+  label: string;
+}
+
+export interface ChildPlayViewCard {
+  cardId?: number;
+  label: string;
+}
+
 export interface ChildPlayViewQuestion {
   formCode: string;
   formLabel?: string;
@@ -22,4 +32,6 @@ export interface ChildPlayViewQuestion {
   choices?: ChildPlayViewChoice[];
   statements?: ChildPlayViewStatement[];
   pairs?: ChildPlayViewPair[];
+  columns?: ChildPlayViewColumn[];
+  cards?: ChildPlayViewCard[];
 }
