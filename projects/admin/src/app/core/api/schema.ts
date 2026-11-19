@@ -1218,6 +1218,11 @@ export interface components {
             slotX?: number;
             /** Format: double */
             slotY?: number;
+            /**
+             * Format: double
+             * @description Fond dédié seulement : largeur de la pièce sur le fond (0,02 à 1 de la largeur du plateau). Absente : taille de la découpe.
+             */
+            slotWidth?: number;
         };
         TeacherQuestionPointInput: {
             /** Format: double */
@@ -1292,6 +1297,11 @@ export interface components {
             slotX?: number;
             /** Format: double */
             slotY?: number;
+            /**
+             * Format: double
+             * @description Largeur de la pièce sur le fond dédié (0–1 de la largeur du plateau). Absente : taille de la découpe.
+             */
+            slotWidth?: number;
         };
         TeacherQuestionPointItem: {
             /** Format: double */
@@ -2117,6 +2127,11 @@ export interface components {
             slotX?: number;
             /** Format: double */
             slotY?: number;
+            /**
+             * Format: double
+             * @description Largeur de la pièce sur le fond dédié (0–1 de la largeur du plateau). Absente : taille de la découpe.
+             */
+            slotWidth?: number;
         };
         ChildPlayQuestionResponse: {
             /** Format: int64 */

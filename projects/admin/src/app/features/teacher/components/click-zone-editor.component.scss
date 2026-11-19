@@ -359,6 +359,11 @@ button.side.faux.selected {
   animation: token-fit 2s ease-out forwards;
 }
 
+.token.picked {
+  outline: 2px dashed #7c5cff;
+  outline-offset: 2px;
+}
+
 @keyframes token-fit {
   0%,
   65% {

@@ -261,7 +261,12 @@ describe('question-form.adapters', () => {
           clickImage: 'data:image/webp;base64,BBB',
           boardMode: PUZZLE_BOARD_MODE.FOND,
           boardImage: 'data:image/webp;base64,CCC',
-          clickZones: zones,
+          clickZones: [
+            {
+              ...zones[0],
+              slot: { x: 0.25, y: 0.35, width: 0.4 },
+            },
+          ],
           puzzleMagnet: 0.12,
         }),
       ),
@@ -273,7 +278,7 @@ describe('question-form.adapters', () => {
         boardImageWebp: 'CCC',
         snapDistance: 0.12,
         pieces: [
-          {
+          jasmine.objectContaining({
             label: 'zone',
             shape: 'polygon',
             points: [
@@ -281,7 +286,10 @@ describe('question-form.adapters', () => {
               { x: 0.2, y: 0.1 },
               { x: 0.2, y: 0.2 },
             ],
-          },
+            slotX: 0.25,
+            slotY: 0.35,
+            slotWidth: 0.4,
+          }),
         ],
       }),
     );

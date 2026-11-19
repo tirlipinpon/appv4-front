@@ -7,17 +7,23 @@ export interface ClickPoint {
   y: number;
 }
 
+/** Place d'une pièce posée par le professeur sur le plateau. */
+export interface PuzzleSlot extends ClickPoint {
+  /** Fond dédié : largeur de la pièce, en proportion du plateau. Absente : taille de la découpe. */
+  width?: number | null;
+}
+
 export interface ClickZone {
   label: string;
   correct: boolean;
   shape: ClickShape;
   points: ClickPoint[];
   /**
-   * Emplacement cible sur le plateau (mode blanc) : coin haut-gauche.
+   * Emplacement cible sur le plateau (cadre blanc, fond dédié) : coin haut-gauche.
    * Peut légèrement sortir de [0, 1] pour déborder du bord tout en restant visible.
-   * Absent / null hors cadre blanc.
+   * Absent / null en mode trous, ou tant que la pièce n'est pas posée.
    */
-  slot?: ClickPoint | null;
+  slot?: PuzzleSlot | null;
   /**
    * Rang du clic parmi les zones correctes : 1, puis 2, puis 3.
    * Absent ou null si la zone est incorrecte, ou si ce n'est pas une image à cliquer.

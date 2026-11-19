@@ -235,8 +235,12 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
           label: zone.label,
           shape: zone.shape,
           points: zone.points.map((point) => ({ x: point.x, y: point.y })),
-          ...(draft.boardMode === PUZZLE_BOARD_MODE.BLANC && zone.slot
+          ...((draft.boardMode === PUZZLE_BOARD_MODE.BLANC || draft.boardMode === PUZZLE_BOARD_MODE.FOND) &&
+          zone.slot
             ? { slotX: zone.slot.x, slotY: zone.slot.y }
+            : {}),
+          ...(draft.boardMode === PUZZLE_BOARD_MODE.FOND && zone.slot?.width != null
+            ? { slotWidth: zone.slot.width }
             : {}),
         })),
       };
@@ -273,7 +277,13 @@ function savedPieces(pieces: ApiQuestion['pieces']): ClickZone[] {
       Number.isFinite(piece.slotX) &&
       typeof piece.slotY === 'number' &&
       Number.isFinite(piece.slotY)
-        ? { x: piece.slotX, y: piece.slotY }
+        ? {
+            x: piece.slotX,
+            y: piece.slotY,
+            ...(typeof piece.slotWidth === 'number' && Number.isFinite(piece.slotWidth)
+              ? { width: piece.slotWidth }
+              : {}),
+          }
         : null;
     return [{ label: piece.label, correct: true, shape: piece.shape, points, slot }];
   });

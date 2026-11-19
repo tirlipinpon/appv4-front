@@ -275,6 +275,7 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
           points,
           slotX: piece.slotX,
           slotY: piece.slotY,
+          slotWidth: piece.slotWidth,
         },
       ];
     }),

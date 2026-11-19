@@ -101,7 +101,7 @@ export interface ChildPlayViewQuestion {
   boardImageWebp?: string;
   /** Magnétisme, fraction de largeur (ex. 0,08). */
   snapDistance?: number;
-  /** Pièces à replacer (géométrie + slots blancs). */
+  /** Pièces à replacer (géométrie + places posées par le professeur). */
   puzzlePieces?: ChildPlayViewPuzzlePiece[];
 }
 
@@ -110,6 +110,9 @@ export interface ChildPlayViewPuzzlePiece {
   label: string;
   shape: string;
   points: ChildPlayViewClickPoint[];
+  /** Place posée par le professeur (cadre blanc, fond dédié) : coin haut-gauche. */
   slotX?: number | null;
   slotY?: number | null;
+  /** Fond dédié : largeur de la pièce sur le plateau. Absente : taille de la découpe. */
+  slotWidth?: number | null;
 }
