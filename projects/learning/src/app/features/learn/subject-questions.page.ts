@@ -76,6 +76,9 @@ export class SubjectQuestionsPage implements OnInit {
     if (code === 'reponse_libre') {
       return 'Lettre par lettre';
     }
+    if (code === 'texte') {
+      return 'Réponse libre';
+    }
     if (code === 'puzzle') {
       return 'Puzzle';
     }
@@ -96,6 +99,7 @@ export class SubjectQuestionsPage implements OnInit {
       code === 'case_vide' ||
       code === 'image_interactive' ||
       code === 'reponse_libre' ||
+      code === 'texte' ||
       code === 'puzzle' ||
       code === 'simon'
     );

@@ -75,6 +75,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'reponse_libre') {
       return view.allLettersFilled();
     }
+    if (q.formCode === 'texte') {
+      return view.freeTextAttempt().trim().length > 0;
+    }
     if (q.formCode === 'puzzle') {
       return view.allPuzzlePiecesPlaced();
     }
@@ -116,6 +119,7 @@ export class PlayQuestionPage implements OnInit {
           body.formCode !== 'case_vide' &&
           body.formCode !== 'image_interactive' &&
           body.formCode !== 'reponse_libre' &&
+          body.formCode !== 'texte' &&
           body.formCode !== 'puzzle' &&
           body.formCode !== 'simon'
         ) {
@@ -171,7 +175,9 @@ export class PlayQuestionPage implements OnInit {
                     ? { zoneClicks: view.zoneClicks().map((zoneId) => ({ zoneId })) }
                     : q.formCode === 'reponse_libre'
                       ? { attempt: view.letterAttempt() }
-                      : q.formCode === 'puzzle'
+                      : q.formCode === 'texte'
+                        ? { attempt: view.freeTextAttempt() }
+                        : q.formCode === 'puzzle'
                         ? { puzzlePlacements: view.puzzlePlacements() }
                         : q.formCode === 'simon'
                           ? { simonSequence: view.simonReplay() }

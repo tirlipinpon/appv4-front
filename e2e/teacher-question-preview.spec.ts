@@ -28,6 +28,7 @@ const ui = {
   linkRight: 'child-play-view-link-right',
   gapWord: 'child-play-view-gap-word',
   gapHole: 'child-play-view-gap-hole',
+  freeText: 'child-play-view-free-text',
 } as const;
 
 test.describe("Voir comme l'enfant", { tag: ['@teacher', '@mock'] }, () => {
@@ -187,6 +188,25 @@ test.describe("Voir comme l'enfant", { tag: ['@teacher', '@mock'] }, () => {
     ]);
     await submitAndExpect(page, false, '50');
   });
+
+  test('Réponse libre : Valider reste inactif tant que le champ est vide', async ({ page }) => {
+    await openPreview(page, freeTextQuestion());
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+    await page.getByTestId(ui.freeText).fill('   ');
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('Réponse libre : Pâris donne Bravo', async ({ page }) => {
+    await openPreview(page, freeTextQuestion());
+    await page.getByTestId(ui.freeText).fill('  Pâris  ');
+    await submitAndExpect(page, true, '100');
+  });
+
+  test('Réponse libre : un espace au milieu affiche Pas encore', async ({ page }) => {
+    await openPreview(page, freeTextQuestion());
+    await page.getByTestId(ui.freeText).fill('Pa ris');
+    await submitAndExpect(page, false, '0');
+  });
 });
 
 function qcmQuestion(): SavedQuestion {
@@ -272,6 +292,16 @@ function gapsQuestion(): SavedQuestion {
   };
 }
 
+function freeTextQuestion(): SavedQuestion {
+  return {
+    id: 42,
+    prompt: 'Capitale de la France',
+    formCode: 'texte',
+    formLabel: 'Réponse libre',
+    expectedAnswer: 'Paris',
+  };
+}
+
 function liensQuestion(): SavedQuestion {
   return {
     id: 42,
@@ -299,6 +329,7 @@ interface SavedQuestion {
   links?: { leftLabel: string; rightLabel: string }[];
   timelineEnabled?: boolean;
   sentence?: string;
+  expectedAnswer?: string;
   answers?: { label: string }[];
   decoys?: { label: string }[];
 }

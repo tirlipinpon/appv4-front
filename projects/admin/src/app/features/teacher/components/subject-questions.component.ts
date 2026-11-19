@@ -212,6 +212,9 @@ export class SubjectQuestionsComponent implements OnInit {
     if (model.formCode === 'reponse_libre') {
       return view.allLettersFilled();
     }
+    if (model.formCode === 'texte') {
+      return view.freeTextAttempt().trim().length > 0;
+    }
     if (model.formCode === 'puzzle') {
       return view.allPuzzlePiecesPlaced();
     }
@@ -1241,6 +1244,10 @@ function gradePreview(
       scorePercent: Math.round((100 * ok) / total),
     };
   }
+  if (source.formCode === 'texte') {
+    const passed = freeTextAccepted(source.expectedAnswer, view.freeTextAttempt());
+    return { passed, scorePercent: passed ? 100 : 0 };
+  }
   if (source.formCode === 'reponse_libre') {
     const attempt = view.letterAttempt();
     const expected = source.expectedAnswer;
@@ -1277,4 +1284,19 @@ function gradePreview(
     return { passed: exact, scorePercent };
   }
   return { passed: false, scorePercent: 0 };
+}
+
+/** Même règle que FreeTextMatch : bord, casse et accents ignorés ; l'espace au milieu compte. */
+function freeTextAccepted(expected: string, attempt: string): boolean {
+  const normalize = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{M}+/gu, '');
+  if (attempt.trim() === '') {
+    return false;
+  }
+  const stored = normalize(expected);
+  return stored !== '' && stored === normalize(attempt);
 }

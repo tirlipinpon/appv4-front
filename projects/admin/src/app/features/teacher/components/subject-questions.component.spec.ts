@@ -812,6 +812,41 @@ describe('SubjectQuestionsComponent', () => {
     expect(page.editingId()).toBe(13);
   });
 
+  it('previews a free text answer and accepts Paris ignoring case and accents', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'texte', label: 'Réponse libre', sortOrder: 11 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 13,
+          formCode: 'texte',
+          formLabel: 'Réponse libre',
+          prompt: 'Capitale de la France',
+          expectedAnswer: 'Paris',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="teacher-question-preview"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    const submit = root.querySelector('[data-testid="teacher-child-preview-submit"]') as HTMLButtonElement;
+    expect(submit.disabled).toBeTrue();
+    input.value = '  Pâris  ';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    submit.click();
+    fixture.detectChanges();
+
+    expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('Bravo');
+    expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('100 %');
+  });
+
   it('counts supplementary Unicode characters as one box', () => {
     expect(fixture.componentInstance.letterCount('A\u{1F600}')).toBe(2);
   });

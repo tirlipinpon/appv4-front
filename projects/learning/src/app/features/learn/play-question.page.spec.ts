@@ -31,6 +31,44 @@ describe('PlayQuestionPage', () => {
     return { fixture, http };
   }
 
+  it('réponse libre : un champ, Valider envoie attempt, un blanc ne part pas', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+      questionId: 42,
+      subjectId: 5,
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="child-play-view-prompt"]')?.textContent).toContain(
+      'Capitale de la France',
+    );
+    expect(root.textContent).not.toContain('Paris');
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    const submit = root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement;
+    expect(submit.disabled).toBeTrue();
+
+    input.value = '   ';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(submit.disabled).toBeTrue();
+
+    input.value = '  Pâris  ';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(submit.disabled).toBeFalse();
+    submit.click();
+
+    const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+    expect(attempt.request.body).toEqual({ attempt: '  Pâris  ' });
+    attempt.flush({ passed: true, scorePercent: 100 });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+    http.verify();
+  });
+
   it('affiche order via le composant partagé et envoie orderedItemIds', () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({

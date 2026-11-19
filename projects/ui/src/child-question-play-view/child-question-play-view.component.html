@@ -539,6 +539,31 @@
     }
   }
 
+  @if (isFreeText()) {
+    <input
+      type="text"
+      autocomplete="off"
+      maxlength="500"
+      aria-label="Réponse"
+      data-testid="child-play-view-free-text"
+      [value]="freeText()"
+      [disabled]="disabled() || !interactive()"
+      [style.box-sizing]="'border-box'"
+      [style.width]="'100%'"
+      [style.max-width]="'28rem'"
+      [style.margin]="'0.35rem 0 0.75rem'"
+      [style.padding]="'0.85rem 1rem'"
+      [style.border]="'2px solid color-mix(in srgb, var(--app-primary, #7c5cff) 45%, var(--app-outline, #4a3f6e))'"
+      [style.border-radius]="'0.9rem'"
+      [style.font]="'inherit'"
+      [style.font-size]="'1.15rem'"
+      [style.font-weight]="'700'"
+      [style.color]="'var(--app-text, #f5f1ff)'"
+      [style.background]="'color-mix(in srgb, var(--app-surface-card, #1a1436) 88%, var(--app-primary, #7c5cff))'"
+      (input)="onFreeTextInput($event)"
+    />
+  }
+
   @if (isLetters()) {
     <div
       class="child-play-view-letters"
