@@ -4,7 +4,6 @@
       class="child-play-view-form"
       [class.memory]="isMemory()"
       [class.order]="isOrder()"
-      [class.links]="isLinks()"
       data-testid="child-play-view-form"
     >
       {{ question().formLabel }}
@@ -243,15 +242,14 @@
     <p class="child-play-view-hint" data-testid="child-play-view-links-hint">
       Choisis un mot, puis sa réponse.
     </p>
-    <div class="child-play-view-links" data-testid="child-play-view-links">
-      <ul class="child-play-view-link-col">
+    <div class="child-play-view-links" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem" data-testid="child-play-view-links">
+      <ul class="child-play-view-options">
         @for (row of linkLefts(); track row.key) {
           <li>
             <button
               type="button"
-              class="child-play-view-link"
-              [class.selected]="linkLeftSelected(row.key)"
-              [class.linked]="linkSidePaired(row.key, 'left')"
+              class="child-play-view-option"
+              [class.selected]="linkLeftSelected(row.key) || linkSidePaired(row.key, 'left')"
               [disabled]="disabled() || !interactive()"
               [attr.data-testid]="'child-play-view-link-left-' + row.key"
               (click)="onLinkLeft(row)"
@@ -261,13 +259,13 @@
           </li>
         }
       </ul>
-      <ul class="child-play-view-link-col">
+      <ul class="child-play-view-options">
         @for (row of linkRights(); track row.key) {
           <li>
             <button
               type="button"
-              class="child-play-view-link"
-              [class.linked]="linkSidePaired(row.key, 'right')"
+              class="child-play-view-option"
+              [class.selected]="linkSidePaired(row.key, 'right')"
               [disabled]="disabled() || !interactive()"
               [attr.data-testid]="'child-play-view-link-right-' + row.key"
               (click)="onLinkRight(row)"
