@@ -230,6 +230,35 @@ button.form-chip:disabled {
   margin-bottom: -0.75rem;
 }
 
+.simon-steps {
+  width: 100%;
+}
+
+.simon-picker {
+  width: 2.75rem;
+  height: 2.5rem;
+  padding: 0.15rem;
+  border: 1px solid #d0d7e2;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.simon-code {
+  width: 9rem;
+  margin-bottom: -0.75rem;
+}
+
+.swatch {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-right: 0.3rem;
+  border: 1px solid rgb(0 0 0 / 20%);
+  border-radius: 50%;
+  vertical-align: -0.1rem;
+}
+
 .child-preview-backdrop {
   position: fixed;
   inset: 0;

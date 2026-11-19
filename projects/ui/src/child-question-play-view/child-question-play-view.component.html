@@ -614,4 +614,38 @@
       Une lettre par case (l’espace se saute), puis Valider.
     </p>
   }
+
+  @if (isSimon()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-simon-phase" aria-live="polite">
+      {{ simonPhase() === 'watch' ? 'Regardez la séquence…' : 'Reproduisez la séquence' }}
+    </p>
+    <div
+      data-testid="child-play-view-simon"
+      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: 0.75rem; margin: 0 0 0.75rem"
+    >
+      @for (element of question().elements ?? []; track $index) {
+        <button
+          type="button"
+          [attr.data-testid]="'child-play-view-simon-element-' + $index"
+          [attr.data-lit]="simonLit() === $index ? 'true' : null"
+          [disabled]="disabled() || !interactive() || simonPhase() !== 'play' || simonPlayed() >= simonTotal()"
+          [style.background]="simonFill(element, $index)"
+          [style.color]="simonInk(element, $index)"
+          [style.box-shadow]="simonGlow(element, $index)"
+          [style.opacity]="simonPhase() === 'watch' && simonLit() !== $index ? '0.55' : '1'"
+          [style.transform]="simonLit() === $index ? 'scale(1.08)' : 'none'"
+          [style.cursor]="simonPhase() === 'play' && interactive() && !disabled() ? 'pointer' : 'default'"
+          style="min-height: 5.5rem; padding: 0.75rem; border: 0; border-radius: 1.25rem; font: inherit; font-size: 1.2rem; font-weight: 800; overflow-wrap: anywhere; transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease"
+          (click)="onSimonElement($index)"
+        >
+          {{ element.label }}
+        </button>
+      }
+    </div>
+    @if (simonPhase() === 'play') {
+      <p class="child-play-view-hint" data-testid="child-play-view-simon-progress">
+        {{ simonPlayed() }} / {{ simonTotal() }}
+      </p>
+    }
+  }
 </div>

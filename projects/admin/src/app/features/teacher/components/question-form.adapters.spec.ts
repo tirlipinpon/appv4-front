@@ -35,6 +35,9 @@ function emptyDraft(overrides: Partial<QuestionDraftSnapshot> = {}): QuestionDra
     clickZones: [],
     puzzleMagnet: 0.08,
     timelineEnabled: false,
+    simonType: null,
+    simonElements: [],
+    simonSequence: [],
     ...overrides,
   };
 }
@@ -340,6 +343,69 @@ describe('question-form.adapters', () => {
         ],
       }),
     );
+  });
+
+  it('maps a simon question and keeps element positions for the sequence', () => {
+    const saved = parseSavedQuestion({
+      id: 30,
+      formCode: FORM.SIMON,
+      formLabel: 'Simon',
+      elementType: 'couleurs',
+      elements: [
+        { id: 1, label: 'rouge', color: '#ff0000' },
+        { id: 2, label: 'bleu', color: '#0000ff' },
+      ],
+      sequence: [0, 1, 0, 7],
+    });
+
+    expect(saved).toEqual(
+      jasmine.objectContaining({
+        elementType: 'couleurs',
+        elements: [
+          { label: 'rouge', color: '#ff0000' },
+          { label: 'bleu', color: '#0000ff' },
+        ],
+        sequence: [0, 1, 0],
+      }),
+    );
+
+    const other = parseSavedQuestion({ id: 31, formCode: FORM.QCM, elementType: 'couleurs', sequence: [0, 1] });
+    expect(other?.elementType).toBeNull();
+    expect(other?.elements).toEqual([]);
+    expect(other?.sequence).toEqual([]);
+  });
+
+  it('builds a simon body and sends a color only for the couleurs genre', () => {
+    const elements = [
+      { label: 'rouge', color: '#ff0000' },
+      { label: 'bleu', color: '#0000ff' },
+    ];
+
+    expect(
+      buildSaveBody(
+        FORM.SIMON,
+        emptyDraft({ prompt: 'Refais', simonType: 'couleurs', simonElements: elements, simonSequence: [1, 0, 1] }),
+      ),
+    ).toEqual({
+      formCode: FORM.SIMON,
+      prompt: 'Refais',
+      elementType: 'couleurs',
+      elements: [
+        { label: 'rouge', color: '#ff0000' },
+        { label: 'bleu', color: '#0000ff' },
+      ],
+      sequence: [1, 0, 1],
+    });
+
+    expect(
+      buildSaveBody(FORM.SIMON, emptyDraft({ simonType: 'formes', simonElements: elements, simonSequence: [0, 1] })),
+    ).toEqual({
+      formCode: FORM.SIMON,
+      prompt: '',
+      elementType: 'formes',
+      elements: [{ label: 'rouge' }, { label: 'bleu' }],
+      sequence: [0, 1],
+    });
   });
 
   it('returns null for an unknown form code', () => {

@@ -10,5 +10,6 @@ export type {
   ChildPlayViewPair,
   ChildPlayViewPuzzlePiece,
   ChildPlayViewQuestion,
+  ChildPlayViewSimonElement,
   ChildPlayViewStatement,
 } from './child-question-play-view/child-question-play-view.model';

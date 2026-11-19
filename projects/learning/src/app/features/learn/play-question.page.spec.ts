@@ -1,6 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { ChildAuthService } from '../../core/auth/child-auth.service';
@@ -236,4 +236,58 @@ describe('PlayQuestionPage', () => {
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
     http.verify();
   });
+
+  it('simon : montre la suite, puis envoie la reprise au dernier pas, sans bouton Valider', fakeAsync(() => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+      questionId: 42,
+      subjectId: 5,
+      formCode: 'simon',
+      prompt: 'Refais la suite',
+      elementType: 'couleurs',
+      elements: [
+        { label: 'rouge', color: '#ff0000' },
+        { label: 'bleu', color: '#0000ff' },
+      ],
+      sequence: [1, 0, 1],
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const phase = () => root.querySelector('[data-testid="child-play-view-simon-phase"]')?.textContent ?? '';
+    const progress = () => root.querySelector('[data-testid="child-play-view-simon-progress"]')?.textContent ?? '';
+    const element = (index: number) =>
+      root.querySelector(`[data-testid="child-play-view-simon-element-${index}"]`) as HTMLButtonElement;
+
+    expect(phase()).toContain('Regardez la séquence');
+    expect(root.querySelector('[data-testid="play-submit"]')).toBeNull();
+    expect(element(0).textContent).toContain('rouge');
+    expect(element(0).style.backgroundColor).toBe('rgb(255, 0, 0)');
+    expect(element(0).disabled).toBeTrue();
+
+    tick(700);
+    fixture.detectChanges();
+    expect(element(1).getAttribute('data-lit')).toBe('true');
+    expect(element(0).getAttribute('data-lit')).toBeNull();
+
+    tick(3000);
+    fixture.detectChanges();
+    expect(phase()).toContain('Reproduisez la séquence');
+    expect(progress()).toContain('0 / 3');
+
+    element(1).click();
+    element(0).click();
+    fixture.detectChanges();
+    expect(progress()).toContain('2 / 3');
+    http.expectNone('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+
+    element(1).click();
+    const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+    expect(attempt.request.body).toEqual({ simonSequence: [1, 0, 1] });
+    attempt.flush({ passed: true, scorePercent: 100 });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+    flush();
+    http.verify();
+  }));
 });

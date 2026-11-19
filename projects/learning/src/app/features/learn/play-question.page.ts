@@ -78,7 +78,18 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'puzzle') {
       return view.allPuzzlePiecesPlaced();
     }
+    if (q.formCode === 'simon') {
+      return view.simonComplete();
+    }
     return false;
+  });
+
+  /** Formes envoyées au dernier geste, sans bouton Valider : Simon, image à clics ordonnés. */
+  protected readonly autoSubmit = computed(() => {
+    const model = this.playModel();
+    return (
+      model?.formCode === 'simon' || (model?.formCode === 'image_interactive' && model.clicksOrdered !== false)
+    );
   });
 
   ngOnInit(): void {
@@ -105,7 +116,8 @@ export class PlayQuestionPage implements OnInit {
           body.formCode !== 'case_vide' &&
           body.formCode !== 'image_interactive' &&
           body.formCode !== 'reponse_libre' &&
-          body.formCode !== 'puzzle'
+          body.formCode !== 'puzzle' &&
+          body.formCode !== 'simon'
         ) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
@@ -129,7 +141,7 @@ export class PlayQuestionPage implements OnInit {
         },
       });
     }
-    if (model?.formCode === 'image_interactive' && model.clicksOrdered !== false && this.canSubmit()) {
+    if (this.autoSubmit() && this.canSubmit()) {
       this.submit();
     }
   }
@@ -161,7 +173,9 @@ export class PlayQuestionPage implements OnInit {
                       ? { attempt: view.letterAttempt() }
                       : q.formCode === 'puzzle'
                         ? { puzzlePlacements: view.puzzlePlacements() }
-                        : { statements: view.statementAnswers() };
+                        : q.formCode === 'simon'
+                          ? { simonSequence: view.simonReplay() }
+                          : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -279,5 +293,8 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
         },
       ];
     }),
+    elementType: body.elementType,
+    elements: (body.elements ?? []).map((element) => ({ label: element.label ?? '', color: element.color })),
+    sequence: body.sequence,
   };
 }

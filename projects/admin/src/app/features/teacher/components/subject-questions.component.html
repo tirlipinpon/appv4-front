@@ -542,6 +542,111 @@
         </div>
       }
 
+      @if (selectedCode() === 'simon') {
+        <div class="editor">
+          @if (editingId()) {
+            <p class="hint">Tu modifies cette question.</p>
+          }
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Énoncé</mat-label>
+            <input
+              matInput
+              [value]="prompt()"
+              [disabled]="saving()"
+              (input)="setPrompt(inputValue($event))"
+            />
+          </mat-form-field>
+          <div class="choice" role="group" aria-label="Genre des éléments">
+            <span class="hint">Genre</span>
+            @for (type of simonTypes; track type) {
+              <button
+                class="form-chip"
+                type="button"
+                [disabled]="saving()"
+                [class.selected]="simonType() === type"
+                [attr.aria-pressed]="simonType() === type"
+                (click)="setSimonType(type)"
+              >
+                {{ type }}
+              </button>
+            }
+          </div>
+          @for (element of simonElements(); track $index) {
+            <div class="choice">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Élément {{ $index + 1 }}</mat-label>
+                <input
+                  matInput
+                  [value]="element.label"
+                  [disabled]="saving()"
+                  (input)="setSimonElementLabel($index, inputValue($event))"
+                />
+              </mat-form-field>
+              @if (simonType() === 'couleurs') {
+                <input
+                  class="simon-picker"
+                  type="color"
+                  [attr.aria-label]="'Couleur de l’élément ' + ($index + 1)"
+                  [value]="element.color"
+                  [disabled]="saving()"
+                  (input)="setSimonElementColor($index, inputValue($event))"
+                />
+                <mat-form-field appearance="outline" class="simon-code">
+                  <mat-label>Code couleur</mat-label>
+                  <input
+                    matInput
+                    placeholder="#ff0000"
+                    [value]="element.color"
+                    [disabled]="saving()"
+                    (input)="setSimonElementColor($index, inputValue($event))"
+                  />
+                </mat-form-field>
+              }
+              <button mat-button type="button" [disabled]="saving()" (click)="removeSimonElement($index)">
+                Enlever
+              </button>
+            </div>
+          }
+          <button mat-button type="button" [disabled]="saving()" (click)="addSimonElement()">
+            Ajouter un élément
+          </button>
+          <div class="choice" role="group" aria-label="Ajouter un pas à la suite">
+            <span class="hint">Suite à refaire : touche les éléments dans l'ordre où ils s'allument.</span>
+            @for (element of simonElements(); track $index) {
+              <button class="form-chip" type="button" [disabled]="saving()" (click)="addSimonStep($index)">
+                @if (simonSwatch(element.color); as color) {
+                  <span class="swatch" [style.background]="color"></span>
+                }
+                {{ simonElementName($index) }}
+              </button>
+            }
+          </div>
+          @if (simonSequence().length) {
+            <ol class="answers ordered simon-steps">
+              @for (step of simonSequence(); track $index) {
+                <li>
+                  {{ simonElementName(step) }}
+                  <button mat-button type="button" [disabled]="saving()" (click)="removeSimonStep($index)">
+                    Enlever
+                  </button>
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="hint simon-steps">Aucun pas pour l'instant.</p>
+          }
+          @if (simonError(); as message) {
+            <p class="field-error simon-steps" role="alert">{{ message }}</p>
+          }
+          @if (editingId()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
+          }
+          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+            Enregistrer
+          </button>
+        </div>
+      }
+
       @if (selectedCode() === 'texte' || selectedCode() === 'reponse_libre') {
         <div class="editor">
           @if (editingId()) {
@@ -707,6 +812,23 @@
                 [zones]="question.zones"
                 [magnet]="question.snapDistance"
               />
+            } @else if (question.formCode === 'simon') {
+              @if (question.elementType) {
+                <p class="hint">Genre : {{ question.elementType }}</p>
+              }
+              <ul class="answers">
+                @for (element of question.elements; track $index) {
+                  <li>
+                    @if (element.color) {
+                      <span class="swatch" [style.background]="element.color"></span>
+                    }
+                    {{ element.label }}
+                  </li>
+                }
+              </ul>
+              @if (simonSequenceLabel(question); as order) {
+                <p class="hint">Suite : {{ order }}</p>
+              }
             } @else if (question.formCode === 'texte') {
               <p>{{ question.expectedAnswer }}</p>
             } @else if (question.formCode === 'reponse_libre') {
@@ -850,8 +972,9 @@
         (imageChange)="onPreviewSelectionChange()"
         (lettersChange)="onPreviewSelectionChange()"
         (puzzleChange)="onPreviewSelectionChange()"
+        (simonChange)="onPreviewSelectionChange()"
       />
-      @if (previewResult() === null && (preview()?.formCode !== 'image_interactive' || preview()?.clicksOrdered === false)) {
+      @if (previewResult() === null && !previewAutoSubmit()) {
         <button
           type="button"
           class="child-preview-submit"
