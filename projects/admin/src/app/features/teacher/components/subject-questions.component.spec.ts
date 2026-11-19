@@ -1123,11 +1123,7 @@ describe('SubjectQuestionsComponent', () => {
       Array.from(fixture.nativeElement.querySelectorAll('button.form-chip') as NodeListOf<HTMLButtonElement>).find(
         (button) => button.textContent?.trim() === label,
       );
-    stepChip('rouge')?.click();
-    stepChip('bleu')?.click();
-    stepChip('rouge')?.click();
-    fixture.detectChanges();
-    expect(page.simonSequence()).toEqual([0, 1, 0]);
+    expect(stepChip('rouge')).toBeUndefined();
 
     buttonNamed('Enregistrer')?.click();
 
@@ -1140,7 +1136,6 @@ describe('SubjectQuestionsComponent', () => {
         { label: 'rouge', color: '#ff0000' },
         { label: 'bleu', color: '#0000ff' },
       ],
-      sequence: [0, 1, 0],
     });
     req.flush({
       id: 16,
@@ -1158,7 +1153,6 @@ describe('SubjectQuestionsComponent', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Genre : couleurs');
-    expect(text).toContain('Suite : 1. rouge, 2. bleu, 3. rouge');
     expect(fixture.nativeElement.querySelectorAll('.saved .swatch').length).toBe(2);
   });
 
@@ -1175,12 +1169,8 @@ describe('SubjectQuestionsComponent', () => {
     page.setSimonElementLabel(0, '1');
     page.setSimonElementLabel(1, '2');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('La suite doit avoir au moins deux pas.');
+    expect(fixture.nativeElement.textContent).not.toContain('La suite doit avoir au moins deux pas.');
     expect(fixture.nativeElement.querySelector('input[type="color"]')).toBeNull();
-
-    page.addSimonStep(1);
-    page.addSimonStep(0);
-    fixture.detectChanges();
     expect(page.simonError()).toBeNull();
 
     buttonNamed('Enregistrer')?.click();
@@ -1190,7 +1180,6 @@ describe('SubjectQuestionsComponent', () => {
       prompt: '',
       elementType: 'nombres',
       elements: [{ label: '1' }, { label: '2' }],
-      sequence: [1, 0],
     });
     req.flush({
       id: 17,
@@ -1241,13 +1230,16 @@ describe('SubjectQuestionsComponent', () => {
 
     (root.querySelector('[data-testid="teacher-question-preview"]') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(root.textContent).toContain('Regardez la séquence');
+    expect(root.textContent).toContain('Regardez');
     expect(root.querySelector('[data-testid="teacher-child-preview-submit"]')).toBeNull();
 
     tick(3000);
     fixture.detectChanges();
-    expect(root.textContent).toContain('Reproduisez la séquence');
+    expect(root.textContent).toContain('Reproduisez');
 
+    (root.querySelector('[data-testid="child-play-view-simon-element-1"]') as HTMLButtonElement).click();
+    tick(4000);
+    fixture.detectChanges();
     (root.querySelector('[data-testid="child-play-view-simon-element-1"]') as HTMLButtonElement).click();
     (root.querySelector('[data-testid="child-play-view-simon-element-0"]') as HTMLButtonElement).click();
     fixture.detectChanges();

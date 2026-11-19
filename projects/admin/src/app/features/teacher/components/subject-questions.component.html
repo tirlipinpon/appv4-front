@@ -610,31 +610,9 @@
           <button mat-button type="button" [disabled]="saving()" (click)="addSimonElement()">
             Ajouter un élément
           </button>
-          <div class="choice" role="group" aria-label="Ajouter un pas à la suite">
-            <span class="hint">Suite à refaire : touche les éléments dans l'ordre où ils s'allument.</span>
-            @for (element of simonElements(); track $index) {
-              <button class="form-chip" type="button" [disabled]="saving()" (click)="addSimonStep($index)">
-                @if (simonSwatch(element.color); as color) {
-                  <span class="swatch" [style.background]="color"></span>
-                }
-                {{ simonElementName($index) }}
-              </button>
-            }
-          </div>
-          @if (simonSequence().length) {
-            <ol class="answers ordered simon-steps">
-              @for (step of simonSequence(); track $index) {
-                <li>
-                  {{ simonElementName(step) }}
-                  <button mat-button type="button" [disabled]="saving()" (click)="removeSimonStep($index)">
-                    Enlever
-                  </button>
-                </li>
-              }
-            </ol>
-          } @else {
-            <p class="hint simon-steps">Aucun pas pour l'instant.</p>
-          }
+          <p class="hint">
+            La suite est tirée au hasard pendant la partie : un élément, puis deux depuis le début, puis trois…
+          </p>
           @if (simonError(); as message) {
             <p class="field-error simon-steps" role="alert">{{ message }}</p>
           }

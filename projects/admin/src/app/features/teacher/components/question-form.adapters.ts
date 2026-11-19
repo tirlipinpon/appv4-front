@@ -263,7 +263,6 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
           label: element.label,
           ...(draft.simonType === SIMON_ELEMENT_TYPE.COLORS ? { color: element.color } : {}),
         })),
-        sequence: [...draft.simonSequence],
       };
     case FORM.QCM:
       return {

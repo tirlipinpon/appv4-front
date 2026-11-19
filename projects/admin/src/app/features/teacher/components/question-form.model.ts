@@ -149,7 +149,6 @@ export function isSimonColor(value: string): boolean {
 export function simonDraftError(
   type: SimonElementType | null,
   elements: readonly SimonElementDraft[],
-  sequence: readonly number[],
 ): string | null {
   if (type === null) {
     return "Choisis un genre d'éléments : couleurs, nombres, lettres ou formes.";
@@ -162,9 +161,6 @@ export function simonDraftError(
   }
   if (type === SIMON_ELEMENT_TYPE.COLORS && elements.some((element) => !isSimonColor(element.color))) {
     return 'Avec le genre couleurs, chaque élément doit avoir un code couleur comme #ff0000.';
-  }
-  if (sequence.length < 2) {
-    return 'La suite doit avoir au moins deux pas.';
   }
   return null;
 }
