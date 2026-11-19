@@ -28,6 +28,7 @@ const ui = {
   linkRight: 'child-play-view-link-right',
   gapWord: 'child-play-view-gap-word',
   gapHole: 'child-play-view-gap-hole',
+  gapLine: 'child-play-view-gaps',
 } as const;
 
 const SUBJECT_ID = 4;
@@ -188,6 +189,11 @@ test.describe('Jouer une question', { tag: ['@learning', '@mock'] }, () => {
       [10, 0],
       [11, 1],
     ]);
+    const line = page.getByTestId(ui.gapLine);
+    const box = await line.boundingBox();
+    expect(box?.height ?? 0).toBeLessThan(56);
+    const scrolls = await line.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+    expect(scrolls).toBe(false);
     await submitAndExpect(page, true, '100');
     await replay(page);
   });
@@ -432,6 +438,10 @@ async function dragGap(page: Page, wordId: number, holeIndex: number): Promise<v
   await page.mouse.down();
   await page.mouse.move(startX + 20, startY, { steps: 6 });
   await page.mouse.move(endX, endY, { steps: 12 });
+  const during = await hole.boundingBox();
+  if (during != null && Math.abs(during.width - holeBox.width) > 2) {
+    throw new Error(`le trou change de largeur (${holeBox.width} → ${during.width})`);
+  }
   await page.mouse.up();
 }
 

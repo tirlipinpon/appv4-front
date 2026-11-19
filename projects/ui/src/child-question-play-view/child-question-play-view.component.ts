@@ -490,6 +490,12 @@ export class ChildQuestionPlayViewComponent {
 
   protected readonly gapParts = computed(() => splitGapSentence(this.question().sentence ?? ''));
 
+  /** Même largeur vide ou rempli, pour que la phrase ne bouge pas. */
+  protected readonly gapHoleSize = computed(() => {
+    const longest = this.gapWords().reduce((max, word) => Math.max(max, word.label.length), 1);
+    return `${Math.min(Math.max(longest + 2, 4), 16)}ch`;
+  });
+
   protected readonly gapBank = computed(() => {
     const placed = new Set(Object.values(this.gapPlacements()));
     return this.gapWords().filter((word) => !placed.has(word.key));

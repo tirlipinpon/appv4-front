@@ -285,25 +285,29 @@
     <p class="child-play-view-hint" data-testid="child-play-view-gaps-hint">
       Choisis un trou, puis un mot. Tu peux aussi glisser le mot dans le trou.
     </p>
-    <div
+    <p
       data-testid="child-play-view-gaps"
-      style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem"
+      style="margin: 0 0 0.85rem; font-weight: 700; line-height: 2.6rem"
     >
       @for (part of gapParts(); track $index) {
         @if (part.kind === 'text') {
           <span>{{ part.text }}</span>
         } @else {
-          <div
+          <span
             cdkDropList
+            cdkDropListSortingDisabled
             [id]="'gap-hole-' + part.holeIndex"
             [cdkDropListData]="gapHoleWords(part.holeIndex)"
             [cdkDropListConnectedTo]="gapDropIds()"
             [cdkDropListDisabled]="disabled() || !interactive()"
-            class="child-play-view-option"
-            [class.selected]="selectedGapHole() === part.holeIndex"
             role="button"
             tabindex="0"
-            style="width: auto; cursor: pointer"
+            [style.width]="gapHoleSize()"
+            [style.min-width]="gapHoleSize()"
+            [style.max-width]="gapHoleSize()"
+            [style.border-color]="selectedGapHole() === part.holeIndex ? 'var(--app-primary, #7c5cff)' : 'color-mix(in srgb, var(--app-primary, #7c5cff) 55%, var(--app-outline, #e4e7ee))'"
+            [style.background]="gapHoleWords(part.holeIndex).length > 0 || selectedGapHole() === part.holeIndex ? 'color-mix(in srgb, var(--app-primary, #7c5cff) 22%, transparent)' : 'transparent'"
+            style="display: inline-flex; vertical-align: middle; align-items: center; justify-content: center; box-sizing: border-box; height: 2.25rem; min-height: 2.25rem; max-height: 2.25rem; margin: 0 0.15rem; padding: 0 0.45rem; overflow: hidden; border-radius: 999px; border: 2px solid; cursor: pointer; color: inherit"
             [attr.data-testid]="'child-play-view-gap-hole-' + part.holeIndex"
             (click)="onGapHole(part.holeIndex)"
             (keydown.enter)="onGapHole(part.holeIndex)"
@@ -316,17 +320,18 @@
                 cdkDrag
                 [cdkDragData]="word"
                 [cdkDragDisabled]="disabled() || !interactive()"
+                style="display: block; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 800; line-height: 1; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
                 (click)="$event.stopPropagation(); onGapChip(word)"
               >
                 {{ word.label }}
               </button>
             } @empty {
-              ___
+              <span style="font-weight: 800; opacity: 0.75">—</span>
             }
-          </div>
+          </span>
         }
       }
-    </div>
+    </p>
     <div
       cdkDropList
       id="gap-bank"
