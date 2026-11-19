@@ -712,7 +712,7 @@
             } @else if (question.formCode === 'reponse_libre') {
               <p>{{ question.expectedAnswer }}</p>
               <app-letter-boxes
-                [count]="letterCount(question.expectedAnswer)"
+                [expectedAnswer]="question.expectedAnswer"
                 [message]="letterMessage(question.id)"
                 [busy]="letterBusyId() === question.id"
                 (submitted)="tryLetters(question, $event)"

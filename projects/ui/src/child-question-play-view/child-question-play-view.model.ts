@@ -85,4 +85,14 @@ export interface ChildPlayViewQuestion {
   clickSteps?: ChildPlayViewClickStep[];
   /** Nombre de cases lettre par lettre (sans le mot). */
   letterCount?: number;
+  /**
+   * Masque jouable : `#` = case lettre, espace = saut.
+   * Fourni par l'API play (sans révéler le mot).
+   */
+  letterMask?: string;
+  /**
+   * Mot attendu — aperçu teacher seulement, pour verrouiller en vert sans appel API.
+   * Learn ne le reçoit pas.
+   */
+  letterExpected?: string;
 }

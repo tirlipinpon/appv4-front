@@ -4,6 +4,7 @@
       class="child-play-view-form"
       [class.memory]="isMemory()"
       [class.order]="isOrder()"
+      [class.letters]="isLetters()"
       data-testid="child-play-view-form"
     >
       {{ question().formLabel }}
@@ -439,28 +440,32 @@
   }
 
   @if (isLetters()) {
-    <div
-      data-testid="child-play-view-letters"
-      style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem"
-    >
-      @for (letter of letterBoxes(); track $index) {
-        <input
-          #letterBox
-          type="text"
-          inputmode="text"
-          autocomplete="off"
-          [attr.aria-label]="'Lettre ' + ($index + 1)"
-          [attr.data-testid]="'child-play-view-letter-' + $index"
-          [value]="letter"
-          [disabled]="disabled() || !interactive()"
-          style="width: 2.2rem; height: 2.4rem; text-align: center; font-size: 1.1rem; font-weight: 800"
-          (input)="onLetterInput($index, $event)"
-          (keydown)="onLetterKeydown($index, $event)"
-        />
+    <div class="child-play-view-letters" data-testid="child-play-view-letters">
+      @for (word of letterWords(); track word.start) {
+        <div class="child-play-view-letter-word" [attr.data-testid]="'child-play-view-letter-word-' + word.start">
+          @for (index of word.indexes; track index) {
+            <input
+              #letterBox
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              class="child-play-view-letter"
+              [class.filled]="letterBoxes()[index] !== ''"
+              [class.locked]="letterLocked(index)"
+              [class.wrong]="letterWrong(index)"
+              [attr.aria-label]="'Lettre ' + (index + 1)"
+              [attr.data-testid]="'child-play-view-letter-' + index"
+              [value]="letterBoxes()[index]"
+              [disabled]="disabled() || !interactive() || letterLocked(index)"
+              (input)="onLetterInput(index, $event)"
+              (keydown)="onLetterKeydown(index, $event)"
+            />
+          }
+        </div>
       }
     </div>
     <p class="child-play-view-hint" data-testid="child-play-view-letters-hint">
-      Une lettre par case, puis Valider.
+      Une lettre par case (l’espace se saute), puis Valider.
     </p>
   }
 </div>

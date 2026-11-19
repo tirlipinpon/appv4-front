@@ -21,7 +21,8 @@
 }
 
 .child-play-view-form.memory,
-.child-play-view-form.order {
+.child-play-view-form.order,
+.child-play-view-form.letters {
   color: var(--app-primary, #7c5cff);
 }
 
@@ -421,3 +422,77 @@
 .cdk-drag-placeholder {
   opacity: 0.35;
 }
+
+.child-play-view-letters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin: 0.35rem 0 0.65rem;
+  align-items: center;
+}
+
+.child-play-view-letter-word {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.child-play-view-letter {
+  box-sizing: border-box;
+  width: 2.85rem;
+  height: 3.1rem;
+  padding: 0;
+  border: 2px solid color-mix(in srgb, var(--app-primary, #7c5cff) 45%, var(--app-outline, #4a3f6e));
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--app-surface-card, #1a1436) 88%, var(--app-primary, #7c5cff));
+  color: var(--app-text, #f5f1ff);
+  font-family: inherit;
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-align: center;
+  text-transform: lowercase;
+  caret-color: var(--app-primary, #7c5cff);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--app-primary, #7c5cff) 22%, transparent);
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.child-play-view-letter.filled {
+  border-color: var(--app-primary, #7c5cff);
+  background: color-mix(in srgb, var(--app-primary, #7c5cff) 28%, var(--app-surface-card, #1a1436));
+}
+
+.child-play-view-letter:focus {
+  border-color: var(--app-primary, #7c5cff);
+  background: color-mix(in srgb, var(--app-primary, #7c5cff) 18%, var(--app-surface-card, #1a1436));
+  box-shadow:
+    0 4px 0 color-mix(in srgb, var(--app-primary, #7c5cff) 28%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--app-primary, #7c5cff) 28%, transparent);
+}
+
+.child-play-view-letter:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+}
+
+.child-play-view-letter.locked,
+.child-play-view-letter.locked:disabled {
+  opacity: 1;
+  border-color: var(--app-form-vrai-faux, #2bb673);
+  background: color-mix(in srgb, var(--app-form-vrai-faux, #2bb673) 28%, var(--app-surface-card, #1a1436));
+  color: var(--app-text, #f5f1ff);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--app-form-vrai-faux, #2bb673) 35%, transparent);
+  cursor: default;
+}
+
+.child-play-view-letter.wrong:not(.locked) {
+  border-color: var(--app-error, #e35d6a);
+  background: color-mix(in srgb, var(--app-error, #e35d6a) 28%, var(--app-surface-card, #1a1436));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--app-error, #e35d6a) 35%, transparent);
+}
+

@@ -297,6 +297,12 @@ export class ChildQuestionPlayViewComponent {
 
   private readonly letterFields = viewChildren<ElementRef<HTMLInputElement>>('letterBox');
   protected readonly letterBoxes = signal<string[]>([]);
+  /** Verrou par case (espace toujours true ; lettre juste → true). */
+  protected readonly letterLocks = signal<boolean[]>([]);
+  /** Cases incorrectes après Valider (rouge). */
+  protected readonly letterWrongs = signal<boolean[]>([]);
+  /** Mots (groupes de cases) pour ne pas couper un mot à la ligne. */
+  protected readonly letterWords = computed(() => letterWordGroups(this.letterMaskValue()));
 
   protected readonly imageSrc = computed(() => imageSource(this.question().imageWebp));
 
@@ -351,8 +357,7 @@ export class ChildQuestionPlayViewComponent {
       this.clickedZoneIds.set([]);
       this.clickMarks.set([]);
       this.clickMiss.set(false);
-      const count = this.question().letterCount ?? 0;
-      this.letterBoxes.set(count > 0 ? Array.from({ length: count }, () => '') : []);
+      this.resetLetterSlots();
     });
     effect(() => {
       const items = this.question().items ?? [];
@@ -466,8 +471,7 @@ export class ChildQuestionPlayViewComponent {
     this.clickedZoneIds.set([]);
     this.clickMarks.set([]);
     this.clickMiss.set(false);
-    const count = this.question().letterCount ?? 0;
-    this.letterBoxes.set(count > 0 ? Array.from({ length: count }, () => '') : []);
+    this.resetLetterSlots();
     this.layoutTick.update((n) => n + 1);
   }
 
@@ -475,13 +479,78 @@ export class ChildQuestionPlayViewComponent {
     return this.letterBoxes().join('');
   }
 
+  /** Tentative partielle : case vide = \\0 pour le check des verrous côté API. */
+  letterAttemptForLocks(): string {
+    return this.letterBoxes()
+      .map((letter, index) => {
+        if (this.isSpaceSlot(index)) {
+          return ' ';
+        }
+        return letter === '' ? '\0' : letter;
+      })
+      .join('');
+  }
+
   allLettersFilled(): boolean {
     const rows = this.letterBoxes();
-    return rows.length > 0 && rows.every((letter) => letter !== '');
+    if (rows.length === 0) {
+      return false;
+    }
+    return rows.every((letter, index) => this.isSpaceSlot(index) || letter !== '');
+  }
+
+  applyLetterLocks(locks: boolean[]): void {
+    const mask = this.letterMaskValue();
+    const next = mask.split('').map((ch, index) => {
+      if (ch === ' ') {
+        return true;
+      }
+      return locks[index] === true;
+    });
+    this.letterLocks.set(next);
+  }
+
+  /**
+   * Après Valider : les cases non verrouillées (incorrectes) passent en rouge.
+   * Si tout est bon, aucun rouge.
+   */
+  markLetterWrongs(showWrongs: boolean): void {
+    const mask = this.letterMaskValue();
+    if (!showWrongs || mask === '') {
+      this.letterWrongs.set(mask === '' ? [] : [...mask].map(() => false));
+      return;
+    }
+    const locks = this.letterLocks();
+    const boxes = this.letterBoxes();
+    this.letterWrongs.set(
+      [...mask].map((ch, index) => {
+        if (ch === ' ') {
+          return false;
+        }
+        return boxes[index] !== '' && locks[index] !== true;
+      }),
+    );
+  }
+
+  /** Aperçu teacher : recalcule les verts à partir de {@code letterExpected}. */
+  refreshLocalLetterLocksFromExpected(): void {
+    this.refreshLocalLetterLocks();
+  }
+
+  protected isSpaceSlot(index: number): boolean {
+    return this.letterMaskValue()[index] === ' ';
+  }
+
+  protected letterLocked(index: number): boolean {
+    return this.letterLocks()[index] === true;
+  }
+
+  protected letterWrong(index: number): boolean {
+    return this.letterWrongs()[index] === true;
   }
 
   protected onLetterInput(index: number, event: Event): void {
-    if (this.disabled() || !this.interactive()) {
+    if (this.disabled() || !this.interactive() || this.letterLocked(index) || this.isSpaceSlot(index)) {
       return;
     }
     const field = event.target as HTMLInputElement;
@@ -492,22 +561,108 @@ export class ChildQuestionPlayViewComponent {
     const letter = chars.length === 0 ? '' : chars[chars.length - 1];
     this.letterBoxes.update((rows) => rows.map((row, i) => (i === index ? letter : row)));
     field.value = letter;
-    if (letter !== '' && index + 1 < this.letterBoxes().length) {
-      this.letterFields()[index + 1]?.nativeElement.focus();
+    this.clearLetterWrongs();
+    this.refreshLocalLetterLocks();
+    if (letter !== '') {
+      const next = this.nextEditableSlot(index);
+      if (next !== null) {
+        this.focusLetterSlot(next);
+      }
     }
     this.lettersChange.emit();
   }
 
   protected onLetterKeydown(index: number, event: KeyboardEvent): void {
+    if (this.letterLocked(index) || this.isSpaceSlot(index)) {
+      event.preventDefault();
+      return;
+    }
     if (event.key !== 'Backspace' || this.letterBoxes()[index] !== '') {
       return;
     }
-    if (index === 0) {
+    const prev = this.prevEditableSlot(index);
+    if (prev === null) {
       return;
     }
-    this.letterBoxes.update((rows) => rows.map((row, i) => (i === index - 1 ? '' : row)));
-    this.letterFields()[index - 1]?.nativeElement.focus();
+    event.preventDefault();
+    this.letterBoxes.update((rows) => rows.map((row, i) => (i === prev ? '' : row)));
+    this.clearLetterWrongs();
+    this.refreshLocalLetterLocks();
+    this.focusLetterSlot(prev);
     this.lettersChange.emit();
+  }
+
+  private resetLetterSlots(): void {
+    const mask = this.letterMaskValue();
+    this.letterBoxes.set(mask === '' ? [] : [...mask].map((ch) => (ch === ' ' ? ' ' : '')));
+    this.letterLocks.set(mask === '' ? [] : [...mask].map((ch) => ch === ' '));
+    this.letterWrongs.set(mask === '' ? [] : [...mask].map(() => false));
+  }
+
+  private clearLetterWrongs(): void {
+    const mask = this.letterMaskValue();
+    this.letterWrongs.set(mask === '' ? [] : [...mask].map(() => false));
+  }
+
+  private letterMaskValue(): string {
+    const fromApi = this.question().letterMask;
+    if (fromApi != null && fromApi !== '') {
+      return fromApi;
+    }
+    const expected = this.question().letterExpected;
+    if (expected != null && expected !== '') {
+      return [...expected].map((ch) => (/\s/.test(ch) ? ' ' : '#')).join('');
+    }
+    const count = this.question().letterCount ?? 0;
+    return count > 0 ? '#'.repeat(count) : '';
+  }
+
+  private refreshLocalLetterLocks(): void {
+    const expected = this.question().letterExpected;
+    if (expected == null || expected === '') {
+      return;
+    }
+    const boxes = this.letterBoxes();
+    const locks = [...expected].map((expCh, index) => {
+      if (/\s/.test(expCh)) {
+        return true;
+      }
+      const typed = boxes[index] ?? '';
+      if (typed === '') {
+        return false;
+      }
+      return typed.toLowerCase() === expCh.toLowerCase();
+    });
+    this.letterLocks.set(locks);
+  }
+
+  private nextEditableSlot(from: number): number | null {
+    const boxes = this.letterBoxes();
+    for (let i = from + 1; i < boxes.length; i++) {
+      if (!this.isSpaceSlot(i) && !this.letterLocked(i)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  private prevEditableSlot(from: number): number | null {
+    for (let i = from - 1; i >= 0; i--) {
+      if (!this.isSpaceSlot(i) && !this.letterLocked(i)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  private focusLetterSlot(slotIndex: number): void {
+    let inputIndex = 0;
+    for (let i = 0; i < slotIndex; i++) {
+      if (!this.isSpaceSlot(i)) {
+        inputIndex += 1;
+      }
+    }
+    this.letterFields()[inputIndex]?.nativeElement.focus();
   }
 
   selectedChoiceIds(): number[] {
@@ -1111,4 +1266,28 @@ export class ChildQuestionPlayViewComponent {
       this.mismatchTimer = null;
     }
   }
+}
+
+/** Découpe le masque en mots pour un retour à la ligne sans couper un mot. */
+function letterWordGroups(mask: string): { start: number; indexes: number[] }[] {
+  const words: { start: number; indexes: number[] }[] = [];
+  let indexes: number[] = [];
+  let start = 0;
+  for (let i = 0; i < mask.length; i++) {
+    if (mask[i] === ' ') {
+      if (indexes.length > 0) {
+        words.push({ start, indexes });
+        indexes = [];
+      }
+      continue;
+    }
+    if (indexes.length === 0) {
+      start = i;
+    }
+    indexes.push(i);
+  }
+  if (indexes.length > 0) {
+    words.push({ start, indexes });
+  }
+  return words;
 }
