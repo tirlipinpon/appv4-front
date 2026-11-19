@@ -21,6 +21,7 @@ import type {
   ChildPlayViewChoice,
   ChildPlayViewColumn,
   ChildPlayViewItem,
+  ChildPlayViewLink,
   ChildPlayViewPair,
   ChildPlayViewQuestion,
   ChildPlayViewStatement,
@@ -50,6 +51,12 @@ export interface ClassColumnView {
   columnId?: number;
   label: string;
   cards: ClassCardView[];
+}
+
+export interface LinkSideView {
+  key: string;
+  linkId?: number;
+  label: string;
 }
 
 const SOURCE_KEY = 'source';
@@ -100,6 +107,15 @@ function toClassCard(card: ChildPlayViewCard, index: number): ClassCardView {
   };
 }
 
+function toLinkSide(link: ChildPlayViewLink, index: number, side: 'l' | 'r'): LinkSideView {
+  const idPart = link.linkId != null ? String(link.linkId) : `i-${index}`;
+  return {
+    key: `${side}-${idPart}`,
+    linkId: link.linkId,
+    label: side === 'l' ? link.leftLabel : link.rightLabel,
+  };
+}
+
 function toClassColumn(column: ChildPlayViewColumn, index: number): ClassColumnView {
   return {
     key: column.columnId != null ? String(column.columnId) : `col-${index}-${column.label}`,
@@ -110,7 +126,7 @@ function toClassColumn(column: ChildPlayViewColumn, index: number): ClassColumnV
 }
 
 /**
- * Rendu partagé Learning + Teacher : qcm / vrai_faux / memory / order (frise optionnelle) / classement.
+ * Rendu partagé Learning + Teacher : qcm / vrai_faux / memory / order (frise optionnelle) / classement / liens.
  * Teacher : aperçu. Learning : interaction + envoi géré par la page parente.
  */
 @Component({
@@ -131,6 +147,7 @@ export class ChildQuestionPlayViewComponent {
   readonly memoryChange = output<void>();
   readonly orderChange = output<void>();
   readonly classificationChange = output<void>();
+  readonly linksChange = output<void>();
 
   private readonly layoutTick = signal(0);
   private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -141,9 +158,15 @@ export class ChildQuestionPlayViewComponent {
   protected readonly isOrder = computed(() => this.question().formCode === 'order');
   protected readonly isTimeline = computed(() => this.isOrder() && this.question().timelineEnabled === true);
   protected readonly isClassification = computed(() => this.question().formCode === 'classement');
+  protected readonly isLinks = computed(() => this.question().formCode === 'liens');
   protected readonly playable = computed(
     () =>
-      this.isQcm() || this.isTrueFalse() || this.isMemory() || this.isOrder() || this.isClassification(),
+      this.isQcm() ||
+      this.isTrueFalse() ||
+      this.isMemory() ||
+      this.isOrder() ||
+      this.isClassification() ||
+      this.isLinks(),
   );
 
   readonly orderedItems = signal<OrderItemView[]>([]);
@@ -151,6 +174,11 @@ export class ChildQuestionPlayViewComponent {
   readonly sourceCards = signal<ClassCardView[]>([]);
   readonly classColumns = signal<ClassColumnView[]>([]);
   readonly selectedClassCardKey = signal<string | null>(null);
+
+  readonly linkLefts = signal<LinkSideView[]>([]);
+  readonly linkRights = signal<LinkSideView[]>([]);
+  readonly selectedLinkKey = signal<string | null>(null);
+  private readonly linkPairs = signal<Readonly<Record<string, string>>>({});
 
   protected readonly classListIds = computed(() => [
     SOURCE_KEY,
@@ -177,6 +205,17 @@ export class ChildQuestionPlayViewComponent {
       this.sourceCards.set(cards);
       this.classColumns.set(columns);
       this.selectedClassCardKey.set(null);
+    });
+    effect(() => {
+      this.layoutTick();
+      if (this.question().formCode !== 'liens') {
+        return;
+      }
+      const links = this.question().links ?? [];
+      this.linkLefts.set(shuffleCopy(links.map((link, index) => toLinkSide(link, index, 'l'))));
+      this.linkRights.set(shuffleCopy(links.map((link, index) => toLinkSide(link, index, 'r'))));
+      this.linkPairs.set({});
+      this.selectedLinkKey.set(null);
     });
   }
 
@@ -222,6 +261,18 @@ export class ChildQuestionPlayViewComponent {
     return `Paires trouvées : ${matched}. Il en reste ${pairs.length - matched}.`;
   });
 
+  protected readonly linksStatus = computed(() => {
+    const total = this.linkLefts().length;
+    const done = Object.keys(this.linkPairs()).length;
+    if (total === 0 || done === 0) {
+      return '';
+    }
+    if (done >= total) {
+      return 'Tous les mots sont reliés.';
+    }
+    return `Liens faits : ${done}. Il en reste ${total - done}.`;
+  });
+
   /** Relance le mélange (rejouer / nouvel aperçu). */
   reshuffle(): void {
     this.clearMismatchTimer();
@@ -231,6 +282,8 @@ export class ChildQuestionPlayViewComponent {
     this.flippedKeys.set([]);
     this.flipBusy.set(false);
     this.selectedClassCardKey.set(null);
+    this.selectedLinkKey.set(null);
+    this.linkPairs.set({});
     this.layoutTick.update((n) => n + 1);
   }
 
@@ -315,6 +368,88 @@ export class ChildQuestionPlayViewComponent {
   allCardsPlaced(): boolean {
     const total = (this.question().cards ?? []).length;
     return total > 0 && this.sourceCards().length === 0 && this.placements().length === total;
+  }
+
+  linkMatches(): { leftId: number; rightId: number }[] {
+    const pairs = this.linkPairs();
+    const rights = new Map(this.linkRights().map((row) => [row.key, row]));
+    const out: { leftId: number; rightId: number }[] = [];
+    for (const left of this.linkLefts()) {
+      const right = rights.get(pairs[left.key] ?? '');
+      if (left.linkId == null || right?.linkId == null) {
+        continue;
+      }
+      out.push({ leftId: left.linkId, rightId: right.linkId });
+    }
+    return out;
+  }
+
+  allLinksMatched(): boolean {
+    const lefts = this.linkLefts();
+    if (lefts.length === 0) {
+      return false;
+    }
+    const pairs = this.linkPairs();
+    const used = new Set<string>();
+    for (const left of lefts) {
+      const rightKey = pairs[left.key];
+      if (rightKey == null || used.has(rightKey)) {
+        return false;
+      }
+      used.add(rightKey);
+    }
+    return used.size === lefts.length;
+  }
+
+  protected linkLeftSelected(key: string): boolean {
+    return this.selectedLinkKey() === key;
+  }
+
+  protected linkSidePaired(key: string, side: 'left' | 'right'): boolean {
+    const pairs = this.linkPairs();
+    if (side === 'left') {
+      return pairs[key] != null;
+    }
+    return Object.values(pairs).includes(key);
+  }
+
+  protected onLinkLeft(row: LinkSideView): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    const current = { ...this.linkPairs() };
+    if (current[row.key] != null) {
+      delete current[row.key];
+      this.linkPairs.set(current);
+    }
+    this.selectedLinkKey.update((selected) => (selected === row.key ? null : row.key));
+    this.linksChange.emit();
+  }
+
+  protected onLinkRight(row: LinkSideView): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    const selected = this.selectedLinkKey();
+    const current = { ...this.linkPairs() };
+    if (selected == null) {
+      const owner = Object.entries(current).find(([, rightKey]) => rightKey === row.key)?.[0];
+      if (owner != null) {
+        delete current[owner];
+        this.linkPairs.set(current);
+        this.linksChange.emit();
+      }
+      return;
+    }
+    for (const [leftKey, rightKey] of Object.entries(current)) {
+      if (rightKey === row.key || leftKey === selected) {
+        delete current[leftKey];
+      }
+    }
+    current[selected] = row.key;
+    this.linkPairs.set(current);
+    this.selectedLinkKey.set(null);
+    this.linksChange.emit();
   }
 
   protected statementKey(statement: ChildPlayViewStatement, index = 0): string {

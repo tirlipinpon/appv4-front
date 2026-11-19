@@ -4,6 +4,7 @@
       class="child-play-view-form"
       [class.memory]="isMemory()"
       [class.order]="isOrder()"
+      [class.links]="isLinks()"
       data-testid="child-play-view-form"
     >
       {{ question().formLabel }}
@@ -236,5 +237,49 @@
         </section>
       }
     </div>
+  }
+
+  @if (isLinks()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-links-hint">
+      Choisis un mot, puis sa réponse.
+    </p>
+    <div class="child-play-view-links" data-testid="child-play-view-links">
+      <ul class="child-play-view-link-col">
+        @for (row of linkLefts(); track row.key) {
+          <li>
+            <button
+              type="button"
+              class="child-play-view-link"
+              [class.selected]="linkLeftSelected(row.key)"
+              [class.linked]="linkSidePaired(row.key, 'left')"
+              [disabled]="disabled() || !interactive()"
+              [attr.data-testid]="'child-play-view-link-left-' + row.key"
+              (click)="onLinkLeft(row)"
+            >
+              {{ row.label }}
+            </button>
+          </li>
+        }
+      </ul>
+      <ul class="child-play-view-link-col">
+        @for (row of linkRights(); track row.key) {
+          <li>
+            <button
+              type="button"
+              class="child-play-view-link"
+              [class.linked]="linkSidePaired(row.key, 'right')"
+              [disabled]="disabled() || !interactive()"
+              [attr.data-testid]="'child-play-view-link-right-' + row.key"
+              (click)="onLinkRight(row)"
+            >
+              {{ row.label }}
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+    @if (linksStatus()) {
+      <p class="child-play-view-hint" data-testid="child-play-view-links-status">{{ linksStatus() }}</p>
+    }
   }
 </div>

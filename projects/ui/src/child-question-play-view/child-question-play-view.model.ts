@@ -32,6 +32,12 @@ export interface ChildPlayViewCard {
   label: string;
 }
 
+export interface ChildPlayViewLink {
+  linkId?: number;
+  leftLabel: string;
+  rightLabel: string;
+}
+
 export interface ChildPlayViewQuestion {
   formCode: string;
   formLabel?: string;
@@ -43,4 +49,5 @@ export interface ChildPlayViewQuestion {
   timelineEnabled?: boolean;
   columns?: ChildPlayViewColumn[];
   cards?: ChildPlayViewCard[];
+  links?: ChildPlayViewLink[];
 }
