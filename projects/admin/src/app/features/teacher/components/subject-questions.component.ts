@@ -37,7 +37,11 @@ import {
   PairDraft,
   PuzzleBoardMode,
   PUZZLE_BOARD_MODE,
+  SIMON_ELEMENT_TYPE,
+  SIMON_ELEMENT_TYPES,
   SavedQuestion,
+  SimonElementDraft,
+  SimonElementType,
   StatementDraft,
   defaultMagnet,
   emptyCards,
@@ -47,9 +51,12 @@ import {
   emptyItems,
   emptyLinks,
   emptyPairs,
+  emptySimonElements,
   emptyStatements,
   holeCount,
   isKnownFormCode,
+  isSimonColor,
+  simonDraftError,
   withoutHole,
 } from './question-form.model';
 
@@ -74,6 +81,8 @@ interface FormChoice {
  * Le puzzle (SCRUM-183) reprend l'éditeur de l'image à cliquer : les pièces
  * sont découpées dans l'image, sans vert ni rouge. On peut les reposer
  * sur leur découpe ; le magnétisme dit à quelle distance elles se collent.
+ * Le Simon (ADMIN-25) demande un genre, au moins deux éléments, puis la suite
+ * à refaire, construite en touchant les éléments dans l'ordre.
  * Il peut copier une ou plusieurs questions vers une de ses matières.
  * Il peut aussi en supprimer une ou plusieurs, après avoir vu combien
  * d'enfants suivent le cours et leurs noms.
@@ -136,6 +145,18 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly puzzleMagnet = signal(defaultMagnet());
   readonly answers = signal<GapWordDraft[]>([]);
   readonly decoys = signal<GapWordDraft[]>(emptyDecoys());
+  readonly simonTypes = SIMON_ELEMENT_TYPES;
+  readonly simonType = signal<SimonElementType | null>(null);
+  readonly simonElements = signal<SimonElementDraft[]>(emptySimonElements());
+  readonly simonSequence = signal<number[]>([]);
+  /**
+   * Faux tant qu'aucun Enregistrer n'a été tenté. Ensuite le message suit la saisie ;
+   * il reste dans l'éditeur, alors que `error` masque tout le panneau.
+   */
+  private readonly simonChecked = signal(false);
+  readonly simonError = computed(() =>
+    this.simonChecked() ? simonDraftError(this.simonType(), this.simonElements(), this.simonSequence()) : null,
+  );
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
   readonly editingId = signal<number | null>(null);
   readonly selectedIds = signal<number[]>([]);
@@ -194,7 +215,18 @@ export class SubjectQuestionsComponent implements OnInit {
     if (model.formCode === 'puzzle') {
       return view.allPuzzlePiecesPlaced();
     }
+    if (model.formCode === 'simon') {
+      return view.simonComplete();
+    }
     return false;
+  });
+
+  /** Formes notées au dernier geste, sans bouton Valider : Simon, image à clics ordonnés. */
+  readonly previewAutoSubmit = computed(() => {
+    const model = this.preview();
+    return (
+      model?.formCode === 'simon' || (model?.formCode === 'image_interactive' && model.clicksOrdered !== false)
+    );
   });
 
   openChildPreview(question: SavedQuestion): void {
@@ -304,6 +336,12 @@ export class SubjectQuestionsComponent implements OnInit {
               slotWidth: zone.slot?.width,
             }))
           : undefined,
+      elementType: question.formCode === 'simon' ? (question.elementType ?? undefined) : undefined,
+      elements:
+        question.formCode === 'simon'
+          ? question.elements.map((element) => ({ label: element.label, color: element.color || undefined }))
+          : undefined,
+      sequence: question.formCode === 'simon' ? [...question.sequence] : undefined,
     });
   }
 
@@ -315,8 +353,7 @@ export class SubjectQuestionsComponent implements OnInit {
 
   onPreviewSelectionChange(): void {
     this.previewSelectionTick.update((n) => n + 1);
-    const model = this.preview();
-    if (model?.formCode === 'image_interactive' && model.clicksOrdered !== false && this.canPreviewSubmit()) {
+    if (this.previewAutoSubmit() && this.canPreviewSubmit()) {
       this.validateChildPreview();
     }
   }
@@ -383,6 +420,7 @@ export class SubjectQuestionsComponent implements OnInit {
       this.cancelEdit();
     }
     this.selectedCode.set(code);
+    this.simonChecked.set(false);
     this.error.set(null);
   }
 
@@ -643,6 +681,55 @@ export class SubjectQuestionsComponent implements OnInit {
     this.decoys.update((rows) => rows.filter((_, i) => i !== index));
   }
 
+  setSimonType(type: SimonElementType): void {
+    this.simonType.set(type);
+  }
+
+  setSimonElementLabel(index: number, value: string): void {
+    this.simonElements.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+  }
+
+  setSimonElementColor(index: number, value: string): void {
+    this.simonElements.update((rows) => rows.map((row, i) => (i === index ? { ...row, color: value } : row)));
+  }
+
+  addSimonElement(): void {
+    this.simonElements.update((rows) => [...rows, { label: '', color: '' }]);
+  }
+
+  /** Les pas désignent une position : ceux de l'élément partent, les suivants reculent d'un cran. */
+  removeSimonElement(index: number): void {
+    this.simonElements.update((rows) => rows.filter((_, i) => i !== index));
+    this.simonSequence.update((steps) =>
+      steps.filter((step) => step !== index).map((step) => (step > index ? step - 1 : step)),
+    );
+  }
+
+  addSimonStep(index: number): void {
+    this.simonSequence.update((steps) => [...steps, index]);
+  }
+
+  removeSimonStep(position: number): void {
+    this.simonSequence.update((steps) => steps.filter((_, i) => i !== position));
+  }
+
+  /** Nom d'un élément du brouillon ; « Élément 2 » tant qu'il n'est pas saisi. */
+  simonElementName(index: number): string {
+    return this.simonElements()[index]?.label.trim() || `Élément ${index + 1}`;
+  }
+
+  /** Suite d'un Simon enregistré : « 1. rouge, 2. bleu ». */
+  simonSequenceLabel(question: SavedQuestion): string {
+    return question.sequence
+      .map((step, position) => `${position + 1}. ${question.elements[step]?.label ?? ''}`)
+      .join(', ');
+  }
+
+  /** Pastille du brouillon : genre couleurs et code #rrggbb complet, sinon rien. */
+  simonSwatch(color: string): string | null {
+    return this.simonType() === SIMON_ELEMENT_TYPE.COLORS && isSimonColor(color) ? color : null;
+  }
+
   beginEdit(question: SavedQuestion): void {
     this.editingId.set(question.id);
     this.selectedCode.set(question.formCode);
@@ -694,6 +781,14 @@ export class SubjectQuestionsComponent implements OnInit {
     this.puzzleMagnet.set(question.snapDistance);
     this.answers.set(question.answers.map((row) => ({ label: row.label })));
     this.decoys.set(question.decoys.length ? question.decoys.map((row) => ({ label: row.label })) : emptyDecoys());
+    this.simonType.set(question.elementType);
+    this.simonElements.set(
+      question.elements.length
+        ? question.elements.map((row) => ({ label: row.label, color: row.color }))
+        : emptySimonElements(),
+    );
+    this.simonSequence.set([...question.sequence]);
+    this.simonChecked.set(false);
     this.error.set(null);
   }
 
@@ -870,6 +965,10 @@ export class SubjectQuestionsComponent implements OnInit {
     this.puzzleMagnet.set(defaultMagnet());
     this.answers.set([]);
     this.decoys.set(emptyDecoys());
+    this.simonType.set(null);
+    this.simonElements.set(emptySimonElements());
+    this.simonSequence.set([]);
+    this.simonChecked.set(false);
     this.error.set(null);
   }
 
@@ -897,6 +996,12 @@ export class SubjectQuestionsComponent implements OnInit {
       this.error.set('Sur le fond, ouvre « Voir le plateau (fond) » et pose chaque pièce à sa place.');
       return;
     }
+    if (code === FORM.SIMON) {
+      this.simonChecked.set(true);
+      if (this.simonError() !== null) {
+        return;
+      }
+    }
     const body = buildSaveBody(code, {
       prompt: this.prompt(),
       choices: this.choices(),
@@ -918,6 +1023,9 @@ export class SubjectQuestionsComponent implements OnInit {
       clickZones: this.clickZones(),
       puzzleMagnet: this.puzzleMagnet(),
       timelineEnabled: this.timelineEnabled(),
+      simonType: this.simonType(),
+      simonElements: this.simonElements(),
+      simonSequence: this.simonSequence(),
     });
     if (!body) {
       return;
@@ -1156,6 +1264,15 @@ function gradePreview(
     const { ok, total } = view.puzzleCorrectCount();
     const scorePercent = total === 0 ? 0 : Math.round((100 * ok) / total);
     return { passed: total > 0 && ok === total, scorePercent };
+  }
+  if (source.formCode === 'simon') {
+    // Tout ou rien, comme la notation serveur : un seul pas faux donne 0.
+    const replay = view.simonReplay();
+    const exact =
+      source.sequence.length > 0 &&
+      replay.length === source.sequence.length &&
+      source.sequence.every((step, index) => replay[index] === step);
+    return { passed: exact, scorePercent: exact ? 100 : 0 };
   }
   return { passed: false, scorePercent: 0 };
 }

@@ -103,6 +103,18 @@ export interface ChildPlayViewQuestion {
   snapDistance?: number;
   /** Pièces à replacer (géométrie + places posées par le professeur). */
   puzzlePieces?: ChildPlayViewPuzzlePiece[];
+  /** Simon : genre des éléments (couleurs, nombres, lettres, formes). */
+  elementType?: string;
+  /** Simon : éléments non mélangés ; `sequence` et la reprise désignent leur position. */
+  elements?: ChildPlayViewSimonElement[];
+  /** Simon : positions 0-based des éléments, dans l'ordre où ils s'allument. */
+  sequence?: number[];
+}
+
+export interface ChildPlayViewSimonElement {
+  label: string;
+  /** Code #rrggbb, genre couleurs seulement. */
+  color?: string;
 }
 
 export interface ChildPlayViewPuzzlePiece {

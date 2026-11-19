@@ -6,10 +6,13 @@ import {
   KnownFormCode,
   PUZZLE_BOARD_MODE,
   QuestionDraftSnapshot,
+  SIMON_ELEMENT_TYPE,
   SavedQuestion,
+  SimonElementDraft,
   defaultMagnet,
   isKnownFormCode,
   isPuzzleBoardMode,
+  isSimonElementType,
 } from './question-form.model';
 
 type ApiQuestion = components['schemas']['TeacherSubjectQuestionItem'];
@@ -81,6 +84,8 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
   const answers = (question.answers ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
   const decoys = (question.decoys ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
   const formCode = question.formCode ?? '';
+  const simon = formCode === FORM.SIMON;
+  const elements = simon ? savedSimonElements(question.elements) : [];
   return {
     id: question.id,
     prompt: question.prompt ?? '',
@@ -114,6 +119,11 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
         ? question.snapDistance
         : defaultMagnet(),
     timelineEnabled: formCode === FORM.ORDER && question.timelineEnabled === true,
+    elementType: simon && isSimonElementType(question.elementType) ? question.elementType : null,
+    elements,
+    sequence: simon
+      ? (question.sequence ?? []).filter((step) => Number.isInteger(step) && step >= 0 && step < elements.length)
+      : [],
   };
 }
 
@@ -244,6 +254,17 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
             : {}),
         })),
       };
+    case FORM.SIMON:
+      return {
+        formCode: code,
+        prompt: draft.prompt,
+        ...(draft.simonType === null ? {} : { elementType: draft.simonType }),
+        elements: draft.simonElements.map((element) => ({
+          label: element.label,
+          ...(draft.simonType === SIMON_ELEMENT_TYPE.COLORS ? { color: element.color } : {}),
+        })),
+        sequence: [...draft.simonSequence],
+      };
     case FORM.QCM:
       return {
         formCode: code,
@@ -256,6 +277,11 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
 export function webpPayload(dataUrl: string): string {
   const comma = dataUrl.indexOf(',');
   return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+}
+
+/** Garde chaque élément, même sans nom : retirer une ligne décalerait les positions de la suite. */
+function savedSimonElements(elements: ApiQuestion['elements']): SimonElementDraft[] {
+  return (elements ?? []).map((element) => ({ label: element.label ?? '', color: element.color ?? '' }));
 }
 
 function savedPieces(pieces: ApiQuestion['pieces']): ClickZone[] {

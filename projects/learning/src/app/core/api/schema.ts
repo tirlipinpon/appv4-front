@@ -1182,6 +1182,12 @@ export interface components {
             snapDistance?: number;
             timelineEnabled?: boolean;
             clicksOrdered?: boolean;
+            /** @description Simon seulement : couleurs, nombres, lettres ou formes. */
+            elementType?: string;
+            /** @description Simon seulement : au moins deux éléments du genre choisi, dans l'ordre voulu. */
+            elements?: components["schemas"]["TeacherQuestionSimonElementInput"][];
+            /** @description Simon seulement : la suite à refaire, au moins deux pas. Chaque pas est la position 0-based d'un élément de elements. */
+            sequence?: number[];
         };
         TeacherQuestionCardInput: {
             label?: string;
@@ -1229,6 +1235,12 @@ export interface components {
             x?: number;
             /** Format: double */
             y?: number;
+        };
+        TeacherQuestionSimonElementInput: {
+            /** @description Nom affiché : rouge, 7, B, cercle. Nombres : un nombre. Lettres : une seule lettre. */
+            label?: string;
+            /** @description Genre couleurs seulement, obligatoire : code #rrggbb. Absent pour les autres genres. */
+            color?: string;
         };
         TeacherQuestionStatementInput: {
             label?: string;
@@ -1309,6 +1321,13 @@ export interface components {
             /** Format: double */
             y?: number;
         };
+        TeacherQuestionSimonElementItem: {
+            /** Format: int64 */
+            id?: number;
+            label?: string;
+            /** @description Code #rrggbb en minuscules pour le genre couleurs. Absent pour les autres genres. */
+            color?: string;
+        };
         TeacherQuestionStatementItem: {
             /** Format: int64 */
             id?: number;
@@ -1352,6 +1371,12 @@ export interface components {
             snapDistance?: number;
             timelineEnabled?: boolean;
             clicksOrdered?: boolean;
+            /** @description Simon seulement : couleurs, nombres, lettres ou formes. */
+            elementType?: string;
+            /** @description Simon seulement : éléments dans l'ordre saisi. Leur position (0, 1, 2…) est celle que la suite désigne. */
+            elements?: components["schemas"]["TeacherQuestionSimonElementItem"][];
+            /** @description Simon seulement : la suite à refaire, chaque pas étant la position 0-based d'un élément de elements. */
+            sequence?: number[];
         };
         SetTeacherSubjectIconRequest: {
             iconCode?: string;
@@ -1673,6 +1698,8 @@ export interface components {
             zoneClicks?: components["schemas"]["SubmitZoneClickAnswer"][];
             puzzlePlacements?: components["schemas"]["SubmitPuzzlePiecePlacement"][];
             attempt?: string;
+            /** @description Simon seulement : positions 0-based des éléments touchés, dans l'ordre, une par pas de la suite (même longueur). */
+            simonSequence?: number[];
         };
         SubmitGapFillAnswer: {
             /** Format: int32 */
@@ -2162,6 +2189,17 @@ export interface components {
             /** Format: double */
             snapDistance?: number;
             puzzlePieces?: components["schemas"]["ChildPlayPuzzlePieceItem"][];
+            /** @description Simon seulement : couleurs, nombres, lettres ou formes. */
+            elementType?: string;
+            /** @description Simon seulement : éléments à afficher, non mélangés. Leur position (0, 1, 2…) est celle que sequence désigne et que simonSequence renvoie. */
+            elements?: components["schemas"]["ChildPlaySimonElementItem"][];
+            /** @description Simon seulement : la suite à montrer, dans l'ordre où les éléments s'allument (positions 0-based dans elements). */
+            sequence?: number[];
+        };
+        ChildPlaySimonElementItem: {
+            label?: string;
+            /** @description Code #rrggbb pour le genre couleurs. Absent pour les autres genres. */
+            color?: string;
         };
         ChildPlayStatementItem: {
             /** Format: int64 */

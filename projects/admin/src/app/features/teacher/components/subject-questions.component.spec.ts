@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
 
 import { SubjectQuestionsComponent } from './subject-questions.component';
 
@@ -1099,6 +1099,163 @@ describe('SubjectQuestionsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('le ciel');
     expect(fixture.nativeElement.querySelector('polygon.correct, rect.correct, ellipse.correct')).toBeNull();
   });
+
+  function bootSimon(questions: unknown[] = []): void {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'simon', label: 'Simon', sortOrder: 7 }] });
+    http.expectOne(questionsUrl).flush({ questions });
+    fixture.detectChanges();
+  }
+
+  it('posts a simon built by touching the elements in order and shows its summary', () => {
+    bootSimon();
+
+    buttonNamed('couleurs')?.click();
+    const page = fixture.componentInstance;
+    page.setPrompt('Refais la suite');
+    page.setSimonElementLabel(0, 'rouge');
+    page.setSimonElementColor(0, '#ff0000');
+    page.setSimonElementLabel(1, 'bleu');
+    page.setSimonElementColor(1, '#0000ff');
+    fixture.detectChanges();
+
+    const stepChip = (label: string) =>
+      Array.from(fixture.nativeElement.querySelectorAll('button.form-chip') as NodeListOf<HTMLButtonElement>).find(
+        (button) => button.textContent?.trim() === label,
+      );
+    stepChip('rouge')?.click();
+    stepChip('bleu')?.click();
+    stepChip('rouge')?.click();
+    fixture.detectChanges();
+    expect(page.simonSequence()).toEqual([0, 1, 0]);
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'simon',
+      prompt: 'Refais la suite',
+      elementType: 'couleurs',
+      elements: [
+        { label: 'rouge', color: '#ff0000' },
+        { label: 'bleu', color: '#0000ff' },
+      ],
+      sequence: [0, 1, 0],
+    });
+    req.flush({
+      id: 16,
+      formCode: 'simon',
+      formLabel: 'Simon',
+      prompt: 'Refais la suite',
+      elementType: 'couleurs',
+      elements: [
+        { id: 1, label: 'rouge', color: '#ff0000' },
+        { id: 2, label: 'bleu', color: '#0000ff' },
+      ],
+      sequence: [0, 1, 0],
+    });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Genre : couleurs');
+    expect(text).toContain('Suite : 1. rouge, 2. bleu, 3. rouge');
+    expect(fixture.nativeElement.querySelectorAll('.saved .swatch').length).toBe(2);
+  });
+
+  it('keeps the simon editor open and says what is missing before sending', () => {
+    bootSimon();
+
+    buttonNamed('Enregistrer')?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain("Choisis un genre d'éléments");
+    expect(buttonNamed('Ajouter un élément')).toBeTruthy();
+
+    const page = fixture.componentInstance;
+    page.setSimonType('nombres');
+    page.setSimonElementLabel(0, '1');
+    page.setSimonElementLabel(1, '2');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('La suite doit avoir au moins deux pas.');
+    expect(fixture.nativeElement.querySelector('input[type="color"]')).toBeNull();
+
+    page.addSimonStep(1);
+    page.addSimonStep(0);
+    fixture.detectChanges();
+    expect(page.simonError()).toBeNull();
+
+    buttonNamed('Enregistrer')?.click();
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'simon',
+      prompt: '',
+      elementType: 'nombres',
+      elements: [{ label: '1' }, { label: '2' }],
+      sequence: [1, 0],
+    });
+    req.flush({
+      id: 17,
+      formCode: 'simon',
+      formLabel: 'Simon',
+      elementType: 'nombres',
+      elements: [
+        { id: 1, label: '1' },
+        { id: 2, label: '2' },
+      ],
+      sequence: [1, 0],
+    });
+  });
+
+  it('drops the steps of a removed simon element and keeps the others on their element', () => {
+    boot();
+    const page = fixture.componentInstance;
+    page.addSimonElement();
+    page.addSimonStep(0);
+    page.addSimonStep(2);
+    page.addSimonStep(1);
+    page.addSimonStep(2);
+
+    page.removeSimonElement(1);
+
+    expect(page.simonElements().length).toBe(2);
+    expect(page.simonSequence()).toEqual([0, 1, 1]);
+  });
+
+  it('previews a simon like the child: watch, replay, then a local verdict without Valider', fakeAsync(() => {
+    bootSimon([
+      {
+        id: 16,
+        formCode: 'simon',
+        formLabel: 'Simon',
+        prompt: 'Refais la suite',
+        elementType: 'nombres',
+        elements: [
+          { id: 1, label: '1' },
+          { id: 2, label: '2' },
+        ],
+        sequence: [1, 0],
+      },
+    ]);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Genre : nombres');
+    expect(root.textContent).toContain('Suite : 1. 2, 2. 1');
+
+    (root.querySelector('[data-testid="teacher-question-preview"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.textContent).toContain('Regardez la séquence');
+    expect(root.querySelector('[data-testid="teacher-child-preview-submit"]')).toBeNull();
+
+    tick(3000);
+    fixture.detectChanges();
+    expect(root.textContent).toContain('Reproduisez la séquence');
+
+    (root.querySelector('[data-testid="child-play-view-simon-element-1"]') as HTMLButtonElement).click();
+    (root.querySelector('[data-testid="child-play-view-simon-element-0"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('Bravo');
+    expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('100 %');
+    flush();
+  }));
 
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(

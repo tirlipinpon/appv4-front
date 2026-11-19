@@ -9,9 +9,11 @@ import {
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
@@ -28,6 +30,7 @@ import type {
   ChildPlayViewPair,
   ChildPlayViewPuzzlePiece,
   ChildPlayViewQuestion,
+  ChildPlayViewSimonElement,
   ChildPlayViewStatement,
   ChildPlayViewClickPoint,
   ChildPlayViewClickZone,
@@ -123,6 +126,22 @@ export interface GapPart {
 }
 
 const SOURCE_KEY = 'source';
+
+/** Simon, en ms. Le noir entre deux pas sépare deux allumages du même élément. */
+const SIMON_START_MS = 700;
+const SIMON_LIT_MS = 600;
+const SIMON_GAP_MS = 300;
+const SIMON_TAP_MS = 250;
+
+/** Texte lisible sur un fond #rrggbb : sombre sur une couleur claire, blanc sinon. */
+function textOnColor(hex: string): string {
+  const digits = /^#([0-9a-f]{6})$/i.exec(hex.trim())?.[1];
+  if (!digits) {
+    return 'var(--app-text, #1c2b3a)';
+  }
+  const [r, g, b] = [0, 2, 4].map((at) => parseInt(digits.slice(at, at + 2), 16));
+  return 0.299 * r + 0.587 * g + 0.114 * b > 140 ? '#1c2b3a' : '#ffffff';
+}
 
 function imageSource(raw: string | undefined): string {
   if (!raw) {
@@ -259,6 +278,8 @@ function toClassColumn(column: ChildPlayViewColumn, index: number): ClassColumnV
 
 /**
  * Rendu partagé Learning + Teacher : qcm / vrai_faux / memory / order (frise optionnelle) / classement / liens / case vide.
+ * Simon : la suite s'allume d'abord, puis l'enfant la refait ; pas de Valider, le parent
+ * envoie la reprise quand `simonComplete()` passe à vrai.
  * Teacher : aperçu. Learning : interaction + envoi géré par la page parente.
  */
 @Component({
@@ -284,6 +305,7 @@ export class ChildQuestionPlayViewComponent {
   readonly imageChange = output<void>();
   readonly lettersChange = output<void>();
   readonly puzzleChange = output<void>();
+  readonly simonChange = output<void>();
 
   private readonly layoutTick = signal(0);
   private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -313,6 +335,7 @@ export class ChildQuestionPlayViewComponent {
   );
   protected readonly isLetters = computed(() => this.question().formCode === 'reponse_libre');
   protected readonly isPuzzle = computed(() => this.question().formCode === 'puzzle');
+  protected readonly isSimon = computed(() => this.question().formCode === 'simon');
   protected readonly playable = computed(
     () =>
       this.isQcm() ||
@@ -324,7 +347,8 @@ export class ChildQuestionPlayViewComponent {
       this.isGaps() ||
       this.isImage() ||
       this.isLetters() ||
-      this.isPuzzle(),
+      this.isPuzzle() ||
+      this.isSimon(),
   );
 
   readonly orderedItems = signal<OrderItemView[]>([]);
@@ -366,6 +390,15 @@ export class ChildQuestionPlayViewComponent {
   protected readonly puzzleDragIndex = signal<number | null>(null);
   protected readonly puzzleFitFlash = signal<ReadonlySet<number>>(new Set());
   private readonly puzzleFitTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+  /** Simon : `watch` pendant la démonstration, `play` quand l'enfant refait la suite. */
+  protected readonly simonPhase = signal<'watch' | 'play'>('watch');
+  /** Simon : position de l'élément allumé, ou null. */
+  protected readonly simonLit = signal<number | null>(null);
+  private readonly simonReplayed = signal<number[]>([]);
+  private simonTimers: ReturnType<typeof setTimeout>[] = [];
+  protected readonly simonPlayed = computed(() => this.simonReplayed().length);
+  protected readonly simonTotal = computed(() => (this.question().sequence ?? []).length);
 
   protected readonly imageSrc = computed(() => imageSource(this.question().imageWebp));
   protected readonly puzzleMagnet = computed(() => {
@@ -425,6 +458,11 @@ export class ChildQuestionPlayViewComponent {
   protected readonly remainingCount = computed(() => this.sourceCards().length);
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.clearSimonTimers());
+    effect(() => {
+      this.layoutTick();
+      this.startSimon(this.question());
+    });
     effect(() => {
       this.question();
       this.layoutTick();
@@ -559,6 +597,7 @@ export class ChildQuestionPlayViewComponent {
     this.resetLetterSlots();
     this.clearPuzzleDrag();
     this.puzzleFitFlash.set(new Set());
+    this.simonReplayed.set([]);
     this.layoutTick.update((n) => n + 1);
   }
 
@@ -910,6 +949,80 @@ export class ChildQuestionPlayViewComponent {
       }
     }
     return { ok, total: pieces.length };
+  }
+
+  /** Simon : positions touchées par l'enfant, dans l'ordre (`simonSequence` de la tentative). */
+  simonReplay(): number[] {
+    return [...this.simonReplayed()];
+  }
+
+  /** Simon : autant de touches que de pas dans la suite. */
+  simonComplete(): boolean {
+    const total = this.simonTotal();
+    return this.isSimon() && total > 0 && this.simonReplayed().length === total;
+  }
+
+  protected onSimonElement(index: number): void {
+    if (this.disabled() || !this.interactive() || this.simonPhase() !== 'play') {
+      return;
+    }
+    if (this.simonReplayed().length >= this.simonTotal()) {
+      return;
+    }
+    this.simonReplayed.update((rows) => [...rows, index]);
+    this.clearSimonTimers();
+    this.simonLit.set(index);
+    this.simonTimers.push(setTimeout(() => this.simonLit.set(null), SIMON_TAP_MS));
+    this.simonChange.emit();
+  }
+
+  /** Couleur de l'API si elle existe ; sinon le thème, plein quand l'élément s'allume. */
+  protected simonFill(element: ChildPlayViewSimonElement, index: number): string {
+    if (element.color) {
+      return element.color;
+    }
+    return this.simonLit() === index ? 'var(--app-primary, #7c5cff)' : 'var(--app-surface-card, #fff)';
+  }
+
+  protected simonInk(element: ChildPlayViewSimonElement, index: number): string {
+    if (element.color) {
+      return textOnColor(element.color);
+    }
+    return this.simonLit() === index ? 'var(--app-on-primary, #fff)' : 'var(--app-text, #1c2b3a)';
+  }
+
+  protected simonGlow(element: ChildPlayViewSimonElement, index: number): string {
+    if (this.simonLit() !== index) {
+      return '0 4px 0 rgba(28, 43, 58, 0.15)';
+    }
+    const halo = element.color ?? 'var(--app-primary, #7c5cff)';
+    return `0 0 0 4px var(--app-surface-card, #fff), 0 0 1.5rem 0.4rem ${halo}`;
+  }
+
+  /** Simon : remet la reprise à zéro et rejoue la démonstration depuis le premier pas. */
+  private startSimon(q: ChildPlayViewQuestion): void {
+    this.clearSimonTimers();
+    this.simonReplayed.set([]);
+    this.simonLit.set(null);
+    this.simonPhase.set('watch');
+    if (q.formCode !== 'simon') {
+      return;
+    }
+    let at = SIMON_START_MS;
+    for (const index of q.sequence ?? []) {
+      this.simonTimers.push(setTimeout(() => this.simonLit.set(index), at));
+      at += SIMON_LIT_MS;
+      this.simonTimers.push(setTimeout(() => this.simonLit.set(null), at));
+      at += SIMON_GAP_MS;
+    }
+    this.simonTimers.push(setTimeout(() => this.simonPhase.set('play'), at));
+  }
+
+  private clearSimonTimers(): void {
+    for (const timer of this.simonTimers) {
+      clearTimeout(timer);
+    }
+    this.simonTimers = [];
   }
 
   protected pieceWidthPercent(piece: PuzzlePiecePlayView): number {

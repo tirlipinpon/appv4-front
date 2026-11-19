@@ -25,9 +25,10 @@
       (imageChange)="onSelectionChange()"
       (lettersChange)="onSelectionChange()"
       (puzzleChange)="onSelectionChange()"
+      (simonChange)="onSelectionChange()"
     />
 
-    @if (!result() && (playModel()?.formCode !== 'image_interactive' || playModel()?.clicksOrdered === false)) {
+    @if (!result() && !autoSubmit()) {
       <button
         type="button"
         class="submit"

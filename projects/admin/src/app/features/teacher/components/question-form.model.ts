@@ -21,6 +21,7 @@ export const FORM = {
   REPONSE_LIBRE: 'reponse_libre',
   IMAGE_CLICK: 'image_interactive',
   PUZZLE: 'puzzle',
+  SIMON: 'simon',
 } as const;
 
 export type KnownFormCode = (typeof FORM)[keyof typeof FORM];
@@ -72,6 +73,12 @@ export interface GapWordDraft {
   label: string;
 }
 
+/** Élément d'un Simon. `color` (#rrggbb) ne compte que pour le genre couleurs. */
+export interface SimonElementDraft {
+  label: string;
+  color: string;
+}
+
 /**
  * Question déjà enregistrée, prête pour la liste / l'édition.
  * Les champs d'une autre forme restent vides : le contenu utile dépend de formCode.
@@ -102,6 +109,64 @@ export interface SavedQuestion {
   snapDistance: number;
   /** Frise Ordre active. False hors forme order. */
   timelineEnabled: boolean;
+  /** Genre des éléments du Simon. Null hors forme simon. */
+  elementType: SimonElementType | null;
+  /** Éléments du Simon, dans l'ordre de l'API : `sequence` désigne leur position. */
+  elements: SimonElementDraft[];
+  /** Suite du Simon : positions 0-based dans `elements`. */
+  sequence: number[];
+}
+
+/** Genre des éléments d'un Simon, tel que le contrat OpenAPI l'écrit (`elementType`). */
+export type SimonElementType = 'couleurs' | 'nombres' | 'lettres' | 'formes';
+
+export const SIMON_ELEMENT_TYPE = {
+  COLORS: 'couleurs',
+  NUMBERS: 'nombres',
+  LETTERS: 'lettres',
+  SHAPES: 'formes',
+} as const satisfies Record<string, SimonElementType>;
+
+export const SIMON_ELEMENT_TYPES: readonly SimonElementType[] = [
+  SIMON_ELEMENT_TYPE.COLORS,
+  SIMON_ELEMENT_TYPE.NUMBERS,
+  SIMON_ELEMENT_TYPE.LETTERS,
+  SIMON_ELEMENT_TYPE.SHAPES,
+];
+
+export function isSimonElementType(value: string | null | undefined): value is SimonElementType {
+  return value === 'couleurs' || value === 'nombres' || value === 'lettres' || value === 'formes';
+}
+
+export function isSimonColor(value: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(value.trim());
+}
+
+/**
+ * Garde-fou avant l'envoi d'un Simon : ce qui manque encore, ou null.
+ * Mêmes messages que l'API ; elle reste seule juge du reste (nombre, lettre, doublon).
+ */
+export function simonDraftError(
+  type: SimonElementType | null,
+  elements: readonly SimonElementDraft[],
+  sequence: readonly number[],
+): string | null {
+  if (type === null) {
+    return "Choisis un genre d'éléments : couleurs, nombres, lettres ou formes.";
+  }
+  if (elements.length < 2) {
+    return 'Il faut au moins deux éléments.';
+  }
+  if (elements.some((element) => element.label.trim() === '')) {
+    return 'Chaque élément doit avoir un nom.';
+  }
+  if (type === SIMON_ELEMENT_TYPE.COLORS && elements.some((element) => !isSimonColor(element.color))) {
+    return 'Avec le genre couleurs, chaque élément doit avoir un code couleur comme #ff0000.';
+  }
+  if (sequence.length < 2) {
+    return 'La suite doit avoir au moins deux pas.';
+  }
+  return null;
 }
 
 /** Plateau de jeu du puzzle : fond dédié, cadre blanc, ou image trouée. */
@@ -139,6 +204,9 @@ export interface QuestionDraftSnapshot {
   clickZones: ClickZone[];
   puzzleMagnet: number;
   timelineEnabled: boolean;
+  simonType: SimonElementType | null;
+  simonElements: SimonElementDraft[];
+  simonSequence: number[];
 }
 
 export function isKnownFormCode(code: string | null | undefined): code is KnownFormCode {
@@ -153,12 +221,20 @@ export function isKnownFormCode(code: string | null | undefined): code is KnownF
     code === FORM.TEXTE ||
     code === FORM.REPONSE_LIBRE ||
     code === FORM.IMAGE_CLICK ||
-    code === FORM.PUZZLE
+    code === FORM.PUZZLE ||
+    code === FORM.SIMON
   );
 }
 
 export function emptyDecoys(): GapWordDraft[] {
   return [{ label: '' }];
+}
+
+export function emptySimonElements(): SimonElementDraft[] {
+  return [
+    { label: '', color: '' },
+    { label: '', color: '' },
+  ];
 }
 
 export function emptyLinks(): LinkDraft[] {
