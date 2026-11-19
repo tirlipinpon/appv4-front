@@ -2,17 +2,21 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import type { Subscription } from 'rxjs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ChildQuestionPlayViewComponent, type ChildPlayViewQuestion } from '@appv4/ui';
 
 import type { ChildAttemptResultResponse, ChildPlayQuestionResponse } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
+import { playForms } from './play-form-rules';
 import { ChildPlayService } from './data-access/child-play.service';
 
 /**
@@ -31,6 +35,10 @@ export class PlayQuestionPage implements OnInit {
   private readonly api = inject(ChildPlayService);
   private readonly playView = viewChild(ChildQuestionPlayViewComponent);
 
+  private readonly destroyRef = inject(DestroyRef);
+  private letterCheck?: Subscription;
+  private readonly form = computed(() => playForms.get(this.question()?.formCode ?? ''));
+
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -43,48 +51,8 @@ export class PlayQuestionPage implements OnInit {
 
   protected readonly canSubmit = computed(() => {
     this.selectionTick();
-    const q = this.question();
     const view = this.playView();
-    if (!q || !view || this.saving() || this.result()) {
-      return false;
-    }
-    if (q.formCode === 'qcm') {
-      return view.selectedChoiceIds().length > 0;
-    }
-    if (q.formCode === 'vrai_faux') {
-      return view.allStatementsAnswered();
-    }
-    if (q.formCode === 'memory') {
-      return view.allPairsMatched();
-    }
-    if (q.formCode === 'order') {
-      return view.hasOrderItems();
-    }
-    if (q.formCode === 'classement') {
-      return view.allCardsPlaced();
-    }
-    if (q.formCode === 'liens') {
-      return view.allLinksMatched();
-    }
-    if (q.formCode === 'case_vide') {
-      return view.allGapsFilled();
-    }
-    if (q.formCode === 'image_interactive') {
-      return view.imageReady();
-    }
-    if (q.formCode === 'reponse_libre') {
-      return view.allLettersFilled();
-    }
-    if (q.formCode === 'texte') {
-      return view.freeTextAttempt().trim().length > 0;
-    }
-    if (q.formCode === 'puzzle') {
-      return view.allPuzzlePiecesPlaced();
-    }
-    if (q.formCode === 'simon') {
-      return view.simonComplete() || view.simonMissed();
-    }
-    return false;
+    return !!view && !this.saving() && !this.result() && this.form()?.ready(view) === true;
   });
 
   /** Formes envoyées au dernier geste, sans bouton Valider : Simon, image à clics ordonnés. */
@@ -109,20 +77,7 @@ export class PlayQuestionPage implements OnInit {
         this.question.set(body);
         this.playModel.set(toPlayModel(body));
         this.loading.set(false);
-        if (
-          body.formCode !== 'qcm' &&
-          body.formCode !== 'vrai_faux' &&
-          body.formCode !== 'memory' &&
-          body.formCode !== 'order' &&
-          body.formCode !== 'classement' &&
-          body.formCode !== 'liens' &&
-          body.formCode !== 'case_vide' &&
-          body.formCode !== 'image_interactive' &&
-          body.formCode !== 'reponse_libre' &&
-          body.formCode !== 'texte' &&
-          body.formCode !== 'puzzle' &&
-          body.formCode !== 'simon'
-        ) {
+        if (!this.form()) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
       },
@@ -137,74 +92,63 @@ export class PlayQuestionPage implements OnInit {
     this.selectionTick.update((n) => n + 1);
     const model = this.playModel();
     const view = this.playView();
-    if (model?.formCode === 'reponse_libre' && view && !this.result()) {
-      this.api.checkLetterLocks(this.subjectId(), this.questionId(), view.letterAttemptForLocks()).subscribe({
-        next: (body) => {
-          view.applyLetterLocks(body.locks ?? []);
-          this.selectionTick.update((n) => n + 1);
-        },
-      });
+    if (model?.formCode === 'reponse_libre' && view && !this.result() && !this.saving()) {
+      this.checkLetters(view);
     }
     if (this.autoSubmit() && this.canSubmit()) {
       this.submit();
     }
   }
 
+  private checkLetters(view: ChildQuestionPlayViewComponent, result?: ChildAttemptResultResponse): void {
+    this.letterCheck?.unsubscribe();
+    this.error.set(null);
+    this.letterCheck = this.api
+      .checkLetterLocks(this.subjectId(), this.questionId(), view.letterAttemptForLocks())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ locks }) => {
+          view.applyLetterLocks(locks ?? []);
+          if (result) {
+            view.markLetterWrongs(result.passed !== true);
+          }
+          this.selectionTick.update((n) => n + 1);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.error.set(apiErrorMessage(err, 'Impossible de vérifier les lettres.'));
+        },
+      });
+  }
+
   protected submit(): void {
-    const q = this.question();
+    const form = this.form();
     const view = this.playView();
-    if (!q || !view || !this.canSubmit()) {
+    if (!form || !view || !this.canSubmit()) {
       return;
     }
     this.saving.set(true);
     this.error.set(null);
-    const body =
-      q.formCode === 'qcm'
-        ? { selectedChoiceIds: view.selectedChoiceIds() }
-        : q.formCode === 'memory'
-          ? { matchedPairIds: view.matchedPairIds() }
-          : q.formCode === 'order'
-            ? { orderedItemIds: view.orderedItemIds() }
-            : q.formCode === 'classement'
-              ? { placements: view.placements() }
-              : q.formCode === 'liens'
-                ? { linkMatches: view.linkMatches() }
-                : q.formCode === 'case_vide'
-                  ? { gapFills: view.gapFills() }
-                  : q.formCode === 'image_interactive'
-                    ? { zoneClicks: view.zoneClicks().map((zoneId) => ({ zoneId })) }
-                    : q.formCode === 'reponse_libre'
-                      ? { attempt: view.letterAttempt() }
-                      : q.formCode === 'texte'
-                        ? { attempt: view.freeTextAttempt() }
-                        : q.formCode === 'puzzle'
-                        ? { puzzlePlacements: view.puzzlePlacements() }
-                        : q.formCode === 'simon'
-                          ? { simonSequence: view.simonReplay() }
-                          : { statements: view.statementAnswers() };
-    this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
-      next: (result) => {
-        this.result.set(result);
-        this.saving.set(false);
-        if (q.formCode === 'reponse_libre' && view) {
-          this.api
-            .checkLetterLocks(this.subjectId(), this.questionId(), view.letterAttemptForLocks())
-            .subscribe({
-              next: (locksBody) => {
-                view.applyLetterLocks(locksBody.locks ?? []);
-                view.markLetterWrongs(result.passed !== true);
-              },
-            });
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        this.saving.set(false);
-        this.error.set(apiErrorMessage(err, 'Impossible d’enregistrer la réponse.'));
-      },
-    });
+    this.letterCheck?.unsubscribe();
+    this.api
+      .submitAttempt(this.subjectId(), this.questionId(), form.answer(view))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.result.set(result);
+          this.saving.set(false);
+          if (this.question()?.formCode === 'reponse_libre') {
+            this.checkLetters(view, result);
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.saving.set(false);
+          this.error.set(apiErrorMessage(err, 'Impossible d’enregistrer la réponse.'));
+        },
+      });
   }
 
   protected replay(): void {
+    this.letterCheck?.unsubscribe();
     this.result.set(null);
     this.error.set(null);
     if (this.playModel()?.formCode === 'simon') {

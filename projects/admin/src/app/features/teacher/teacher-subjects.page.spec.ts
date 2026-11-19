@@ -95,6 +95,24 @@ describe('TeacherSubjectsPage', () => {
     fixture.detectChanges();
   }
 
+  for (const reopenSameSubject of [false, true]) {
+    it(`ignore une erreur du transfert fermé (même matière : ${reopenSameSubject})`, () => {
+      boot(loaded);
+      const [firstGrade, secondGrade] = page.schools()[0].grades;
+      const first = firstGrade.subjects[0];
+      const reopened = reopenSameSubject ? first : secondGrade.subjects[0];
+      page.askTransfer(first);
+      const obsolete = http.expectOne(`${subjectsUrl}/${first.id}/colleagues`);
+      page.cancelPending();
+      page.askTransfer(reopened);
+      const active = http.expectOne(`${subjectsUrl}/${reopened.id}/colleagues`);
+      obsolete.flush({}, { status: 503, statusText: 'Unavailable' });
+      expect(page.pending()?.id).toBe(reopened.id);
+      active.flush({ colleagues: [{ userId: 12, displayName: 'Luc' }] });
+      expect(page.pending()?.colleagues[0].userId).toBe(12);
+    });
+  }
+
   function flushFollowers(
     subjectId: number,
     body: { childCount: number; warning: string; names: string[] } = {
