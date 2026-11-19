@@ -66,6 +66,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'liens') {
       return view.allLinksMatched();
     }
+    if (q.formCode === 'case_vide') {
+      return view.allGapsFilled();
+    }
     return false;
   });
 
@@ -89,7 +92,8 @@ export class PlayQuestionPage implements OnInit {
           body.formCode !== 'memory' &&
           body.formCode !== 'order' &&
           body.formCode !== 'classement' &&
-          body.formCode !== 'liens'
+          body.formCode !== 'liens' &&
+          body.formCode !== 'case_vide'
         ) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
@@ -124,7 +128,9 @@ export class PlayQuestionPage implements OnInit {
               ? { placements: view.placements() }
               : q.formCode === 'liens'
                 ? { linkMatches: view.linkMatches() }
-                : { statements: view.statementAnswers() };
+                : q.formCode === 'case_vide'
+                  ? { gapFills: view.gapFills() }
+                  : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -187,5 +193,9 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
         leftLabel: link.leftLabel!,
         rightLabel: link.rightLabel!,
       })),
+    sentence: body.sentence,
+    words: (body.words ?? [])
+      .filter((word) => word.label != null)
+      .map((word) => ({ wordId: word.wordId, label: word.label! })),
   };
 }

@@ -280,4 +280,48 @@
       <p class="child-play-view-hint" data-testid="child-play-view-links-status">{{ linksStatus() }}</p>
     }
   }
+
+  @if (isGaps()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-gaps-hint">
+      Choisis un mot, puis le trou.
+    </p>
+    <p
+      data-testid="child-play-view-gaps"
+      style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem"
+    >
+      @for (part of gapParts(); track $index) {
+        @if (part.kind === 'text') {
+          <span>{{ part.text }}</span>
+        } @else {
+          <button
+            type="button"
+            class="child-play-view-option"
+            [class.selected]="gapHoleFilled(part.holeIndex)"
+            [disabled]="disabled() || !interactive()"
+            [attr.data-testid]="'child-play-view-gap-hole-' + part.holeIndex"
+            (click)="onGapHole(part.holeIndex)"
+          >
+            {{ gapHoleLabel(part.holeIndex) || '___' }}
+          </button>
+        }
+      }
+    </p>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem" data-testid="child-play-view-gap-bank">
+      @for (word of gapBank(); track word.key) {
+        <button
+          type="button"
+          class="child-play-view-option"
+          [class.selected]="selectedGapWordKey() === word.key"
+          [disabled]="disabled() || !interactive()"
+          [attr.data-testid]="'child-play-view-gap-word-' + word.key"
+          (click)="onGapWord(word)"
+        >
+          {{ word.label }}
+        </button>
+      }
+    </div>
+    @if (gapsStatus()) {
+      <p class="child-play-view-hint" data-testid="child-play-view-gaps-status">{{ gapsStatus() }}</p>
+    }
+  }
 </div>

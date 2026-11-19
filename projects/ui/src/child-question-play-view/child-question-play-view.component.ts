@@ -25,6 +25,7 @@ import type {
   ChildPlayViewPair,
   ChildPlayViewQuestion,
   ChildPlayViewStatement,
+  ChildPlayViewWord,
 } from './child-question-play-view.model';
 
 export interface OrderItemView {
@@ -57,6 +58,18 @@ export interface LinkSideView {
   key: string;
   linkId?: number;
   label: string;
+}
+
+export interface GapWordView {
+  key: string;
+  wordId?: number;
+  label: string;
+}
+
+export interface GapPart {
+  kind: 'text' | 'hole';
+  text: string;
+  holeIndex: number;
 }
 
 const SOURCE_KEY = 'source';
@@ -107,6 +120,38 @@ function toClassCard(card: ChildPlayViewCard, index: number): ClassCardView {
   };
 }
 
+const GAP_HOLE = '___';
+
+function toGapWord(word: ChildPlayViewWord, index: number): GapWordView {
+  return {
+    key: word.wordId != null ? `w-${word.wordId}` : `i-${index}`,
+    wordId: word.wordId,
+    label: word.label,
+  };
+}
+
+function splitGapSentence(sentence: string): GapPart[] {
+  const parts: GapPart[] = [];
+  let from = 0;
+  let holeIndex = 0;
+  while (from <= sentence.length) {
+    const at = sentence.indexOf(GAP_HOLE, from);
+    if (at < 0) {
+      if (from < sentence.length) {
+        parts.push({ kind: 'text', text: sentence.slice(from), holeIndex: -1 });
+      }
+      break;
+    }
+    if (at > from) {
+      parts.push({ kind: 'text', text: sentence.slice(from, at), holeIndex: -1 });
+    }
+    parts.push({ kind: 'hole', text: '', holeIndex });
+    holeIndex++;
+    from = at + GAP_HOLE.length;
+  }
+  return parts;
+}
+
 function toLinkSide(link: ChildPlayViewLink, index: number, side: 'l' | 'r'): LinkSideView {
   const idPart = link.linkId != null ? String(link.linkId) : `i-${index}`;
   return {
@@ -126,7 +171,7 @@ function toClassColumn(column: ChildPlayViewColumn, index: number): ClassColumnV
 }
 
 /**
- * Rendu partagé Learning + Teacher : qcm / vrai_faux / memory / order (frise optionnelle) / classement / liens.
+ * Rendu partagé Learning + Teacher : qcm / vrai_faux / memory / order (frise optionnelle) / classement / liens / case vide.
  * Teacher : aperçu. Learning : interaction + envoi géré par la page parente.
  */
 @Component({
@@ -148,6 +193,7 @@ export class ChildQuestionPlayViewComponent {
   readonly orderChange = output<void>();
   readonly classificationChange = output<void>();
   readonly linksChange = output<void>();
+  readonly gapsChange = output<void>();
 
   private readonly layoutTick = signal(0);
   private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -159,6 +205,7 @@ export class ChildQuestionPlayViewComponent {
   protected readonly isTimeline = computed(() => this.isOrder() && this.question().timelineEnabled === true);
   protected readonly isClassification = computed(() => this.question().formCode === 'classement');
   protected readonly isLinks = computed(() => this.question().formCode === 'liens');
+  protected readonly isGaps = computed(() => this.question().formCode === 'case_vide');
   protected readonly playable = computed(
     () =>
       this.isQcm() ||
@@ -166,7 +213,8 @@ export class ChildQuestionPlayViewComponent {
       this.isMemory() ||
       this.isOrder() ||
       this.isClassification() ||
-      this.isLinks(),
+      this.isLinks() ||
+      this.isGaps(),
   );
 
   readonly orderedItems = signal<OrderItemView[]>([]);
@@ -179,6 +227,10 @@ export class ChildQuestionPlayViewComponent {
   readonly linkRights = signal<LinkSideView[]>([]);
   readonly selectedLinkKey = signal<string | null>(null);
   private readonly linkPairs = signal<Readonly<Record<string, string>>>({});
+
+  readonly gapWords = signal<GapWordView[]>([]);
+  readonly selectedGapWordKey = signal<string | null>(null);
+  private readonly gapPlacements = signal<Readonly<Record<number, string>>>({});
 
   protected readonly classListIds = computed(() => [
     SOURCE_KEY,
@@ -216,6 +268,16 @@ export class ChildQuestionPlayViewComponent {
       this.linkRights.set(shuffleCopy(links.map((link, index) => toLinkSide(link, index, 'r'))));
       this.linkPairs.set({});
       this.selectedLinkKey.set(null);
+    });
+    effect(() => {
+      this.layoutTick();
+      if (this.question().formCode !== 'case_vide') {
+        return;
+      }
+      const words = this.question().words ?? [];
+      this.gapWords.set(shuffleCopy(words.map((word, index) => toGapWord(word, index))));
+      this.gapPlacements.set({});
+      this.selectedGapWordKey.set(null);
     });
   }
 
@@ -284,6 +346,8 @@ export class ChildQuestionPlayViewComponent {
     this.selectedClassCardKey.set(null);
     this.selectedLinkKey.set(null);
     this.linkPairs.set({});
+    this.selectedGapWordKey.set(null);
+    this.gapPlacements.set({});
     this.layoutTick.update((n) => n + 1);
   }
 
@@ -384,6 +448,28 @@ export class ChildQuestionPlayViewComponent {
     return out;
   }
 
+  gapFills(): { holeIndex: number; wordId: number }[] {
+    const byKey = new Map(this.gapWords().map((word) => [word.key, word]));
+    const out: { holeIndex: number; wordId: number }[] = [];
+    for (const [hole, key] of Object.entries(this.gapPlacements())) {
+      const word = byKey.get(key);
+      if (word?.wordId == null) {
+        continue;
+      }
+      out.push({ holeIndex: Number(hole), wordId: word.wordId });
+    }
+    return out;
+  }
+
+  allGapsFilled(): boolean {
+    const holes = splitGapSentence(this.question().sentence ?? '').filter((part) => part.kind === 'hole');
+    if (holes.length === 0) {
+      return false;
+    }
+    const placed = this.gapPlacements();
+    return holes.every((part) => placed[part.holeIndex] != null);
+  }
+
   allLinksMatched(): boolean {
     const lefts = this.linkLefts();
     if (lefts.length === 0) {
@@ -399,6 +485,65 @@ export class ChildQuestionPlayViewComponent {
       used.add(rightKey);
     }
     return used.size === lefts.length;
+  }
+
+  protected readonly gapParts = computed(() => splitGapSentence(this.question().sentence ?? ''));
+
+  protected readonly gapBank = computed(() => {
+    const placed = new Set(Object.values(this.gapPlacements()));
+    return this.gapWords().filter((word) => !placed.has(word.key));
+  });
+
+  protected readonly gapsStatus = computed(() => {
+    const holes = this.gapParts().filter((part) => part.kind === 'hole');
+    const done = holes.filter((part) => this.gapPlacements()[part.holeIndex] != null).length;
+    if (holes.length === 0 || done === 0) {
+      return '';
+    }
+    if (done >= holes.length) {
+      return 'Tous les trous sont remplis.';
+    }
+    return `Trous remplis : ${done}. Il en reste ${holes.length - done}.`;
+  });
+
+  protected gapHoleLabel(holeIndex: number): string {
+    const key = this.gapPlacements()[holeIndex];
+    return this.gapWords().find((word) => word.key === key)?.label ?? '';
+  }
+
+  protected gapHoleFilled(holeIndex: number): boolean {
+    return this.gapPlacements()[holeIndex] != null;
+  }
+
+  protected onGapWord(word: GapWordView): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    this.selectedGapWordKey.update((selected) => (selected === word.key ? null : word.key));
+    this.gapsChange.emit();
+  }
+
+  protected onGapHole(holeIndex: number): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    const selected = this.selectedGapWordKey();
+    const current = { ...this.gapPlacements() };
+    if (selected == null) {
+      delete current[holeIndex];
+      this.gapPlacements.set(current);
+      this.gapsChange.emit();
+      return;
+    }
+    for (const [hole, key] of Object.entries(current)) {
+      if (key === selected) {
+        delete current[Number(hole)];
+      }
+    }
+    current[holeIndex] = selected;
+    this.gapPlacements.set(current);
+    this.selectedGapWordKey.set(null);
+    this.gapsChange.emit();
   }
 
   protected linkLeftSelected(key: string): boolean {

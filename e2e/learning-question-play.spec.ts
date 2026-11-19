@@ -26,6 +26,8 @@ const ui = {
   classColumn: 'child-play-view-class-column',
   linkLeft: 'child-play-view-link-left',
   linkRight: 'child-play-view-link-right',
+  gapWord: 'child-play-view-gap-word',
+  gapHole: 'child-play-view-gap-hole',
 } as const;
 
 const SUBJECT_ID = 4;
@@ -38,6 +40,7 @@ interface AttemptBody {
   orderedItemIds?: number[];
   placements?: { cardId: number; columnId: number }[];
   linkMatches?: { leftId: number; rightId: number }[];
+  gapFills?: { holeIndex: number; wordId: number }[];
 }
 
 test.describe('Jouer une question', { tag: ['@learning', '@mock'] }, () => {
@@ -172,6 +175,31 @@ test.describe('Jouer une question', { tag: ['@learning', '@mock'] }, () => {
     ]);
     await submitAndExpect(page, false, '0');
   });
+
+  test('Case vide : Valider reste inactif tant qu un trou est vide', async ({ page }) => {
+    await openPlay(page, gapsQuestion());
+    await placeGaps(page, [[10, 0]]);
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('Case vide : les bons mots donnent Bravo et Rejouer ramène Valider', async ({ page }) => {
+    await openPlay(page, gapsQuestion());
+    await placeGaps(page, [
+      [10, 0],
+      [11, 1],
+    ]);
+    await submitAndExpect(page, true, '100');
+    await replay(page);
+  });
+
+  test('Case vide : un leurre affiche Pas encore', async ({ page }) => {
+    await openPlay(page, gapsQuestion());
+    await placeGaps(page, [
+      [10, 0],
+      [12, 1],
+    ]);
+    await submitAndExpect(page, false, '50');
+  });
 });
 
 function qcmQuestion(): Record<string, unknown> {
@@ -231,6 +259,19 @@ function classementQuestion(): Record<string, unknown> {
     cards: [
       { cardId: 1, label: 'Poire' },
       { cardId: 2, label: 'Carotte' },
+    ],
+  };
+}
+
+function gapsQuestion(): Record<string, unknown> {
+  return {
+    formCode: 'case_vide',
+    prompt: 'Complète la phrase',
+    sentence: 'Le ___ mange une ___.',
+    words: [
+      { wordId: 10, label: 'chat' },
+      { wordId: 11, label: 'pomme' },
+      { wordId: 12, label: 'voiture' },
     ],
   };
 }
@@ -301,6 +342,16 @@ function grade(formCode: string, body: AttemptBody): { attemptId: number; scoreP
     const ok = expected.filter((id, index) => ordered[index] === id).length;
     return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed: ok === expected.length };
   }
+  if (formCode === 'case_vide') {
+    const fills = new Map((body.gapFills ?? []).map((row) => [row.holeIndex, row.wordId]));
+    const expected: [number, number][] = [
+      [0, 10],
+      [1, 11],
+    ];
+    const ok = expected.filter(([hole, wordId]) => fills.get(hole) === wordId).length;
+    const passed = ok === expected.length && (body.gapFills ?? []).length === expected.length;
+    return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed };
+  }
   if (formCode === 'classement') {
     const byCard = new Map((body.placements ?? []).map((row) => [row.cardId, row.columnId]));
     const expected: [number, number][] = [
@@ -346,6 +397,13 @@ async function placeCards(page: Page, pairs: readonly (readonly [number, number]
   for (const [cardId, columnId] of pairs) {
     await page.getByTestId(`${ui.classCard}-${cardId}`).click();
     await page.getByTestId(`${ui.classColumn}-${columnId}`).click();
+  }
+}
+
+async function placeGaps(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {
+  for (const [wordId, holeIndex] of pairs) {
+    await page.getByTestId(`${ui.gapWord}-w-${wordId}`).click();
+    await page.getByTestId(`${ui.gapHole}-${holeIndex}`).click();
   }
 }
 
