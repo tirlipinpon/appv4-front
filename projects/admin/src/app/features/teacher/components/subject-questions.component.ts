@@ -191,6 +191,9 @@ export class SubjectQuestionsComponent implements OnInit {
     if (model.formCode === 'reponse_libre') {
       return view.allLettersFilled();
     }
+    if (model.formCode === 'puzzle') {
+      return view.allPuzzlePiecesPlaced();
+    }
     return false;
   });
 
@@ -245,7 +248,6 @@ export class SubjectQuestionsComponent implements OnInit {
         rightLabel: link.rightLabel,
       })),
       sentence: question.sentence,
-      imageWebp: question.formCode === 'image_interactive' ? question.imageDataUrl : undefined,
       clicksOrdered: question.clicksOrdered,
       clickZones:
         question.formCode === 'image_interactive'
@@ -283,6 +285,24 @@ export class SubjectQuestionsComponent implements OnInit {
           label: word.label,
         })),
       ],
+      imageWebp:
+        question.formCode === 'image_interactive' || question.formCode === 'puzzle'
+          ? question.imageDataUrl
+          : undefined,
+      boardMode: question.formCode === 'puzzle' ? question.boardMode : undefined,
+      boardImageWebp: question.formCode === 'puzzle' ? question.boardImageDataUrl || undefined : undefined,
+      snapDistance: question.formCode === 'puzzle' ? question.snapDistance : undefined,
+      puzzlePieces:
+        question.formCode === 'puzzle'
+          ? question.zones.map((zone, index) => ({
+              pieceId: index + 1,
+              label: zone.label,
+              shape: zone.shape,
+              points: zone.points,
+              slotX: zone.slot?.x,
+              slotY: zone.slot?.y,
+            }))
+          : undefined,
     });
   }
 
@@ -1112,6 +1132,11 @@ function gradePreview(
     }
     const scorePercent = total === 0 ? 0 : Math.round((100 * ok) / total);
     return { passed: scorePercent === 100, scorePercent };
+  }
+  if (source.formCode === 'puzzle') {
+    const { ok, total } = view.puzzleCorrectCount();
+    const scorePercent = total === 0 ? 0 : Math.round((100 * ok) / total);
+    return { passed: total > 0 && ok === total, scorePercent };
   }
   return { passed: false, scorePercent: 0 };
 }

@@ -1661,6 +1661,7 @@ export interface components {
             linkMatches?: components["schemas"]["SubmitLinkMatchAnswer"][];
             gapFills?: components["schemas"]["SubmitGapFillAnswer"][];
             zoneClicks?: components["schemas"]["SubmitZoneClickAnswer"][];
+            puzzlePlacements?: components["schemas"]["SubmitPuzzlePiecePlacement"][];
             attempt?: string;
         };
         SubmitGapFillAnswer: {
@@ -1680,6 +1681,14 @@ export interface components {
             cardId?: number;
             /** Format: int64 */
             columnId?: number;
+        };
+        SubmitPuzzlePiecePlacement: {
+            /** Format: int64 */
+            pieceId?: number;
+            /** Format: double */
+            x?: number;
+            /** Format: double */
+            y?: number;
         };
         SubmitStatementAnswer: {
             /** Format: int64 */
@@ -2098,6 +2107,17 @@ export interface components {
             questionSide?: string;
             answerSide?: string;
         };
+        ChildPlayPuzzlePieceItem: {
+            /** Format: int64 */
+            pieceId?: number;
+            label?: string;
+            shape?: string;
+            points?: components["schemas"]["ChildPlayClickPointItem"][];
+            /** Format: double */
+            slotX?: number;
+            /** Format: double */
+            slotY?: number;
+        };
         ChildPlayQuestionResponse: {
             /** Format: int64 */
             questionId?: number;
@@ -2122,6 +2142,11 @@ export interface components {
             /** Format: int32 */
             letterCount?: number;
             letterMask?: string;
+            boardMode?: string;
+            boardImageWebp?: string;
+            /** Format: double */
+            snapDistance?: number;
+            puzzlePieces?: components["schemas"]["ChildPlayPuzzlePieceItem"][];
         };
         ChildPlayStatementItem: {
             /** Format: int64 */

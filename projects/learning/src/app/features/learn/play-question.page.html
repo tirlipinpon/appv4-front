@@ -24,6 +24,7 @@
       (gapsChange)="onSelectionChange()"
       (imageChange)="onSelectionChange()"
       (lettersChange)="onSelectionChange()"
+      (puzzleChange)="onSelectionChange()"
     />
 
     @if (!result() && (playModel()?.formCode !== 'image_interactive' || playModel()?.clicksOrdered === false)) {

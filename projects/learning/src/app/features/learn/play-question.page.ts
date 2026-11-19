@@ -75,6 +75,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'reponse_libre') {
       return view.allLettersFilled();
     }
+    if (q.formCode === 'puzzle') {
+      return view.allPuzzlePiecesPlaced();
+    }
     return false;
   });
 
@@ -101,7 +104,8 @@ export class PlayQuestionPage implements OnInit {
           body.formCode !== 'liens' &&
           body.formCode !== 'case_vide' &&
           body.formCode !== 'image_interactive' &&
-          body.formCode !== 'reponse_libre'
+          body.formCode !== 'reponse_libre' &&
+          body.formCode !== 'puzzle'
         ) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
@@ -155,7 +159,9 @@ export class PlayQuestionPage implements OnInit {
                     ? { zoneClicks: view.zoneClicks().map((zoneId) => ({ zoneId })) }
                     : q.formCode === 'reponse_libre'
                       ? { attempt: view.letterAttempt() }
-                      : { statements: view.statementAnswers() };
+                      : q.formCode === 'puzzle'
+                        ? { puzzlePlacements: view.puzzlePlacements() }
+                        : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -248,5 +254,29 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
     ),
     letterCount: body.letterCount,
     letterMask: body.letterMask,
+    boardMode: body.boardMode,
+    boardImageWebp: body.boardImageWebp,
+    snapDistance: body.snapDistance,
+    puzzlePieces: (body.puzzlePieces ?? []).flatMap((piece) => {
+      if (!piece.shape || !piece.points?.length) {
+        return [];
+      }
+      const points = piece.points.flatMap((point) =>
+        point.x == null || point.y == null ? [] : [{ x: point.x, y: point.y }],
+      );
+      if (!points.length) {
+        return [];
+      }
+      return [
+        {
+          pieceId: piece.pieceId,
+          label: piece.label ?? '',
+          shape: piece.shape,
+          points,
+          slotX: piece.slotX,
+          slotY: piece.slotY,
+        },
+      ];
+    }),
   };
 }
