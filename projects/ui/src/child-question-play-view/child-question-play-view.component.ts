@@ -317,6 +317,7 @@ export class ChildQuestionPlayViewComponent {
   readonly gapsChange = output<void>();
   readonly imageChange = output<void>();
   readonly lettersChange = output<void>();
+  readonly freeTextChange = output<void>();
   readonly puzzleChange = output<void>();
   readonly simonChange = output<void>();
 
@@ -347,6 +348,7 @@ export class ChildQuestionPlayViewComponent {
     () => this.isImage() && this.question().clicksOrdered !== false && (this.question().clickSteps ?? []).length > 0,
   );
   protected readonly isLetters = computed(() => this.question().formCode === 'reponse_libre');
+  protected readonly isFreeText = computed(() => this.question().formCode === 'texte');
   protected readonly isPuzzle = computed(() => this.question().formCode === 'puzzle');
   protected readonly isSimon = computed(() => this.question().formCode === 'simon');
   protected readonly playable = computed(
@@ -360,6 +362,7 @@ export class ChildQuestionPlayViewComponent {
       this.isGaps() ||
       this.isImage() ||
       this.isLetters() ||
+      this.isFreeText() ||
       this.isPuzzle() ||
       this.isSimon(),
   );
@@ -388,6 +391,8 @@ export class ChildQuestionPlayViewComponent {
   private readonly letterFields = viewChildren<ElementRef<HTMLInputElement>>('letterBox');
   private readonly puzzleStage = viewChild<ElementRef<HTMLElement>>('puzzleStage');
   protected readonly letterBoxes = signal<string[]>([]);
+  /** Saisie du champ unique (forme texte). */
+  protected readonly freeText = signal('');
   /** Verrou par case (espace toujours true ; lettre juste → true). */
   protected readonly letterLocks = signal<boolean[]>([]);
   /** Cases incorrectes après Valider (rouge). */
@@ -497,6 +502,7 @@ export class ChildQuestionPlayViewComponent {
       this.clickMarks.set([]);
       this.clickMiss.set(false);
       this.resetLetterSlots();
+      this.freeText.set('');
     });
     effect(() => {
       const items = this.question().items ?? [];
@@ -629,6 +635,17 @@ export class ChildQuestionPlayViewComponent {
 
   letterAttempt(): string {
     return this.letterBoxes().join('');
+  }
+
+  /** Saisie du champ unique (réponse libre). */
+  freeTextAttempt(): string {
+    return this.freeText();
+  }
+
+  protected onFreeTextInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.freeText.set(value);
+    this.freeTextChange.emit();
   }
 
   /** Tentative partielle : case vide = \\0 pour le check des verrous côté API. */

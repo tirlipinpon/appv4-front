@@ -29,6 +29,7 @@ const ui = {
   gapWord: 'child-play-view-gap-word',
   gapHole: 'child-play-view-gap-hole',
   gapLine: 'child-play-view-gaps',
+  freeText: 'child-play-view-free-text',
 } as const;
 
 const SUBJECT_ID = 4;
@@ -42,6 +43,7 @@ interface AttemptBody {
   placements?: { cardId: number; columnId: number }[];
   linkMatches?: { leftId: number; rightId: number }[];
   gapFills?: { holeIndex: number; wordId: number }[];
+  attempt?: string;
 }
 
 test.describe('Jouer une question', { tag: ['@learning', '@mock'] }, () => {
@@ -215,7 +217,35 @@ test.describe('Jouer une question', { tag: ['@learning', '@mock'] }, () => {
     await expect(page.getByTestId(`${ui.gapHole}-1`)).toContainText('pomme');
     await submitAndExpect(page, true, '100');
   });
+
+  test('Réponse libre : Valider reste inactif tant que le champ est vide', async ({ page }) => {
+    await openPlay(page, freeTextQuestion());
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+    await page.getByTestId(ui.freeText).fill('   ');
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('Réponse libre : Pâris donne Bravo et Rejouer vide le champ', async ({ page }) => {
+    await openPlay(page, freeTextQuestion());
+    await page.getByTestId(ui.freeText).fill('  Pâris  ');
+    await submitAndExpect(page, true, '100');
+    await replay(page);
+    await expect(page.getByTestId(ui.freeText)).toHaveValue('');
+  });
+
+  test('Réponse libre : Lyon affiche Pas encore', async ({ page }) => {
+    await openPlay(page, freeTextQuestion());
+    await page.getByTestId(ui.freeText).fill('Lyon');
+    await submitAndExpect(page, false, '0');
+  });
 });
+
+function freeTextQuestion(): Record<string, unknown> {
+  return {
+    formCode: 'texte',
+    prompt: 'Capitale de la France',
+  };
+}
 
 function qcmQuestion(): Record<string, unknown> {
   return {
@@ -357,6 +387,10 @@ function grade(formCode: string, body: AttemptBody): { attemptId: number; scoreP
     const ok = expected.filter((id, index) => ordered[index] === id).length;
     return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed: ok === expected.length };
   }
+  if (formCode === 'texte') {
+    const passed = freeTextSame('Paris', body.attempt ?? '');
+    return { attemptId: 1, scorePercent: passed ? 100 : 0, passed };
+  }
   if (formCode === 'case_vide') {
     const fills = new Map((body.gapFills ?? []).map((row) => [row.holeIndex, row.wordId]));
     const expected: [number, number][] = [
@@ -381,6 +415,16 @@ function grade(formCode: string, body: AttemptBody): { attemptId: number; scoreP
   const ok = matches.filter((match) => match.leftId === match.rightId).length;
   const passed = ok === 2 && matches.length === 2;
   return { attemptId: 1, scorePercent: Math.round((100 * ok) / 2), passed };
+}
+
+function freeTextSame(expected: string, attempt: string): boolean {
+  const normalize = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{M}+/gu, '');
+  return attempt.trim() !== '' && normalize(expected) === normalize(attempt);
 }
 
 async function submitAndExpect(page: Page, passed: boolean, score?: string): Promise<void> {
