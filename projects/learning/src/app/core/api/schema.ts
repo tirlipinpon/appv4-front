@@ -1401,6 +1401,8 @@ export interface components {
             questionCount?: number;
             /** @description Code d'icône de la librairie, ou null. */
             iconCode?: string;
+            /** @description Teinte #rrggbb de l'icône, ou null. */
+            accentColor?: string;
         };
         TeacherSubjectSharedHolder: {
             /** Format: int64 */
@@ -1609,6 +1611,8 @@ export interface components {
             questionCount?: number;
             /** @description Code d'icône de la librairie matières, ou null. */
             iconCode?: string;
+            /** @description Teinte #rrggbb de l'icône, ou null. */
+            accentColor?: string;
         };
         SwitchRoleRequest: {
             role: string;
@@ -1870,6 +1874,10 @@ export interface components {
             label?: string;
             /** Format: int32 */
             sortOrder?: number;
+            /** @description Dessin de la forme. Null sans identité visuelle. */
+            iconCode?: string;
+            /** @description Couleur #rrggbb unique de la forme. Null sans identité. */
+            color?: string;
         };
         TeacherQuestionFormsResponse: {
             forms?: components["schemas"]["TeacherQuestionFormItem"][];
@@ -2026,6 +2034,8 @@ export interface components {
             /** Format: int64 */
             questionCount?: number;
             iconCode?: string;
+            /** @description Teinte #rrggbb de l'icône, ou null. */
+            accentColor?: string;
         };
         ChildLearningSubjectsResponse: {
             subjects?: components["schemas"]["ChildLearningSubjectItem"][];
@@ -2035,6 +2045,8 @@ export interface components {
             subjectId?: number;
             name?: string;
             iconCode?: string;
+            /** @description Teinte #rrggbb de l'icône, ou null. */
+            accentColor?: string;
             grade?: string;
             description?: string;
             tagline?: string;
@@ -2082,6 +2094,12 @@ export interface components {
             questionId?: number;
             formCode?: string;
             prompt?: string;
+            /** @description Libellé de la forme, celui du catalogue professeur. */
+            formLabel?: string;
+            /** @description Code du dessin de la forme. Null si la forme n'a pas d'identité. */
+            iconCode?: string;
+            /** @description Couleur #rrggbb de la forme. Null si pas d'identité. */
+            color?: string;
         };
         ChildLearningQuestionsResponse: {
             /** Format: int64 */

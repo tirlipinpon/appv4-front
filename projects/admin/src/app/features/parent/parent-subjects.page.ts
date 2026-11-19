@@ -45,6 +45,12 @@ export class ParentSubjectsPage implements OnInit, OnDestroy {
   private readonly photoBag = new PhotoObjectUrlBag();
 
   readonly emoji = avatarEmoji;
+
+  /** Teinte API de la matière, seulement si c'est un code #rrggbb. */
+  offerAccent(offer: { accentColor?: string | null }): string | null {
+    const color = offer.accentColor;
+    return color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : null;
+  }
   readonly sexLabel = sexLabel;
   readonly children = signal<ChildSubjectsResponse[]>([]);
   readonly searchQueries = signal<Readonly<Record<number, string>>>({});

@@ -208,6 +208,11 @@
   font-size: 1.1rem;
 }
 
+.subject-icon.tinted {
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px var(--subject-accent);
+}
+
 .add {
   display: flex;
   flex-wrap: wrap;

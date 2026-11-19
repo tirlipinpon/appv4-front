@@ -39,6 +39,8 @@ interface SubjectRow {
   questionCount: number;
   /** Code d'icône de la librairie API, ou absent. */
   iconCode?: string | null;
+  /** Teinte #rrggbb renvoyée avec l'icône, ou absente. */
+  accentColor?: string | null;
 }
 
 interface AddableCourse {
@@ -142,7 +144,6 @@ export class TeacherSubjectsPage implements OnInit {
   readonly error = signal<string | null>(null);
   readonly drafts = signal<Readonly<Record<string, string>>>({});
   /** Icône choisie à la création, par classe (clé schoolId|grade). */
-  readonly iconDrafts = signal<Readonly<Record<string, string>>>({});
   /** Librairie fermée renvoyée par GET /teacher/subjects. */
   readonly iconChoices = signal<AvatarChoice[]>([]);
   /** Matière déjà créée choisie dans le menu, par école et année. */
@@ -368,13 +369,10 @@ export class TeacherSubjectsPage implements OnInit {
     }
   }
 
-  iconDraft(schoolId: number, grade: string): string {
-    return this.iconDrafts()[this.gradeKey(schoolId, grade)] ?? '';
-  }
-
-  onIconDraft(schoolId: number, grade: string, value: string): void {
-    const key = this.gradeKey(schoolId, grade);
-    this.iconDrafts.update((current) => ({ ...current, [key]: value }));
+  /** Teinte API de la matière, seulement si c'est un code #rrggbb. */
+  subjectAccent(subject: SubjectRow): string | null {
+    const color = subject.accentColor;
+    return color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : null;
   }
 
   /** Change l'icône d'une matière encore suivie et créée par moi. */
@@ -410,19 +408,16 @@ export class TeacherSubjectsPage implements OnInit {
     this.clearGradeError(schoolId, grade);
     this.error.set(null);
     this.saving.set(true);
-    const iconCode = this.iconDraft(schoolId, grade);
     this.api
       .create({
         schoolId,
         grade,
         name: raw.trim(),
-        ...(iconCode ? { iconCode } : {}),
       })
       .subscribe({
       next: () => {
         this.clearReuse(schoolId, grade);
         this.onDraft(schoolId, grade, '');
-        this.onIconDraft(schoolId, grade, '');
         this.reload();
       },
       error: (err: HttpErrorResponse) => {
@@ -1048,6 +1043,7 @@ export class TeacherSubjectsPage implements OnInit {
             owner: subject.owner?.userId != null ? holdersOf([subject.owner])[0] : undefined,
             questionCount: subject.questionCount ?? 0,
             iconCode: subject.iconCode ?? null,
+            accentColor: subject.accentColor ?? null,
           });
         }
         const addable: AddableCourse[] = [];

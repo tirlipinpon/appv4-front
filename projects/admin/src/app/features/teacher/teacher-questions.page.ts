@@ -15,6 +15,7 @@ interface SubjectRow {
   place: string;
   questionCount: number;
   iconCode?: string | null;
+  accentColor?: string | null;
 }
 
 interface GradeBlock {
@@ -83,6 +84,12 @@ export class TeacherQuestionsPage implements OnInit {
     return grades.map((grade) => grade.grade).join(', ');
   }
 
+  /** Teinte API de la matière, seulement si c'est un code #rrggbb. */
+  subjectAccent(subject: SubjectRow): string | null {
+    const color = subject.accentColor;
+    return color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : null;
+  }
+
   ngOnInit(): void {
     this.subjectsApi.load().subscribe({
       next: (body) => this.apply(body),
@@ -116,6 +123,7 @@ export class TeacherQuestionsPage implements OnInit {
             place,
             questionCount: subject.questionCount ?? 0,
             iconCode: subject.iconCode ?? null,
+            accentColor: subject.accentColor ?? null,
           });
         }
         grades.push({ grade: grade.grade, subjects });

@@ -167,6 +167,8 @@ li.editing .prompt {
 }
 
 button.form-chip {
+  display: inline-flex;
+  align-items: center;
   border: 1px solid #d0d7e2;
   background: white;
   border-radius: 999px;
@@ -175,10 +177,18 @@ button.form-chip {
   cursor: pointer;
 }
 
+button.form-chip.tinted {
+  border-color: var(--form-color);
+}
+
 button.form-chip.selected {
-  border-color: var(--app-primary);
+  border-color: var(--form-color, var(--app-primary));
   background: var(--app-primary-soft);
   font-weight: 600;
+}
+
+button.form-chip.tinted.selected {
+  background: color-mix(in srgb, var(--form-color) 16%, #fff);
 }
 
 .sides {

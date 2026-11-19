@@ -85,6 +85,11 @@
   vertical-align: -0.1em;
 }
 
+.subject-icon.tinted {
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px var(--subject-accent);
+}
+
 .meta {
   display: block;
   margin-top: 0.15rem;

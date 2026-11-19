@@ -4,6 +4,7 @@ export { ButtonComponent } from './button/button.component';
 export { TextFieldComponent } from './text-field/text-field.component';
 export { ThemeToggleComponent } from './theme-toggle/theme-toggle.component';
 export { ChildQuestionPlayViewComponent } from './child-question-play-view/child-question-play-view.component';
+export { QuestionFormMarkComponent } from './question-form-mark/question-form-mark.component';
 export type {
   ChildPlayViewChoice,
   ChildPlayViewItem,
