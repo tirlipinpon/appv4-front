@@ -35,6 +35,7 @@ import type {
 } from './child-question-play-view.model';
 import {
   PUZZLE_MAGNET_DEFAULT,
+  clampPuzzleMagnet,
   cutPuzzlePiece,
   loadImageElement,
   magnetizedPosition,
@@ -291,6 +292,8 @@ export class ChildQuestionPlayViewComponent {
     offsetX: number;
     offsetY: number;
     width: number;
+    /** True une fois collé : on garde le trou jusqu'à un vrai écart. */
+    snapped: boolean;
   } | null = null;
   private stopPieceListeners: (() => void) | null = null;
 
@@ -355,6 +358,8 @@ export class ChildQuestionPlayViewComponent {
 
   protected readonly puzzlePieces = signal<PuzzlePiecePlayView[]>([]);
   protected readonly puzzleBoardSrc = signal('');
+  /** Ratio largeur/hauteur de l'image à découper — plateau blanc stable (pas le rail). */
+  protected readonly puzzleBoardAspect = signal('4 / 3');
   protected readonly puzzleGhost = signal<PuzzleGhost | null>(null);
   protected readonly puzzleDragIndex = signal<number | null>(null);
   protected readonly puzzleFitFlash = signal<ReadonlySet<number>>(new Set());
@@ -363,7 +368,9 @@ export class ChildQuestionPlayViewComponent {
   protected readonly imageSrc = computed(() => imageSource(this.question().imageWebp));
   protected readonly puzzleMagnet = computed(() => {
     const value = this.question().snapDistance;
-    return value == null || !Number.isFinite(value) ? PUZZLE_MAGNET_DEFAULT : value;
+    return value == null || !Number.isFinite(value)
+      ? PUZZLE_MAGNET_DEFAULT
+      : clampPuzzleMagnet(value);
   });
   protected readonly puzzleBoardBlank = computed(() => this.question().boardMode === 'blanc');
   protected readonly puzzleTrayPieces = computed(() =>
@@ -907,8 +914,16 @@ export class ChildQuestionPlayViewComponent {
     return piece.frame.width * 100;
   }
 
-  protected trayWidthPercent(piece: PuzzlePiecePlayView): number {
-    return Math.min(28, this.pieceWidthPercent(piece) * 1.4);
+  /**
+   * Largeur réelle de dépôt (= % du plateau). Dès le drag, le fantôme
+   * prend cette taille, même si la vignette du rail est petite.
+   */
+  private pieceDepositWidthPx(piece: PuzzlePiecePlayView): number {
+    const stage = this.puzzleStage()?.nativeElement.getBoundingClientRect();
+    if (stage != null && stage.width > 0 && piece.frame.width > 0) {
+      return piece.frame.width * stage.width;
+    }
+    return 64;
   }
 
   protected onPuzzlePieceDown(event: PointerEvent, index: number): void {
@@ -926,20 +941,36 @@ export class ChildQuestionPlayViewComponent {
       return;
     }
     const rect = target.getBoundingClientRect();
+    const depositWidth = this.pieceDepositWidthPx(piece);
+    // Hauteur du fantôme = ratio réel de l'image (height:auto sur le ghost).
+    const depositHeight =
+      target instanceof HTMLImageElement && target.naturalWidth > 0
+        ? depositWidth * (target.naturalHeight / target.naturalWidth)
+        : piece.frame.width > 0
+          ? depositWidth * (piece.frame.height / piece.frame.width)
+          : Math.max(rect.height, 1);
+    // Garde le point cliqué sous la souris en passant vignette → taille dépôt.
+    const scaleX = rect.width > 0 ? depositWidth / rect.width : 1;
+    const scaleY = rect.height > 0 ? depositHeight / rect.height : scaleX;
+    const offsetX = (event.clientX - rect.left) * scaleX;
+    const offsetY = (event.clientY - rect.top) * scaleY;
+    const left = event.clientX - offsetX;
+    const top = event.clientY - offsetY;
     this.clearPuzzleDrag();
     this.pieceDrag = {
       pointer: event.pointerId,
       index,
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top,
-      width: rect.width,
+      offsetX,
+      offsetY,
+      width: depositWidth,
+      snapped: false,
     };
     this.puzzleDragIndex.set(index);
     this.puzzleGhost.set({
       url: piece.url,
-      left: rect.left,
-      top: rect.top,
-      width: rect.width,
+      left,
+      top,
+      width: depositWidth,
     });
     const onMove = (move: PointerEvent) => this.onPuzzlePieceMove(move);
     const onUp = (up: PointerEvent) => this.finishPuzzlePieceDrag(up);
@@ -962,31 +993,44 @@ export class ChildQuestionPlayViewComponent {
     if (event.cancelable) {
       event.preventDefault();
     }
-    const left = event.clientX - drag.offsetX;
-    const top = event.clientY - drag.offsetY;
+    const freeLeft = event.clientX - drag.offsetX;
+    const freeTop = event.clientY - drag.offsetY;
     const piece = this.puzzlePieces()[drag.index];
     const url = piece?.url ?? '';
     const home = piece?.home;
     if (!home) {
-      this.puzzleGhost.set({ url, left, top, width: drag.width });
+      this.puzzleGhost.set({ url, left: freeLeft, top: freeTop, width: drag.width });
       return;
     }
+    const freeRaw = {
+      x: (freeLeft - stage.left) / stage.width,
+      y: (freeTop - stage.top) / stage.height,
+    };
+    const magnet = this.puzzleMagnet();
+    // Déjà collé : rayon ×2 pour ne pas décrocher au micro-mouvement (ex. magnétisme 2 %).
     const spot = magnetizedPosition(
-      { x: (left - stage.left) / stage.width, y: (top - stage.top) / stage.height },
+      freeRaw,
       home,
-      this.puzzleMagnet(),
+      drag.snapped ? clampPuzzleMagnet(magnet * 2) : magnet,
       stage,
     );
-    this.puzzleGhost.set(
-      spot.snapped
-        ? {
-            url,
-            left: stage.left + home.x * stage.width,
-            top: stage.top + home.y * stage.height,
-            width: home.width * stage.width,
-          }
-        : { url, left, top, width: drag.width },
-    );
+    if (spot.snapped) {
+      if (!drag.snapped) {
+        // Recaler l'offset sur le trou : sinon le prochain move recalcule loin du home et décroche.
+        drag.offsetX = event.clientX - (stage.left + home.x * stage.width);
+        drag.offsetY = event.clientY - (stage.top + home.y * stage.height);
+        drag.snapped = true;
+      }
+      this.puzzleGhost.set({
+        url,
+        left: stage.left + home.x * stage.width,
+        top: stage.top + home.y * stage.height,
+        width: home.width * stage.width,
+      });
+      return;
+    }
+    drag.snapped = false;
+    this.puzzleGhost.set({ url, left: freeLeft, top: freeTop, width: drag.width });
   }
 
   private finishPuzzlePieceDrag(event: PointerEvent): void {
@@ -994,26 +1038,30 @@ export class ChildQuestionPlayViewComponent {
     if (!drag || event.pointerId !== drag.pointer) {
       return;
     }
+    // Dernier move avec la position du lâcher (évite un fantôme en retard).
+    this.onPuzzlePieceMove(event);
     const stage = this.puzzleStage()?.nativeElement.getBoundingClientRect();
-    const ghost = this.puzzleGhost();
     const piece = this.puzzlePieces()[drag.index];
     const home = piece?.home;
-    const raw =
-      stage != null && stage.width > 0 && stage.height > 0 && ghost != null
-        ? {
-            x: (ghost.left - stage.left) / stage.width,
-            y: (ghost.top - stage.top) / stage.height,
-          }
-        : null;
-    const placed =
-      raw == null || home == null || stage == null
-        ? null
-        : placeOnImage(raw, home, this.puzzleMagnet(), stage);
-    const snapped =
-      placed != null &&
-      home != null &&
-      stage != null &&
-      magnetizedPosition(placed, home, this.puzzleMagnet(), stage).snapped;
+    const magnet = this.puzzleMagnet();
+    let placed: PuzzlePoint | null = null;
+    let snapped = false;
+    if (home != null && stage != null && stage.width > 0 && stage.height > 0) {
+      if (drag.snapped) {
+        placed = { x: home.x, y: home.y };
+        snapped = true;
+      } else {
+        const freeLeft = event.clientX - drag.offsetX;
+        const freeTop = event.clientY - drag.offsetY;
+        const raw = {
+          x: (freeLeft - stage.left) / stage.width,
+          y: (freeTop - stage.top) / stage.height,
+        };
+        placed = placeOnImage(raw, home, magnet, stage);
+        snapped =
+          placed != null && magnetizedPosition(placed, home, magnet, stage).snapped;
+      }
+    }
     this.clearPuzzleDrag();
     this.puzzlePieces.update((rows) =>
       rows.map((row, index) => (index === drag.index ? { ...row, placement: placed } : row)),
@@ -1060,6 +1108,7 @@ export class ChildQuestionPlayViewComponent {
     if (!cutSrc || pieces.length === 0) {
       this.puzzlePieces.set([]);
       this.puzzleBoardSrc.set('');
+      this.puzzleBoardAspect.set('4 / 3');
       return;
     }
     try {
@@ -1081,6 +1130,10 @@ export class ChildQuestionPlayViewComponent {
       const views: PuzzlePiecePlayView[] = pieces.map((piece, index) =>
         toPuzzlePlayView(piece, index, cutImage, width, height, boardMode),
       );
+      // Même ratio que l'image source : les slotX/Y restent justes sur le plateau blanc.
+      this.puzzleBoardAspect.set(
+        width > 0 && height > 0 ? `${width} / ${height}` : '4 / 3',
+      );
       this.puzzleBoardSrc.set(boardSrc);
       this.puzzlePieces.set(views);
     } catch {
@@ -1089,6 +1142,7 @@ export class ChildQuestionPlayViewComponent {
       }
       this.puzzlePieces.set([]);
       this.puzzleBoardSrc.set('');
+      this.puzzleBoardAspect.set('4 / 3');
     }
   }
 

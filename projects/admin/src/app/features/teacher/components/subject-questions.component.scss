@@ -240,10 +240,11 @@ button.form-chip:disabled {
 .child-preview-dialog {
   position: fixed;
   z-index: 41;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  /* Centrage sans transform : un transform décale les position:fixed du jeu (pièce de puzzle en drag). */
+  inset: 0;
+  margin: auto;
   width: min(40rem, calc(100vw - 2rem));
+  height: fit-content;
   max-height: min(90vh, 40rem);
   overflow: auto;
   padding: 1rem 1.15rem 1.25rem;
