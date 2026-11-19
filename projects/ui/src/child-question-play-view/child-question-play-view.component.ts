@@ -9,11 +9,13 @@ import {
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   computed,
   effect,
   input,
   output,
   signal,
+  viewChildren,
 } from '@angular/core';
 
 import type {
@@ -241,6 +243,7 @@ export class ChildQuestionPlayViewComponent {
   readonly linksChange = output<void>();
   readonly gapsChange = output<void>();
   readonly imageChange = output<void>();
+  readonly lettersChange = output<void>();
 
   private readonly layoutTick = signal(0);
   private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -257,6 +260,7 @@ export class ChildQuestionPlayViewComponent {
   protected readonly isOrderedImage = computed(
     () => this.isImage() && this.question().clicksOrdered !== false && (this.question().clickSteps ?? []).length > 0,
   );
+  protected readonly isLetters = computed(() => this.question().formCode === 'reponse_libre');
   protected readonly playable = computed(
     () =>
       this.isQcm() ||
@@ -266,7 +270,8 @@ export class ChildQuestionPlayViewComponent {
       this.isClassification() ||
       this.isLinks() ||
       this.isGaps() ||
-      this.isImage(),
+      this.isImage() ||
+      this.isLetters(),
   );
 
   readonly orderedItems = signal<OrderItemView[]>([]);
@@ -289,6 +294,9 @@ export class ChildQuestionPlayViewComponent {
   private readonly clickedZoneIds = signal<number[]>([]);
   protected readonly clickMarks = signal<ClickMark[]>([]);
   protected readonly clickMiss = signal(false);
+
+  private readonly letterFields = viewChildren<ElementRef<HTMLInputElement>>('letterBox');
+  protected readonly letterBoxes = signal<string[]>([]);
 
   protected readonly imageSrc = computed(() => imageSource(this.question().imageWebp));
 
@@ -343,6 +351,8 @@ export class ChildQuestionPlayViewComponent {
       this.clickedZoneIds.set([]);
       this.clickMarks.set([]);
       this.clickMiss.set(false);
+      const count = this.question().letterCount ?? 0;
+      this.letterBoxes.set(count > 0 ? Array.from({ length: count }, () => '') : []);
     });
     effect(() => {
       const items = this.question().items ?? [];
@@ -456,7 +466,48 @@ export class ChildQuestionPlayViewComponent {
     this.clickedZoneIds.set([]);
     this.clickMarks.set([]);
     this.clickMiss.set(false);
+    const count = this.question().letterCount ?? 0;
+    this.letterBoxes.set(count > 0 ? Array.from({ length: count }, () => '') : []);
     this.layoutTick.update((n) => n + 1);
+  }
+
+  letterAttempt(): string {
+    return this.letterBoxes().join('');
+  }
+
+  allLettersFilled(): boolean {
+    const rows = this.letterBoxes();
+    return rows.length > 0 && rows.every((letter) => letter !== '');
+  }
+
+  protected onLetterInput(index: number, event: Event): void {
+    if (this.disabled() || !this.interactive()) {
+      return;
+    }
+    const field = event.target as HTMLInputElement;
+    if (event instanceof InputEvent && event.isComposing) {
+      return;
+    }
+    const chars = Array.from(field.value);
+    const letter = chars.length === 0 ? '' : chars[chars.length - 1];
+    this.letterBoxes.update((rows) => rows.map((row, i) => (i === index ? letter : row)));
+    field.value = letter;
+    if (letter !== '' && index + 1 < this.letterBoxes().length) {
+      this.letterFields()[index + 1]?.nativeElement.focus();
+    }
+    this.lettersChange.emit();
+  }
+
+  protected onLetterKeydown(index: number, event: KeyboardEvent): void {
+    if (event.key !== 'Backspace' || this.letterBoxes()[index] !== '') {
+      return;
+    }
+    if (index === 0) {
+      return;
+    }
+    this.letterBoxes.update((rows) => rows.map((row, i) => (i === index - 1 ? '' : row)));
+    this.letterFields()[index - 1]?.nativeElement.focus();
+    this.lettersChange.emit();
   }
 
   selectedChoiceIds(): number[] {

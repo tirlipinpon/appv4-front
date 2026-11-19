@@ -848,6 +848,7 @@
         (linksChange)="onPreviewSelectionChange()"
         (gapsChange)="onPreviewSelectionChange()"
         (imageChange)="onPreviewSelectionChange()"
+        (lettersChange)="onPreviewSelectionChange()"
       />
       @if (previewResult() === null && (preview()?.formCode !== 'image_interactive' || preview()?.clicksOrdered === false)) {
         <button

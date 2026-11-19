@@ -83,4 +83,6 @@ export interface ChildPlayViewQuestion {
   clicksOrdered?: boolean;
   clickZones?: ChildPlayViewClickZone[];
   clickSteps?: ChildPlayViewClickStep[];
+  /** Nombre de cases lettre par lettre (sans le mot). */
+  letterCount?: number;
 }
