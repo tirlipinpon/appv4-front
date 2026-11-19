@@ -158,4 +158,42 @@ describe('PlayQuestionPage', () => {
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
     http.verify();
   });
+
+  it('affiche liens et envoie les associations choisies', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+      questionId: 42,
+      subjectId: 5,
+      formCode: 'liens',
+      prompt: 'Relie.',
+      links: [
+        { linkId: 1, leftLabel: 'Pomme', rightLabel: 'Fruit' },
+        { linkId: 2, leftLabel: 'Chien', rightLabel: 'Animal' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="child-play-view-links"]')).toBeTruthy();
+    const click = (id: string) =>
+      (root.querySelector(`[data-testid="${id}"]`) as HTMLButtonElement).click();
+    click('child-play-view-link-left-l-1');
+    click('child-play-view-link-right-r-1');
+    click('child-play-view-link-left-l-2');
+    click('child-play-view-link-right-r-2');
+    fixture.detectChanges();
+
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+    expect(attempt.request.body.linkMatches).toEqual(
+      jasmine.arrayContaining([
+        { leftId: 1, rightId: 1 },
+        { leftId: 2, rightId: 2 },
+      ]),
+    );
+    attempt.flush({ passed: true, scorePercent: 100 });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+    http.verify();
+  });
 });

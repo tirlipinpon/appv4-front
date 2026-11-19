@@ -237,4 +237,47 @@
       }
     </div>
   }
+
+  @if (isLinks()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-links-hint">
+      Choisis un mot, puis sa réponse.
+    </p>
+    <div class="child-play-view-links" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem" data-testid="child-play-view-links">
+      <ul class="child-play-view-options">
+        @for (row of linkLefts(); track row.key) {
+          <li>
+            <button
+              type="button"
+              class="child-play-view-option"
+              [class.selected]="linkLeftSelected(row.key) || linkSidePaired(row.key, 'left')"
+              [disabled]="disabled() || !interactive()"
+              [attr.data-testid]="'child-play-view-link-left-' + row.key"
+              (click)="onLinkLeft(row)"
+            >
+              {{ row.label }}
+            </button>
+          </li>
+        }
+      </ul>
+      <ul class="child-play-view-options">
+        @for (row of linkRights(); track row.key) {
+          <li>
+            <button
+              type="button"
+              class="child-play-view-option"
+              [class.selected]="linkSidePaired(row.key, 'right')"
+              [disabled]="disabled() || !interactive()"
+              [attr.data-testid]="'child-play-view-link-right-' + row.key"
+              (click)="onLinkRight(row)"
+            >
+              {{ row.label }}
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+    @if (linksStatus()) {
+      <p class="child-play-view-hint" data-testid="child-play-view-links-status">{{ linksStatus() }}</p>
+    }
+  }
 </div>

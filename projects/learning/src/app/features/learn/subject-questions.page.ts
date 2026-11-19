@@ -64,12 +64,20 @@ export class SubjectQuestionsPage implements OnInit {
     if (code === 'classement') {
       return 'Classement';
     }
+    if (code === 'liens') {
+      return 'Liens';
+    }
     return code ?? '';
   }
 
   protected canPlay(code: string | undefined): boolean {
     return (
-      code === 'vrai_faux' || code === 'qcm' || code === 'memory' || code === 'order' || code === 'classement'
+      code === 'vrai_faux' ||
+      code === 'qcm' ||
+      code === 'memory' ||
+      code === 'order' ||
+      code === 'classement' ||
+      code === 'liens'
     );
   }
 }

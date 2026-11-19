@@ -178,6 +178,9 @@ export class SubjectQuestionsComponent implements OnInit {
     if (model.formCode === 'classement') {
       return view.allCardsPlaced();
     }
+    if (model.formCode === 'liens') {
+      return view.allLinksMatched();
+    }
     return false;
   });
 
@@ -225,6 +228,11 @@ export class SubjectQuestionsComponent implements OnInit {
       cards: question.cards.map((card, index) => ({
         cardId: index + 1,
         label: card.label,
+      })),
+      links: question.links.map((link, index) => ({
+        linkId: index + 1,
+        leftLabel: link.leftLabel,
+        rightLabel: link.rightLabel,
       })),
     });
   }
@@ -961,6 +969,18 @@ function gradePreview(
     const total = source.cards.length || 1;
     const scorePercent = Math.round((100 * ok) / total);
     return { passed: ok === source.cards.length, scorePercent };
+  }
+  if (source.formCode === 'liens') {
+    const matches = view.linkMatches();
+    let ok = 0;
+    for (const match of matches) {
+      if (match.leftId === match.rightId) {
+        ok++;
+      }
+    }
+    const total = source.links.length || 1;
+    const scorePercent = Math.round((100 * ok) / total);
+    return { passed: ok === source.links.length && matches.length === source.links.length, scorePercent };
   }
   return { passed: false, scorePercent: 0 };
 }

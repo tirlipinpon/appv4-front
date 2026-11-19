@@ -63,6 +63,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'classement') {
       return view.allCardsPlaced();
     }
+    if (q.formCode === 'liens') {
+      return view.allLinksMatched();
+    }
     return false;
   });
 
@@ -85,7 +88,8 @@ export class PlayQuestionPage implements OnInit {
           body.formCode !== 'vrai_faux' &&
           body.formCode !== 'memory' &&
           body.formCode !== 'order' &&
-          body.formCode !== 'classement'
+          body.formCode !== 'classement' &&
+          body.formCode !== 'liens'
         ) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
@@ -118,7 +122,9 @@ export class PlayQuestionPage implements OnInit {
             ? { orderedItemIds: view.orderedItemIds() }
             : q.formCode === 'classement'
               ? { placements: view.placements() }
-              : { statements: view.statementAnswers() };
+              : q.formCode === 'liens'
+                ? { linkMatches: view.linkMatches() }
+                : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -174,5 +180,12 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
     cards: (body.cards ?? [])
       .filter((c) => c.label != null)
       .map((c) => ({ cardId: c.cardId, label: c.label! })),
+    links: (body.links ?? [])
+      .filter((link) => link.leftLabel != null && link.rightLabel != null)
+      .map((link) => ({
+        linkId: link.linkId,
+        leftLabel: link.leftLabel!,
+        rightLabel: link.rightLabel!,
+      })),
   };
 }

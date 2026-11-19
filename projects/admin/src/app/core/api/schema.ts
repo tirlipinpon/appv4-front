@@ -1633,6 +1633,13 @@ export interface components {
             matchedPairIds?: number[];
             orderedItemIds?: number[];
             placements?: components["schemas"]["SubmitPlacementAnswer"][];
+            linkMatches?: components["schemas"]["SubmitLinkMatchAnswer"][];
+        };
+        SubmitLinkMatchAnswer: {
+            /** Format: int64 */
+            leftId?: number;
+            /** Format: int64 */
+            rightId?: number;
         };
         SubmitPlacementAnswer: {
             /** Format: int64 */
@@ -2019,6 +2026,12 @@ export interface components {
             label?: string;
             axisLabel?: string;
         };
+        ChildPlayLinkItem: {
+            /** Format: int64 */
+            linkId?: number;
+            leftLabel?: string;
+            rightLabel?: string;
+        };
         ChildPlayPairItem: {
             /** Format: int64 */
             pairId?: number;
@@ -2039,6 +2052,7 @@ export interface components {
             columns?: components["schemas"]["ChildPlayColumnItem"][];
             cards?: components["schemas"]["ChildPlayCardItem"][];
             timelineEnabled?: boolean;
+            links?: components["schemas"]["ChildPlayLinkItem"][];
         };
         ChildPlayStatementItem: {
             /** Format: int64 */
