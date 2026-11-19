@@ -269,6 +269,13 @@ export class SubjectQuestionsComponent implements OnInit {
           : undefined,
       letterCount:
         question.formCode === 'reponse_libre' ? Array.from(question.expectedAnswer).length : undefined,
+      letterMask:
+        question.formCode === 'reponse_libre'
+          ? Array.from(question.expectedAnswer)
+              .map((ch) => (/\s/.test(ch) ? ' ' : '#'))
+              .join('')
+          : undefined,
+      letterExpected: question.formCode === 'reponse_libre' ? question.expectedAnswer : undefined,
       words: [
         ...question.answers.map((word, index) => ({ wordId: index + 1, label: word.label })),
         ...question.decoys.map((word, index) => ({
@@ -299,7 +306,12 @@ export class SubjectQuestionsComponent implements OnInit {
     if (!view || !source || !this.canPreviewSubmit()) {
       return;
     }
-    this.previewResult.set(gradePreview(source, view));
+    const verdict = gradePreview(source, view);
+    this.previewResult.set(verdict);
+    if (source.formCode === 'reponse_libre') {
+      view.refreshLocalLetterLocksFromExpected();
+      view.markLetterWrongs(verdict.passed !== true);
+    }
   }
 
   replayChildPreview(): void {
@@ -1084,9 +1096,22 @@ function gradePreview(
   }
   if (source.formCode === 'reponse_libre') {
     const attempt = view.letterAttempt();
-    const expected = source.expectedAnswer.trim().toLowerCase();
-    const same = attempt.trim().toLowerCase() === expected;
-    return { passed: same, scorePercent: same ? 100 : 0 };
+    const expected = source.expectedAnswer;
+    let total = 0;
+    let ok = 0;
+    for (let i = 0; i < expected.length; i++) {
+      const expCh = expected[i] ?? '';
+      if (/\s/.test(expCh)) {
+        continue;
+      }
+      total += 1;
+      const typed = (attempt[i] ?? '').toLowerCase();
+      if (typed !== '' && typed === expCh.toLowerCase()) {
+        ok += 1;
+      }
+    }
+    const scorePercent = total === 0 ? 0 : Math.round((100 * ok) / total);
+    return { passed: scorePercent === 100, scorePercent };
   }
   return { passed: false, scorePercent: 0 };
 }

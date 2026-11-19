@@ -116,6 +116,15 @@ export class PlayQuestionPage implements OnInit {
   protected onSelectionChange(): void {
     this.selectionTick.update((n) => n + 1);
     const model = this.playModel();
+    const view = this.playView();
+    if (model?.formCode === 'reponse_libre' && view && !this.result()) {
+      this.api.checkLetterLocks(this.subjectId(), this.questionId(), view.letterAttemptForLocks()).subscribe({
+        next: (body) => {
+          view.applyLetterLocks(body.locks ?? []);
+          this.selectionTick.update((n) => n + 1);
+        },
+      });
+    }
     if (model?.formCode === 'image_interactive' && model.clicksOrdered !== false && this.canSubmit()) {
       this.submit();
     }
@@ -151,6 +160,16 @@ export class PlayQuestionPage implements OnInit {
       next: (result) => {
         this.result.set(result);
         this.saving.set(false);
+        if (q.formCode === 'reponse_libre' && view) {
+          this.api
+            .checkLetterLocks(this.subjectId(), this.questionId(), view.letterAttemptForLocks())
+            .subscribe({
+              next: (locksBody) => {
+                view.applyLetterLocks(locksBody.locks ?? []);
+                view.markLetterWrongs(result.passed !== true);
+              },
+            });
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
@@ -228,5 +247,6 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
       step.zoneId == null || !step.prompt ? [] : [{ zoneId: step.zoneId, prompt: step.prompt }],
     ),
     letterCount: body.letterCount,
+    letterMask: body.letterMask,
   };
 }

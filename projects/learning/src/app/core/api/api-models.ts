@@ -20,6 +20,7 @@ export type ChildLearningQuestionItem = components['schemas']['ChildLearningQues
 export type ChildPlayQuestionResponse = components['schemas']['ChildPlayQuestionResponse'];
 export type SubmitChildAttemptRequest = components['schemas']['SubmitChildAttemptRequest'];
 export type ChildAttemptResultResponse = components['schemas']['ChildAttemptResultResponse'];
+export type ChildLetterLocksResponse = components['schemas']['ChildLetterLocksResponse'];
 export type ChildProgressResponse = Required<
   Pick<
     components['schemas']['ChildProgressResponse'],

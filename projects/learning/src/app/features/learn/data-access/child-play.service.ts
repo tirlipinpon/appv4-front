@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import type {
   ChildAttemptResultResponse,
   ChildLearningQuestionsResponse,
+  ChildLetterLocksResponse,
   ChildPlayQuestionResponse,
   SubmitChildAttemptRequest,
 } from '../../../core/api/api-models';
@@ -42,6 +43,19 @@ export class ChildPlayService {
     return this.http.post<ChildAttemptResultResponse>(
       `${environment.apiBaseUrl}/subjects/${subjectId}/questions/${questionId}/attempts`,
       body,
+      { headers: this.headers() },
+    );
+  }
+
+  /** Verrous case par case pendant la saisie lettre (sans tentative). */
+  checkLetterLocks(
+    subjectId: number,
+    questionId: number,
+    attempt: string,
+  ): Observable<ChildLetterLocksResponse> {
+    return this.http.post<ChildLetterLocksResponse>(
+      `${environment.apiBaseUrl}/subjects/${subjectId}/questions/${questionId}/letter-locks`,
+      { attempt },
       { headers: this.headers() },
     );
   }

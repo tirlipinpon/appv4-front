@@ -4,6 +4,7 @@
       class="child-play-view-form"
       [class.memory]="isMemory()"
       [class.order]="isOrder()"
+      [class.letters]="isLetters()"
       data-testid="child-play-view-form"
     >
       {{ question().formLabel }}
@@ -440,27 +441,77 @@
 
   @if (isLetters()) {
     <div
+      class="child-play-view-letters"
       data-testid="child-play-view-letters"
-      style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem"
+      style="display: flex; flex-wrap: wrap; gap: 0.65rem 1rem; margin: 0.35rem 0 0.65rem; align-items: center"
     >
-      @for (letter of letterBoxes(); track $index) {
-        <input
-          #letterBox
-          type="text"
-          inputmode="text"
-          autocomplete="off"
-          [attr.aria-label]="'Lettre ' + ($index + 1)"
-          [attr.data-testid]="'child-play-view-letter-' + $index"
-          [value]="letter"
-          [disabled]="disabled() || !interactive()"
-          style="width: 2.2rem; height: 2.4rem; text-align: center; font-size: 1.1rem; font-weight: 800"
-          (input)="onLetterInput($index, $event)"
-          (keydown)="onLetterKeydown($index, $event)"
-        />
+      @for (word of letterWords(); track word.start) {
+        <div
+          class="child-play-view-letter-word"
+          [attr.data-testid]="'child-play-view-letter-word-' + word.start"
+          style="display: flex; flex-wrap: nowrap; gap: 0.55rem; align-items: center"
+        >
+          @for (index of word.indexes; track index) {
+            <input
+              #letterBox
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              class="child-play-view-letter"
+              [attr.aria-label]="'Lettre ' + (index + 1)"
+              [attr.data-testid]="'child-play-view-letter-' + index"
+              [value]="letterBoxes()[index]"
+              [disabled]="disabled() || !interactive() || letterLocked(index)"
+              [style.box-sizing]="'border-box'"
+              [style.width]="'2.85rem'"
+              [style.height]="'3.1rem'"
+              [style.padding]="'0'"
+              [style.border]="'2px solid'"
+              [style.border-radius]="'0.7rem'"
+              [style.font-family]="'inherit'"
+              [style.font-size]="'1.35rem'"
+              [style.font-weight]="'800'"
+              [style.text-align]="'center'"
+              [style.text-transform]="'lowercase'"
+              [style.outline]="'none'"
+              [style.caret-color]="'var(--app-primary, #7c5cff)'"
+              [style.color]="'var(--app-text, #f5f1ff)'"
+              [style.border-color]="
+                letterLocked(index)
+                  ? 'var(--app-form-vrai-faux, #2bb673)'
+                  : letterWrong(index)
+                    ? 'var(--app-error, #e35d6a)'
+                    : letterBoxes()[index] !== ''
+                      ? 'var(--app-primary, #7c5cff)'
+                      : 'color-mix(in srgb, var(--app-primary, #7c5cff) 45%, var(--app-outline, #4a3f6e))'
+              "
+              [style.background]="
+                letterLocked(index)
+                  ? 'color-mix(in srgb, var(--app-form-vrai-faux, #2bb673) 28%, var(--app-surface-card, #1a1436))'
+                  : letterWrong(index)
+                    ? 'color-mix(in srgb, var(--app-error, #e35d6a) 28%, var(--app-surface-card, #1a1436))'
+                    : letterBoxes()[index] !== ''
+                      ? 'color-mix(in srgb, var(--app-primary, #7c5cff) 28%, var(--app-surface-card, #1a1436))'
+                      : 'color-mix(in srgb, var(--app-surface-card, #1a1436) 88%, var(--app-primary, #7c5cff))'
+              "
+              [style.box-shadow]="
+                letterLocked(index)
+                  ? '0 4px 0 color-mix(in srgb, var(--app-form-vrai-faux, #2bb673) 35%, transparent)'
+                  : letterWrong(index)
+                    ? '0 4px 0 color-mix(in srgb, var(--app-error, #e35d6a) 35%, transparent)'
+                    : '0 4px 0 color-mix(in srgb, var(--app-primary, #7c5cff) 22%, transparent)'
+              "
+              [style.opacity]="disabled() && !letterLocked(index) ? '0.55' : '1'"
+              [style.cursor]="letterLocked(index) || disabled() || !interactive() ? 'default' : 'text'"
+              (input)="onLetterInput(index, $event)"
+              (keydown)="onLetterKeydown(index, $event)"
+            />
+          }
+        </div>
       }
     </div>
     <p class="child-play-view-hint" data-testid="child-play-view-letters-hint">
-      Une lettre par case, puis Valider.
+      Une lettre par case (l’espace se saute), puis Valider.
     </p>
   }
 </div>

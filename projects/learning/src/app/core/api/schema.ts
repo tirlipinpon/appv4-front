@@ -644,6 +644,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/subjects/{subjectId}/questions/{questionId}/letter-locks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verrouiller les lettres déjà justes (sans enregistrer) */
+        post: operations["checkChildLetterLocks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/subjects/{subjectId}/questions/{questionId}/attempts": {
         parameters: {
             query?: never;
@@ -1629,6 +1646,12 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
         };
+        ChildLetterLocksRequest: {
+            attempt?: string;
+        };
+        ChildLetterLocksResponse: {
+            locks?: boolean[];
+        };
         SubmitChildAttemptRequest: {
             selectedChoiceIds?: number[];
             statements?: components["schemas"]["SubmitStatementAnswer"][];
@@ -2098,6 +2121,7 @@ export interface components {
             clickSteps?: components["schemas"]["ChildPlayClickStepItem"][];
             /** Format: int32 */
             letterCount?: number;
+            letterMask?: string;
         };
         ChildPlayStatementItem: {
             /** Format: int64 */
@@ -3806,6 +3830,62 @@ export interface operations {
                 };
             };
             /** @description Demande inconnue */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    checkChildLetterLocks: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChildLetterLocksRequest"];
+            };
+        };
+        responses: {
+            /** @description Verrous par case */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildLetterLocksResponse"];
+                };
+            };
+            /** @description Forme non lettre par lettre */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière ou question absente / non liée */
             404: {
                 headers: {
                     [name: string]: unknown;

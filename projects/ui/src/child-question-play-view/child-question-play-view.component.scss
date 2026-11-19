@@ -21,7 +21,8 @@
 }
 
 .child-play-view-form.memory,
-.child-play-view-form.order {
+.child-play-view-form.order,
+.child-play-view-form.letters {
   color: var(--app-primary, #7c5cff);
 }
 
@@ -421,3 +422,4 @@
 .cdk-drag-placeholder {
   opacity: 0.35;
 }
+
