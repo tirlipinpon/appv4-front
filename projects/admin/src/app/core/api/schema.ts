@@ -1638,6 +1638,7 @@ export interface components {
             linkMatches?: components["schemas"]["SubmitLinkMatchAnswer"][];
             gapFills?: components["schemas"]["SubmitGapFillAnswer"][];
             zoneClicks?: components["schemas"]["SubmitZoneClickAnswer"][];
+            attempt?: string;
         };
         SubmitGapFillAnswer: {
             /** Format: int32 */
@@ -2095,6 +2096,8 @@ export interface components {
             clicksOrdered?: boolean;
             clickZones?: components["schemas"]["ChildPlayClickZoneItem"][];
             clickSteps?: components["schemas"]["ChildPlayClickStepItem"][];
+            /** Format: int32 */
+            letterCount?: number;
         };
         ChildPlayStatementItem: {
             /** Format: int64 */

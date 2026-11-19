@@ -72,6 +72,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'image_interactive') {
       return view.imageReady();
     }
+    if (q.formCode === 'reponse_libre') {
+      return view.allLettersFilled();
+    }
     return false;
   });
 
@@ -97,7 +100,8 @@ export class PlayQuestionPage implements OnInit {
           body.formCode !== 'classement' &&
           body.formCode !== 'liens' &&
           body.formCode !== 'case_vide' &&
-          body.formCode !== 'image_interactive'
+          body.formCode !== 'image_interactive' &&
+          body.formCode !== 'reponse_libre'
         ) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
@@ -140,7 +144,9 @@ export class PlayQuestionPage implements OnInit {
                   ? { gapFills: view.gapFills() }
                   : q.formCode === 'image_interactive'
                     ? { zoneClicks: view.zoneClicks().map((zoneId) => ({ zoneId })) }
-                    : { statements: view.statementAnswers() };
+                    : q.formCode === 'reponse_libre'
+                      ? { attempt: view.letterAttempt() }
+                      : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -221,5 +227,6 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
     clickSteps: (body.clickSteps ?? []).flatMap((step) =>
       step.zoneId == null || !step.prompt ? [] : [{ zoneId: step.zoneId, prompt: step.prompt }],
     ),
+    letterCount: body.letterCount,
   };
 }

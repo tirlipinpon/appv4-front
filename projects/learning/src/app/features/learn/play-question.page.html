@@ -23,6 +23,7 @@
       (linksChange)="onSelectionChange()"
       (gapsChange)="onSelectionChange()"
       (imageChange)="onSelectionChange()"
+      (lettersChange)="onSelectionChange()"
     />
 
     @if (!result() && (playModel()?.formCode !== 'image_interactive' || playModel()?.clicksOrdered === false)) {

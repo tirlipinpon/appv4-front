@@ -188,6 +188,9 @@ export class SubjectQuestionsComponent implements OnInit {
     if (model.formCode === 'image_interactive') {
       return view.imageReady();
     }
+    if (model.formCode === 'reponse_libre') {
+      return view.allLettersFilled();
+    }
     return false;
   });
 
@@ -264,6 +267,8 @@ export class SubjectQuestionsComponent implements OnInit {
               )
               .map((row) => ({ zoneId: row.zoneId, prompt: row.zone.label }))
           : undefined,
+      letterCount:
+        question.formCode === 'reponse_libre' ? Array.from(question.expectedAnswer).length : undefined,
       words: [
         ...question.answers.map((word, index) => ({ wordId: index + 1, label: word.label })),
         ...question.decoys.map((word, index) => ({
@@ -1076,6 +1081,12 @@ function gradePreview(
       passed: source.requireAllCorrect ? ok === correctIds.size && correctIds.size > 0 : ok >= 1,
       scorePercent: Math.round((100 * ok) / total),
     };
+  }
+  if (source.formCode === 'reponse_libre') {
+    const attempt = view.letterAttempt();
+    const expected = source.expectedAnswer.trim().toLowerCase();
+    const same = attempt.trim().toLowerCase() === expected;
+    return { passed: same, scorePercent: same ? 100 : 0 };
   }
   return { passed: false, scorePercent: 0 };
 }

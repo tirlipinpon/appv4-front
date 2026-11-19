@@ -73,6 +73,9 @@ export class SubjectQuestionsPage implements OnInit {
     if (code === 'image_interactive') {
       return 'Image à cliquer';
     }
+    if (code === 'reponse_libre') {
+      return 'Lettre par lettre';
+    }
     return code ?? '';
   }
 
@@ -85,7 +88,8 @@ export class SubjectQuestionsPage implements OnInit {
       code === 'classement' ||
       code === 'liens' ||
       code === 'case_vide' ||
-      code === 'image_interactive'
+      code === 'image_interactive' ||
+      code === 'reponse_libre'
     );
   }
 }
