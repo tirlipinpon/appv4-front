@@ -17,7 +17,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
-import { ChildQuestionPlayViewComponent, type ChildPlayViewQuestion } from '@appv4/ui';
+import {
+  ChildQuestionPlayViewComponent,
+  QuestionFormMarkComponent,
+  type ChildPlayViewQuestion,
+} from '@appv4/ui';
 
 import type { TeacherSubjectFollowersResponse } from '../../../core/api/api-models';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
@@ -69,6 +73,8 @@ export interface QuestionDestination {
 interface FormChoice {
   code: string;
   label: string;
+  iconCode: string | null;
+  color: string | null;
 }
 
 /**
@@ -98,6 +104,7 @@ interface FormChoice {
     ClickZoneEditorComponent,
     LetterBoxesComponent,
     ChildQuestionPlayViewComponent,
+    QuestionFormMarkComponent,
   ],
   templateUrl: './subject-questions.component.html',
   styleUrl: './subject-questions.component.scss',
@@ -403,7 +410,12 @@ export class SubjectQuestionsComponent implements OnInit {
             if (!form.code) {
               return [];
             }
-            return [{ code: form.code, label: form.label || form.code }];
+            return [{
+              code: form.code,
+              label: form.label || form.code,
+              iconCode: form.iconCode ?? null,
+              color: form.color ?? null,
+            }];
           });
           this.forms.set(forms);
           this.formsLoading.set(false);
@@ -416,6 +428,15 @@ export class SubjectQuestionsComponent implements OnInit {
           this.formsError.set(httpErrorMessage(err, 'Formes indisponibles.'));
         },
       });
+  }
+
+  protected formOf(code: string): FormChoice | undefined {
+    return this.forms().find((form) => form.code === code);
+  }
+
+  /** Teinte API, seulement si c'est un code #rrggbb. */
+  protected formTint(color: string | null | undefined): string | null {
+    return color && /^#[0-9a-fA-F]{6}$/.test(color) ? color : null;
   }
 
   selectForm(code: string): void {

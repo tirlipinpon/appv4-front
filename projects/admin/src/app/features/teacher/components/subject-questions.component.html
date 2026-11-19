@@ -24,9 +24,11 @@
             type="button"
             [disabled]="saving()"
             [class.selected]="selectedCode() === form.code"
+            [class.tinted]="formTint(form.color) !== null"
+            [style.--form-color]="formTint(form.color)"
             (click)="selectForm(form.code)"
           >
-            {{ form.label }}
+            <app-question-form-mark [iconCode]="form.iconCode" [color]="form.color" [label]="form.label" />
           </button>
         }
       </div>
@@ -742,7 +744,13 @@
             @if (question.prompt) {
               <p class="prompt">{{ question.prompt }}</p>
             }
-            <p class="kind">{{ question.formLabel }}</p>
+            <p class="kind">
+              <app-question-form-mark
+                [iconCode]="formOf(question.formCode)?.iconCode"
+                [color]="formOf(question.formCode)?.color"
+                [label]="question.formLabel"
+              />
+            </p>
             @if (question.formCode === 'memory') {
               <ul class="answers">
                 @for (pair of question.pairs; track $index) {

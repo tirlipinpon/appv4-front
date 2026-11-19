@@ -125,6 +125,12 @@
   line-height: 1;
 }
 
+.pick-icon.tinted,
+.subject-icon.tinted {
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px var(--subject-accent);
+}
+
 .pick-name {
   font-weight: 600;
 }

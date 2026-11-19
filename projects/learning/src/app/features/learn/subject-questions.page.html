@@ -20,12 +20,24 @@
               [routerLink]="['/learn', subjectId(), 'play', question.questionId]"
               [attr.data-testid]="'subject-question-' + question.questionId"
             >
-              <span class="form">{{ formLabel(question.formCode) }}</span>
+              <span class="form">
+                <app-question-form-mark
+                  [iconCode]="question.iconCode"
+                  [color]="question.color"
+                  [label]="question.formLabel ?? ''"
+                />
+              </span>
               <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
             </a>
           } @else {
             <div class="row locked" [attr.data-testid]="'subject-question-' + question.questionId">
-              <span class="form">{{ formLabel(question.formCode) }}</span>
+              <span class="form">
+                <app-question-form-mark
+                  [iconCode]="question.iconCode"
+                  [color]="question.color"
+                  [label]="question.formLabel ?? ''"
+                />
+              </span>
               <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
               <span class="hint">Pas encore jouable</span>
             </div>

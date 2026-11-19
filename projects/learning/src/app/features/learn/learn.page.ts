@@ -41,8 +41,12 @@ export class LearnPage implements OnInit {
     });
   }
 
-  protected cardTint(iconCode: string | null | undefined): string {
-    return subjectCardTint(iconCode);
+  protected cardTint(subject: { iconCode?: string | null; accentColor?: string | null }): string {
+    const accent = subject.accentColor;
+    if (accent && /^#[0-9a-fA-F]{6}$/.test(accent)) {
+      return accent;
+    }
+    return subjectCardTint(subject.iconCode);
   }
 
   protected iconSrc(iconCode: string | null | undefined): string | null {

@@ -2,6 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { QuestionFormMarkComponent } from '@appv4/ui';
+
 import type { ChildLearningQuestionItem } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { ChildPlayService } from './data-access/child-play.service';
@@ -12,7 +14,7 @@ import { shuffleCopy } from './shuffle';
  */
 @Component({
   selector: 'app-subject-questions-page',
-  imports: [RouterLink],
+  imports: [RouterLink, QuestionFormMarkComponent],
   templateUrl: './subject-questions.page.html',
   styleUrl: './subject-questions.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,46 +48,6 @@ export class SubjectQuestionsPage implements OnInit {
         this.error.set(apiErrorMessage(err, 'Impossible de charger les questions.'));
       },
     });
-  }
-
-  protected formLabel(code: string | undefined): string {
-    if (code === 'vrai_faux') {
-      return 'Vrai ou faux';
-    }
-    if (code === 'qcm') {
-      return 'QCM';
-    }
-    if (code === 'memory') {
-      return 'Memory';
-    }
-    if (code === 'order') {
-      return 'Ordre';
-    }
-    if (code === 'classement') {
-      return 'Classement';
-    }
-    if (code === 'liens') {
-      return 'Liens';
-    }
-    if (code === 'case_vide') {
-      return 'Case vide';
-    }
-    if (code === 'image_interactive') {
-      return 'Image à cliquer';
-    }
-    if (code === 'reponse_libre') {
-      return 'Lettre par lettre';
-    }
-    if (code === 'texte') {
-      return 'Réponse libre';
-    }
-    if (code === 'puzzle') {
-      return 'Puzzle';
-    }
-    if (code === 'simon') {
-      return 'Simon';
-    }
-    return code ?? '';
   }
 
   protected canPlay(code: string | undefined): boolean {

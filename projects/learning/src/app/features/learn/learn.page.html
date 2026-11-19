@@ -24,7 +24,7 @@
           <li>
             <a
               class="learn-subject-card"
-              [style.--card-tint]="cardTint(subject.iconCode)"
+              [style.--card-tint]="cardTint(subject)"
               [routerLink]="['/learn', subject.subjectId]"
               [attr.data-testid]="'learn-subject-' + subject.subjectId"
             >

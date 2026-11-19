@@ -13,7 +13,7 @@
   } @else if (error()) {
     <p class="subject-board-status subject-board-error" data-testid="subject-board-error">{{ error() }}</p>
   } @else if (board(); as b) {
-    <article class="subject-board-hero" [style.--card-tint]="cardTint(b.iconCode)" data-testid="subject-board-hero">
+    <article class="subject-board-hero" [style.--card-tint]="cardTint(b)" data-testid="subject-board-hero">
       @if (b.grade) {
         <p class="subject-board-grade" data-testid="subject-board-grade">{{ b.grade }}</p>
       }

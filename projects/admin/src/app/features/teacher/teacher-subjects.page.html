@@ -305,7 +305,13 @@
                             <span class="name" data-testid="subject-name" [class.inactive]="!subject.active">{{ subject.name }}</span>
                             <span class="question-count" data-testid="subject-question-count">{{ subject.questionCount }} question{{ subject.questionCount === 1 ? '' : 's' }}</span>
                             @if (subject.iconCode) {
-                              <app-subject-icon-view class="subject-icon" data-testid="subject-icon" [code]="subject.iconCode" />
+                              <app-subject-icon-view
+                                class="subject-icon"
+                                data-testid="subject-icon"
+                                [class.tinted]="subjectAccent(subject) !== null"
+                                [style.--subject-accent]="subjectAccent(subject)"
+                                [code]="subject.iconCode"
+                              />
                             }
                             @if (ownerAside(subject); as owner) {
                               <strong class="owner">{{ owner }}</strong>
@@ -378,14 +384,6 @@
                       (input)="onNameInput(school.schoolId, grade.grade, inputValue($event))"
                     />
                   </mat-form-field>
-                  <app-subject-icon-picker
-                    class="icon-picker add-icon"
-                    testId="subject-new-icon"
-                    [choices]="iconChoices()"
-                    [value]="iconDraft(school.schoolId, grade.grade)"
-                    [disabled]="saving()"
-                    (valueChange)="onIconDraft(school.schoolId, grade.grade, $event)"
-                  />
                   <button
                     mat-flat-button
                     color="primary"

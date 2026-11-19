@@ -44,7 +44,12 @@
                     >
                       <span class="pick-title">
                         @if (item.iconCode) {
-                          <app-subject-icon-view class="pick-icon" [code]="item.iconCode" />
+                          <app-subject-icon-view
+                            class="pick-icon"
+                            [class.tinted]="subjectAccent(item) !== null"
+                            [style.--subject-accent]="subjectAccent(item)"
+                            [code]="item.iconCode"
+                          />
                         }
                         <span class="pick-name">{{ item.name }}</span>
                       </span>
@@ -63,7 +68,12 @@
         <section class="subject">
           <h2>
             @if (subject.iconCode) {
-              <app-subject-icon-view class="subject-icon" [code]="subject.iconCode" />
+              <app-subject-icon-view
+                class="subject-icon"
+                [class.tinted]="subjectAccent(subject) !== null"
+                [style.--subject-accent]="subjectAccent(subject)"
+                [code]="subject.iconCode"
+              />
             }
             {{ subject.name }}
           </h2>
