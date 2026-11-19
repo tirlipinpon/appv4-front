@@ -25,6 +25,8 @@ import type {
   ChildPlayViewPair,
   ChildPlayViewQuestion,
   ChildPlayViewStatement,
+  ChildPlayViewClickPoint,
+  ChildPlayViewClickZone,
   ChildPlayViewWord,
 } from './child-question-play-view.model';
 
@@ -66,6 +68,13 @@ export interface GapWordView {
   label: string;
 }
 
+interface ClickMark {
+  n: string;
+  x: number;
+  y: number;
+  zoneId?: number;
+}
+
 export interface GapPart {
   kind: 'text' | 'hole';
   text: string;
@@ -73,6 +82,43 @@ export interface GapPart {
 }
 
 const SOURCE_KEY = 'source';
+
+function imageSource(raw: string | undefined): string {
+  if (!raw) {
+    return '';
+  }
+  return raw.startsWith('data:') ? raw : `data:image/webp;base64,${raw}`;
+}
+
+function playZoneContains(zone: ChildPlayViewClickZone, point: ChildPlayViewClickPoint): boolean {
+  const points = zone.points ?? [];
+  if (zone.shape === 'rect' && points.length >= 2) {
+    const x = Math.min(points[0].x, points[1].x);
+    const y = Math.min(points[0].y, points[1].y);
+    const width = Math.abs(points[1].x - points[0].x);
+    const height = Math.abs(points[1].y - points[0].y);
+    return point.x >= x && point.y >= y && point.x <= x + width && point.y <= y + height;
+  }
+  if (zone.shape === 'ellipse' && points.length >= 2) {
+    const rx = Math.max(0.02, points[1].x - points[0].x);
+    const ry = Math.max(0.02, points[1].y - points[0].y);
+    const dx = (point.x - points[0].x) / rx;
+    const dy = (point.y - points[0].y) / ry;
+    return dx * dx + dy * dy <= 1;
+  }
+  let inside = false;
+  for (let index = 0, previous = points.length - 1; index < points.length; previous = index, index += 1) {
+    const current = points[index];
+    const before = points[previous];
+    const crosses =
+      current.y > point.y !== before.y > point.y &&
+      point.x < ((before.x - current.x) * (point.y - current.y)) / (before.y - current.y) + current.x;
+    if (crosses) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
 
 function shuffleCopy<T>(items: readonly T[]): T[] {
   const next = [...items];
@@ -194,6 +240,7 @@ export class ChildQuestionPlayViewComponent {
   readonly classificationChange = output<void>();
   readonly linksChange = output<void>();
   readonly gapsChange = output<void>();
+  readonly imageChange = output<void>();
 
   private readonly layoutTick = signal(0);
   private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -206,6 +253,10 @@ export class ChildQuestionPlayViewComponent {
   protected readonly isClassification = computed(() => this.question().formCode === 'classement');
   protected readonly isLinks = computed(() => this.question().formCode === 'liens');
   protected readonly isGaps = computed(() => this.question().formCode === 'case_vide');
+  protected readonly isImage = computed(() => this.question().formCode === 'image_interactive');
+  protected readonly isOrderedImage = computed(
+    () => this.isImage() && this.question().clicksOrdered !== false && (this.question().clickSteps ?? []).length > 0,
+  );
   protected readonly playable = computed(
     () =>
       this.isQcm() ||
@@ -214,7 +265,8 @@ export class ChildQuestionPlayViewComponent {
       this.isOrder() ||
       this.isClassification() ||
       this.isLinks() ||
-      this.isGaps(),
+      this.isGaps() ||
+      this.isImage(),
   );
 
   readonly orderedItems = signal<OrderItemView[]>([]);
@@ -233,6 +285,49 @@ export class ChildQuestionPlayViewComponent {
   readonly selectedGapHole = signal<number | null>(null);
   private readonly gapPlacements = signal<Readonly<Record<number, string>>>({});
 
+  protected readonly clickStep = signal(0);
+  private readonly clickedZoneIds = signal<number[]>([]);
+  protected readonly clickMarks = signal<ClickMark[]>([]);
+  protected readonly clickMiss = signal(false);
+
+  protected readonly imageSrc = computed(() => imageSource(this.question().imageWebp));
+
+  protected readonly currentClickPrompt = computed(() => {
+    const steps = this.question().clickSteps ?? [];
+    if (steps.length === 0) {
+      return '';
+    }
+    const index = Math.min(this.clickStep(), steps.length - 1);
+    return steps[index]?.prompt ?? '';
+  });
+
+  protected readonly clickProgress = computed(() => {
+    const total = (this.question().clickSteps ?? []).length;
+    if (total === 0) {
+      return '';
+    }
+    const current = Math.min(this.clickStep() + 1, total);
+    return `Question ${current} sur ${total}`;
+  });
+
+  /** Numéro du marqueur sur l'image, par zone (mode sans ordre). */
+  protected readonly clickMarkByZoneId = computed(() => {
+    const map = new Map<number, string>();
+    for (const mark of this.clickMarks()) {
+      if (mark.zoneId != null) {
+        map.set(mark.zoneId, mark.n);
+      }
+    }
+    return map;
+  });
+
+  protected markForZone(zoneId: number | undefined): string | null {
+    if (zoneId === undefined) {
+      return null;
+    }
+    return this.clickMarkByZoneId().get(zoneId) ?? null;
+  }
+
   protected readonly classListIds = computed(() => [
     SOURCE_KEY,
     ...this.classColumns().map((column) => column.key),
@@ -241,6 +336,14 @@ export class ChildQuestionPlayViewComponent {
   protected readonly remainingCount = computed(() => this.sourceCards().length);
 
   constructor() {
+    effect(() => {
+      this.question();
+      this.layoutTick();
+      this.clickStep.set(0);
+      this.clickedZoneIds.set([]);
+      this.clickMarks.set([]);
+      this.clickMiss.set(false);
+    });
     effect(() => {
       const items = this.question().items ?? [];
       this.layoutTick();
@@ -349,6 +452,10 @@ export class ChildQuestionPlayViewComponent {
     this.linkPairs.set({});
     this.selectedGapHole.set(null);
     this.gapPlacements.set({});
+    this.clickStep.set(0);
+    this.clickedZoneIds.set([]);
+    this.clickMarks.set([]);
+    this.clickMiss.set(false);
     this.layoutTick.update((n) => n + 1);
   }
 
@@ -460,6 +567,99 @@ export class ChildQuestionPlayViewComponent {
       out.push({ holeIndex: Number(hole), wordId: word.wordId });
     }
     return out;
+  }
+
+  imageReady(): boolean {
+    if (!this.isImage()) {
+      return false;
+    }
+    if (this.isOrderedImage()) {
+      const steps = this.question().clickSteps ?? [];
+      return steps.length > 0 && this.clickStep() >= steps.length;
+    }
+    return this.clickedZoneIds().length > 0;
+  }
+
+  zoneClicks(): number[] {
+    if (this.isOrderedImage()) {
+      return this.clickMarks().flatMap((mark) => (mark.zoneId == null ? [] : [mark.zoneId]));
+    }
+    return this.clickedZoneIds();
+  }
+
+  protected onImageClick(event: MouseEvent): void {
+    // Sans ordre, imageReady() autorise Valider dès le 1er clic : il ne doit pas bloquer les suivants.
+    if (this.disabled() || !this.interactive()) {
+      return;
+    }
+    if (this.isOrderedImage() && this.imageReady()) {
+      return;
+    }
+    const host = event.currentTarget;
+    if (!(host instanceof HTMLElement)) {
+      return;
+    }
+    const bounds = host.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0) {
+      return;
+    }
+    const point = {
+      x: (event.clientX - bounds.left) / bounds.width,
+      y: (event.clientY - bounds.top) / bounds.height,
+    };
+    const zones = this.question().clickZones ?? [];
+    let hit: ChildPlayViewClickZone | null = null;
+    for (let index = zones.length - 1; index >= 0; index -= 1) {
+      if (playZoneContains(zones[index], point)) {
+        hit = zones[index];
+        break;
+      }
+    }
+    if (hit?.zoneId == null) {
+      this.clickMiss.set(this.isOrderedImage());
+      return;
+    }
+    const zoneId = hit.zoneId;
+    if (this.isOrderedImage()) {
+      const step = (this.question().clickSteps ?? [])[this.clickStep()];
+      if (step?.zoneId !== zoneId) {
+        this.clickMiss.set(true);
+        return;
+      }
+      this.clickMiss.set(false);
+      const rank = String(this.clickStep() + 1);
+      this.clickMarks.update((marks) => [...marks, { n: rank, x: point.x, y: point.y, zoneId }]);
+      this.clickStep.update((stepIndex) => stepIndex + 1);
+      this.imageChange.emit();
+      return;
+    }
+    const targetIds = new Set(
+      (this.question().clickSteps ?? []).flatMap((step) =>
+        step.zoneId === undefined ? [] : [step.zoneId],
+      ),
+    );
+    // Sans ordre : seuls les éléments de la liste comptent (pas les leurres).
+    if (targetIds.size > 0 && !targetIds.has(zoneId)) {
+      this.clickMiss.set(true);
+      return;
+    }
+    this.clickMiss.set(false);
+    const ids = this.clickedZoneIds();
+    if (ids.includes(zoneId)) {
+      this.clickedZoneIds.set(ids.filter((id) => id !== zoneId));
+      this.clickMarks.update((marks) =>
+        marks
+          .filter((mark) => mark.zoneId !== zoneId)
+          .map((mark, index) => ({ ...mark, n: String(index + 1) })),
+      );
+    } else {
+      this.clickedZoneIds.set([...ids, zoneId]);
+      this.clickMarks.update((marks) => [
+        ...marks,
+        { n: String(ids.length + 1), x: point.x, y: point.y, zoneId },
+      ]);
+    }
+    this.imageChange.emit();
   }
 
   allGapsFilled(): boolean {

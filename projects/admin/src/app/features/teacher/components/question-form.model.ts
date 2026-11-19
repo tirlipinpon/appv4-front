@@ -96,6 +96,8 @@ export interface SavedQuestion {
   boardMode: PuzzleBoardMode;
   boardImageDataUrl: string;
   requireAllCorrect: boolean;
+  /** true : une consigne par zone juste. false : clics sans ordre. */
+  clicksOrdered: boolean;
   zones: ClickZone[];
   snapDistance: number;
   /** Frise Ordre active. False hors forme order. */
@@ -133,6 +135,7 @@ export interface QuestionDraftSnapshot {
   boardMode: PuzzleBoardMode;
   boardImage: string;
   requireAllCorrect: boolean;
+  clicksOrdered: boolean;
   clickZones: ClickZone[];
   puzzleMagnet: number;
   timelineEnabled: boolean;

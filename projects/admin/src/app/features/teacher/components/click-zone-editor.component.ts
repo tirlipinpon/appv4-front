@@ -74,6 +74,8 @@ export class ClickZoneEditorComponent {
   readonly readonly = input(false);
   /** click : vert et rouge. puzzle : mêmes formes, sans côté juste ou faux. */
   readonly variant = input<'click' | 'puzzle'>('click');
+  /** false : les zones n'ont pas de rang de clic. */
+  readonly orderEnabled = input(true);
   /** Magnétisme du puzzle, en fraction de la largeur de l'image. */
   readonly magnet = input(0.08);
 
@@ -819,7 +821,7 @@ export class ClickZoneEditorComponent {
   }
 
   showClickOrder(zone: ClickZone): boolean {
-    return this.variant() === 'click' && zone.correct && zone.clickOrder != null;
+    return this.orderEnabled() && this.variant() === 'click' && zone.correct && zone.clickOrder != null;
   }
 
   orderSpot(zone: ClickZone): ClickPoint {

@@ -467,17 +467,34 @@
             [imageDataUrl]="clickImage()"
             [zones]="clickZones()"
             [disabled]="saving()"
+            [orderEnabled]="clicksOrdered()"
             (imageSelected)="setClickImage($event)"
             (imageError)="setClickImageError($event)"
             (zonesChange)="setClickZones($event)"
           />
           <mat-checkbox
-            [checked]="requireAllCorrect()"
+            [checked]="clicksOrdered()"
             [disabled]="saving()"
-            (change)="setRequireAllCorrect($event.checked)"
+            (change)="setClicksOrdered($event.checked)"
           >
-            Toutes les zones correctes sont à cliquer
+            Les clics suivent un ordre
           </mat-checkbox>
+          @if (clicksOrdered()) {
+            <p class="hint">
+              Chaque nom de zone juste est la consigne de cette étape. L'enfant passe à la suivante seulement au bon clic.
+            </p>
+          } @else {
+            <p class="hint">
+              L'enfant voit l'énoncé, la liste des noms des zones justes (quoi chercher), et l'image. Les emplacements restent cachés.
+            </p>
+            <mat-checkbox
+              [checked]="requireAllCorrect()"
+              [disabled]="saving()"
+              (change)="setRequireAllCorrect($event.checked)"
+            >
+              Toutes les zones correctes sont à cliquer
+            </mat-checkbox>
+          }
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
@@ -666,6 +683,7 @@
             } @else if (question.formCode === 'image_interactive') {
               <app-click-zone-editor
                 [readonly]="true"
+                [orderEnabled]="question.clicksOrdered !== false"
                 [imageDataUrl]="question.imageDataUrl"
                 [zones]="question.zones"
               />
@@ -676,7 +694,7 @@
                     : 'Une partie des zones correctes suffit.'
                 }}
               </p>
-              @if (clickSequenceLabel(question.zones); as order) {
+              @if (question.clicksOrdered !== false && clickSequenceLabel(question.zones); as order) {
                 <p class="hint">Ordre des clics : {{ order }}</p>
               }
             } @else if (question.formCode === 'puzzle') {
@@ -829,8 +847,9 @@
         (classificationChange)="onPreviewSelectionChange()"
         (linksChange)="onPreviewSelectionChange()"
         (gapsChange)="onPreviewSelectionChange()"
+        (imageChange)="onPreviewSelectionChange()"
       />
-      @if (previewResult() === null) {
+      @if (previewResult() === null && (preview()?.formCode !== 'image_interactive' || preview()?.clicksOrdered === false)) {
         <button
           type="button"
           class="child-preview-submit"

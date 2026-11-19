@@ -31,6 +31,7 @@ function emptyDraft(overrides: Partial<QuestionDraftSnapshot> = {}): QuestionDra
     boardMode: PUZZLE_BOARD_MODE.TROUS,
     boardImage: '',
     requireAllCorrect: true,
+    clicksOrdered: true,
     clickZones: [],
     puzzleMagnet: 0.08,
     timelineEnabled: false,

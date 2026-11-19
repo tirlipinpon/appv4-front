@@ -1164,6 +1164,7 @@ export interface components {
             /** Format: double */
             snapDistance?: number;
             timelineEnabled?: boolean;
+            clicksOrdered?: boolean;
         };
         TeacherQuestionCardInput: {
             label?: string;
@@ -1323,6 +1324,7 @@ export interface components {
             /** Format: double */
             snapDistance?: number;
             timelineEnabled?: boolean;
+            clicksOrdered?: boolean;
         };
         SetTeacherSubjectIconRequest: {
             iconCode?: string;
@@ -1635,6 +1637,7 @@ export interface components {
             placements?: components["schemas"]["SubmitPlacementAnswer"][];
             linkMatches?: components["schemas"]["SubmitLinkMatchAnswer"][];
             gapFills?: components["schemas"]["SubmitGapFillAnswer"][];
+            zoneClicks?: components["schemas"]["SubmitZoneClickAnswer"][];
         };
         SubmitGapFillAnswer: {
             /** Format: int32 */
@@ -1658,6 +1661,10 @@ export interface components {
             /** Format: int64 */
             statementId?: number;
             value?: boolean;
+        };
+        SubmitZoneClickAnswer: {
+            /** Format: int64 */
+            zoneId?: number;
         };
         ChildAttemptResultResponse: {
             /** Format: int64 */
@@ -2022,6 +2029,23 @@ export interface components {
             choiceId?: number;
             label?: string;
         };
+        ChildPlayClickPointItem: {
+            /** Format: double */
+            x?: number;
+            /** Format: double */
+            y?: number;
+        };
+        ChildPlayClickStepItem: {
+            /** Format: int64 */
+            zoneId?: number;
+            prompt?: string;
+        };
+        ChildPlayClickZoneItem: {
+            /** Format: int64 */
+            zoneId?: number;
+            shape?: string;
+            points?: components["schemas"]["ChildPlayClickPointItem"][];
+        };
         ChildPlayColumnItem: {
             /** Format: int64 */
             columnId?: number;
@@ -2067,6 +2091,10 @@ export interface components {
             links?: components["schemas"]["ChildPlayLinkItem"][];
             sentence?: string;
             words?: components["schemas"]["ChildPlayGapWordItem"][];
+            imageWebp?: string;
+            clicksOrdered?: boolean;
+            clickZones?: components["schemas"]["ChildPlayClickZoneItem"][];
+            clickSteps?: components["schemas"]["ChildPlayClickStepItem"][];
         };
         ChildPlayStatementItem: {
             /** Format: int64 */

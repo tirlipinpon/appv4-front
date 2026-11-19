@@ -274,9 +274,9 @@
   @if (variant() === 'puzzle' && zones().length > 1) {
     <p class="hint">Ordre : le haut de la liste est derrière, le bas est devant.</p>
   }
-  @if (variant() === 'click' && zones().length) {
+  @if (variant() === 'click' && orderEnabled() && zones().length) {
     <p class="hint">
-      Les numéros disent dans quel ordre cliquer les zones correctes. Une zone incorrecte n'a pas de numéro.
+      Le nom d'une zone juste est la consigne de cette étape. Les numéros disent dans quel ordre l'enfant les verra.
     </p>
   }
   <ul #zoneList class="zone-list">
@@ -319,7 +319,7 @@
           >
             Incorrecte
           </button>
-          @if (zone.correct) {
+          @if (orderEnabled() && zone.correct) {
             <span class="click-rank">Clic {{ zone.clickOrder }}</span>
             <button
               mat-button
