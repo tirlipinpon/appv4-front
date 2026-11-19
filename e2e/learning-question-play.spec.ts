@@ -200,6 +200,15 @@ test.describe('Jouer une question', { tag: ['@learning', '@mock'] }, () => {
     ]);
     await submitAndExpect(page, false, '50');
   });
+
+  test('Case vide : glisser un mot dans le trou le place', async ({ page }) => {
+    await openPlay(page, gapsQuestion());
+    await dragGap(page, 10, 0);
+    await dragGap(page, 11, 1);
+    await expect(page.getByTestId(`${ui.gapHole}-0`)).toContainText('chat');
+    await expect(page.getByTestId(`${ui.gapHole}-1`)).toContainText('pomme');
+    await submitAndExpect(page, true, '100');
+  });
 });
 
 function qcmQuestion(): Record<string, unknown> {
@@ -402,9 +411,28 @@ async function placeCards(page: Page, pairs: readonly (readonly [number, number]
 
 async function placeGaps(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {
   for (const [wordId, holeIndex] of pairs) {
-    await page.getByTestId(`${ui.gapWord}-w-${wordId}`).click();
     await page.getByTestId(`${ui.gapHole}-${holeIndex}`).click();
+    await page.getByTestId(`${ui.gapWord}-w-${wordId}`).click();
   }
+}
+
+async function dragGap(page: Page, wordId: number, holeIndex: number): Promise<void> {
+  const word = page.getByTestId(`${ui.gapWord}-w-${wordId}`);
+  const hole = page.getByTestId(`${ui.gapHole}-${holeIndex}`);
+  const wordBox = await word.boundingBox();
+  const holeBox = await hole.boundingBox();
+  if (wordBox == null || holeBox == null) {
+    throw new Error('mot ou trou introuvable');
+  }
+  const startX = wordBox.x + wordBox.width / 2;
+  const startY = wordBox.y + wordBox.height / 2;
+  const endX = holeBox.x + Math.min(16, holeBox.width / 2);
+  const endY = holeBox.y + holeBox.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 20, startY, { steps: 6 });
+  await page.mouse.move(endX, endY, { steps: 12 });
+  await page.mouse.up();
 }
 
 async function pairLinks(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {

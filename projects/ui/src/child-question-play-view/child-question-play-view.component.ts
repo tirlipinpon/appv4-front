@@ -229,7 +229,8 @@ export class ChildQuestionPlayViewComponent {
   private readonly linkPairs = signal<Readonly<Record<string, string>>>({});
 
   readonly gapWords = signal<GapWordView[]>([]);
-  readonly selectedGapWordKey = signal<string | null>(null);
+  /** Trou choisi : le prochain clic sur un mot s'y place. */
+  readonly selectedGapHole = signal<number | null>(null);
   private readonly gapPlacements = signal<Readonly<Record<number, string>>>({});
 
   protected readonly classListIds = computed(() => [
@@ -277,7 +278,7 @@ export class ChildQuestionPlayViewComponent {
       const words = this.question().words ?? [];
       this.gapWords.set(shuffleCopy(words.map((word, index) => toGapWord(word, index))));
       this.gapPlacements.set({});
-      this.selectedGapWordKey.set(null);
+      this.selectedGapHole.set(null);
     });
   }
 
@@ -346,7 +347,7 @@ export class ChildQuestionPlayViewComponent {
     this.selectedClassCardKey.set(null);
     this.selectedLinkKey.set(null);
     this.linkPairs.set({});
-    this.selectedGapWordKey.set(null);
+    this.selectedGapHole.set(null);
     this.gapPlacements.set({});
     this.layoutTick.update((n) => n + 1);
   }
@@ -506,44 +507,86 @@ export class ChildQuestionPlayViewComponent {
     return `Trous remplis : ${done}. Il en reste ${holes.length - done}.`;
   });
 
-  protected gapHoleLabel(holeIndex: number): string {
+  protected readonly gapDropIds = computed(() => [
+    'gap-bank',
+    ...this.gapParts()
+      .filter((part) => part.kind === 'hole')
+      .map((part) => `gap-hole-${part.holeIndex}`),
+  ]);
+
+  protected gapHoleWords(holeIndex: number): GapWordView[] {
     const key = this.gapPlacements()[holeIndex];
-    return this.gapWords().find((word) => word.key === key)?.label ?? '';
-  }
-
-  protected gapHoleFilled(holeIndex: number): boolean {
-    return this.gapPlacements()[holeIndex] != null;
-  }
-
-  protected onGapWord(word: GapWordView): void {
-    if (!this.interactive() || this.disabled()) {
-      return;
-    }
-    this.selectedGapWordKey.update((selected) => (selected === word.key ? null : word.key));
-    this.gapsChange.emit();
+    const word = this.gapWords().find((row) => row.key === key);
+    return word ? [word] : [];
   }
 
   protected onGapHole(holeIndex: number): void {
     if (!this.interactive() || this.disabled()) {
       return;
     }
-    const selected = this.selectedGapWordKey();
-    const current = { ...this.gapPlacements() };
-    if (selected == null) {
-      delete current[holeIndex];
-      this.gapPlacements.set(current);
-      this.gapsChange.emit();
+    this.selectedGapHole.update((selected) => (selected === holeIndex ? null : holeIndex));
+    this.gapsChange.emit();
+  }
+
+  protected onGapWord(word: GapWordView): void {
+    if (!this.interactive() || this.disabled()) {
       return;
     }
+    const hole = this.selectedGapHole();
+    if (hole == null) {
+      return;
+    }
+    this.placeGapWord(word.key, hole);
+    this.gapsChange.emit();
+  }
+
+  protected onGapChip(word: GapWordView): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    this.clearGapWord(word.key);
+    this.gapsChange.emit();
+  }
+
+  protected onGapDrop(event: CdkDragDrop<GapWordView[]>, holeIndex: number | null): void {
+    if (!this.interactive() || this.disabled()) {
+      return;
+    }
+    if (event.previousContainer === event.container && event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const word = event.item.data as GapWordView | undefined;
+    if (word == null) {
+      return;
+    }
+    if (holeIndex == null) {
+      this.clearGapWord(word.key);
+    } else {
+      this.placeGapWord(word.key, holeIndex);
+    }
+    this.gapsChange.emit();
+  }
+
+  private placeGapWord(wordKey: string, holeIndex: number): void {
+    const current = { ...this.gapPlacements() };
     for (const [hole, key] of Object.entries(current)) {
-      if (key === selected) {
+      if (key === wordKey || Number(hole) === holeIndex) {
         delete current[Number(hole)];
       }
     }
-    current[holeIndex] = selected;
+    current[holeIndex] = wordKey;
     this.gapPlacements.set(current);
-    this.selectedGapWordKey.set(null);
-    this.gapsChange.emit();
+    this.selectedGapHole.set(null);
+  }
+
+  private clearGapWord(wordKey: string): void {
+    const current = { ...this.gapPlacements() };
+    for (const [hole, key] of Object.entries(current)) {
+      if (key === wordKey) {
+        delete current[Number(hole)];
+      }
+    }
+    this.gapPlacements.set(current);
   }
 
   protected linkLeftSelected(key: string): boolean {

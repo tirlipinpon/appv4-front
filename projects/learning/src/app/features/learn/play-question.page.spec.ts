@@ -217,10 +217,10 @@ describe('PlayQuestionPage', () => {
     expect(root.querySelector('[data-testid="child-play-view-gaps"]')).toBeTruthy();
     const click = (id: string) =>
       (root.querySelector(`[data-testid="${id}"]`) as HTMLButtonElement).click();
-    click('child-play-view-gap-word-w-10');
     click('child-play-view-gap-hole-0');
-    click('child-play-view-gap-word-w-11');
+    click('child-play-view-gap-word-w-10');
     click('child-play-view-gap-hole-1');
+    click('child-play-view-gap-word-w-11');
     fixture.detectChanges();
 
     (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();

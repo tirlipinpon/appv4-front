@@ -283,9 +283,9 @@
 
   @if (isGaps()) {
     <p class="child-play-view-hint" data-testid="child-play-view-gaps-hint">
-      Choisis un mot, puis le trou.
+      Choisis un trou, puis un mot. Tu peux aussi glisser le mot dans le trou.
     </p>
-    <p
+    <div
       data-testid="child-play-view-gaps"
       style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem"
     >
@@ -293,25 +293,58 @@
         @if (part.kind === 'text') {
           <span>{{ part.text }}</span>
         } @else {
-          <button
-            type="button"
+          <div
+            cdkDropList
+            [id]="'gap-hole-' + part.holeIndex"
+            [cdkDropListData]="gapHoleWords(part.holeIndex)"
+            [cdkDropListConnectedTo]="gapDropIds()"
+            [cdkDropListDisabled]="disabled() || !interactive()"
             class="child-play-view-option"
-            [class.selected]="gapHoleFilled(part.holeIndex)"
-            [disabled]="disabled() || !interactive()"
+            [class.selected]="selectedGapHole() === part.holeIndex"
+            role="button"
+            tabindex="0"
+            style="width: auto; cursor: pointer"
             [attr.data-testid]="'child-play-view-gap-hole-' + part.holeIndex"
             (click)="onGapHole(part.holeIndex)"
+            (keydown.enter)="onGapHole(part.holeIndex)"
+            (keydown.space)="$event.preventDefault(); onGapHole(part.holeIndex)"
+            (cdkDropListDropped)="onGapDrop($event, part.holeIndex)"
           >
-            {{ gapHoleLabel(part.holeIndex) || '___' }}
-          </button>
+            @for (word of gapHoleWords(part.holeIndex); track word.key) {
+              <button
+                type="button"
+                cdkDrag
+                [cdkDragData]="word"
+                [cdkDragDisabled]="disabled() || !interactive()"
+                (click)="$event.stopPropagation(); onGapChip(word)"
+              >
+                {{ word.label }}
+              </button>
+            } @empty {
+              ___
+            }
+          </div>
         }
       }
-    </p>
-    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem" data-testid="child-play-view-gap-bank">
+    </div>
+    <div
+      cdkDropList
+      id="gap-bank"
+      [cdkDropListData]="gapBank()"
+      [cdkDropListConnectedTo]="gapDropIds()"
+      [cdkDropListDisabled]="disabled() || !interactive()"
+      data-testid="child-play-view-gap-bank"
+      style="display: flex; flex-wrap: wrap; gap: 0.5rem"
+      (cdkDropListDropped)="onGapDrop($event, null)"
+    >
       @for (word of gapBank(); track word.key) {
         <button
           type="button"
           class="child-play-view-option"
-          [class.selected]="selectedGapWordKey() === word.key"
+          style="width: auto"
+          cdkDrag
+          [cdkDragData]="word"
+          [cdkDragDisabled]="disabled() || !interactive()"
           [disabled]="disabled() || !interactive()"
           [attr.data-testid]="'child-play-view-gap-word-' + word.key"
           (click)="onGapWord(word)"

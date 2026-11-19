@@ -396,8 +396,8 @@ async function placeCards(page: Page, pairs: readonly (readonly [number, number]
 
 async function placeGaps(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {
   for (const [wordId, holeIndex] of pairs) {
-    await page.getByTestId(`${ui.gapWord}-w-${wordId}`).click();
     await page.getByTestId(`${ui.gapHole}-${holeIndex}`).click();
+    await page.getByTestId(`${ui.gapWord}-w-${wordId}`).click();
   }
 }
 
