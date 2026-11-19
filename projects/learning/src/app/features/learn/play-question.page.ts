@@ -241,8 +241,9 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
   const formCode = body.formCode ?? '';
   return {
     formCode,
-    formLabel:
-      formCode === 'memory' ? 'FORME · memory' : formCode === 'order' ? 'FORME · order' : undefined,
+    formLabel: body.formLabel || undefined,
+    formIconCode: body.iconCode,
+    formColor: body.color,
     prompt:
       formCode === 'memory'
         ? body.prompt || 'Memory'

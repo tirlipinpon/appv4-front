@@ -37,11 +37,15 @@ describe('PlayQuestionPage', () => {
       questionId: 42,
       subjectId: 5,
       formCode: 'texte',
+      formLabel: 'Réponse libre',
+      iconCode: 'text',
+      color: '#1aa6a6',
       prompt: 'Capitale de la France',
     });
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="child-play-view-form"]')?.textContent).toContain('Réponse libre');
     expect(root.querySelector('[data-testid="child-play-view-prompt"]')?.textContent).toContain(
       'Capitale de la France',
     );
