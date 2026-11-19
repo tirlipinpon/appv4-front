@@ -67,6 +67,9 @@ export class SubjectQuestionsPage implements OnInit {
     if (code === 'liens') {
       return 'Liens';
     }
+    if (code === 'case_vide') {
+      return 'Case vide';
+    }
     return code ?? '';
   }
 
@@ -77,7 +80,8 @@ export class SubjectQuestionsPage implements OnInit {
       code === 'memory' ||
       code === 'order' ||
       code === 'classement' ||
-      code === 'liens'
+      code === 'liens' ||
+      code === 'case_vide'
     );
   }
 }

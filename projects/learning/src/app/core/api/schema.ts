@@ -1634,6 +1634,13 @@ export interface components {
             orderedItemIds?: number[];
             placements?: components["schemas"]["SubmitPlacementAnswer"][];
             linkMatches?: components["schemas"]["SubmitLinkMatchAnswer"][];
+            gapFills?: components["schemas"]["SubmitGapFillAnswer"][];
+        };
+        SubmitGapFillAnswer: {
+            /** Format: int32 */
+            holeIndex?: number;
+            /** Format: int64 */
+            wordId?: number;
         };
         SubmitLinkMatchAnswer: {
             /** Format: int64 */
@@ -2020,6 +2027,11 @@ export interface components {
             columnId?: number;
             label?: string;
         };
+        ChildPlayGapWordItem: {
+            /** Format: int64 */
+            wordId?: number;
+            label?: string;
+        };
         ChildPlayItemItem: {
             /** Format: int64 */
             itemId?: number;
@@ -2053,6 +2065,8 @@ export interface components {
             cards?: components["schemas"]["ChildPlayCardItem"][];
             timelineEnabled?: boolean;
             links?: components["schemas"]["ChildPlayLinkItem"][];
+            sentence?: string;
+            words?: components["schemas"]["ChildPlayGapWordItem"][];
         };
         ChildPlayStatementItem: {
             /** Format: int64 */

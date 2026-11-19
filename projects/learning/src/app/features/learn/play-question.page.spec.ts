@@ -196,4 +196,44 @@ describe('PlayQuestionPage', () => {
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
     http.verify();
   });
+
+  it('affiche case vide et envoie les mots placés', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+      questionId: 42,
+      subjectId: 5,
+      formCode: 'case_vide',
+      prompt: 'Complète.',
+      sentence: 'Le ___ mange une ___.',
+      words: [
+        { wordId: 10, label: 'chat' },
+        { wordId: 11, label: 'pomme' },
+        { wordId: 12, label: 'voiture' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="child-play-view-gaps"]')).toBeTruthy();
+    const click = (id: string) =>
+      (root.querySelector(`[data-testid="${id}"]`) as HTMLButtonElement).click();
+    click('child-play-view-gap-hole-0');
+    click('child-play-view-gap-word-w-10');
+    click('child-play-view-gap-hole-1');
+    click('child-play-view-gap-word-w-11');
+    fixture.detectChanges();
+
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+    expect(attempt.request.body.gapFills).toEqual(
+      jasmine.arrayContaining([
+        { holeIndex: 0, wordId: 10 },
+        { holeIndex: 1, wordId: 11 },
+      ]),
+    );
+    attempt.flush({ passed: true, scorePercent: 100 });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+    http.verify();
+  });
 });

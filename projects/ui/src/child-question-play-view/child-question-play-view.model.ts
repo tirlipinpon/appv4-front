@@ -38,6 +38,11 @@ export interface ChildPlayViewLink {
   rightLabel: string;
 }
 
+export interface ChildPlayViewWord {
+  wordId?: number;
+  label: string;
+}
+
 export interface ChildPlayViewQuestion {
   formCode: string;
   formLabel?: string;
@@ -50,4 +55,8 @@ export interface ChildPlayViewQuestion {
   columns?: ChildPlayViewColumn[];
   cards?: ChildPlayViewCard[];
   links?: ChildPlayViewLink[];
+  /** Phrase avec `___` pour chaque trou. */
+  sentence?: string;
+  /** Banque mélangée : mots justes et leurres, sans les distinguer. */
+  words?: ChildPlayViewWord[];
 }

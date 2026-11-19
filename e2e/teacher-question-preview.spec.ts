@@ -26,6 +26,8 @@ const ui = {
   classColumn: 'child-play-view-class-column',
   linkLeft: 'child-play-view-link-left',
   linkRight: 'child-play-view-link-right',
+  gapWord: 'child-play-view-gap-word',
+  gapHole: 'child-play-view-gap-hole',
 } as const;
 
 test.describe("Voir comme l'enfant", { tag: ['@teacher', '@mock'] }, () => {
@@ -160,6 +162,31 @@ test.describe("Voir comme l'enfant", { tag: ['@teacher', '@mock'] }, () => {
     ]);
     await submitAndExpect(page, false, '0');
   });
+
+  test('Case vide : Valider reste inactif tant qu un trou est vide', async ({ page }) => {
+    await openPreview(page, gapsQuestion());
+    await placeGaps(page, [[1, 0]]);
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('Case vide : les bons mots donnent Bravo et Rejouer ramène Valider', async ({ page }) => {
+    await openPreview(page, gapsQuestion());
+    await placeGaps(page, [
+      [1, 0],
+      [2, 1],
+    ]);
+    await submitAndExpect(page, true, '100');
+    await replay(page);
+  });
+
+  test('Case vide : un leurre affiche Pas encore', async ({ page }) => {
+    await openPreview(page, gapsQuestion());
+    await placeGaps(page, [
+      [1, 0],
+      [3, 1],
+    ]);
+    await submitAndExpect(page, false, '50');
+  });
 });
 
 function qcmQuestion(): SavedQuestion {
@@ -233,6 +260,18 @@ function classementQuestion(): SavedQuestion {
   };
 }
 
+function gapsQuestion(): SavedQuestion {
+  return {
+    id: 42,
+    prompt: 'Complète la phrase',
+    formCode: 'case_vide',
+    formLabel: 'Case vide',
+    sentence: 'Le ___ mange une ___.',
+    answers: [{ label: 'chat' }, { label: 'pomme' }],
+    decoys: [{ label: 'voiture' }],
+  };
+}
+
 function liensQuestion(): SavedQuestion {
   return {
     id: 42,
@@ -259,6 +298,9 @@ interface SavedQuestion {
   cards?: { label: string; correctColumnId: number }[];
   links?: { leftLabel: string; rightLabel: string }[];
   timelineEnabled?: boolean;
+  sentence?: string;
+  answers?: { label: string }[];
+  decoys?: { label: string }[];
 }
 
 async function openPreview(page: Page, question: SavedQuestion): Promise<void> {
@@ -349,6 +391,13 @@ async function placeCards(page: Page, pairs: readonly (readonly [number, number]
   for (const [cardId, columnId] of pairs) {
     await page.getByTestId(`${ui.classCard}-${cardId}`).click();
     await page.getByTestId(`${ui.classColumn}-${columnId}`).click();
+  }
+}
+
+async function placeGaps(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {
+  for (const [wordId, holeIndex] of pairs) {
+    await page.getByTestId(`${ui.gapHole}-${holeIndex}`).click();
+    await page.getByTestId(`${ui.gapWord}-w-${wordId}`).click();
   }
 }
 

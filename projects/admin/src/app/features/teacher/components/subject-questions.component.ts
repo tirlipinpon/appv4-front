@@ -181,6 +181,9 @@ export class SubjectQuestionsComponent implements OnInit {
     if (model.formCode === 'liens') {
       return view.allLinksMatched();
     }
+    if (model.formCode === 'case_vide') {
+      return view.allGapsFilled();
+    }
     return false;
   });
 
@@ -234,6 +237,14 @@ export class SubjectQuestionsComponent implements OnInit {
         leftLabel: link.leftLabel,
         rightLabel: link.rightLabel,
       })),
+      sentence: question.sentence,
+      words: [
+        ...question.answers.map((word, index) => ({ wordId: index + 1, label: word.label })),
+        ...question.decoys.map((word, index) => ({
+          wordId: question.answers.length + index + 1,
+          label: word.label,
+        })),
+      ],
     });
   }
 
@@ -981,6 +992,21 @@ function gradePreview(
     const total = source.links.length || 1;
     const scorePercent = Math.round((100 * ok) / total);
     return { passed: ok === source.links.length && matches.length === source.links.length, scorePercent };
+  }
+  if (source.formCode === 'case_vide') {
+    const fills = new Map(view.gapFills().map((row) => [row.holeIndex, row.wordId]));
+    let ok = 0;
+    source.answers.forEach((_, index) => {
+      if (fills.get(index) === index + 1) {
+        ok++;
+      }
+    });
+    const total = source.answers.length || 1;
+    const scorePercent = Math.round((100 * ok) / total);
+    return {
+      passed: ok === source.answers.length && fills.size === source.answers.length,
+      scorePercent,
+    };
   }
   return { passed: false, scorePercent: 0 };
 }
