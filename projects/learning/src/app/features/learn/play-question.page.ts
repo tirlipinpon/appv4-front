@@ -201,8 +201,33 @@ export class PlayQuestionPage implements OnInit {
   protected replay(): void {
     this.result.set(null);
     this.error.set(null);
+    if (this.playModel()?.formCode === 'simon') {
+      this.reloadSimon();
+      return;
+    }
     this.playView()?.reshuffle();
     this.selectionTick.update((n) => n + 1);
+  }
+
+  /**
+   * Une nouvelle partie Simon : le serveur tire et garde une autre suite.
+   * Rejouer seulement l'écran renverrait l'ancienne, déjà notée et effacée.
+   */
+  private reloadSimon(): void {
+    this.loading.set(true);
+    this.api.getQuestion(this.subjectId(), this.questionId()).subscribe({
+      next: (body) => {
+        this.question.set(body);
+        this.playModel.set(toPlayModel(body));
+        this.loading.set(false);
+        this.selectionTick.update((n) => n + 1);
+        setTimeout(() => this.playView()?.reshuffle());
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.error.set(apiErrorMessage(err, 'Impossible de charger la question.'));
+      },
+    });
   }
 }
 

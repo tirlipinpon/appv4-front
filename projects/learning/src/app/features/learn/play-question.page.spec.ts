@@ -295,6 +295,27 @@ describe('PlayQuestionPage', () => {
     attempt.flush({ passed: true, scorePercent: 100 });
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+
+    (root.querySelector('[data-testid="play-replay"]') as HTMLButtonElement).click();
+    const again = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42');
+    expect(again.request.method).toBe('GET');
+    again.flush({
+      questionId: 42,
+      subjectId: 5,
+      formCode: 'simon',
+      prompt: 'Refais la suite',
+      elementType: 'couleurs',
+      elements: [
+        { label: 'rouge', color: '#ff0000' },
+        { label: 'bleu', color: '#0000ff' },
+      ],
+      sequence: [0, 1, 0],
+    });
+    fixture.detectChanges();
+    tick(1);
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-result"]')).toBeNull();
+    expect(root.querySelector('[data-testid="child-play-view-simon-phase"]')?.textContent).toContain('Regardez');
     flush();
     http.verify();
   }));

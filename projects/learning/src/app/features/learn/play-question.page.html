@@ -14,7 +14,7 @@
     <app-child-question-play-view
       [question]="model"
       [interactive]="!result()"
-      [disabled]="saving() || !!result()"
+      [disabled]="saving() || loading() || !!result()"
       (choiceToggle)="onSelectionChange()"
       (statementPick)="onSelectionChange()"
       (memoryChange)="onSelectionChange()"
