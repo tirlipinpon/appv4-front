@@ -9,7 +9,7 @@
       {{ question().formLabel }}
     </p>
   }
-  @if (question().prompt) {
+  @if (question().prompt && !isOrderedImage()) {
     <p class="child-play-view-prompt" data-testid="child-play-view-prompt">{{ question().prompt }}</p>
   }
 
@@ -360,6 +360,81 @@
     </div>
     @if (gapsStatus()) {
       <p class="child-play-view-hint" data-testid="child-play-view-gaps-status">{{ gapsStatus() }}</p>
+    }
+  }
+
+  @if (isImage()) {
+    @if (isOrderedImage()) {
+      <p class="child-play-view-prompt" data-testid="child-play-view-click-prompt">{{ currentClickPrompt() }}</p>
+      <p class="child-play-view-hint" data-testid="child-play-view-click-progress">{{ clickProgress() }}</p>
+    } @else if ((question().clickSteps ?? []).length) {
+      <p class="child-play-view-hint" data-testid="child-play-view-click-targets-title">À trouver :</p>
+    }
+    @if ((question().clickSteps ?? []).length) {
+      <ul
+        data-testid="child-play-view-click-targets"
+        style="margin: 0 0 0.75rem; padding: 0; list-style: none; display: grid; gap: 0.4rem"
+      >
+        @for (step of question().clickSteps ?? []; track step.zoneId ?? step.prompt; let i = $index) {
+          <li
+            [attr.data-testid]="'child-play-view-click-target-' + (step.zoneId ?? i)"
+            [style.opacity]="isOrderedImage() && i > clickStep() ? '0.4' : '1'"
+            [style.font-weight]="isOrderedImage() && i === clickStep() ? '800' : '600'"
+            style="display: flex; align-items: center; gap: 0.5rem"
+          >
+            @if (markForZone(step.zoneId); as mark) {
+              <span
+                [attr.data-testid]="'child-play-view-click-target-mark-' + mark"
+                style="display: grid; width: 1.5rem; height: 1.5rem; flex: 0 0 1.5rem; place-items: center; border-radius: 999px; background: #7c5cff; color: #fff; font-weight: 800; font-size: 0.85rem"
+              >{{ mark }}</span>
+            } @else if (isOrderedImage() && i === clickStep()) {
+              <span
+                data-testid="child-play-view-click-target-current"
+                style="display: grid; width: 1.5rem; height: 1.5rem; flex: 0 0 1.5rem; place-items: center; border-radius: 999px; border: 2px solid #7c5cff; color: #7c5cff; font-weight: 800; font-size: 0.85rem"
+                aria-hidden="true"
+              >{{ i + 1 }}</span>
+            } @else {
+              <span
+                style="display: grid; width: 1.5rem; height: 1.5rem; flex: 0 0 1.5rem; place-items: center; border-radius: 999px; border: 2px dashed color-mix(in srgb, currentColor 35%, transparent)"
+                aria-hidden="true"
+              ></span>
+            }
+            <span>{{ step.prompt }}</span>
+          </li>
+        }
+      </ul>
+    }
+    @if (imageSrc()) {
+      <div
+        data-testid="child-play-view-click-image"
+        role="button"
+        tabindex="0"
+        style="position: relative; width: 100%; border-radius: 1rem; overflow: hidden"
+        (click)="onImageClick($event)"
+        (keydown.enter)="$event.preventDefault()"
+        (keydown.space)="$event.preventDefault()"
+      >
+        <img [src]="imageSrc()" alt="" style="display: block; width: 100%; height: auto" />
+        @for (mark of clickMarks(); track $index) {
+          <span
+            [attr.data-testid]="'child-play-view-click-mark-' + mark.n"
+            [style.left.%]="mark.x * 100"
+            [style.top.%]="mark.y * 100"
+            style="position: absolute; z-index: 1; display: grid; width: 1.75rem; height: 1.75rem; place-items: center; border-radius: 999px; background: #7c5cff; color: #fff; font-weight: 800; transform: translate(-50%, -50%); pointer-events: none"
+          >{{ mark.n }}</span>
+        }
+      </div>
+    }
+    @if (clickMiss()) {
+      <p class="child-play-view-hint" data-testid="child-play-view-click-miss">Pas celle-ci.</p>
+    } @else if (!isOrderedImage()) {
+      <p class="child-play-view-hint" data-testid="child-play-view-click-hint">
+        Touche chaque élément de la liste, puis Valider.
+      </p>
+    } @else {
+      <p class="child-play-view-hint" data-testid="child-play-view-click-hint">
+        Un bon clic passe à la question suivante.
+      </p>
     }
   }
 </div>

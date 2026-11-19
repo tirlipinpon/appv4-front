@@ -107,6 +107,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
         ? `data:image/webp;base64,${question.boardImageWebp}`
         : '',
     requireAllCorrect: question.requireAllCorrect === true,
+    clicksOrdered: question.clicksOrdered !== false,
     zones: formCode === FORM.PUZZLE ? savedPieces(question.pieces) : savedZones(question.zones),
     snapDistance:
       formCode === FORM.PUZZLE && typeof question.snapDistance === 'number'
@@ -208,12 +209,15 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         prompt: draft.prompt,
         imageWebp: webpPayload(draft.clickImage),
         requireAllCorrect: draft.requireAllCorrect,
+        clicksOrdered: draft.clicksOrdered,
         zones: compactClickOrders(draft.clickZones).map((zone) => ({
           label: zone.label,
           correct: zone.correct,
           shape: zone.shape,
           points: zone.points.map((point) => ({ x: point.x, y: point.y })),
-          ...(zone.correct && zone.clickOrder != null ? { clickOrder: zone.clickOrder } : {}),
+          ...(draft.clicksOrdered && zone.correct && zone.clickOrder != null
+            ? { clickOrder: zone.clickOrder }
+            : {}),
         })),
       };
     case FORM.PUZZLE:

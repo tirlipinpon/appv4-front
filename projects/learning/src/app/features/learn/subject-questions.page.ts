@@ -70,6 +70,9 @@ export class SubjectQuestionsPage implements OnInit {
     if (code === 'case_vide') {
       return 'Case vide';
     }
+    if (code === 'image_interactive') {
+      return 'Image à cliquer';
+    }
     return code ?? '';
   }
 
@@ -81,7 +84,8 @@ export class SubjectQuestionsPage implements OnInit {
       code === 'order' ||
       code === 'classement' ||
       code === 'liens' ||
-      code === 'case_vide'
+      code === 'case_vide' ||
+      code === 'image_interactive'
     );
   }
 }

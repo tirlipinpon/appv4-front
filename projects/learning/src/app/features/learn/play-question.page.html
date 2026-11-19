@@ -22,9 +22,10 @@
       (classificationChange)="onSelectionChange()"
       (linksChange)="onSelectionChange()"
       (gapsChange)="onSelectionChange()"
+      (imageChange)="onSelectionChange()"
     />
 
-    @if (!result()) {
+    @if (!result() && (playModel()?.formCode !== 'image_interactive' || playModel()?.clicksOrdered === false)) {
       <button
         type="button"
         class="submit"

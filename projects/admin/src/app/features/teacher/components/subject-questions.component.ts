@@ -130,6 +130,7 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly boardMode = signal<PuzzleBoardMode>(PUZZLE_BOARD_MODE.TROUS);
   readonly boardImage = signal('');
   readonly requireAllCorrect = signal(true);
+  readonly clicksOrdered = signal(true);
   readonly timelineEnabled = signal(false);
   readonly clickZones = signal<ClickZone[]>([]);
   readonly puzzleMagnet = signal(defaultMagnet());
@@ -183,6 +184,9 @@ export class SubjectQuestionsComponent implements OnInit {
     }
     if (model.formCode === 'case_vide') {
       return view.allGapsFilled();
+    }
+    if (model.formCode === 'image_interactive') {
+      return view.imageReady();
     }
     return false;
   });
@@ -238,6 +242,28 @@ export class SubjectQuestionsComponent implements OnInit {
         rightLabel: link.rightLabel,
       })),
       sentence: question.sentence,
+      imageWebp: question.formCode === 'image_interactive' ? question.imageDataUrl : undefined,
+      clicksOrdered: question.clicksOrdered,
+      clickZones:
+        question.formCode === 'image_interactive'
+          ? question.zones.map((zone, index) => ({
+              zoneId: index + 1,
+              shape: zone.shape,
+              points: zone.points,
+            }))
+          : undefined,
+      clickSteps:
+        question.formCode === 'image_interactive'
+          ? question.zones
+              .map((zone, index) => ({ zone, zoneId: index + 1 }))
+              .filter((row) => row.zone.correct)
+              .sort((a, b) =>
+                question.clicksOrdered !== false
+                  ? (a.zone.clickOrder ?? 0) - (b.zone.clickOrder ?? 0)
+                  : a.zoneId - b.zoneId,
+              )
+              .map((row) => ({ zoneId: row.zoneId, prompt: row.zone.label }))
+          : undefined,
       words: [
         ...question.answers.map((word, index) => ({ wordId: index + 1, label: word.label })),
         ...question.decoys.map((word, index) => ({
@@ -256,6 +282,10 @@ export class SubjectQuestionsComponent implements OnInit {
 
   onPreviewSelectionChange(): void {
     this.previewSelectionTick.update((n) => n + 1);
+    const model = this.preview();
+    if (model?.formCode === 'image_interactive' && model.clicksOrdered !== false && this.canPreviewSubmit()) {
+      this.validateChildPreview();
+    }
   }
 
   validateChildPreview(): void {
@@ -390,6 +420,10 @@ export class SubjectQuestionsComponent implements OnInit {
 
   setRequireAllCorrect(value: boolean): void {
     this.requireAllCorrect.set(value);
+  }
+
+  setClicksOrdered(value: boolean): void {
+    this.clicksOrdered.set(value);
   }
 
   setTimelineEnabled(value: boolean): void {
@@ -607,6 +641,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.boardMode.set(question.boardMode);
     this.boardImage.set(question.boardImageDataUrl);
     this.requireAllCorrect.set(question.requireAllCorrect);
+    this.clicksOrdered.set(question.clicksOrdered);
     this.clickZones.set(question.zones.map((zone) => ({ ...zone, points: zone.points.map((point) => ({ ...point })) })));
     this.puzzleMagnet.set(question.snapDistance);
     this.answers.set(question.answers.map((row) => ({ label: row.label })));
@@ -781,6 +816,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.boardMode.set(PUZZLE_BOARD_MODE.TROUS);
     this.boardImage.set('');
     this.requireAllCorrect.set(true);
+    this.clicksOrdered.set(true);
     this.timelineEnabled.set(false);
     this.clickZones.set([]);
     this.puzzleMagnet.set(defaultMagnet());
@@ -822,6 +858,7 @@ export class SubjectQuestionsComponent implements OnInit {
       boardMode: this.boardMode(),
       boardImage: this.boardImage(),
       requireAllCorrect: this.requireAllCorrect(),
+      clicksOrdered: this.clicksOrdered(),
       clickZones: this.clickZones(),
       puzzleMagnet: this.puzzleMagnet(),
       timelineEnabled: this.timelineEnabled(),
@@ -1006,6 +1043,38 @@ function gradePreview(
     return {
       passed: ok === source.answers.length && fills.size === source.answers.length,
       scorePercent,
+    };
+  }
+  if (source.formCode === 'image_interactive') {
+    const clicks = view.zoneClicks();
+    const rows = source.zones.map((zone, index) => ({ zone, id: index + 1 }));
+    if (source.clicksOrdered !== false) {
+      const expected = rows
+        .filter((row) => row.zone.correct)
+        .sort((a, b) => (a.zone.clickOrder ?? 0) - (b.zone.clickOrder ?? 0));
+      let ok = 0;
+      expected.forEach((row, index) => {
+        if (clicks[index] === row.id) {
+          ok++;
+        }
+      });
+      const total = expected.length || 1;
+      return {
+        passed: expected.length > 0 && ok === expected.length && clicks.length === expected.length,
+        scorePercent: Math.round((100 * ok) / total),
+      };
+    }
+    const correctIds = new Set(rows.flatMap((row) => (row.zone.correct ? [row.id] : [])));
+    let ok = 0;
+    for (const id of clicks) {
+      if (correctIds.has(id)) {
+        ok++;
+      }
+    }
+    const total = correctIds.size || 1;
+    return {
+      passed: source.requireAllCorrect ? ok === correctIds.size && correctIds.size > 0 : ok >= 1,
+      scorePercent: Math.round((100 * ok) / total),
     };
   }
   return { passed: false, scorePercent: 0 };

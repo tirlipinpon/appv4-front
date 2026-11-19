@@ -69,6 +69,9 @@ export class PlayQuestionPage implements OnInit {
     if (q.formCode === 'case_vide') {
       return view.allGapsFilled();
     }
+    if (q.formCode === 'image_interactive') {
+      return view.imageReady();
+    }
     return false;
   });
 
@@ -93,7 +96,8 @@ export class PlayQuestionPage implements OnInit {
           body.formCode !== 'order' &&
           body.formCode !== 'classement' &&
           body.formCode !== 'liens' &&
-          body.formCode !== 'case_vide'
+          body.formCode !== 'case_vide' &&
+          body.formCode !== 'image_interactive'
         ) {
           this.error.set('Cette forme de question n’est pas encore jouable.');
         }
@@ -107,6 +111,10 @@ export class PlayQuestionPage implements OnInit {
 
   protected onSelectionChange(): void {
     this.selectionTick.update((n) => n + 1);
+    const model = this.playModel();
+    if (model?.formCode === 'image_interactive' && model.clicksOrdered !== false && this.canSubmit()) {
+      this.submit();
+    }
   }
 
   protected submit(): void {
@@ -130,7 +138,9 @@ export class PlayQuestionPage implements OnInit {
                 ? { linkMatches: view.linkMatches() }
                 : q.formCode === 'case_vide'
                   ? { gapFills: view.gapFills() }
-                  : { statements: view.statementAnswers() };
+                  : q.formCode === 'image_interactive'
+                    ? { zoneClicks: view.zoneClicks().map((zoneId) => ({ zoneId })) }
+                    : { statements: view.statementAnswers() };
     this.api.submitAttempt(this.subjectId(), this.questionId(), body).subscribe({
       next: (result) => {
         this.result.set(result);
@@ -197,5 +207,19 @@ function toPlayModel(body: ChildPlayQuestionResponse): ChildPlayViewQuestion {
     words: (body.words ?? [])
       .filter((word) => word.label != null)
       .map((word) => ({ wordId: word.wordId, label: word.label! })),
+    imageWebp: body.imageWebp,
+    clicksOrdered: body.clicksOrdered,
+    clickZones: (body.clickZones ?? []).flatMap((zone) => {
+      if (zone.zoneId == null || !zone.shape || !zone.points?.length) {
+        return [];
+      }
+      const points = zone.points.flatMap((point) =>
+        point.x == null || point.y == null ? [] : [{ x: point.x, y: point.y }],
+      );
+      return points.length ? [{ zoneId: zone.zoneId, shape: zone.shape, points }] : [];
+    }),
+    clickSteps: (body.clickSteps ?? []).flatMap((step) =>
+      step.zoneId == null || !step.prompt ? [] : [{ zoneId: step.zoneId, prompt: step.prompt }],
+    ),
   };
 }

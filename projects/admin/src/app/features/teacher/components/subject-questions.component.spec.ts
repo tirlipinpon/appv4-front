@@ -916,6 +916,7 @@ describe('SubjectQuestionsComponent', () => {
       prompt: 'Trouve le soleil',
       imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
       requireAllCorrect: true,
+      clicksOrdered: true,
       zones: [
         {
           label: 'le soleil',
