@@ -259,7 +259,7 @@ describe('PlayQuestionPage', () => {
     const element = (index: number) =>
       root.querySelector(`[data-testid="child-play-view-simon-element-${index}"]`) as HTMLButtonElement;
 
-    expect(phase()).toContain('Regardez la séquence');
+    expect(phase()).toContain('Regardez');
     expect(root.querySelector('[data-testid="play-submit"]')).toBeNull();
     expect(element(0).textContent).toContain('rouge');
     expect(element(0).style.backgroundColor).toBe('rgb(255, 0, 0)');
@@ -268,19 +268,27 @@ describe('PlayQuestionPage', () => {
     tick(700);
     fixture.detectChanges();
     expect(element(1).getAttribute('data-lit')).toBe('true');
-    expect(element(0).getAttribute('data-lit')).toBeNull();
 
     tick(3000);
     fixture.detectChanges();
-    expect(phase()).toContain('Reproduisez la séquence');
-    expect(progress()).toContain('0 / 3');
+    expect(phase()).toContain('Reproduisez');
+    expect(progress()).toContain('Manche 1');
 
+    element(1).click();
+    fixture.detectChanges();
+    http.expectNone('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+
+    tick(3000);
+    fixture.detectChanges();
     element(1).click();
     element(0).click();
     fixture.detectChanges();
-    expect(progress()).toContain('2 / 3');
     http.expectNone('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
 
+    tick(4000);
+    fixture.detectChanges();
+    element(1).click();
+    element(0).click();
     element(1).click();
     const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
     expect(attempt.request.body).toEqual({ simonSequence: [1, 0, 1] });

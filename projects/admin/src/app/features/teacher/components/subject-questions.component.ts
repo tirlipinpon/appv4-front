@@ -155,7 +155,7 @@ export class SubjectQuestionsComponent implements OnInit {
    */
   private readonly simonChecked = signal(false);
   readonly simonError = computed(() =>
-    this.simonChecked() ? simonDraftError(this.simonType(), this.simonElements(), this.simonSequence()) : null,
+    this.simonChecked() ? simonDraftError(this.simonType(), this.simonElements()) : null,
   );
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
   readonly editingId = signal<number | null>(null);
@@ -216,7 +216,7 @@ export class SubjectQuestionsComponent implements OnInit {
       return view.allPuzzlePiecesPlaced();
     }
     if (model.formCode === 'simon') {
-      return view.simonComplete();
+      return view.simonComplete() || view.simonMissed();
     }
     return false;
   });
@@ -1266,13 +1266,15 @@ function gradePreview(
     return { passed: total > 0 && ok === total, scorePercent };
   }
   if (source.formCode === 'simon') {
-    // Tout ou rien, comme la notation serveur : un seul pas faux donne 0.
+    const issued = view.simonIssuedSequence();
     const replay = view.simonReplay();
-    const exact =
-      source.sequence.length > 0 &&
-      replay.length === source.sequence.length &&
-      source.sequence.every((step, index) => replay[index] === step);
-    return { passed: exact, scorePercent: exact ? 100 : 0 };
+    let matched = 0;
+    while (matched < replay.length && replay[matched] === issued[matched]) {
+      matched += 1;
+    }
+    const exact = issued.length > 0 && matched === issued.length && replay.length === issued.length;
+    const scorePercent = issued.length === 0 ? 0 : Math.round((100 * matched) / issued.length);
+    return { passed: exact, scorePercent };
   }
   return { passed: false, scorePercent: 0 };
 }

@@ -394,7 +394,6 @@ describe('question-form.adapters', () => {
         { label: 'rouge', color: '#ff0000' },
         { label: 'bleu', color: '#0000ff' },
       ],
-      sequence: [1, 0, 1],
     });
 
     expect(
@@ -404,7 +403,6 @@ describe('question-form.adapters', () => {
       prompt: '',
       elementType: 'formes',
       elements: [{ label: 'rouge' }, { label: 'bleu' }],
-      sequence: [0, 1],
     });
   });
 

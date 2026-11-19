@@ -617,7 +617,7 @@
 
   @if (isSimon()) {
     <p class="child-play-view-hint" data-testid="child-play-view-simon-phase" aria-live="polite">
-      {{ simonPhase() === 'watch' ? 'Regardez la séquence…' : 'Reproduisez la séquence' }}
+      {{ simonPhase() === 'watch' ? 'Regardez…' : 'Reproduisez depuis le début' }}
     </p>
     <div
       data-testid="child-play-view-simon"
@@ -628,7 +628,7 @@
           type="button"
           [attr.data-testid]="'child-play-view-simon-element-' + $index"
           [attr.data-lit]="simonLit() === $index ? 'true' : null"
-          [disabled]="disabled() || !interactive() || simonPhase() !== 'play' || simonPlayed() >= simonTotal()"
+          [disabled]="disabled() || !interactive() || simonPhase() !== 'play' || simonMissed() || simonPlayed() >= simonTotal()"
           [style.background]="simonFill(element, $index)"
           [style.color]="simonInk(element, $index)"
           [style.box-shadow]="simonGlow(element, $index)"
@@ -644,7 +644,7 @@
     </div>
     @if (simonPhase() === 'play') {
       <p class="child-play-view-hint" data-testid="child-play-view-simon-progress">
-        {{ simonPlayed() }} / {{ simonTotal() }}
+        Manche {{ simonRound() }} · {{ simonPlayed() }} / {{ simonRound() }}
       </p>
     }
   }

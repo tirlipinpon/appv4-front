@@ -79,7 +79,7 @@ export class PlayQuestionPage implements OnInit {
       return view.allPuzzlePiecesPlaced();
     }
     if (q.formCode === 'simon') {
-      return view.simonComplete();
+      return view.simonComplete() || view.simonMissed();
     }
     return false;
   });

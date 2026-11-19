@@ -133,6 +133,19 @@ const SIMON_LIT_MS = 600;
 const SIMON_GAP_MS = 300;
 const SIMON_TAP_MS = 250;
 
+/** Même règle que le back : 3 à 8 pas, avec remise. */
+function drawSimonSequence(elementCount: number): number[] {
+  if (elementCount < 1) {
+    return [];
+  }
+  const length = Math.max(3, Math.min(8, elementCount));
+  const steps: number[] = [];
+  for (let step = 0; step < length; step++) {
+    steps.push(Math.floor(Math.random() * elementCount));
+  }
+  return steps;
+}
+
 /** Texte lisible sur un fond #rrggbb : sombre sur une couleur claire, blanc sinon. */
 function textOnColor(hex: string): string {
   const digits = /^#([0-9a-f]{6})$/i.exec(hex.trim())?.[1];
@@ -391,14 +404,19 @@ export class ChildQuestionPlayViewComponent {
   protected readonly puzzleFitFlash = signal<ReadonlySet<number>>(new Set());
   private readonly puzzleFitTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
-  /** Simon : `watch` pendant la démonstration, `play` quand l'enfant refait la suite. */
+  /** Simon : `watch` pendant la démonstration, `play` quand l'enfant refait la manche. */
   protected readonly simonPhase = signal<'watch' | 'play'>('watch');
   /** Simon : position de l'élément allumé, ou null. */
   protected readonly simonLit = signal<number | null>(null);
+  /** Manche en cours : 1 pas, puis 2 depuis le début, puis 3… */
+  protected readonly simonRound = signal(1);
+  private readonly simonIssued = signal<number[]>([]);
   private readonly simonReplayed = signal<number[]>([]);
+  private readonly simonFailed = signal(false);
   private simonTimers: ReturnType<typeof setTimeout>[] = [];
+  private simonSession = '';
   protected readonly simonPlayed = computed(() => this.simonReplayed().length);
-  protected readonly simonTotal = computed(() => (this.question().sequence ?? []).length);
+  protected readonly simonTotal = computed(() => this.simonRound());
 
   protected readonly imageSrc = computed(() => imageSource(this.question().imageWebp));
   protected readonly puzzleMagnet = computed(() => {
@@ -460,8 +478,16 @@ export class ChildQuestionPlayViewComponent {
   constructor() {
     inject(DestroyRef).onDestroy(() => this.clearSimonTimers());
     effect(() => {
+      const question = this.question();
       this.layoutTick();
-      this.startSimon(this.question());
+      const key = `${question.formCode}|${(question.sequence ?? []).join(',')}|${question.elements?.length ?? 0}|${this.layoutTick()}`;
+      if (question.formCode !== 'simon' || key === this.simonSession) {
+        return;
+      }
+      this.simonSession = key;
+      this.simonIssued.set([]);
+      this.simonRound.set(1);
+      this.startSimon(question);
     });
     effect(() => {
       this.question();
@@ -951,29 +977,62 @@ export class ChildQuestionPlayViewComponent {
     return { ok, total: pieces.length };
   }
 
-  /** Simon : positions touchées par l'enfant, dans l'ordre (`simonSequence` de la tentative). */
+  /** Simon : positions touchées sur la manche en cours (`simonSequence` de la tentative). */
   simonReplay(): number[] {
     return [...this.simonReplayed()];
   }
 
-  /** Simon : autant de touches que de pas dans la suite. */
+  /** Suite montrée (API, ou tirage local pour l'aperçu professeur). */
+  simonIssuedSequence(): number[] {
+    return [...this.simonIssued()];
+  }
+
+  /** Simon : la dernière manche, refaite en entier. */
   simonComplete(): boolean {
-    const total = this.simonTotal();
-    return this.isSimon() && total > 0 && this.simonReplayed().length === total;
+    const issued = this.simonIssued();
+    const replay = this.simonReplayed();
+    return (
+      this.isSimon() &&
+      issued.length > 0 &&
+      replay.length === issued.length &&
+      replay.every((step, index) => step === issued[index])
+    );
+  }
+
+  /** Simon : un pas faux sur la manche en cours. */
+  simonMissed(): boolean {
+    return this.simonFailed();
   }
 
   protected onSimonElement(index: number): void {
-    if (this.disabled() || !this.interactive() || this.simonPhase() !== 'play') {
+    if (this.disabled() || !this.interactive() || this.simonPhase() !== 'play' || this.simonFailed()) {
       return;
     }
-    if (this.simonReplayed().length >= this.simonTotal()) {
+    const issued = this.simonIssued();
+    const round = this.simonRound();
+    if (this.simonReplayed().length >= round || issued.length === 0) {
       return;
     }
-    this.simonReplayed.update((rows) => [...rows, index]);
+    const replay = [...this.simonReplayed(), index];
+    this.simonReplayed.set(replay);
     this.clearSimonTimers();
     this.simonLit.set(index);
     this.simonTimers.push(setTimeout(() => this.simonLit.set(null), SIMON_TAP_MS));
-    this.simonChange.emit();
+    const expected = issued[replay.length - 1];
+    if (index !== expected) {
+      this.simonFailed.set(true);
+      this.simonChange.emit();
+      return;
+    }
+    if (replay.length < round) {
+      return;
+    }
+    if (round >= issued.length) {
+      this.simonChange.emit();
+      return;
+    }
+    this.simonRound.set(round + 1);
+    this.startSimon(this.question());
   }
 
   /** Couleur de l'API si elle existe ; sinon le thème, plein quand l'élément s'allume. */
@@ -999,17 +1058,28 @@ export class ChildQuestionPlayViewComponent {
     return `0 0 0 4px var(--app-surface-card, #fff), 0 0 1.5rem 0.4rem ${halo}`;
   }
 
-  /** Simon : remet la reprise à zéro et rejoue la démonstration depuis le premier pas. */
+  /**
+   * Simon : montre la manche en cours depuis le premier pas, puis laisse rejouer.
+   * La première fois, prend la suite de l'API, ou en tire une si l'aperçu n'en a pas.
+   */
   private startSimon(q: ChildPlayViewQuestion): void {
     this.clearSimonTimers();
     this.simonReplayed.set([]);
     this.simonLit.set(null);
+    this.simonFailed.set(false);
     this.simonPhase.set('watch');
     if (q.formCode !== 'simon') {
       return;
     }
+    if (this.simonIssued().length === 0) {
+      const fromApi = (q.sequence ?? []).filter((step) => Number.isInteger(step));
+      const count = q.elements?.length ?? 0;
+      this.simonIssued.set(fromApi.length > 0 ? fromApi : drawSimonSequence(count));
+      this.simonRound.set(1);
+    }
+    const prefix = this.simonIssued().slice(0, this.simonRound());
     let at = SIMON_START_MS;
-    for (const index of q.sequence ?? []) {
+    for (const index of prefix) {
       this.simonTimers.push(setTimeout(() => this.simonLit.set(index), at));
       at += SIMON_LIT_MS;
       this.simonTimers.push(setTimeout(() => this.simonLit.set(null), at));
