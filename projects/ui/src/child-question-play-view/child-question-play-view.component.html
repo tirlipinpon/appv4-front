@@ -407,8 +407,12 @@
     @if (imageSrc()) {
       <div
         data-testid="child-play-view-click-image"
+        role="button"
+        tabindex="0"
         style="position: relative; width: 100%; border-radius: 1rem; overflow: hidden"
         (click)="onImageClick($event)"
+        (keydown.enter)="$event.preventDefault()"
+        (keydown.space)="$event.preventDefault()"
       >
         <img [src]="imageSrc()" alt="" style="display: block; width: 100%; height: auto" />
         @for (mark of clickMarks(); track $index) {
