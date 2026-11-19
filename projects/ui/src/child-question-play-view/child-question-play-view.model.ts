@@ -95,4 +95,21 @@ export interface ChildPlayViewQuestion {
    * Learn ne le reçoit pas.
    */
   letterExpected?: string;
+  /** Mode de plateau puzzle : `fond` | `blanc` | `trous`. */
+  boardMode?: string;
+  /** Fond dédié (mode fond), base64 ou data URL. */
+  boardImageWebp?: string;
+  /** Magnétisme, fraction de largeur (ex. 0,08). */
+  snapDistance?: number;
+  /** Pièces à replacer (géométrie + slots blancs). */
+  puzzlePieces?: ChildPlayViewPuzzlePiece[];
+}
+
+export interface ChildPlayViewPuzzlePiece {
+  pieceId?: number;
+  label: string;
+  shape: string;
+  points: ChildPlayViewClickPoint[];
+  slotX?: number | null;
+  slotY?: number | null;
 }

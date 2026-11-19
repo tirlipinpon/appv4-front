@@ -8,6 +8,7 @@ export type {
   ChildPlayViewChoice,
   ChildPlayViewItem,
   ChildPlayViewPair,
+  ChildPlayViewPuzzlePiece,
   ChildPlayViewQuestion,
   ChildPlayViewStatement,
 } from './child-question-play-view/child-question-play-view.model';

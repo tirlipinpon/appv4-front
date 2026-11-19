@@ -15,6 +15,7 @@ import {
   input,
   output,
   signal,
+  viewChild,
   viewChildren,
 } from '@angular/core';
 
@@ -25,12 +26,26 @@ import type {
   ChildPlayViewItem,
   ChildPlayViewLink,
   ChildPlayViewPair,
+  ChildPlayViewPuzzlePiece,
   ChildPlayViewQuestion,
   ChildPlayViewStatement,
   ChildPlayViewClickPoint,
   ChildPlayViewClickZone,
   ChildPlayViewWord,
 } from './child-question-play-view.model';
+import {
+  PUZZLE_MAGNET_DEFAULT,
+  cutPuzzlePiece,
+  loadImageElement,
+  magnetizedPosition,
+  placeOnImage,
+  punchPuzzlePieces,
+  puzzlePieceFrame,
+  puzzlePieceHome,
+  withinPuzzleMagnet,
+  type PuzzleFrame,
+  type PuzzlePoint,
+} from './puzzle-play';
 
 export interface OrderItemView {
   key: string;
@@ -75,6 +90,27 @@ interface ClickMark {
   x: number;
   y: number;
   zoneId?: number;
+}
+
+interface PuzzlePiecePlayView {
+  key: string;
+  pieceId?: number;
+  label: string;
+  shape: string;
+  points: ChildPlayViewClickPoint[];
+  slotX?: number | null;
+  slotY?: number | null;
+  url: string;
+  frame: PuzzleFrame;
+  home: PuzzleFrame;
+  placement: PuzzlePoint | null;
+}
+
+interface PuzzleGhost {
+  url: string;
+  left: number;
+  top: number;
+  width: number;
 }
 
 export interface GapPart {
@@ -244,9 +280,19 @@ export class ChildQuestionPlayViewComponent {
   readonly gapsChange = output<void>();
   readonly imageChange = output<void>();
   readonly lettersChange = output<void>();
+  readonly puzzleChange = output<void>();
 
   private readonly layoutTick = signal(0);
   private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
+  private puzzleBuildSeq = 0;
+  private pieceDrag: {
+    pointer: number;
+    index: number;
+    offsetX: number;
+    offsetY: number;
+    width: number;
+  } | null = null;
+  private stopPieceListeners: (() => void) | null = null;
 
   protected readonly isQcm = computed(() => this.question().formCode === 'qcm');
   protected readonly isTrueFalse = computed(() => this.question().formCode === 'vrai_faux');
@@ -261,6 +307,7 @@ export class ChildQuestionPlayViewComponent {
     () => this.isImage() && this.question().clicksOrdered !== false && (this.question().clickSteps ?? []).length > 0,
   );
   protected readonly isLetters = computed(() => this.question().formCode === 'reponse_libre');
+  protected readonly isPuzzle = computed(() => this.question().formCode === 'puzzle');
   protected readonly playable = computed(
     () =>
       this.isQcm() ||
@@ -271,7 +318,8 @@ export class ChildQuestionPlayViewComponent {
       this.isLinks() ||
       this.isGaps() ||
       this.isImage() ||
-      this.isLetters(),
+      this.isLetters() ||
+      this.isPuzzle(),
   );
 
   readonly orderedItems = signal<OrderItemView[]>([]);
@@ -296,6 +344,7 @@ export class ChildQuestionPlayViewComponent {
   protected readonly clickMiss = signal(false);
 
   private readonly letterFields = viewChildren<ElementRef<HTMLInputElement>>('letterBox');
+  private readonly puzzleStage = viewChild<ElementRef<HTMLElement>>('puzzleStage');
   protected readonly letterBoxes = signal<string[]>([]);
   /** Verrou par case (espace toujours true ; lettre juste → true). */
   protected readonly letterLocks = signal<boolean[]>([]);
@@ -304,7 +353,24 @@ export class ChildQuestionPlayViewComponent {
   /** Mots (groupes de cases) pour ne pas couper un mot à la ligne. */
   protected readonly letterWords = computed(() => letterWordGroups(this.letterMaskValue()));
 
+  protected readonly puzzlePieces = signal<PuzzlePiecePlayView[]>([]);
+  protected readonly puzzleBoardSrc = signal('');
+  protected readonly puzzleGhost = signal<PuzzleGhost | null>(null);
+  protected readonly puzzleDragIndex = signal<number | null>(null);
+  protected readonly puzzleFitFlash = signal<ReadonlySet<number>>(new Set());
+  private readonly puzzleFitTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
   protected readonly imageSrc = computed(() => imageSource(this.question().imageWebp));
+  protected readonly puzzleMagnet = computed(() => {
+    const value = this.question().snapDistance;
+    return value == null || !Number.isFinite(value) ? PUZZLE_MAGNET_DEFAULT : value;
+  });
+  protected readonly puzzleBoardBlank = computed(() => this.question().boardMode === 'blanc');
+  protected readonly puzzleTrayPieces = computed(() =>
+    this.puzzlePieces()
+      .map((piece, index) => ({ piece, index }))
+      .filter((row) => row.piece.placement == null),
+  );
 
   protected readonly currentClickPrompt = computed(() => {
     const steps = this.question().clickSteps ?? [];
@@ -398,6 +464,16 @@ export class ChildQuestionPlayViewComponent {
       this.gapPlacements.set({});
       this.selectedGapHole.set(null);
     });
+    effect(() => {
+      this.layoutTick();
+      const q = this.question();
+      if (q.formCode !== 'puzzle') {
+        this.puzzlePieces.set([]);
+        this.puzzleBoardSrc.set('');
+        return;
+      }
+      void this.rebuildPuzzleBoard(q);
+    });
   }
 
   protected readonly displayChoices = computed(() => {
@@ -472,6 +548,8 @@ export class ChildQuestionPlayViewComponent {
     this.clickMarks.set([]);
     this.clickMiss.set(false);
     this.resetLetterSlots();
+    this.clearPuzzleDrag();
+    this.puzzleFitFlash.set(new Set());
     this.layoutTick.update((n) => n + 1);
   }
 
@@ -791,6 +869,227 @@ export class ChildQuestionPlayViewComponent {
       return this.clickMarks().flatMap((mark) => (mark.zoneId == null ? [] : [mark.zoneId]));
     }
     return this.clickedZoneIds();
+  }
+
+  allPuzzlePiecesPlaced(): boolean {
+    const pieces = this.puzzlePieces();
+    return pieces.length > 0 && pieces.every((piece) => piece.placement != null);
+  }
+
+  puzzlePlacements(): { pieceId: number; x: number; y: number }[] {
+    const out: { pieceId: number; x: number; y: number }[] = [];
+    for (const piece of this.puzzlePieces()) {
+      if (piece.pieceId == null || piece.placement == null) {
+        continue;
+      }
+      out.push({ pieceId: piece.pieceId, x: piece.placement.x, y: piece.placement.y });
+    }
+    return out;
+  }
+
+  /** Aperçu teacher : pièces assez près de leur home (même rayon que le serveur). */
+  puzzleCorrectCount(): { ok: number; total: number } {
+    const pieces = this.puzzlePieces();
+    const magnet = this.puzzleMagnet();
+    let ok = 0;
+    for (const piece of pieces) {
+      if (piece.placement == null) {
+        continue;
+      }
+      if (withinPuzzleMagnet(piece.placement.x, piece.placement.y, piece.home, magnet)) {
+        ok += 1;
+      }
+    }
+    return { ok, total: pieces.length };
+  }
+
+  protected pieceWidthPercent(piece: PuzzlePiecePlayView): number {
+    return piece.frame.width * 100;
+  }
+
+  protected trayWidthPercent(piece: PuzzlePiecePlayView): number {
+    return Math.min(28, this.pieceWidthPercent(piece) * 1.4);
+  }
+
+  protected onPuzzlePieceDown(event: PointerEvent, index: number): void {
+    if (this.disabled() || !this.interactive() || event.button !== 0) {
+      return;
+    }
+    const piece = this.puzzlePieces()[index];
+    if (!piece?.url) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    this.clearPuzzleDrag();
+    this.pieceDrag = {
+      pointer: event.pointerId,
+      index,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      width: rect.width,
+    };
+    this.puzzleDragIndex.set(index);
+    this.puzzleGhost.set({
+      url: piece.url,
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+    });
+    const onMove = (move: PointerEvent) => this.onPuzzlePieceMove(move);
+    const onUp = (up: PointerEvent) => this.finishPuzzlePieceDrag(up);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    this.stopPieceListeners = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }
+
+  private onPuzzlePieceMove(event: PointerEvent): void {
+    const drag = this.pieceDrag;
+    const stage = this.puzzleStage()?.nativeElement.getBoundingClientRect();
+    if (!drag || event.pointerId !== drag.pointer || !stage || stage.width <= 0 || stage.height <= 0) {
+      return;
+    }
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+    const left = event.clientX - drag.offsetX;
+    const top = event.clientY - drag.offsetY;
+    const piece = this.puzzlePieces()[drag.index];
+    const url = piece?.url ?? '';
+    const home = piece?.home;
+    if (!home) {
+      this.puzzleGhost.set({ url, left, top, width: drag.width });
+      return;
+    }
+    const spot = magnetizedPosition(
+      { x: (left - stage.left) / stage.width, y: (top - stage.top) / stage.height },
+      home,
+      this.puzzleMagnet(),
+      stage,
+    );
+    this.puzzleGhost.set(
+      spot.snapped
+        ? {
+            url,
+            left: stage.left + home.x * stage.width,
+            top: stage.top + home.y * stage.height,
+            width: home.width * stage.width,
+          }
+        : { url, left, top, width: drag.width },
+    );
+  }
+
+  private finishPuzzlePieceDrag(event: PointerEvent): void {
+    const drag = this.pieceDrag;
+    if (!drag || event.pointerId !== drag.pointer) {
+      return;
+    }
+    const stage = this.puzzleStage()?.nativeElement.getBoundingClientRect();
+    const ghost = this.puzzleGhost();
+    const piece = this.puzzlePieces()[drag.index];
+    const home = piece?.home;
+    const raw =
+      stage != null && stage.width > 0 && stage.height > 0 && ghost != null
+        ? {
+            x: (ghost.left - stage.left) / stage.width,
+            y: (ghost.top - stage.top) / stage.height,
+          }
+        : null;
+    const placed =
+      raw == null || home == null || stage == null
+        ? null
+        : placeOnImage(raw, home, this.puzzleMagnet(), stage);
+    const snapped =
+      placed != null &&
+      home != null &&
+      stage != null &&
+      magnetizedPosition(placed, home, this.puzzleMagnet(), stage).snapped;
+    this.clearPuzzleDrag();
+    this.puzzlePieces.update((rows) =>
+      rows.map((row, index) => (index === drag.index ? { ...row, placement: placed } : row)),
+    );
+    if (placed && snapped) {
+      this.flashPuzzleFit(drag.index);
+    }
+    this.puzzleChange.emit();
+  }
+
+  private flashPuzzleFit(index: number): void {
+    const previous = this.puzzleFitTimers.get(index);
+    if (previous != null) {
+      clearTimeout(previous);
+    }
+    this.puzzleFitFlash.update((rows) => new Set([...rows, index]));
+    const timer = setTimeout(() => {
+      this.puzzleFitTimers.delete(index);
+      this.puzzleFitFlash.update((rows) => {
+        const next = new Set(rows);
+        next.delete(index);
+        return next;
+      });
+    }, 1800);
+    this.puzzleFitTimers.set(index, timer);
+  }
+
+  protected isPuzzleFit(index: number): boolean {
+    return this.puzzleFitFlash().has(index);
+  }
+
+  private clearPuzzleDrag(): void {
+    this.stopPieceListeners?.();
+    this.stopPieceListeners = null;
+    this.pieceDrag = null;
+    this.puzzleDragIndex.set(null);
+    this.puzzleGhost.set(null);
+  }
+
+  private async rebuildPuzzleBoard(q: ChildPlayViewQuestion): Promise<void> {
+    const seq = ++this.puzzleBuildSeq;
+    const cutSrc = imageSource(q.imageWebp);
+    const pieces = q.puzzlePieces ?? [];
+    if (!cutSrc || pieces.length === 0) {
+      this.puzzlePieces.set([]);
+      this.puzzleBoardSrc.set('');
+      return;
+    }
+    try {
+      const cutImage = await loadImageElement(cutSrc);
+      if (seq !== this.puzzleBuildSeq) {
+        return;
+      }
+      const width = cutImage.naturalWidth || cutImage.width;
+      const height = cutImage.naturalHeight || cutImage.height;
+      const boardMode = q.boardMode ?? 'trous';
+      let boardSrc = '';
+      if (boardMode === 'fond') {
+        boardSrc = imageSource(q.boardImageWebp);
+      } else if (boardMode === 'blanc') {
+        boardSrc = '';
+      } else {
+        boardSrc = punchPuzzlePieces(cutImage, width, height, pieces);
+      }
+      const views: PuzzlePiecePlayView[] = pieces.map((piece, index) =>
+        toPuzzlePlayView(piece, index, cutImage, width, height, boardMode),
+      );
+      this.puzzleBoardSrc.set(boardSrc);
+      this.puzzlePieces.set(views);
+    } catch {
+      if (seq !== this.puzzleBuildSeq) {
+        return;
+      }
+      this.puzzlePieces.set([]);
+      this.puzzleBoardSrc.set('');
+    }
   }
 
   protected onImageClick(event: MouseEvent): void {
@@ -1266,6 +1565,37 @@ export class ChildQuestionPlayViewComponent {
       this.mismatchTimer = null;
     }
   }
+}
+
+function toPuzzlePlayView(
+  piece: ChildPlayViewPuzzlePiece,
+  index: number,
+  cutImage: HTMLImageElement,
+  width: number,
+  height: number,
+  boardMode: string,
+): PuzzlePiecePlayView {
+  const shape = {
+    shape: piece.shape,
+    points: piece.points,
+    slotX: piece.slotX,
+    slotY: piece.slotY,
+  };
+  const frame = puzzlePieceFrame(shape);
+  const home = puzzlePieceHome(shape, boardMode);
+  return {
+    key: piece.pieceId != null ? `p-${piece.pieceId}` : `p-${index}-${piece.label}`,
+    pieceId: piece.pieceId,
+    label: piece.label,
+    shape: piece.shape,
+    points: piece.points,
+    slotX: piece.slotX,
+    slotY: piece.slotY,
+    url: cutPuzzlePiece(cutImage, width, height, shape),
+    frame,
+    home,
+    placement: null,
+  };
 }
 
 /** Découpe le masque en mots pour un retour à la ligne sans couper un mot. */

@@ -439,6 +439,102 @@
     }
   }
 
+  @if (isPuzzle()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-puzzle-hint">
+      Glisse chaque pièce sur le plateau. Elle se colle toute seule près du bon endroit.
+    </p>
+    <div
+      #puzzleStage
+      data-testid="child-play-view-puzzle-board"
+      [style.position]="'relative'"
+      [style.width]="'100%'"
+      [style.border-radius]="'1rem'"
+      [style.overflow]="'hidden'"
+      [style.background]="
+        puzzleBoardBlank()
+          ? 'color-mix(in srgb, var(--app-surface-card, #1a1436) 70%, #fff)'
+          : 'transparent'
+      "
+      [style.min-height]="puzzleBoardBlank() && !puzzleBoardSrc() ? '14rem' : null"
+      [style.aspect-ratio]="puzzleBoardBlank() && !puzzleBoardSrc() ? '4 / 3' : null"
+      [style.touch-action]="'none'"
+    >
+      @if (puzzleBoardSrc()) {
+        <img [src]="puzzleBoardSrc()" alt="" style="display: block; width: 100%; height: auto; pointer-events: none" />
+      }
+      @for (piece of puzzlePieces(); track piece.key; let pieceIndex = $index) {
+        @if (piece.placement; as spot) {
+          @if (piece.url) {
+            <img
+              [src]="piece.url"
+              alt=""
+              draggable="false"
+              [attr.aria-label]="piece.label || 'Pièce'"
+              [attr.data-testid]="'child-play-view-puzzle-token-' + (piece.pieceId ?? pieceIndex)"
+              [style.position]="'absolute'"
+              [style.left.%]="spot.x * 100"
+              [style.top.%]="spot.y * 100"
+              [style.width.%]="pieceWidthPercent(piece)"
+              [style.height]="'auto'"
+              [style.z-index]="puzzleDragIndex() === pieceIndex ? 1000 : pieceIndex + 1"
+              [style.outline]="isPuzzleFit(pieceIndex) ? '3px solid var(--app-form-vrai-faux, #2bb673)' : null"
+              [style.outline-offset]="'2px'"
+              [style.cursor]="disabled() || !interactive() ? 'default' : 'grab'"
+              [style.opacity]="puzzleDragIndex() === pieceIndex ? '0.35' : '1'"
+              [style.pointer-events]="disabled() || !interactive() ? 'none' : 'auto'"
+              (pointerdown)="onPuzzlePieceDown($event, pieceIndex)"
+            />
+          }
+        }
+      }
+    </div>
+    <ul
+      data-testid="child-play-view-puzzle-tray"
+      style="list-style: none; margin: 0.85rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: flex-end"
+    >
+      @for (row of puzzleTrayPieces(); track row.piece.key) {
+        <li
+          [style.width.%]="trayWidthPercent(row.piece)"
+          [style.max-width]="'7rem'"
+          style="display: grid; gap: 0.25rem; justify-items: center"
+        >
+          @if (row.piece.url) {
+            <img
+              [src]="row.piece.url"
+              alt=""
+              draggable="false"
+              [attr.aria-label]="row.piece.label || 'Pièce'"
+              [attr.data-testid]="'child-play-view-puzzle-tray-' + (row.piece.pieceId ?? row.index)"
+              style="width: 100%; height: auto; cursor: grab; touch-action: none"
+              [style.opacity]="puzzleDragIndex() === row.index ? '0.35' : '1'"
+              [style.pointer-events]="disabled() || !interactive() ? 'none' : 'auto'"
+              (pointerdown)="onPuzzlePieceDown($event, row.index)"
+            />
+          }
+          <span style="font-size: 0.8rem; font-weight: 700; text-align: center">{{
+            row.piece.label || 'Pièce'
+          }}</span>
+        </li>
+      }
+    </ul>
+    @if (puzzleGhost(); as ghost) {
+      <img
+        [src]="ghost.url"
+        alt=""
+        draggable="false"
+        data-testid="child-play-view-puzzle-ghost"
+        [style.position]="'fixed'"
+        [style.left.px]="ghost.left"
+        [style.top.px]="ghost.top"
+        [style.width.px]="ghost.width"
+        [style.height]="'auto'"
+        [style.z-index]="'2000'"
+        [style.pointer-events]="'none'"
+        [style.opacity]="'0.95'"
+      />
+    }
+  }
+
   @if (isLetters()) {
     <div
       class="child-play-view-letters"
