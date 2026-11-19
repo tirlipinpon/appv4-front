@@ -49,6 +49,9 @@ import {
 import { clampMagnet, cutPiece, magnetizedPosition, placeOnImage, punchPieces } from './puzzle-piece';
 import { PuzzleBoardMode, PUZZLE_BOARD_MODE } from './question-form.model';
 
+/** Plus petite taille d'une pièce sur le fond : même plancher que le backend (2 %). */
+const SLOT_WIDTH_MIN = 0.02;
+
 /**
  * Dessin des zones sur l'image (SCRUM-181).
  * Les points sont en proportion du dessin : si l'écran change, les formes restent dessus.
@@ -163,6 +166,23 @@ export class ClickZoneEditorComponent {
   readonly ghost = signal<{ url: string; left: number; top: number; width: number } | null>(null);
   /** Index des pièces qui viennent de coller à l'emplacement (contour vert ~2 s). */
   readonly fitFlash = signal<ReadonlySet<number>>(new Set());
+  /** Fond dédié en édition : pièce posée dont le professeur règle la taille. */
+  readonly slotPick = signal<number | null>(null);
+  readonly slotSizing = computed(() => {
+    const index = this.slotPick();
+    if (index === null || this.readonly() || !this.usingCustomBoard()) {
+      return null;
+    }
+    const zone = this.zones()[index];
+    if (!zone?.slot) {
+      return null;
+    }
+    const width = zone.slot.width ?? pieceFrame(zone).width;
+    return { index, name: this.shapeName(zone, index), percent: Math.round(width * 100) };
+  });
+  /** Taille en pixels de l'image à découper : ratio des vignettes pour garder le centre au redimensionnement. */
+  private readonly cutSize = signal<{ width: number; height: number } | null>(null);
+  private lastBoardMode: PuzzleBoardMode | null = null;
 
   private readonly destroyRef = inject(DestroyRef);
   private paintToken = 0;
@@ -234,15 +254,17 @@ export class ClickZoneEditorComponent {
       if (!this.autoPlayArmed) {
         this.autoPlayArmed = true;
         this.playPreview.set(true);
-        this.clearPlacements();
+        untracked(() => this.placements.set(this.initialPlacements()));
       }
     });
 
     effect(() => {
       // Changer de mode plateau ramène à l'édition pour éviter un aperçu incohérent.
-      this.boardMode();
+      const mode = this.boardMode();
       untracked(() => {
-        if (this.playPreview()) {
+        const changed = this.lastBoardMode !== null && this.lastBoardMode !== mode;
+        this.lastBoardMode = mode;
+        if (changed && this.playPreview()) {
           this.playPreview.set(false);
           this.clearPlacements();
         }
@@ -265,7 +287,7 @@ export class ClickZoneEditorComponent {
       this.dragIndex.set(null);
       this.ghost.set(null);
       this.clearFitFlash();
-      this.placements.set(this.zones().map(() => null));
+      untracked(() => this.placements.set(this.initialPlacements()));
     });
   }
 
@@ -317,7 +339,67 @@ export class ClickZoneEditorComponent {
     this.dragIndex.set(null);
     this.ghost.set(null);
     this.clearFitFlash();
+    this.slotPick.set(null);
     this.placements.set(this.zones().map(() => null));
+  }
+
+  /**
+   * « Remettre les pièces en bas ». Sur le fond en édition, les places posées sont aussi
+   * retirées : une pièce revenue dans le rail n'a plus de place à enregistrer.
+   */
+  resetPieces(): void {
+    this.clearPlacements();
+    if (this.placingSlots() && this.boardMode() === PUZZLE_BOARD_MODE.FOND) {
+      this.zonesChange.emit(this.zones().map((zone) => ({ ...zone, slot: null })));
+    }
+  }
+
+  /** Fond au même cadrage que la découpe : chaque pièce prend sa place et sa taille de découpe. */
+  placeLikeCut(): void {
+    if (this.disabled() || !this.placingSlots() || this.boardMode() !== PUZZLE_BOARD_MODE.FOND) {
+      return;
+    }
+    const zones = this.zones().map((zone) => {
+      const frame = pieceFrame(zone);
+      return { ...zone, slot: { x: frame.x, y: frame.y, width: frame.width } };
+    });
+    this.slotPick.set(null);
+    this.placements.set(zones.map((zone) => ({ x: zone.slot.x, y: zone.slot.y })));
+    this.zonesChange.emit(zones);
+  }
+
+  /**
+   * Taille d'une pièce posée sur le fond, en % de la largeur du plateau.
+   * Le centre de la pièce ne bouge pas : elle rétrécit ou grandit sur place.
+   */
+  resizeSlot(index: number, raw: string): void {
+    const zone = this.zones()[index];
+    const slot = zone?.slot;
+    if (this.disabled() || !slot || !this.placingSlots() || this.boardMode() !== PUZZLE_BOARD_MODE.FOND) {
+      return;
+    }
+    const before = slot.width ?? pieceFrame(zone).width;
+    const width = Math.min(1, Math.max(SLOT_WIDTH_MIN, Number(raw) / 100));
+    if (!Number.isFinite(width) || width === before) {
+      return;
+    }
+    const heightPerWidth = this.slotHeightPerWidth(zone);
+    const next = {
+      x: slot.x + (before - width) / 2,
+      y: slot.y + ((before - width) * heightPerWidth) / 2,
+      width,
+    };
+    this.placements.update((rows) =>
+      this.zones().map((_, current) => (current === index ? { x: next.x, y: next.y } : (rows[current] ?? null))),
+    );
+    this.zonesChange.emit(
+      this.zones().map((row, current) => (current === index ? { ...row, slot: next } : row)),
+    );
+  }
+
+  /** Largeur affichée d'une pièce posée sur le plateau, en % (taille choisie sur le fond). */
+  tokenWidth(zone: ClickZone): number {
+    return this.pieceHome(zone).width * 100;
   }
 
   /** True pendant ~2 s après un lâcher collé sur l'emplacement. */
@@ -348,22 +430,38 @@ export class ClickZoneEditorComponent {
       this.draft.set([]);
       this.draftHandle.set(null);
       this.adding.set(false);
-      if (this.boardMode() === PUZZLE_BOARD_MODE.BLANC) {
-        // En édition : montrer les emplacements déjà posés par le prof.
-        this.placements.set(this.zones().map((zone) => (zone.slot ? { ...zone.slot } : null)));
-      } else {
-        this.clearPlacements();
-      }
+      this.clearPlacements();
+      // En édition (blanc, fond) : montrer les emplacements déjà posés par le prof.
+      this.placements.set(this.initialPlacements());
     }
   }
 
   /**
-   * Cible du magnétisme : découpe (trous/fond), ou slot posé par le prof (blanc).
-   * Sans slot en mode blanc : hors plateau pour ne pas coller sur la découpe.
+   * Pièces déjà posées sur le plateau à l'ouverture : les places du professeur quand il les
+   * édite (cadre blanc, fond). En jeu (lecture seule), toutes les pièces partent du rail.
+   */
+  private initialPlacements(): (ClickPoint | null)[] {
+    const mode = this.boardMode();
+    const showSlots =
+      !this.readonly() &&
+      this.playPreview() &&
+      (mode === PUZZLE_BOARD_MODE.BLANC || mode === PUZZLE_BOARD_MODE.FOND);
+    return this.zones().map((zone) => (showSlots && zone.slot ? { x: zone.slot.x, y: zone.slot.y } : null));
+  }
+
+  /**
+   * Cible du magnétisme : découpe (trous), ou place posée par le prof (blanc ; fond quand le
+   * plateau fond est affiché, avec sa taille). Sans slot en mode blanc : hors plateau pour ne pas
+   * coller sur la découpe. Fond sans place (ancienne question) : la découpe.
    */
   private pieceHome(zone: ClickZone): { x: number; y: number; width: number; height: number } {
     const frame = pieceFrame(zone);
-    if (this.boardMode() !== PUZZLE_BOARD_MODE.BLANC) {
+    const mode = this.boardMode();
+    if (mode === PUZZLE_BOARD_MODE.FOND && zone.slot && this.usingCustomBoard()) {
+      const width = zone.slot.width != null && zone.slot.width > 0 ? zone.slot.width : frame.width;
+      return { x: zone.slot.x, y: zone.slot.y, width, height: frame.height * (width / frame.width) };
+    }
+    if (mode !== PUZZLE_BOARD_MODE.BLANC) {
       return frame;
     }
     if (zone.slot) {
@@ -373,15 +471,29 @@ export class ClickZoneEditorComponent {
   }
 
   /**
-   * Pose des emplacements en cadre blanc (édition professeur).
+   * Pose des emplacements par le professeur : cadre blanc, ou fond dédié quand son plateau est
+   * affiché (sur la découpe, une place n'aurait pas de sens pour le fond).
    * Pas de magnétisme : sinon la pièce recolle sur l'ancien slot et on ne peut plus la décaler.
    */
-  private placingBlancSlots(): boolean {
-    return (
-      !this.readonly() &&
-      this.variant() === 'puzzle' &&
-      this.boardMode() === PUZZLE_BOARD_MODE.BLANC
-    );
+  private placingSlots(): boolean {
+    if (this.readonly() || this.variant() !== 'puzzle') {
+      return false;
+    }
+    if (this.boardMode() === PUZZLE_BOARD_MODE.BLANC) {
+      return true;
+    }
+    return this.boardMode() === PUZZLE_BOARD_MODE.FOND && this.usingCustomBoard();
+  }
+
+  /** Hauteur affichée d'une pièce (proportion du plateau) pour 1 de largeur. */
+  private slotHeightPerWidth(zone: ClickZone): number {
+    const frame = pieceFrame(zone);
+    const stage = this.stage()?.nativeElement.getBoundingClientRect();
+    const cut = this.cutSize();
+    if (!stage || stage.width <= 0 || stage.height <= 0 || !cut || frame.width <= 0) {
+      return frame.height / frame.width;
+    }
+    return (stage.width / stage.height) * ((frame.height * cut.height) / (frame.width * cut.width));
   }
 
   /** Lâcher libre sur le plateau (sans coller) : reste si la pièce touche encore l'image. */
@@ -414,6 +526,9 @@ export class ClickZoneEditorComponent {
     event.preventDefault();
     event.stopPropagation();
     this.stopPieceListeners?.();
+    if (this.placingSlots() && this.boardMode() === PUZZLE_BOARD_MODE.FOND) {
+      this.slotPick.set(index);
+    }
     const rect = target.getBoundingClientRect();
     const pointer = event.pointerId;
     this.pieceDrag = {
@@ -460,7 +575,7 @@ export class ClickZoneEditorComponent {
     const top = event.clientY - drag.offsetY;
     const url = this.pieceUrls()[drag.index] ?? '';
     // Pose libre des slots : le fantôme suit le doigt, sans coller à l'ancien emplacement.
-    if (this.placingBlancSlots()) {
+    if (this.placingSlots()) {
       this.ghost.set({ url, left, top, width: drag.width });
       return;
     }
@@ -499,7 +614,7 @@ export class ClickZoneEditorComponent {
             y: (ghost.top - stage.top) / stage.height,
           }
         : null;
-    const placingSlots = this.placingBlancSlots();
+    const placingSlots = this.placingSlots();
     const snap =
       raw != null && stage != null && !placingSlots
         ? magnetizedPosition(raw, home, this.magnetLive(), stage)
@@ -519,18 +634,26 @@ export class ClickZoneEditorComponent {
       next[drag.index] = placed;
       return next;
     });
-    // Cadre blanc en édition : la pose du prof devient l'emplacement cible enregistré.
+    // Cadre blanc / fond en édition : la pose du prof devient l'emplacement cible enregistré.
     // Pas de clamp 0–1 : une pièce déjà au bord gauche (ex. roue arrière) doit pouvoir déborder un peu.
     if (placed && placingSlots) {
-      const slot = { x: placed.x, y: placed.y };
+      const fond = this.boardMode() === PUZZLE_BOARD_MODE.FOND;
+      // Fond : la pièce garde la taille vue pendant le glisser (puis réglable au curseur).
+      const seen = stage != null && stage.width > 0 ? drag.width / stage.width : pieceFrame(zone).width;
+      const slot = fond
+        ? { x: placed.x, y: placed.y, width: Math.min(1, Math.max(SLOT_WIDTH_MIN, zone.slot?.width ?? seen)) }
+        : { x: placed.x, y: placed.y };
       this.placements.update((rows) => {
         const next = this.zones().map((_, index) => rows[index] ?? null);
-        next[drag.index] = slot;
+        next[drag.index] = { x: slot.x, y: slot.y };
         return next;
       });
       this.zonesChange.emit(
         this.zones().map((row, index) => (index === drag.index ? { ...row, slot } : row)),
       );
+      if (fond) {
+        this.slotPick.set(drag.index);
+      }
     } else if (placed && snap?.snapped) {
       this.flashFit(drag.index);
     }
@@ -570,6 +693,7 @@ export class ClickZoneEditorComponent {
       }
       const width = image.naturalWidth;
       const height = image.naturalHeight;
+      this.cutSize.set({ width, height });
       this.pieceUrls.set(zones.map((zone) => cutPiece(image, width, height, zone)));
       this.punchedUrl.set(punchPieces(image, width, height, zones));
     };

@@ -101,8 +101,10 @@ interface PuzzlePiecePlayView {
   points: ChildPlayViewClickPoint[];
   slotX?: number | null;
   slotY?: number | null;
+  slotWidth?: number | null;
   url: string;
   frame: PuzzleFrame;
+  /** Place attendue sur le plateau ; sa largeur est aussi celle de la pièce posée. */
   home: PuzzleFrame;
   placement: PuzzlePoint | null;
 }
@@ -911,7 +913,7 @@ export class ChildQuestionPlayViewComponent {
   }
 
   protected pieceWidthPercent(piece: PuzzlePiecePlayView): number {
-    return piece.frame.width * 100;
+    return piece.home.width * 100;
   }
 
   /**
@@ -920,8 +922,8 @@ export class ChildQuestionPlayViewComponent {
    */
   private pieceDepositWidthPx(piece: PuzzlePiecePlayView): number {
     const stage = this.puzzleStage()?.nativeElement.getBoundingClientRect();
-    if (stage != null && stage.width > 0 && piece.frame.width > 0) {
-      return piece.frame.width * stage.width;
+    if (stage != null && stage.width > 0 && piece.home.width > 0) {
+      return piece.home.width * stage.width;
     }
     return 64;
   }
@@ -1634,6 +1636,7 @@ function toPuzzlePlayView(
     points: piece.points,
     slotX: piece.slotX,
     slotY: piece.slotY,
+    slotWidth: piece.slotWidth,
   };
   const frame = puzzlePieceFrame(shape);
   const home = puzzlePieceHome(shape, boardMode);
@@ -1645,6 +1648,7 @@ function toPuzzlePlayView(
     points: piece.points,
     slotX: piece.slotX,
     slotY: piece.slotY,
+    slotWidth: piece.slotWidth,
     url: cutPuzzlePiece(cutImage, width, height, shape),
     frame,
     home,

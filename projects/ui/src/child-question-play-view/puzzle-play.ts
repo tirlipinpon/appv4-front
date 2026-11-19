@@ -16,6 +16,7 @@ export interface PuzzleShape {
   points: PuzzlePoint[];
   slotX?: number | null;
   slotY?: number | null;
+  slotWidth?: number | null;
 }
 
 export interface PuzzleFrame {
@@ -66,13 +67,20 @@ export function puzzlePieceFrame(zone: PuzzleShape): PuzzleFrame {
   };
 }
 
-/** Emplacement cible du coin haut-gauche (slot blanc ou cadre de découpe). */
+/**
+ * Emplacement cible du coin haut-gauche : place posée par le professeur (cadre blanc,
+ * fond dédié), sinon cadre de découpe (trous, ancien fond sans place).
+ * Sur le fond dédié, la largeur est celle choisie par le professeur.
+ */
 export function puzzlePieceHome(zone: PuzzleShape, boardMode: string | undefined): PuzzleFrame {
   const frame = puzzlePieceFrame(zone);
-  if (boardMode === 'blanc' && zone.slotX != null && zone.slotY != null) {
-    return { x: zone.slotX, y: zone.slotY, width: frame.width, height: frame.height };
+  const placedByTeacher = boardMode === 'blanc' || boardMode === 'fond';
+  if (!placedByTeacher || zone.slotX == null || zone.slotY == null) {
+    return frame;
   }
-  return frame;
+  const width =
+    boardMode === 'fond' && zone.slotWidth != null && zone.slotWidth > 0 ? zone.slotWidth : frame.width;
+  return { x: zone.slotX, y: zone.slotY, width, height: frame.height * (width / frame.width) };
 }
 
 export function magnetizedPosition(

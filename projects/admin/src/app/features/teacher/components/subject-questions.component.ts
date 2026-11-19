@@ -301,6 +301,7 @@ export class SubjectQuestionsComponent implements OnInit {
               points: zone.points,
               slotX: zone.slot?.x,
               slotY: zone.slot?.y,
+              slotWidth: zone.slot?.width,
             }))
           : undefined,
     });
@@ -430,20 +431,30 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setBoardMode(mode: PuzzleBoardMode): void {
+    const previous = this.boardMode();
     this.boardMode.set(mode);
     if (mode !== PUZZLE_BOARD_MODE.FOND) {
       this.boardImage.set('');
     }
-    if (mode !== PUZZLE_BOARD_MODE.BLANC) {
-      this.clickZones.update((zones) => zones.map((zone) => ({ ...zone, slot: null })));
+    // Les places sont posées sur un plateau précis : un autre plateau les rend fausses.
+    if (mode !== previous || mode === PUZZLE_BOARD_MODE.TROUS) {
+      this.clearPuzzleSlots();
     }
     this.error.set(null);
   }
 
   setBoardImage(dataUrl: string): void {
+    const replaced = this.boardImage() !== dataUrl;
     this.boardImage.set(dataUrl);
     this.boardMode.set(PUZZLE_BOARD_MODE.FOND);
+    if (replaced) {
+      this.clearPuzzleSlots();
+    }
     this.error.set(null);
+  }
+
+  private clearPuzzleSlots(): void {
+    this.clickZones.update((zones) => zones.map((zone) => ({ ...zone, slot: null })));
   }
 
   setClickImage(dataUrl: string): void {
@@ -876,6 +887,14 @@ export class SubjectQuestionsComponent implements OnInit {
       this.error.set(
         'Sur le cadre blanc, ouvre l’aperçu plateau et pose chaque pièce pour fixer son emplacement.',
       );
+      return;
+    }
+    if (
+      code === FORM.PUZZLE &&
+      this.boardMode() === PUZZLE_BOARD_MODE.FOND &&
+      this.clickZones().some((zone) => zone.slot == null)
+    ) {
+      this.error.set('Sur le fond, ouvre « Voir le plateau (fond) » et pose chaque pièce à sa place.');
       return;
     }
     const body = buildSaveBody(code, {

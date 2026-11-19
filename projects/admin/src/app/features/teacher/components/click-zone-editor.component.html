@@ -2,7 +2,7 @@
   @if (variant() === 'puzzle') {
     <p class="hint">
       1) Image à découper = les éléments. 2) Choisis le plateau : trous dans l'image, cadre blanc, ou
-      fond dédié (même cadrage).
+      fond dédié.
     </p>
   }
   <label class="upload">
@@ -69,7 +69,7 @@
         <p class="hint">Fond prêt. Les pièces découpées se posent sur ce plateau.</p>
         <img class="board-thumb" [src]="boardImageDataUrl()" alt="Fond de jeu" />
       } @else {
-        <p class="hint">Ajoute une image de fond distincte (même cadrage / même scène).</p>
+        <p class="hint">Ajoute l'image de fond où l'enfant posera les pièces.</p>
       }
     }
   }
@@ -203,6 +203,7 @@
               <img
                 class="token"
                 [class.fit]="isFitFlash(pieceIndex)"
+                [class.picked]="slotSizing()?.index === pieceIndex"
                 [src]="url"
                 alt=""
                 draggable="false"
@@ -211,7 +212,7 @@
                 matTooltipShowDelay="200"
                 [style.left.%]="spot.x * 100"
                 [style.top.%]="spot.y * 100"
-                [style.width.%]="pieceWidth(zone)"
+                [style.width.%]="tokenWidth(zone)"
                 [style.z-index]="dragIndex() === pieceIndex ? 1000 : pieceIndex + 1"
                 (pointerdown)="onPieceDown($event, pieceIndex)"
               />
@@ -395,7 +396,13 @@
     </button>
   }
   @if (showingBoard() && usingCustomBoard()) {
-    <p class="hint">Les vignettes viennent de l'image à découper ; tu les poses sur le fond.</p>
+    <p class="hint">
+      @if (readonly()) {
+        Les vignettes viennent de l'image à découper ; tu les poses sur le fond.
+      } @else {
+        Pose chaque pièce à sa place sur le fond, touche-la pour régler sa taille, puis enregistre.
+      }
+    </p>
   } @else if (showingBoard() && usingBlankBoard()) {
     <p class="hint">
       @if (readonly()) {
@@ -407,7 +414,7 @@
   } @else if (showingBoard() && usingPunchedBoard()) {
     <p class="hint">Plateau = image de découpe trouée.</p>
   } @else if (boardMode() === boardModes.FOND && hasDistinctBoard()) {
-    <p class="hint">Trace les pièces ici, puis « Voir le plateau (fond) » pour les y glisser.</p>
+    <p class="hint">Trace les pièces ici, puis « Voir le plateau (fond) » pour les poser à leur place.</p>
   } @else if (boardMode() === boardModes.FOND) {
     <p class="hint">Ajoute un fond dédié plus haut, puis aperçois le plateau.</p>
   } @else {
@@ -446,5 +453,24 @@
     />
   </label>
   <p class="hint">0 % ne colle qu'au ras du trou. 25 % accroche de plus loin. Enregistre pour garder ce réglage.</p>
-  <button mat-button type="button" (click)="clearPlacements()">Remettre les pièces en bas</button>
+  @if (slotSizing(); as sizing) {
+    <label class="magnet">
+      Taille de « {{ sizing.name }} » : {{ sizing.percent }} %
+      <input
+        type="range"
+        min="2"
+        max="100"
+        step="1"
+        [value]="sizing.percent"
+        [disabled]="disabled()"
+        (input)="resizeSlot(sizing.index, inputValue($event))"
+      />
+    </label>
+  }
+  <button mat-button type="button" (click)="resetPieces()">Remettre les pièces en bas</button>
+  @if (!readonly() && showingBoard() && usingCustomBoard()) {
+    <button mat-button type="button" [disabled]="disabled()" (click)="placeLikeCut()">
+      Placer comme sur l'image à découper
+    </button>
+  }
 }
