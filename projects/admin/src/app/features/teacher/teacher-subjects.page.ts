@@ -88,6 +88,7 @@ type Pending =
       confirm: boolean;
       /** Vrai quand on arrive du retrait : seul le déplacement est proposé. */
       fromRemoval: boolean;
+      colleaguesRequest?: symbol;
     };
 
 const NAME_REQUIRED = 'Le nom est obligatoire.';
@@ -742,7 +743,9 @@ export class TeacherSubjectsPage implements OnInit {
   askTransfer(subject: SubjectRow): void {
     this.renamingId.set(null);
     this.clearSubjectError(subject.id);
+    const request = Symbol();
     this.pending.set({
+      colleaguesRequest: request,
       id: subject.id,
       kind: 'transfer',
       mode: null,
@@ -751,10 +754,10 @@ export class TeacherSubjectsPage implements OnInit {
       confirm: false,
       fromRemoval: false,
     });
-    this.api.colleagues(subject.id).subscribe({
+    this.api.colleagues(subject.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (body) => {
         const current = this.pending();
-        if (!current || current.kind !== 'transfer' || current.id !== subject.id) {
+        if (current?.kind !== 'transfer' || current.colleaguesRequest !== request) {
           return;
         }
         this.pending.set({
@@ -763,6 +766,10 @@ export class TeacherSubjectsPage implements OnInit {
         });
       },
       error: (err: HttpErrorResponse) => {
+        const current = this.pending();
+        if (current?.kind !== 'transfer' || current.colleaguesRequest !== request) {
+          return;
+        }
         this.pending.set(null);
         this.setSubjectError(subject.id, httpErrorMessage(err, 'Collègues indisponibles.'));
       },

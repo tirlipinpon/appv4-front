@@ -73,6 +73,44 @@ describe('PlayQuestionPage', () => {
     http.verify();
   });
 
+  it('annule les vérifications de lettres remplacées par une frappe, une validation ou un rejeu', () => {
+    const { fixture, http } = setup();
+    const url = 'http://localhost:8080/api/ext/subjects/5/questions/42';
+    http.expectOne(url).flush({ formCode: 'reponse_libre', letterMask: '__', letterCount: 2 });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const typeLetter = (index: number, value: string) => {
+      const field = root.querySelector(`[data-testid="child-play-view-letter-${index}"]`) as HTMLInputElement;
+      field.value = value;
+      field.dispatchEvent(new Event('input'));
+      return http.expectOne(`${url}/letter-locks`);
+    };
+    const first = typeLetter(0, 'a');
+    const second = typeLetter(1, 'b');
+    expect(first.cancelled).toBeTrue();
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    expect(second.cancelled).toBeTrue();
+    const attempt = http.expectOne(`${url}/attempts`);
+    expect(attempt.request.body).toEqual({ attempt: 'ab' });
+    attempt.flush({ passed: false });
+    const finalCheck = http.expectOne(`${url}/letter-locks`);
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-replay"]') as HTMLButtonElement).click();
+    expect(finalCheck.cancelled).toBeTrue();
+    http.verify();
+  });
+
+  it('désactive la soumission pour une forme inconnue', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({ formCode: 'future' });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="play-error"]')?.textContent).toContain('pas encore jouable');
+    expect((root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).disabled).toBeTrue();
+    http.verify();
+  });
+
   it('affiche order via le composant partagé et envoie orderedItemIds', () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
