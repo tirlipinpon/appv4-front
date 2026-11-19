@@ -998,6 +998,7 @@ describe('SubjectQuestionsComponent', () => {
           { x: 0, y: 0 },
           { x: 1, y: 0.5 },
         ],
+        slot: { x: 0.05, y: 0.1, width: 0.9 },
       },
       {
         label: 'le sol',
@@ -1007,6 +1008,7 @@ describe('SubjectQuestionsComponent', () => {
           { x: 0.5, y: 0.75 },
           { x: 0.7, y: 0.9 },
         ],
+        slot: { x: 0.4, y: 0.6, width: 0.35 },
       },
     ]);
     fixture.detectChanges();
@@ -1034,6 +1036,9 @@ describe('SubjectQuestionsComponent', () => {
             { x: 0, y: 0 },
             { x: 1, y: 0.5 },
           ],
+          slotX: 0.05,
+          slotY: 0.1,
+          slotWidth: 0.9,
         },
         {
           label: 'le sol',
@@ -1042,6 +1047,9 @@ describe('SubjectQuestionsComponent', () => {
             { x: 0.5, y: 0.75 },
             { x: 0.7, y: 0.9 },
           ],
+          slotX: 0.4,
+          slotY: 0.6,
+          slotWidth: 0.35,
         },
       ],
     });
@@ -1062,6 +1070,9 @@ describe('SubjectQuestionsComponent', () => {
             { x: 0, y: 0 },
             { x: 1, y: 0.5 },
           ],
+          slotX: 0.05,
+          slotY: 0.1,
+          slotWidth: 0.9,
         },
         {
           id: 2,
@@ -1071,6 +1082,9 @@ describe('SubjectQuestionsComponent', () => {
             { x: 0.5, y: 0.75 },
             { x: 0.7, y: 0.9 },
           ],
+          slotX: 0.4,
+          slotY: 0.6,
+          slotWidth: 0.35,
         },
       ],
       choices: [],
