@@ -1,0 +1,396 @@
+import { expect, test, type Page, type Route } from '@playwright/test';
+
+/**
+ * Parcours enfant : jouer les six formes (QCM, Memory, Ordre, Vrai/Faux,
+ * Classement, Liens). L'API est simulée. Le score affiché est celui renvoyé.
+ */
+
+test.use({ baseURL: 'http://localhost:4200', viewport: { width: 1280, height: 1200 } });
+
+const ui = {
+  panel: 'play-question-panel',
+  prompt: 'child-play-view-prompt',
+  submit: 'play-submit',
+  result: 'play-result',
+  score: 'play-score',
+  replay: 'play-replay',
+  choice: 'child-play-view-choice',
+  tf: 'child-play-view-tf',
+  memoryCard: 'child-play-view-memory-card',
+  order: 'child-play-view-order',
+  orderItem: 'child-play-view-order-item',
+  orderUp: 'child-play-view-order-up',
+  orderDown: 'child-play-view-order-down',
+  orderAxis: 'child-play-view-order-axis',
+  classCard: 'child-play-view-class-card',
+  classColumn: 'child-play-view-class-column',
+  linkLeft: 'child-play-view-link-left',
+  linkRight: 'child-play-view-link-right',
+} as const;
+
+const SUBJECT_ID = 4;
+const QUESTION_ID = 42;
+
+interface AttemptBody {
+  selectedChoiceIds?: number[];
+  statements?: { statementId: number; value: boolean }[];
+  matchedPairIds?: number[];
+  orderedItemIds?: number[];
+  placements?: { cardId: number; columnId: number }[];
+  linkMatches?: { leftId: number; rightId: number }[];
+}
+
+test.describe('Jouer une question', { tag: ['@learning', '@mock'] }, () => {
+  test.describe.configure({ mode: 'parallel' });
+
+  test('QCM : Valider reste inactif tant qu aucun choix n est fait', async ({ page }) => {
+    await openPlay(page, qcmQuestion());
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('QCM : la bonne réponse donne Bravo et Rejouer ramène Valider', async ({ page }) => {
+    await openPlay(page, qcmQuestion());
+    await page.getByTestId(`${ui.choice}-2`).click();
+    await submitAndExpect(page, true, '100');
+    await replay(page);
+  });
+
+  test('QCM : un mauvais choix affiche Pas encore', async ({ page }) => {
+    await openPlay(page, qcmQuestion());
+    await page.getByTestId(`${ui.choice}-1`).click();
+    await submitAndExpect(page, false, '0');
+  });
+
+  test('Memory : Valider reste inactif après une seule paire', async ({ page }) => {
+    await openPlay(page, memoryQuestion());
+    await matchMemory(page, [1]);
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('Memory : une fausse paire ne débloque pas Valider', async ({ page }) => {
+    await openPlay(page, memoryQuestion());
+    await page.getByTestId(`${ui.memoryCard}-1-q`).click();
+    await page.getByTestId(`${ui.memoryCard}-2-a`).click();
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('Memory : les deux paires donnent Bravo et Rejouer ramène Valider', async ({ page }) => {
+    await openPlay(page, memoryQuestion());
+    await matchMemory(page, [1, 2]);
+    await submitAndExpect(page, true, '100');
+    await replay(page);
+  });
+
+  test("Ordre : la frise est visible et Valider l'ordre est déjà actif", async ({ page }) => {
+    await openPlay(page, orderQuestion());
+    await expect(page.getByTestId(`${ui.orderAxis}-1`)).toHaveText('matin');
+    await expect(page.getByTestId(`${ui.orderAxis}-2`)).toHaveText('midi');
+    await expect(page.getByTestId(`${ui.orderAxis}-3`)).toHaveText('soir');
+    await expect(page.getByTestId(ui.submit)).toBeEnabled();
+  });
+
+  test("Ordre : le bon ordre donne Bravo et Rejouer ramène Valider l'ordre", async ({ page }) => {
+    await openPlay(page, orderQuestion());
+    await arrangeOrder(page, [1, 2, 3]);
+    await submitAndExpect(page, true, '100');
+    await replay(page);
+  });
+
+  test('Ordre : un ordre mélangé affiche Pas encore', async ({ page }) => {
+    await openPlay(page, orderQuestion());
+    await disorder(page, [1, 2, 3]);
+    await submitAndExpect(page, false);
+  });
+
+  test("Vrai/Faux : Valider reste inactif tant qu'une affirmation n'a pas de réponse", async ({ page }) => {
+    await openPlay(page, trueFalseQuestion());
+    await page.getByTestId(`${ui.tf}-1-true`).click();
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('Vrai/Faux : les deux bonnes réponses donnent Bravo et Rejouer ramène Valider', async ({ page }) => {
+    await openPlay(page, trueFalseQuestion());
+    await page.getByTestId(`${ui.tf}-1-true`).click();
+    await page.getByTestId(`${ui.tf}-2-false`).click();
+    await submitAndExpect(page, true, '100');
+    await replay(page);
+  });
+
+  test('Vrai/Faux : une affirmation fausse affiche Pas encore', async ({ page }) => {
+    await openPlay(page, trueFalseQuestion());
+    await page.getByTestId(`${ui.tf}-1-true`).click();
+    await page.getByTestId(`${ui.tf}-2-true`).click();
+    await submitAndExpect(page, false, '50');
+  });
+
+  test('Classement : Valider reste inactif tant qu une carte reste à placer', async ({ page }) => {
+    await openPlay(page, classementQuestion());
+    await placeCards(page, [[1, 10]]);
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('Classement : les bonnes colonnes donnent Bravo et Rejouer ramène Valider', async ({ page }) => {
+    await openPlay(page, classementQuestion());
+    await placeCards(page, [
+      [1, 10],
+      [2, 11],
+    ]);
+    await submitAndExpect(page, true, '100');
+    await replay(page);
+  });
+
+  test('Classement : les colonnes inversées affichent Pas encore', async ({ page }) => {
+    await openPlay(page, classementQuestion());
+    await placeCards(page, [
+      [1, 11],
+      [2, 10],
+    ]);
+    await submitAndExpect(page, false, '0');
+  });
+
+  test('Liens : Valider reste inactif tant qu un mot n est pas relié', async ({ page }) => {
+    await openPlay(page, liensQuestion());
+    await pairLinks(page, [[1, 1]]);
+    await expect(page.getByTestId(ui.submit)).toBeDisabled();
+  });
+
+  test('Liens : les bonnes associations donnent Bravo et Rejouer ramène Valider', async ({ page }) => {
+    await openPlay(page, liensQuestion());
+    await pairLinks(page, [
+      [1, 1],
+      [2, 2],
+    ]);
+    await submitAndExpect(page, true, '100');
+    await replay(page);
+  });
+
+  test('Liens : les associations croisées affichent Pas encore', async ({ page }) => {
+    await openPlay(page, liensQuestion());
+    await pairLinks(page, [
+      [1, 2],
+      [2, 1],
+    ]);
+    await submitAndExpect(page, false, '0');
+  });
+});
+
+function qcmQuestion(): Record<string, unknown> {
+  return {
+    formCode: 'qcm',
+    prompt: 'Lequel est un fruit ?',
+    choices: [
+      { choiceId: 1, label: 'Pierre' },
+      { choiceId: 2, label: 'Poire' },
+    ],
+  };
+}
+
+function memoryQuestion(): Record<string, unknown> {
+  return {
+    formCode: 'memory',
+    prompt: 'Retrouve les paires',
+    pairs: [
+      { pairId: 1, questionSide: 'chat', answerSide: 'miaou' },
+      { pairId: 2, questionSide: 'chien', answerSide: 'ouaf' },
+    ],
+  };
+}
+
+function orderQuestion(): Record<string, unknown> {
+  return {
+    formCode: 'order',
+    prompt: 'Remets la journée dans l ordre',
+    timelineEnabled: true,
+    items: [
+      { itemId: 1, label: 'lever', axisLabel: 'matin' },
+      { itemId: 2, label: 'déjeuner', axisLabel: 'midi' },
+      { itemId: 3, label: 'dîner', axisLabel: 'soir' },
+    ],
+  };
+}
+
+function trueFalseQuestion(): Record<string, unknown> {
+  return {
+    formCode: 'vrai_faux',
+    prompt: 'Vrai ou faux ?',
+    statements: [
+      { statementId: 1, label: 'Deux et deux font quatre' },
+      { statementId: 2, label: 'Trois et trois font sept' },
+    ],
+  };
+}
+
+function classementQuestion(): Record<string, unknown> {
+  return {
+    formCode: 'classement',
+    prompt: 'Range chaque carte',
+    columns: [
+      { columnId: 10, label: 'Fruit' },
+      { columnId: 11, label: 'Légume' },
+    ],
+    cards: [
+      { cardId: 1, label: 'Poire' },
+      { cardId: 2, label: 'Carotte' },
+    ],
+  };
+}
+
+function liensQuestion(): Record<string, unknown> {
+  return {
+    formCode: 'liens',
+    prompt: 'Relie chaque mot',
+    links: [
+      { linkId: 1, leftLabel: 'un', rightLabel: '1' },
+      { linkId: 2, leftLabel: 'deux', rightLabel: '2' },
+    ],
+  };
+}
+
+async function openPlay(page: Page, question: Record<string, unknown>): Promise<void> {
+  const formCode = String(question['formCode']);
+  await page.addInitScript((token) => {
+    sessionStorage.setItem('learning.jwt', token);
+  }, 'child-token');
+  await page.route(
+    (url) => url.pathname === '/api/ext/me',
+    async (route) => {
+      await json(route, { childId: 1, firstName: 'Akira', hasPhoto: false });
+    },
+  );
+  await page.route(
+    (url) => url.pathname === `/api/ext/subjects/${SUBJECT_ID}/questions/${QUESTION_ID}/attempts`,
+    async (route) => {
+      const body = route.request().postDataJSON() as AttemptBody;
+      await json(route, grade(formCode, body));
+    },
+  );
+  await page.route(
+    (url) => url.pathname === `/api/ext/subjects/${SUBJECT_ID}/questions/${QUESTION_ID}`,
+    async (route) => {
+      await json(route, question);
+    },
+  );
+  await page.goto(`/learn/${SUBJECT_ID}/play/${QUESTION_ID}`);
+  await expect(page.getByTestId(ui.panel)).toBeVisible();
+  await expect(page.getByTestId(ui.prompt)).toBeVisible();
+}
+
+function grade(formCode: string, body: AttemptBody): { attemptId: number; scorePercent: number; passed: boolean } {
+  if (formCode === 'qcm') {
+    const selected = [...(body.selectedChoiceIds ?? [])].sort((a, b) => a - b);
+    const passed = selected.length === 1 && selected[0] === 2;
+    return { attemptId: 1, scorePercent: passed ? 100 : 0, passed };
+  }
+  if (formCode === 'vrai_faux') {
+    const answers = new Map((body.statements ?? []).map((row) => [row.statementId, row.value]));
+    const expected: [number, boolean][] = [
+      [1, true],
+      [2, false],
+    ];
+    const ok = expected.filter(([id, value]) => answers.get(id) === value).length;
+    return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed: ok === expected.length };
+  }
+  if (formCode === 'memory') {
+    const ids = new Set(body.matchedPairIds ?? []);
+    const passed = ids.size === 2 && ids.has(1) && ids.has(2);
+    return { attemptId: 1, scorePercent: passed ? 100 : 0, passed };
+  }
+  if (formCode === 'order') {
+    const ordered = body.orderedItemIds ?? [];
+    const expected = [1, 2, 3];
+    const ok = expected.filter((id, index) => ordered[index] === id).length;
+    return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed: ok === expected.length };
+  }
+  if (formCode === 'classement') {
+    const byCard = new Map((body.placements ?? []).map((row) => [row.cardId, row.columnId]));
+    const expected: [number, number][] = [
+      [1, 10],
+      [2, 11],
+    ];
+    const ok = expected.filter(([cardId, columnId]) => byCard.get(cardId) === columnId).length;
+    const passed = ok === expected.length && (body.placements ?? []).length === expected.length;
+    return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed };
+  }
+  const matches = body.linkMatches ?? [];
+  const ok = matches.filter((match) => match.leftId === match.rightId).length;
+  const passed = ok === 2 && matches.length === 2;
+  return { attemptId: 1, scorePercent: Math.round((100 * ok) / 2), passed };
+}
+
+async function submitAndExpect(page: Page, passed: boolean, score?: string): Promise<void> {
+  await expect(page.getByTestId(ui.submit)).toBeEnabled();
+  await page.getByTestId(ui.submit).click();
+  const result = page.getByTestId(ui.result);
+  await expect(result).toContainText(passed ? 'Bravo' : 'Pas encore');
+  if (score != null) {
+    await expect(page.getByTestId(ui.score)).toContainText(score);
+  } else {
+    await expect(page.getByTestId(ui.score)).not.toContainText('100');
+  }
+}
+
+async function replay(page: Page): Promise<void> {
+  await page.getByTestId(ui.replay).click();
+  await expect(page.getByTestId(ui.result)).toHaveCount(0);
+  await expect(page.getByTestId(ui.submit)).toBeVisible();
+}
+
+async function matchMemory(page: Page, pairIds: number[]): Promise<void> {
+  for (const pairId of pairIds) {
+    await page.getByTestId(`${ui.memoryCard}-${pairId}-q`).click();
+    await page.getByTestId(`${ui.memoryCard}-${pairId}-a`).click();
+  }
+}
+
+async function placeCards(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {
+  for (const [cardId, columnId] of pairs) {
+    await page.getByTestId(`${ui.classCard}-${cardId}`).click();
+    await page.getByTestId(`${ui.classColumn}-${columnId}`).click();
+  }
+}
+
+async function pairLinks(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {
+  for (const [leftId, rightId] of pairs) {
+    await page.getByTestId(`${ui.linkLeft}-l-${leftId}`).click();
+    await page.getByTestId(`${ui.linkRight}-r-${rightId}`).click();
+  }
+}
+
+async function arrangeOrder(page: Page, expected: number[]): Promise<void> {
+  for (let target = 0; target < expected.length; target++) {
+    const id = expected[target]!;
+    for (let step = 0; step < expected.length; step++) {
+      const current = await readOrder(page);
+      const index = current.indexOf(id);
+      if (index === target) {
+        break;
+      }
+      const item = page.getByTestId(`${ui.orderItem}-${id}`);
+      const move = index > target ? item.getByTestId(ui.orderUp) : item.getByTestId(ui.orderDown);
+      await move.click();
+      await expect.poll(async () => (await readOrder(page)).join(',')).not.toBe(current.join(','));
+    }
+  }
+  await expect.poll(async () => (await readOrder(page)).join(',')).toBe(expected.join(','));
+}
+
+async function disorder(page: Page, expected: number[]): Promise<void> {
+  const current = await readOrder(page);
+  const alreadyWrong = current.some((id, index) => id !== expected[index]);
+  if (!alreadyWrong) {
+    await page.getByTestId(`${ui.orderItem}-${expected[0]}`).getByTestId(ui.orderDown).click();
+    await expect.poll(async () => (await readOrder(page)).join(',')).not.toBe(current.join(','));
+  }
+  const next = await readOrder(page);
+  expect(next.some((id, index) => id !== expected[index])).toBe(true);
+}
+
+async function readOrder(page: Page): Promise<number[]> {
+  return page.getByTestId(ui.order).locator('[data-testid^="child-play-view-order-item-"]').evaluateAll((nodes) =>
+    nodes.map((node) => Number((node.getAttribute('data-testid') ?? '').replace('child-play-view-order-item-', ''))),
+  );
+}
+
+async function json(route: Route, body: unknown): Promise<void> {
+  await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+}
