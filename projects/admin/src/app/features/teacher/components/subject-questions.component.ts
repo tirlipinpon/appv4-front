@@ -245,12 +245,9 @@ export class SubjectQuestionsComponent implements OnInit {
     this.previewSelectionTick.set(0);
     this.preview.set({
       formCode: question.formCode,
-      formLabel:
-        question.formCode === 'memory'
-          ? 'FORME · memory'
-          : question.formCode === 'order'
-            ? 'FORME · order'
-            : question.formLabel,
+      formLabel: question.formLabel || this.formOf(question.formCode)?.label,
+      formIconCode: this.formOf(question.formCode)?.iconCode,
+      formColor: this.formOf(question.formCode)?.color,
       prompt:
         question.formCode === 'memory'
           ? question.prompt || 'Memory'

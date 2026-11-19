@@ -2213,6 +2213,12 @@ export interface components {
             elements?: components["schemas"]["ChildPlaySimonElementItem"][];
             /** @description Simon seulement : la suite à montrer, dans l'ordre où les éléments s'allument (positions 0-based dans elements). */
             sequence?: number[];
+            /** @description Libellé de la forme, ou null. */
+            formLabel?: string;
+            /** @description Dessin de la forme, ou null. */
+            iconCode?: string;
+            /** @description Couleur #rrggbb de la forme, ou null. */
+            color?: string;
         };
         ChildPlaySimonElementItem: {
             label?: string;

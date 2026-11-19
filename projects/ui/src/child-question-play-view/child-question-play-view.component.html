@@ -1,13 +1,11 @@
 <div class="child-play-view" data-testid="child-question-play-view">
-  @if (question().formLabel) {
-    <p
-      class="child-play-view-form"
-      [class.memory]="isMemory()"
-      [class.order]="isOrder()"
-      [class.letters]="isLetters()"
-      data-testid="child-play-view-form"
-    >
-      {{ question().formLabel }}
+  @if (question().formLabel || question().formIconCode) {
+    <p class="child-play-view-form" data-testid="child-play-view-form">
+      <app-question-form-mark
+        [iconCode]="question().formIconCode"
+        [color]="question().formColor"
+        [label]="question().formLabel ?? ''"
+      />
     </p>
   }
   @if (question().prompt && !isOrderedImage()) {

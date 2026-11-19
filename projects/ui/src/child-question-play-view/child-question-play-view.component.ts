@@ -36,6 +36,7 @@ import type {
   ChildPlayViewClickZone,
   ChildPlayViewWord,
 } from './child-question-play-view.model';
+import { QuestionFormMarkComponent } from '../question-form-mark/question-form-mark.component';
 import {
   PUZZLE_MAGNET_DEFAULT,
   clampPuzzleMagnet,
@@ -297,7 +298,7 @@ function toClassColumn(column: ChildPlayViewColumn, index: number): ClassColumnV
  */
 @Component({
   selector: 'app-child-question-play-view',
-  imports: [CdkDropList, CdkDrag, CdkDragHandle],
+  imports: [CdkDropList, CdkDrag, CdkDragHandle, QuestionFormMarkComponent],
   templateUrl: './child-question-play-view.component.html',
   styleUrl: './child-question-play-view.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

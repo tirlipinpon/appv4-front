@@ -64,6 +64,10 @@ export interface ChildPlayViewClickStep {
 export interface ChildPlayViewQuestion {
   formCode: string;
   formLabel?: string;
+  /** Dessin de la forme, renvoyé par l'API. Absent si la forme n'a pas d'identité. */
+  formIconCode?: string | null;
+  /** Teinte #rrggbb de la forme, renvoyée par l'API. */
+  formColor?: string | null;
   prompt?: string;
   choices?: ChildPlayViewChoice[];
   statements?: ChildPlayViewStatement[];
