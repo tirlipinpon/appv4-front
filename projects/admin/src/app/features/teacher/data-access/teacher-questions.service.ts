@@ -10,6 +10,7 @@ import type {
   LetterAttemptRequest,
   LetterAttemptResponse,
   TeacherQuestionFormsResponse,
+  TeacherQuestionGamificationCatalog,
   TeacherSubjectFollowersResponse,
   TeacherSubjectQuestionItem,
   TeacherSubjectQuestionsResponse,
@@ -31,6 +32,13 @@ export class TeacherQuestionsService {
 
   noteCopied(subjectId: number): void {
     this.copiedSubject.next(subjectId);
+  }
+
+  /** Défaut d'une question neuve et barème des difficultés. */
+  gamification(): Observable<TeacherQuestionGamificationCatalog> {
+    return this.http.get<TeacherQuestionGamificationCatalog>(
+      `${environment.apiBaseUrl}/teacher/question-gamification`,
+    );
   }
 
   forms(): Observable<TeacherQuestionFormsResponse> {

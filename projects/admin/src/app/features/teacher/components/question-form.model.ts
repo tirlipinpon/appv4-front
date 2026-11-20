@@ -1,4 +1,5 @@
 import { ClickZone } from './click-zone';
+import { GamificationDraft } from './question-gamification';
 import { MAGNET_DEFAULT } from './puzzle-piece';
 
 /**
@@ -115,6 +116,8 @@ export interface SavedQuestion {
   elements: SimonElementDraft[];
   /** Suite du Simon : positions 0-based dans `elements`. */
   sequence: number[];
+  /** Réglage renvoyé par l'API. Absent : le panneau n'invente pas un barème. */
+  gamification: GamificationDraft | null;
 }
 
 /** Genre des éléments d'un Simon, tel que le contrat OpenAPI l'écrit (`elementType`). */
@@ -203,6 +206,7 @@ export interface QuestionDraftSnapshot {
   simonType: SimonElementType | null;
   simonElements: SimonElementDraft[];
   simonSequence: number[];
+  gamification?: GamificationDraft | null;
 }
 
 export function isKnownFormCode(code: string | null | undefined): code is KnownFormCode {

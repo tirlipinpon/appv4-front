@@ -10,6 +10,7 @@ import { TeacherQuestionsPage } from './teacher-questions.page';
 const subjectsUrl = 'http://localhost:8080/api/int/teacher/subjects';
 const formsUrl = 'http://localhost:8080/api/int/teacher/question-forms';
 const questionsUrl = 'http://localhost:8080/api/int/teacher/subjects/3/questions';
+const gamificationUrl = 'http://localhost:8080/api/int/teacher/question-gamification';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
 const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
@@ -48,6 +49,22 @@ describe('TeacherQuestionsPage', () => {
   });
 
   afterEach(() => {
+    for (const pending of http.match(gamificationUrl)) {
+      if (pending.cancelled) {
+        continue;
+      }
+      pending.flush({
+        defaults: {
+          maxAttempts: 1,
+          difficulty: 'facile',
+          difficultyLabel: 'Facile',
+          customizePoints: false,
+          gamificationDisabled: false,
+          points: [10],
+        },
+        difficulties: [{ code: 'facile', label: 'Facile', pointsByAttempt: [10] }],
+      });
+    }
     http.verify();
   });
 

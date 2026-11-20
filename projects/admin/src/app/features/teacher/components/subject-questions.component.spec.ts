@@ -7,6 +7,22 @@ import { SubjectQuestionsComponent } from './subject-questions.component';
 
 const formsUrl = 'http://localhost:8080/api/int/teacher/question-forms';
 const questionsUrl = 'http://localhost:8080/api/int/teacher/subjects/4/questions';
+const gamificationUrl = 'http://localhost:8080/api/int/teacher/question-gamification';
+const gamificationCatalog = {
+  defaults: {
+    maxAttempts: 1,
+    difficulty: 'facile',
+    difficultyLabel: 'Facile',
+    customizePoints: false,
+    gamificationDisabled: false,
+    points: [10],
+  },
+  difficulties: [
+    { code: 'facile', label: 'Facile', pointsByAttempt: [10, 5, 2, 1, 1] },
+    { code: 'modere', label: 'Modéré', pointsByAttempt: [20, 10, 5, 2, 1] },
+    { code: 'difficile', label: 'Difficile', pointsByAttempt: [30, 15, 8, 4, 2] },
+  ],
+};
 
 describe('SubjectQuestionsComponent', () => {
   let fixture: ComponentFixture<SubjectQuestionsComponent>;
@@ -24,6 +40,11 @@ describe('SubjectQuestionsComponent', () => {
   });
 
   afterEach(() => {
+    for (const pending of http.match(gamificationUrl)) {
+      if (!pending.cancelled) {
+        pending.flush(gamificationCatalog);
+      }
+    }
     http.verify();
   });
 
@@ -1283,6 +1304,91 @@ describe('SubjectQuestionsComponent', () => {
     expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('100 %');
     flush();
   }));
+
+  it('sends the gamification chosen on the panel and reloads a saved question as returned', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [{
+        id: 7,
+        formCode: 'qcm',
+        formLabel: 'Choix multiples',
+        prompt: 'Déjà là',
+        choices: [
+          { id: 1, label: 'bleu', correct: true },
+          { id: 2, label: 'vert', correct: false },
+        ],
+        gamification: {
+          maxAttempts: 2,
+          difficulty: 'difficile',
+          difficultyLabel: 'Difficile',
+          customizePoints: true,
+          gamificationDisabled: true,
+          points: [30, 15],
+        },
+      }],
+    });
+    http.expectOne(gamificationUrl).flush(gamificationCatalog);
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    expect(page.gamification()?.difficultyLabel).toBe('Facile');
+    page.setAttempts('2');
+    page.setDifficultyIndex('1');
+    page.setCustomize(true);
+    page.setGamificationPoint(0, '20');
+    page.setGamificationPoint(1, '10');
+    page.setPrompt('Couleur du ciel ?');
+    page.setChoiceLabel(0, 'bleu');
+    page.setChoiceLabel(1, 'vert');
+    page.setChoiceCorrect(0, true);
+    page.save();
+
+    const created = http.expectOne(questionsUrl);
+    expect(created.request.method).toBe('POST');
+    expect(created.request.body.gamification).toEqual({
+      maxAttempts: 2,
+      difficulty: 'modere',
+      customizePoints: true,
+      gamificationDisabled: false,
+      points: [20, 10],
+    });
+    created.flush({
+      id: 8,
+      formCode: 'qcm',
+      formLabel: 'Choix multiples',
+      prompt: 'Couleur du ciel ?',
+      choices: [
+        { id: 1, label: 'bleu', correct: true },
+        { id: 2, label: 'vert', correct: false },
+      ],
+      gamification: {
+        maxAttempts: 2,
+        difficulty: 'modere',
+        difficultyLabel: 'Modéré',
+        customizePoints: true,
+        gamificationDisabled: false,
+        points: [20, 10],
+      },
+    });
+    fixture.detectChanges();
+
+    const editSaved = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((button) => button.textContent?.includes('Modifier') && button.closest('li')?.textContent?.includes('Déjà là'));
+    editSaved?.click();
+    fixture.detectChanges();
+    expect(page.gamification()).toEqual({
+      maxAttempts: 2,
+      difficulty: 'difficile',
+      difficultyLabel: 'Difficile',
+      customizePoints: true,
+      gamificationDisabled: true,
+      points: [30, 15],
+    });
+  });
 
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(

@@ -33,6 +33,83 @@
         }
       </div>
 
+      @if (selectedCode() && gamification(); as game) {
+        <details class="gamification">
+          <summary>
+            +1 Gamification
+            <span class="hint">{{ game.maxAttempts }} · {{ game.difficultyLabel }}</span>
+          </summary>
+          @if (attemptMax(); as maxAttempts) {
+            <label class="gamification-row">
+              Nombre maximum d'essais
+              <input
+                type="range"
+                [min]="1"
+                [max]="maxAttempts"
+                [value]="game.maxAttempts"
+                [disabled]="saving()"
+                (input)="setAttempts(inputValue($event))"
+              />
+              <span>{{ game.maxAttempts }}</span>
+            </label>
+          }
+          @if (difficultyIndex() >= 0) {
+            <label class="gamification-row">
+              Difficulté
+              <input
+                type="range"
+                min="0"
+                [max]="gamificationLevels().length - 1"
+                [value]="difficultyIndex()"
+                [disabled]="saving()"
+                (input)="setDifficultyIndex(inputValue($event))"
+              />
+              <span>{{ game.difficultyLabel }}</span>
+              @if (!game.customizePoints) {
+                <span>{{ pointsLabel(game) }}</span>
+              }
+            </label>
+          } @else {
+            <p class="hint">{{ game.difficultyLabel }}</p>
+          }
+          <mat-slide-toggle
+            [checked]="game.customizePoints"
+            [disabled]="saving()"
+            (change)="setCustomize($event.checked)"
+          >
+            Personnaliser les points
+          </mat-slide-toggle>
+          @if (game.customizePoints) {
+            <div class="gamification-points">
+              @for (point of game.points; track attemptField($index)) {
+                <mat-form-field appearance="outline" class="field">
+                  <mat-label>Essai {{ $index + 1 }}</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    [value]="point ?? ''"
+                    [disabled]="saving()"
+                    (input)="setGamificationPoint($index, inputValue($event))"
+                  />
+                </mat-form-field>
+              }
+            </div>
+          }
+          <mat-slide-toggle
+            [checked]="game.gamificationDisabled"
+            [disabled]="saving()"
+            (change)="setGamificationDisabled($event.checked)"
+          >
+            Désactiver la gamification
+          </mat-slide-toggle>
+          <p class="hint">Utile pour recueillir des valeurs dans les statistiques sans aspect ludique.</p>
+        </details>
+      }
+      @if (selectedCode() && gamificationError(); as message) {
+        <p class="field-error" role="alert">{{ message }}</p>
+        <button mat-button type="button" (click)="loadGamification()">Réessayer</button>
+      }
+
       @if (selectedCode() === 'qcm') {
         <div class="editor">
           @if (editingId()) {
