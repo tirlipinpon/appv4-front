@@ -360,7 +360,7 @@ describe('PlayQuestionPage', () => {
 
     expect(phase()).toContain('Regardez');
     expect(root.querySelector('[data-testid="play-submit"]')).toBeNull();
-    expect(element(0).textContent).toContain('rouge');
+    expect(element(0).textContent?.trim()).toBe('');
     expect(element(0).style.backgroundColor).toBe('rgb(255, 0, 0)');
     expect(element(0).disabled).toBeTrue();
 
