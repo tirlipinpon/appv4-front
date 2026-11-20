@@ -797,6 +797,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/question-gamification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire le barème et le défaut de gamification */
+        get: operations["getTeacherQuestionGamification"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/question-forms": {
         parameters: {
             query?: never;
@@ -1188,6 +1205,8 @@ export interface components {
             elements?: components["schemas"]["TeacherQuestionSimonElementInput"][];
             /** @description Simon seulement : la suite à refaire, au moins deux pas. Chaque pas est la position 0-based d'un élément de elements. */
             sequence?: number[];
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
         };
         TeacherQuestionCardInput: {
             label?: string;
@@ -1200,6 +1219,14 @@ export interface components {
         };
         TeacherQuestionColumnInput: {
             label?: string;
+        };
+        TeacherQuestionGamificationInput: {
+            /** Format: int32 */
+            maxAttempts?: number;
+            difficulty?: string;
+            customizePoints?: boolean;
+            gamificationDisabled?: boolean;
+            points?: number[];
         };
         TeacherQuestionGapWordInput: {
             label?: string;
@@ -1275,6 +1302,15 @@ export interface components {
             /** Format: int64 */
             id?: number;
             label?: string;
+        };
+        TeacherQuestionGamificationItem: {
+            /** Format: int32 */
+            maxAttempts?: number;
+            difficulty?: string;
+            difficultyLabel?: string;
+            customizePoints?: boolean;
+            gamificationDisabled?: boolean;
+            points?: number[];
         };
         TeacherQuestionGapWordItem: {
             /** Format: int64 */
@@ -1377,6 +1413,7 @@ export interface components {
             elements?: components["schemas"]["TeacherQuestionSimonElementItem"][];
             /** @description Simon seulement : la suite à refaire, chaque pas étant la position 0-based d'un élément de elements. */
             sequence?: number[];
+            gamification?: components["schemas"]["TeacherQuestionGamificationItem"];
         };
         SetTeacherSubjectIconRequest: {
             iconCode?: string;
@@ -1868,6 +1905,15 @@ export interface components {
         TeacherStudentsResponse: {
             noClassMessage?: string;
             schools?: components["schemas"]["TeacherStudentSchool"][];
+        };
+        TeacherQuestionDifficultyItem: {
+            code?: string;
+            label?: string;
+            pointsByAttempt?: number[];
+        };
+        TeacherQuestionGamificationCatalog: {
+            defaults?: components["schemas"]["TeacherQuestionGamificationItem"];
+            difficulties?: components["schemas"]["TeacherQuestionDifficultyItem"][];
         };
         TeacherQuestionFormItem: {
             code?: string;
@@ -4290,6 +4336,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getTeacherQuestionGamification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Défaut d'une question neuve et barème des difficultés */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherQuestionGamificationCatalog"];
                 };
             };
         };

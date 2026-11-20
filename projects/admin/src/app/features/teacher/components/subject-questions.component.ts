@@ -16,6 +16,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import {
   ChildQuestionPlayViewComponent,
@@ -30,6 +31,19 @@ import { ClickZoneEditorComponent } from './click-zone-editor.component';
 import { LetterBoxesComponent } from './letter-boxes.component';
 import { ClickZone } from './click-zone';
 import { buildSaveBody, parseSavedQuestion, requireSavedQuestion } from './question-form.adapters';
+import {
+  GamificationDraft,
+  GamificationLevel,
+  attemptLimit,
+  copyDraft,
+  draftFromItem,
+  levelsFromCatalog,
+  withAttempts,
+  withCustomize,
+  withDifficulty,
+  withDisabled,
+  withPoint,
+} from './question-gamification';
 import {
   CardDraft,
   ChoiceDraft,
@@ -101,6 +115,7 @@ interface FormChoice {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatSlideToggleModule,
     ClickZoneEditorComponent,
     LetterBoxesComponent,
     ChildQuestionPlayViewComponent,
@@ -174,6 +189,12 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly followersLoading = signal(false);
   readonly formsLoading = signal(true);
   readonly formsError = signal<string | null>(null);
+  /** Barème API. Vide tant que le catalogue n'est pas arrivé. */
+  readonly gamificationLevels = signal<GamificationLevel[]>([]);
+  /** Réglage du panneau. Null : on n'affiche pas un barème de secours. */
+  readonly gamification = signal<GamificationDraft | null>(null);
+  readonly gamificationError = signal<string | null>(null);
+  private catalogDefaults: GamificationDraft | null = null;
   readonly followers = signal<TeacherSubjectFollowersResponse | null>(null);
   readonly letterMessages = signal<Readonly<Record<number, string>>>({});
   readonly letterBusyId = signal<number | null>(null);
@@ -393,6 +414,32 @@ export class SubjectQuestionsComponent implements OnInit {
     });
     this.loadQuestions();
     this.loadForms();
+    this.loadGamification();
+  }
+
+  loadGamification(): void {
+    this.gamificationError.set(null);
+    this.api
+      .gamification()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (body) => {
+          const levels = levelsFromCatalog(body.difficulties);
+          const defaults = draftFromItem(body.defaults);
+          if (levels.length === 0 || defaults == null) {
+            this.gamificationError.set('Le barème renvoyé par le serveur est incomplet.');
+            return;
+          }
+          this.gamificationLevels.set(levels);
+          this.catalogDefaults = copyDraft(defaults);
+          if (this.editingId() == null && this.gamification() == null) {
+            this.gamification.set(copyDraft(defaults));
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.gamificationError.set(httpErrorMessage(err, 'Barème indisponible.'));
+        },
+      });
   }
 
   loadForms(): void {
@@ -810,7 +857,73 @@ export class SubjectQuestionsComponent implements OnInit {
     );
     this.simonSequence.set([...question.sequence]);
     this.simonChecked.set(false);
+    this.gamification.set(question.gamification ? copyDraft(question.gamification) : null);
     this.error.set(null);
+  }
+
+  attemptMax(): number | null {
+    const game = this.gamification();
+    return game ? attemptLimit(this.gamificationLevels(), game.difficulty) : null;
+  }
+
+  difficultyIndex(): number {
+    const game = this.gamification();
+    if (!game) {
+      return -1;
+    }
+    return this.gamificationLevels().findIndex((level) => level.code === game.difficulty);
+  }
+
+  pointsLabel(game: GamificationDraft): string {
+    return game.points.filter((point): point is number => point != null).join(', ');
+  }
+
+  /** Recrée la case quand la difficulté change, pour afficher le nouveau barème. */
+  attemptField(index: number): string {
+    return `${this.gamification()?.difficulty ?? ''}:${index}`;
+  }
+
+  setAttempts(raw: string): void {
+    const game = this.gamification();
+    const attempts = Number(raw);
+    if (!game || !Number.isInteger(attempts)) {
+      return;
+    }
+    this.gamification.set(withAttempts(game, attempts, this.gamificationLevels()));
+  }
+
+  setDifficultyIndex(raw: string): void {
+    const game = this.gamification();
+    const index = Number(raw);
+    const level = this.gamificationLevels()[index];
+    if (!game || !level) {
+      return;
+    }
+    this.gamification.set(withDifficulty(game, level));
+  }
+
+  setCustomize(enabled: boolean): void {
+    const game = this.gamification();
+    if (!game) {
+      return;
+    }
+    this.gamification.set(withCustomize(game, enabled, this.gamificationLevels()));
+  }
+
+  setGamificationPoint(index: number, raw: string): void {
+    const game = this.gamification();
+    if (!game) {
+      return;
+    }
+    this.gamification.set(withPoint(game, index, raw));
+  }
+
+  setGamificationDisabled(disabled: boolean): void {
+    const game = this.gamification();
+    if (!game) {
+      return;
+    }
+    this.gamification.set(withDisabled(game, disabled));
   }
 
   toggleSelected(id: number, checked: boolean): void {
@@ -990,6 +1103,7 @@ export class SubjectQuestionsComponent implements OnInit {
     this.simonElements.set(emptySimonElements());
     this.simonSequence.set([]);
     this.simonChecked.set(false);
+    this.gamification.set(this.catalogDefaults ? copyDraft(this.catalogDefaults) : null);
     this.error.set(null);
   }
 
@@ -1047,6 +1161,7 @@ export class SubjectQuestionsComponent implements OnInit {
       simonType: this.simonType(),
       simonElements: this.simonElements(),
       simonSequence: this.simonSequence(),
+      gamification: this.gamification(),
     });
     if (!body) {
       return;

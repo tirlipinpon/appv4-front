@@ -66,6 +66,9 @@ export type TeacherSubjectQuestionsResponse = Required<
 >;
 export type TeacherSubjectQuestionItem = Required<components['schemas']['TeacherSubjectQuestionItem']>;
 export type TeacherQuestionChoiceItem = Required<components['schemas']['TeacherQuestionChoiceItem']>;
+export type TeacherQuestionGamificationCatalog = components['schemas']['TeacherQuestionGamificationCatalog'];
+export type TeacherQuestionGamificationItem = components['schemas']['TeacherQuestionGamificationItem'];
+export type TeacherQuestionDifficultyItem = components['schemas']['TeacherQuestionDifficultyItem'];
 export type CreateTeacherSubjectQuestionRequest =
   components['schemas']['CreateTeacherSubjectQuestionRequest'];
 export type CloneTeacherSubjectQuestionsRequest =

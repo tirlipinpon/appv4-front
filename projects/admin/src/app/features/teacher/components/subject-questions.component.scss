@@ -381,3 +381,31 @@ button.form-chip:disabled {
   color: var(--app-text-muted);
 }
 
+.gamification {
+  margin: 0.75rem 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--app-border, #d9d9d9);
+  border-radius: 8px;
+  background: var(--app-surface);
+}
+
+.gamification summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.gamification-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.65rem 0;
+}
+
+.gamification-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.35rem 0 0.75rem;
+}
+

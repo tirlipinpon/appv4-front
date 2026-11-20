@@ -1,6 +1,7 @@
 import type { components } from '../../../core/api/schema';
 import type { CreateTeacherSubjectQuestionRequest } from '../../../core/api/api-models';
 import { ClickZone, compactClickOrders } from './click-zone';
+import { draftFromItem, gamificationInput } from './question-gamification';
 import {
   FORM,
   KnownFormCode,
@@ -124,6 +125,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     sequence: simon
       ? (question.sequence ?? []).filter((step) => Number.isInteger(step) && step >= 0 && step < elements.length)
       : [],
+    gamification: draftFromItem(question.gamification),
   };
 }
 
@@ -146,7 +148,9 @@ export function buildSaveBody(
   if (!isKnownFormCode(code)) {
     return null;
   }
-  return bodyForForm(code, draft);
+  const body = bodyForForm(code, draft);
+  const gamification = gamificationInput(draft.gamification);
+  return gamification ? { ...body, gamification } : body;
 }
 
 function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateTeacherSubjectQuestionRequest {
