@@ -26,7 +26,6 @@ import {
 
 import type { TeacherSubjectFollowersResponse } from '../../../core/api/api-models';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
-import { preparePhoto } from '../../../shared/prepare-photo/prepare-photo';
 import { TeacherQuestionsService } from '../data-access/teacher-questions.service';
 import { ClickZoneEditorComponent } from './click-zone-editor.component';
 import { PieceFaceComponent } from './piece-face.component';
@@ -58,7 +57,6 @@ import {
   PuzzleBoardMode,
   PUZZLE_BOARD_MODE,
   SIMON_ELEMENT_TYPE,
-  SIMON_ELEMENT_TYPES,
   SavedQuestion,
   SimonElementDraft,
   SimonElementType,
@@ -103,7 +101,7 @@ interface FormChoice {
  * Le puzzle (SCRUM-183) reprend l'éditeur de l'image à cliquer : les pièces
  * sont découpées dans l'image, sans vert ni rouge. On peut les reposer
  * sur leur découpe ; le magnétisme dit à quelle distance elles se collent.
- * Le Simon (ADMIN-25) demande un genre, au moins deux éléments, puis la suite
+ * Le Simon demande au moins deux éléments, chacun texte, image ou couleur, puis la suite
  * à refaire, construite en touchant les éléments dans l'ordre.
  * Il peut copier une ou plusieurs questions vers une de ses matières.
  * Il peut aussi en supprimer une ou plusieurs, après avoir vu combien
@@ -171,7 +169,6 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly puzzleMagnet = signal(defaultMagnet());
   readonly answers = signal<GapWordDraft[]>([]);
   readonly decoys = signal<GapWordDraft[]>(emptyDecoys());
-  readonly simonTypes = SIMON_ELEMENT_TYPES;
   readonly simonType = signal<SimonElementType | null>(null);
   readonly simonElements = signal<SimonElementDraft[]>(emptySimonElements());
   readonly simonSequence = signal<number[]>([]);
@@ -815,50 +812,48 @@ export class SubjectQuestionsComponent implements OnInit {
 
   setSimonElementLabel(index: number, value: string): void {
     this.simonElements.update((rows) =>
-      rows.map((row, i) =>
-        i === index
-          ? { ...row, label: value, ...(value.trim() ? { color: '', imageDataUrl: undefined } : {}) }
-          : row,
-      ),
+      rows.map((row, i) => (i === index ? { label: value, color: '' } : row)),
+    );
+  }
+
+  setSimonElementFace(index: number, face: 'text' | 'image' | 'color'): void {
+    this.simonElements.update((rows) =>
+      rows.map((row, i) => {
+        if (i !== index) {
+          return row;
+        }
+        if (face === 'image') {
+          return { label: '', color: '', hasImage: true };
+        }
+        if (face === 'color') {
+          return { label: '', color: isSimonColor(row.color) ? row.color : '#000000' };
+        }
+        return { label: '', color: '' };
+      }),
     );
   }
 
   setSimonElementColor(index: number, value: string): void {
     this.simonElements.update((rows) =>
-      rows.map((row, i) =>
-        i === index
-          ? { ...row, color: value, ...(value.trim() ? { label: '', imageDataUrl: undefined } : {}) }
-          : row,
-      ),
+      rows.map((row, i) => (i === index ? { label: '', color: value } : row)),
     );
   }
 
-  setSimonElementImage(index: number, dataUrl: string): void {
+  onSimonImagePending(index: number): void {
     this.simonElements.update((rows) =>
-      rows.map((row, i) =>
-        i === index ? { label: '', color: '', imageDataUrl: dataUrl } : row,
-      ),
+      rows.map((row, i) => (i === index ? { label: '', color: '', hasImage: true, imageDataUrl: '' } : row)),
     );
   }
 
-  onSimonImage(index: number, event: Event): void {
-    const input = event.target;
-    const file = input instanceof HTMLInputElement ? input.files?.[0] : undefined;
-    if (!file) {
-      return;
-    }
-    this.setSimonElementImage(index, '');
-    preparePhoto(file, 256)
-      .then((photo) => this.setSimonElementImage(index, photo.dataUrl))
-      .catch((error: unknown) => {
-        if (input instanceof HTMLInputElement) {
-          input.value = '';
-        }
-        this.simonElements.update((rows) =>
-          rows.map((row, i) => (i === index ? { label: '', color: '', imageDataUrl: undefined } : row)),
-        );
-        this.error.set(error instanceof Error ? error.message : 'Image refusée.');
-      });
+  onSimonImageReady(index: number, dataUrl: string): void {
+    this.simonElements.update((rows) =>
+      rows.map((row, i) => (i === index ? { label: '', color: '', hasImage: true, imageDataUrl: dataUrl } : row)),
+    );
+  }
+
+  onSimonImageFailed(index: number, message: string): void {
+    this.setSimonElementFace(index, 'image');
+    this.error.set(message);
   }
 
   private patchPairImage(index: number, side: 'question' | 'answer', dataUrl: string): void {

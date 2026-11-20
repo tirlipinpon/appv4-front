@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
-import { preparePhoto } from '../../../shared/prepare-photo/prepare-photo';
+import { PIECE_PHOTO_SIDE, preparePhoto } from '../../../shared/prepare-photo/prepare-photo';
 
 /**
- * Une face de pièce : texte ou image, jamais les deux.
+ * Une face : texte ou image, et couleur pour un élément Simon.
  * Le parent garde le brouillon ; ce composant prépare le fichier WebP.
  */
 @Component({
@@ -20,16 +20,29 @@ export class PieceFaceComponent {
   readonly text = input('');
   readonly imageDataUrl = input<string | undefined>(undefined);
   readonly hasImage = input(false);
+  readonly allowColor = input(false);
+  readonly color = input('');
   readonly disabled = input(false);
 
   readonly textChange = output<string>();
+  readonly colorChange = output<string>();
   readonly face = output<'text' | 'image'>();
+  readonly colorSelected = output<void>();
   readonly imagePending = output<void>();
   readonly imageReady = output<string>();
   readonly imageFailed = output<string>();
 
   imageMode(): boolean {
     return this.hasImage() || this.imageDataUrl() != null;
+  }
+
+  colorMode(): boolean {
+    return this.allowColor() && !this.imageMode() && this.color().trim() !== '';
+  }
+
+  onColor(event: Event): void {
+    const target = event.target;
+    this.colorChange.emit(target instanceof HTMLInputElement ? target.value : '');
   }
 
   onText(event: Event): void {
@@ -44,7 +57,7 @@ export class PieceFaceComponent {
       return;
     }
     this.imagePending.emit();
-    preparePhoto(file, 256)
+    preparePhoto(file, PIECE_PHOTO_SIDE)
       .then((photo) => this.imageReady.emit(photo.dataUrl))
       .catch((error: unknown) => {
         if (input instanceof HTMLInputElement) {

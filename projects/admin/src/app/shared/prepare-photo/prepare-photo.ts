@@ -4,7 +4,12 @@ export const PHOTO_NOT_IMAGE = "Le fichier n'est pas une image.";
 export const PHOTO_TOO_LARGE = "L'image dépasse 5 Mo.";
 
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+/** Photo de profil : le plus grand côté autorisé. */
 export const MAX_PHOTO_SIDE = 1600;
+/** Pièce ou élément Simon. */
+export const PIECE_PHOTO_SIDE = 256;
+/** Plateau du puzzle et de l'image à cliquer. */
+export const BOARD_PHOTO_SIDE = 1280;
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
@@ -23,7 +28,8 @@ export interface CroppedPhoto {
 
 /**
  * Refuse un fichier qui n'est pas JPEG, PNG, GIF ou WebP, ou qui dépasse 5 Mo.
- * Réduit le plus grand côté à 1600 px sans agrandir, puis convertit en WebP.
+ * Réduit le plus grand côté à maxSide px sans agrandir, puis convertit en WebP.
+ * 1600 px pour une photo de profil, 256 px pour une pièce, 1280 px pour un plateau.
  * Un GIF animé devient sa première image.
  */
 export async function preparePhoto(file: File, maxSide = MAX_PHOTO_SIDE): Promise<PreparedPhoto> {

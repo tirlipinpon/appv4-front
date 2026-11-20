@@ -3,7 +3,7 @@
     <button
       class="form-chip"
       type="button"
-      [class.selected]="!imageMode()"
+      [class.selected]="!imageMode() && !colorMode()"
       [disabled]="disabled()"
       (click)="face.emit('text')"
     >
@@ -18,6 +18,17 @@
     >
       Image
     </button>
+    @if (allowColor()) {
+      <button
+        class="form-chip"
+        type="button"
+        [class.selected]="colorMode()"
+        [disabled]="disabled()"
+        (click)="colorSelected.emit()"
+      >
+        Couleur
+      </button>
+    }
   </div>
   @if (imageMode()) {
     @if (imageDataUrl()) {
@@ -31,6 +42,15 @@
       [attr.aria-label]="'Image : ' + legend()"
       [disabled]="disabled()"
       (change)="onFile($event)"
+    />
+  } @else if (colorMode()) {
+    <input
+      class="simon-picker"
+      type="color"
+      [attr.aria-label]="'Couleur : ' + legend()"
+      [value]="color()"
+      [disabled]="disabled()"
+      (input)="onColor($event)"
     />
   } @else {
     <mat-form-field appearance="outline" class="field">
