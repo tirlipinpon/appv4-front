@@ -659,58 +659,23 @@
               (input)="setPrompt(inputValue($event))"
             />
           </mat-form-field>
-          <div class="choice" role="group" aria-label="Genre des éléments">
-            <span class="hint">Genre</span>
-            @for (type of simonTypes; track type) {
-              <button
-                class="form-chip"
-                type="button"
-                [disabled]="saving()"
-                [class.selected]="simonType() === type"
-                [attr.aria-pressed]="simonType() === type"
-                (click)="setSimonType(type)"
-              >
-                {{ type }}
-              </button>
-            }
-          </div>
           @for (element of simonElements(); track $index) {
             <div class="choice">
-              @if (element.imageDataUrl) {
-                <img
-                  [src]="element.imageDataUrl"
-                  alt=""
-                  style="display: block; max-width: 8rem; max-height: 6rem; object-fit: contain"
-                />
-              } @else if (element.hasImage || element.imageDataUrl === '') {
-                <p>Image en cours…</p>
-              } @else {
-                <mat-form-field appearance="outline" class="field">
-                  <mat-label>Élément {{ $index + 1 }}</mat-label>
-                  <input
-                    matInput
-                    [value]="element.label"
-                    [disabled]="saving()"
-                    (input)="setSimonElementLabel($index, inputValue($event))"
-                  />
-                </mat-form-field>
-              }
-              @if (simonType() === 'couleurs' && !element.imageDataUrl) {
-                <input
-                  class="simon-picker"
-                  type="color"
-                  [attr.aria-label]="'Couleur de l’élément ' + ($index + 1)"
-                  [value]="element.color || '#000000'"
-                  [disabled]="saving()"
-                  (input)="setSimonElementColor($index, inputValue($event))"
-                />
-              }
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                [attr.aria-label]="'Image de l’élément ' + ($index + 1)"
-                [disabled]="saving()"
-                (change)="onSimonImage($index, $event)"
+              <app-piece-face
+                [legend]="'Élément ' + ($index + 1)"
+                [text]="element.label"
+                [imageDataUrl]="element.imageDataUrl"
+                [hasImage]="element.hasImage === true"
+                [allowColor]="true"
+                [color]="element.color"
+                [disabled]="saving() || imagesLoading()"
+                (textChange)="setSimonElementLabel($index, $event)"
+                (face)="setSimonElementFace($index, $event)"
+                (colorSelected)="setSimonElementFace($index, 'color')"
+                (colorChange)="setSimonElementColor($index, $event)"
+                (imagePending)="onSimonImagePending($index)"
+                (imageReady)="onSimonImageReady($index, $event)"
+                (imageFailed)="onSimonImageFailed($index, $event)"
               />
               <button mat-button type="button" [disabled]="saving()" (click)="removeSimonElement($index)">
                 Enlever

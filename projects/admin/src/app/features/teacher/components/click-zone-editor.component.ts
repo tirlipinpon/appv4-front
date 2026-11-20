@@ -18,7 +18,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { preparePhoto } from '../../../shared/prepare-photo/prepare-photo';
+import { BOARD_PHOTO_SIDE, preparePhoto } from '../../../shared/prepare-photo/prepare-photo';
 import {
   ClickPoint,
   ClickZone,
@@ -715,7 +715,7 @@ export class ClickZoneEditorComponent {
       return;
     }
     try {
-      const prepared = await preparePhoto(file);
+      const prepared = await preparePhoto(file, BOARD_PHOTO_SIDE);
       if (kind === 'board') {
         this.boardImageSelected.emit(prepared.dataUrl);
       } else {

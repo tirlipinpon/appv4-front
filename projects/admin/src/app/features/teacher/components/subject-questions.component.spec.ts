@@ -1172,7 +1172,6 @@ describe('SubjectQuestionsComponent', () => {
   it('posts a simon built by touching the elements in order and shows its summary', () => {
     bootSimon();
 
-    buttonNamed('couleurs')?.click();
     const page = fixture.componentInstance;
     page.setPrompt('Refais la suite');
     page.setSimonElementLabel(0, 'rouge');
