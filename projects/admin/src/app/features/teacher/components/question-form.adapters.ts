@@ -7,7 +7,6 @@ import {
   KnownFormCode,
   PUZZLE_BOARD_MODE,
   QuestionDraftSnapshot,
-  SIMON_ELEMENT_TYPE,
   SavedQuestion,
   SimonElementDraft,
   defaultMagnet,
@@ -34,34 +33,55 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     return null;
   }
   const choices = (question.choices ?? []).flatMap((choice) => {
-    if (!choice.label) {
+    const face = textFace(choice.label, choice.imageWebp, choice.hasImage);
+    if (!face) {
       return [];
     }
-    return [{ label: choice.label, correct: !!choice.correct }];
+    return [{ label: face.label, correct: !!choice.correct, ...face.extra }];
   });
   const pairs = (question.pairs ?? []).flatMap((pair) => {
-    if (!pair.questionSide || !pair.answerSide) {
+    const questionSide = textFace(pair.questionSide, pair.questionImageWebp, pair.questionHasImage);
+    const answerSide = textFace(pair.answerSide, pair.answerImageWebp, pair.answerHasImage);
+    if (!questionSide || !answerSide) {
       return [];
     }
-    return [{ questionSide: pair.questionSide, answerSide: pair.answerSide }];
+    return [{
+      questionSide: questionSide.label,
+      answerSide: answerSide.label,
+      ...(questionSide.extra.imageDataUrl ? { questionImageDataUrl: questionSide.extra.imageDataUrl } : {}),
+      ...(questionSide.extra.hasImage ? { questionHasImage: true } : {}),
+      ...(answerSide.extra.imageDataUrl ? { answerImageDataUrl: answerSide.extra.imageDataUrl } : {}),
+      ...(answerSide.extra.hasImage ? { answerHasImage: true } : {}),
+    }];
   });
   const items = (question.items ?? []).flatMap((item) => {
-    if (!item.label) {
+    const face = textFace(item.label, item.imageWebp, item.hasImage);
+    if (!face) {
       return [];
     }
-    return [{ label: item.label, axisLabel: item.axisLabel ?? '' }];
+    return [{ label: face.label, axisLabel: item.axisLabel ?? '', ...face.extra }];
   });
   const statements = (question.statements ?? []).flatMap((row) => {
-    if (!row.label || row.truthful == null) {
+    const face = textFace(row.label, row.imageWebp, row.hasImage);
+    if (!face || row.truthful == null) {
       return [];
     }
-    return [{ label: row.label, truthful: row.truthful }];
+    return [{ label: face.label, truthful: row.truthful, ...face.extra }];
   });
   const links = (question.links ?? []).flatMap((row) => {
-    if (!row.leftLabel || !row.rightLabel) {
+    const left = textFace(row.leftLabel, row.leftImageWebp, row.leftHasImage);
+    const right = textFace(row.rightLabel, row.rightImageWebp, row.rightHasImage);
+    if (!left || !right) {
       return [];
     }
-    return [{ leftLabel: row.leftLabel, rightLabel: row.rightLabel }];
+    return [{
+      leftLabel: left.label,
+      rightLabel: right.label,
+      ...(left.extra.imageDataUrl ? { leftImageDataUrl: left.extra.imageDataUrl } : {}),
+      ...(left.extra.hasImage ? { leftHasImage: true } : {}),
+      ...(right.extra.imageDataUrl ? { rightImageDataUrl: right.extra.imageDataUrl } : {}),
+      ...(right.extra.hasImage ? { rightHasImage: true } : {}),
+    }];
   });
   const columns = (question.columns ?? []).flatMap((row) => {
     if (!row.label) {
@@ -73,14 +93,15 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     .map((row) => row.id)
     .filter((id): id is number => typeof id === 'number');
   const cards = (question.cards ?? []).flatMap((row) => {
-    if (!row.label || row.correctColumnId == null) {
+    const face = textFace(row.label, row.imageWebp, row.hasImage);
+    if (!face || row.correctColumnId == null) {
       return [];
     }
     const columnIndex = columnIds.indexOf(row.correctColumnId);
     if (columnIndex < 0) {
       return [];
     }
-    return [{ label: row.label, columnIndex }];
+    return [{ label: face.label, columnIndex, ...face.extra }];
   });
   const answers = (question.answers ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
   const decoys = (question.decoys ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
@@ -163,8 +184,12 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         formCode: code,
         prompt: draft.prompt,
         pairs: draft.pairs.map((pair) => ({
-          questionSide: pair.questionSide,
-          answerSide: pair.answerSide,
+          ...(pair.questionImageDataUrl
+            ? { questionImageWebp: webpPayload(pair.questionImageDataUrl) }
+            : { questionSide: pair.questionSide }),
+          ...(pair.answerImageDataUrl
+            ? { answerImageWebp: webpPayload(pair.answerImageDataUrl) }
+            : { answerSide: pair.answerSide }),
         })),
       };
     case FORM.ORDER:
@@ -173,22 +198,25 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         prompt: draft.prompt,
         timelineEnabled: draft.timelineEnabled,
         items: draft.items.map((item) => ({
-          label: item.label,
+          ...(item.imageDataUrl
+            ? { imageWebp: webpPayload(item.imageDataUrl) }
+            : { label: item.label }),
           ...(draft.timelineEnabled ? { axisLabel: item.axisLabel } : {}),
         })),
       };
     case FORM.TRUE_FALSE: {
-      const statements = draft.statements.filter((row) => row.label.trim() !== '');
+      const statements = draft.statements.filter((row) => row.label.trim() !== '' || !!row.imageDataUrl);
       if (statements.some((row) => row.truthful == null)) {
         return null;
       }
       return {
         formCode: code,
         prompt: draft.prompt,
-        statements: statements.map((row) => ({
-          label: row.label,
-          truthful: row.truthful === true,
-        })),
+        statements: statements.map((row) =>
+          row.imageDataUrl
+            ? { imageWebp: webpPayload(row.imageDataUrl), truthful: row.truthful === true }
+            : { label: row.label, truthful: row.truthful === true },
+        ),
       };
     }
     case FORM.LINKS:
@@ -196,8 +224,12 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         formCode: code,
         prompt: draft.prompt,
         links: draft.links.map((row) => ({
-          leftLabel: row.leftLabel,
-          rightLabel: row.rightLabel,
+          ...(row.leftImageDataUrl
+            ? { leftImageWebp: webpPayload(row.leftImageDataUrl) }
+            : { leftLabel: row.leftLabel }),
+          ...(row.rightImageDataUrl
+            ? { rightImageWebp: webpPayload(row.rightImageDataUrl) }
+            : { rightLabel: row.rightLabel }),
         })),
       };
     case FORM.CLASSIFICATION:
@@ -206,7 +238,9 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         prompt: draft.prompt,
         columns: draft.columns.map((row) => ({ label: row.label })),
         cards: draft.cards.map((row) => ({
-          label: row.label,
+          ...(row.imageDataUrl
+            ? { imageWebp: webpPayload(row.imageDataUrl) }
+            : { label: row.label }),
           columnIndex: row.columnIndex,
         })),
       };
@@ -267,23 +301,27 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         })),
       };
     case FORM.SIMON:
-      if (draft.simonType === null) {
-        return null;
-      }
       return {
         formCode: code,
         prompt: draft.prompt,
-        elementType: draft.simonType,
-        elements: draft.simonElements.map((element) => ({
-          label: element.label,
-          ...(draft.simonType === SIMON_ELEMENT_TYPE.COLORS ? { color: element.color } : {}),
-        })),
+        elementType: 'libre',
+        elements: draft.simonElements.map((element) =>
+          element.imageDataUrl
+            ? { imageWebp: webpPayload(element.imageDataUrl) }
+            : element.color.trim()
+              ? { color: element.color.trim() }
+              : { label: element.label },
+        ),
       };
     case FORM.QCM:
       return {
         formCode: code,
         prompt: draft.prompt,
-        choices: draft.choices.map((choice) => ({ label: choice.label, correct: choice.correct })),
+        choices: draft.choices.map((choice) =>
+          choice.imageDataUrl
+            ? { imageWebp: webpPayload(choice.imageDataUrl), correct: choice.correct }
+            : { label: choice.label, correct: choice.correct },
+        ),
       };
   }
 }
@@ -293,9 +331,42 @@ export function webpPayload(dataUrl: string): string {
   return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
 }
 
+/** Une pièce enregistrée : texte, ou image (octets ou simple drapeau de la liste). */
+function textFace(
+  label: string | undefined,
+  imageWebp: string | undefined,
+  hasImage: boolean | undefined,
+): { label: string; extra: { imageDataUrl?: string; hasImage?: boolean } } | null {
+  const imageDataUrl = imageWebp ? `data:image/webp;base64,${imageWebp}` : undefined;
+  const image = hasImage === true || !!imageDataUrl;
+  if (!label && !image) {
+    return null;
+  }
+  return {
+    label: imageDataUrl ? '' : (label ?? ''),
+    extra: {
+      ...(imageDataUrl ? { imageDataUrl } : {}),
+      ...(image ? { hasImage: true } : {}),
+    },
+  };
+}
+
 /** Garde chaque élément, même sans nom : retirer une ligne décalerait les positions de la suite. */
 function savedSimonElements(elements: ApiQuestion['elements']): SimonElementDraft[] {
-  return (elements ?? []).map((element) => ({ label: element.label ?? '', color: element.color ?? '' }));
+  return (elements ?? []).map((element) => {
+    const imageDataUrl = element.imageWebp ? `data:image/webp;base64,${element.imageWebp}` : undefined;
+    const draft: SimonElementDraft = {
+      label: imageDataUrl || element.color ? '' : (element.label ?? ''),
+      color: imageDataUrl ? '' : (element.color ?? ''),
+    };
+    if (imageDataUrl) {
+      draft.imageDataUrl = imageDataUrl;
+    }
+    if (element.hasImage === true || imageDataUrl) {
+      draft.hasImage = true;
+    }
+    return draft;
+  });
 }
 
 function savedPieces(pieces: ApiQuestion['pieces']): ClickZone[] {

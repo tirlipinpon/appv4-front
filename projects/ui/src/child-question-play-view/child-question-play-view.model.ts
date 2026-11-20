@@ -2,16 +2,19 @@
 export interface ChildPlayViewChoice {
   choiceId?: number;
   label: string;
+  imageWebp?: string;
 }
 
 export interface ChildPlayViewStatement {
   statementId?: number;
   label: string;
+  imageWebp?: string;
 }
 
 export interface ChildPlayViewMemoryCard {
   cardId: string;
   label: string;
+  imageWebp?: string;
 }
 
 export interface ChildPlayViewItem {
@@ -19,6 +22,7 @@ export interface ChildPlayViewItem {
   label: string;
   /** Jalon de frise (ex. « 20 minutes »). Affiché seulement si `timelineEnabled`. */
   axisLabel?: string | null;
+  imageWebp?: string;
 }
 
 export interface ChildPlayViewColumn {
@@ -29,11 +33,13 @@ export interface ChildPlayViewColumn {
 export interface ChildPlayViewCard {
   cardId?: number;
   label: string;
+  imageWebp?: string;
 }
 
 export interface ChildPlayViewLinkOption {
   optionId: string;
   label: string;
+  imageWebp?: string;
 }
 
 export interface ChildPlayViewWord {
@@ -111,8 +117,10 @@ export interface ChildPlayViewQuestion {
 
 export interface ChildPlayViewSimonElement {
   label: string;
-  /** Code #rrggbb, genre couleurs seulement. */
+  /** Code #rrggbb quand l'élément est une couleur sans mot. */
   color?: string | null;
+  /** WebP base64 quand l'élément est une image. */
+  imageWebp?: string | null;
 }
 
 export interface ChildPlayViewPuzzlePiece {

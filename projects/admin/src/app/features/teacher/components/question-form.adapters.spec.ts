@@ -362,8 +362,8 @@ describe('question-form.adapters', () => {
       jasmine.objectContaining({
         elementType: 'couleurs',
         elements: [
-          { label: 'rouge', color: '#ff0000' },
-          { label: 'bleu', color: '#0000ff' },
+          { label: '', color: '#ff0000' },
+          { label: '', color: '#0000ff' },
         ],
         sequence: [0, 1, 0],
       }),
@@ -389,21 +389,78 @@ describe('question-form.adapters', () => {
     ).toEqual({
       formCode: FORM.SIMON,
       prompt: 'Refais',
-      elementType: 'couleurs',
-      elements: [
-        { label: 'rouge', color: '#ff0000' },
-        { label: 'bleu', color: '#0000ff' },
-      ],
+      elementType: 'libre',
+      elements: [{ color: '#ff0000' }, { color: '#0000ff' }],
     });
 
     expect(
-      buildSaveBody(FORM.SIMON, emptyDraft({ simonType: 'formes', simonElements: elements, simonSequence: [0, 1] })),
+      buildSaveBody(FORM.SIMON, emptyDraft({
+        simonElements: [
+          { label: 'zz', color: '', imageDataUrl: 'data:image/webp;base64,AAAA' },
+          { label: 'sdffefef', color: '' },
+        ],
+      })),
     ).toEqual({
       formCode: FORM.SIMON,
       prompt: '',
-      elementType: 'formes',
-      elements: [{ label: 'rouge' }, { label: 'bleu' }],
+      elementType: 'libre',
+      elements: [{ imageWebp: 'AAAA' }, { label: 'sdffefef' }],
     });
+  });
+
+  it('sends an image instead of the text for each piece game and reads it back', () => {
+    const photo = 'data:image/webp;base64,AAAA';
+
+    expect(buildSaveBody(FORM.QCM, emptyDraft({
+      choices: [
+        { label: 'zz', correct: false, imageDataUrl: photo },
+        { label: 'mot', correct: true },
+      ],
+    }))).toEqual(jasmine.objectContaining({
+      choices: [{ imageWebp: 'AAAA', correct: false }, { label: 'mot', correct: true }],
+    }));
+
+    expect(buildSaveBody(FORM.MEMORY, emptyDraft({
+      pairs: [{ questionSide: '', answerSide: 'chat', questionImageDataUrl: photo }],
+    }))).toEqual(jasmine.objectContaining({
+      pairs: [{ questionImageWebp: 'AAAA', answerSide: 'chat' }],
+    }));
+
+    expect(buildSaveBody(FORM.ORDER, emptyDraft({
+      timelineEnabled: true,
+      items: [{ label: '', axisLabel: 'lundi', imageDataUrl: photo }],
+    }))).toEqual(jasmine.objectContaining({
+      items: [{ imageWebp: 'AAAA', axisLabel: 'lundi' }],
+    }));
+
+    expect(buildSaveBody(FORM.TRUE_FALSE, emptyDraft({
+      statements: [{ label: '', truthful: false, imageDataUrl: photo }],
+    }))).toEqual(jasmine.objectContaining({
+      statements: [{ imageWebp: 'AAAA', truthful: false }],
+    }));
+
+    expect(buildSaveBody(FORM.LINKS, emptyDraft({
+      links: [{ leftLabel: 'chien', rightLabel: '', rightImageDataUrl: photo }],
+    }))).toEqual(jasmine.objectContaining({
+      links: [{ leftLabel: 'chien', rightImageWebp: 'AAAA' }],
+    }));
+
+    expect(buildSaveBody(FORM.CLASSIFICATION, emptyDraft({
+      columns: [{ label: 'Animaux' }],
+      cards: [{ label: '', columnIndex: 0, imageDataUrl: photo }],
+    }))).toEqual(jasmine.objectContaining({
+      columns: [{ label: 'Animaux' }],
+      cards: [{ imageWebp: 'AAAA', columnIndex: 0 }],
+    }));
+
+    const saved = parseSavedQuestion({
+      id: 40,
+      formCode: FORM.QCM,
+      choices: [{ correct: true, imageWebp: 'AAAA', hasImage: true }],
+    });
+    expect(saved?.choices).toEqual([
+      { label: '', correct: true, imageDataUrl: photo, hasImage: true },
+    ]);
   });
 
   it('returns null for an unknown form code', () => {

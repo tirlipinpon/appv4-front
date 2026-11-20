@@ -1193,11 +1193,8 @@ describe('SubjectQuestionsComponent', () => {
     expect(req.request.body).toEqual({
       formCode: 'simon',
       prompt: 'Refais la suite',
-      elementType: 'couleurs',
-      elements: [
-        { label: 'rouge', color: '#ff0000' },
-        { label: 'bleu', color: '#0000ff' },
-      ],
+      elementType: 'libre',
+      elements: [{ color: '#ff0000' }, { color: '#0000ff' }],
     });
     req.flush({
       id: 16,
@@ -1223,7 +1220,7 @@ describe('SubjectQuestionsComponent', () => {
 
     buttonNamed('Enregistrer')?.click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain("Choisis un genre d'éléments");
+    expect(fixture.nativeElement.textContent).toContain('Chaque élément est une image');
     expect(buttonNamed('Ajouter un élément')).toBeTruthy();
 
     const page = fixture.componentInstance;
@@ -1232,7 +1229,6 @@ describe('SubjectQuestionsComponent', () => {
     page.setSimonElementLabel(1, '2');
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).not.toContain('La suite doit avoir au moins deux pas.');
-    expect(fixture.nativeElement.querySelector('input[type="color"]')).toBeNull();
     expect(page.simonError()).toBeNull();
 
     buttonNamed('Enregistrer')?.click();
@@ -1240,7 +1236,7 @@ describe('SubjectQuestionsComponent', () => {
     expect(req.request.body).toEqual({
       formCode: 'simon',
       prompt: '',
-      elementType: 'nombres',
+      elementType: 'libre',
       elements: [{ label: '1' }, { label: '2' }],
     });
     req.flush({

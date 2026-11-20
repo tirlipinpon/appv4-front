@@ -30,7 +30,11 @@
             [attr.data-testid]="'child-play-view-choice-' + (choice.choiceId ?? 'x')"
             (click)="onChoice(choice)"
           >
-            {{ choice.label }}
+            @if (choice.imageWebp) {
+              <img [src]="pieceSrc(choice.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 8rem; object-fit: contain" />
+            } @else {
+              {{ choice.label }}
+            }
           </button>
         </li>
       }
@@ -41,7 +45,13 @@
     <ul class="child-play-view-statements" data-testid="child-play-view-true-false">
       @for (statement of displayStatements(); track statement.statementId ?? statement.label; let i = $index) {
         <li class="child-play-view-card" [attr.data-testid]="'child-play-view-statement-' + statementKey(statement, i)">
-          <p class="child-play-view-statement-label">{{ statement.label }}</p>
+          <p class="child-play-view-statement-label">
+            @if (statement.imageWebp) {
+              <img [src]="pieceSrc(statement.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 8rem; object-fit: contain" />
+            } @else {
+              {{ statement.label }}
+            }
+          </p>
           <div class="child-play-view-tf">
             @for (value of tfOrderFor(statementKey(statement, i)); track value) {
               <button
@@ -79,7 +89,12 @@
           [attr.data-testid]="'child-play-view-memory-card-' + card.key"
           (click)="onMemoryCard(card)"
         >
-          {{ cardFaceUp(card) ? card.label : '?' }}
+          {{ cardFaceUp(card) ? '' : '?' }}
+          @if (cardFaceUp(card) && card.imageWebp) {
+            <img [src]="pieceSrc(card.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+          } @else if (cardFaceUp(card)) {
+            {{ card.label }}
+          }
         </button>
       }
     </div>
@@ -121,7 +136,11 @@
                 {{ item.axisLabel }}
               </span>
             }
-            {{ item.label }}
+            @if (item.imageWebp) {
+              <img [src]="pieceSrc(item.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+            } @else {
+              {{ item.label }}
+            }
           </span>
           <div class="child-play-view-order-actions">
             <button
@@ -192,7 +211,11 @@
               [attr.data-testid]="'child-play-view-class-card-' + card.key"
               (click)="$event.stopPropagation(); onClassCardTap(card)"
             >
-              {{ card.label }}
+              @if (card.imageWebp) {
+                <img [src]="pieceSrc(card.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+              } @else {
+                {{ card.label }}
+              }
             </button>
           } @empty {
             <p class="child-play-view-class-empty">Toutes les cartes sont placées</p>
@@ -231,7 +254,11 @@
                 [attr.data-testid]="'child-play-view-class-card-' + card.key"
                 (click)="$event.stopPropagation(); onClassCardTap(card)"
               >
+                @if (card.imageWebp) {
+                <img [src]="pieceSrc(card.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+              } @else {
                 {{ card.label }}
+              }
               </button>
             } @empty {
               <p class="child-play-view-class-empty">Déposez les cartes ici</p>
@@ -258,7 +285,11 @@
               [attr.data-testid]="'child-play-view-link-left-' + row.key"
               (click)="onLinkLeft(row)"
             >
-              {{ row.label }}
+              @if (row.imageWebp) {
+                <img [src]="pieceSrc(row.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+              } @else {
+                {{ row.label }}
+              }
             </button>
           </li>
         }
@@ -274,7 +305,11 @@
               [attr.data-testid]="'child-play-view-link-right-' + row.key"
               (click)="onLinkRight(row)"
             >
-              {{ row.label }}
+              @if (row.imageWebp) {
+                <img [src]="pieceSrc(row.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+              } @else {
+                {{ row.label }}
+              }
             </button>
           </li>
         }
@@ -666,7 +701,11 @@
           style="min-height: 5.5rem; padding: 0.75rem; border: 0; border-radius: 1.25rem; font: inherit; font-size: 1.2rem; font-weight: 800; overflow-wrap: anywhere; transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease"
           (click)="onSimonElement($index)"
         >
-          {{ element.label }}
+          @if (element.imageWebp) {
+            <img [src]="pieceSrc(element.imageWebp)" alt="" style="display: block; width: 100%; max-height: 5.5rem; object-fit: contain" />
+          } @else if (!element.color) {
+            {{ element.label }}
+          }
         </button>
       }
     </div>

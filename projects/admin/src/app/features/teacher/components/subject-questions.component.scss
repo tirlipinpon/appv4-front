@@ -166,6 +166,13 @@ li.editing .prompt {
   min-width: 16rem;
 }
 
+img.piece-thumb {
+  display: block;
+  max-width: 8rem;
+  max-height: 6rem;
+  object-fit: contain;
+}
+
 button.form-chip {
   display: inline-flex;
   align-items: center;
