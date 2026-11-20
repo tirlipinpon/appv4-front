@@ -4,50 +4,51 @@
     <h1 data-testid="play-title">Jouer</h1>
   </header>
 
-  @if (loading()) {
+  @if (play.loading()) {
     <p class="status" data-testid="play-loading">Chargement…</p>
-  } @else if (error(); as message) {
+  } @else if (play.error(); as message) {
     <p class="status error" role="alert" data-testid="play-error">{{ message }}</p>
   }
 
-  @if (playModel(); as model) {
+  @if (play.model(); as model) {
     <app-child-question-play-view
       [question]="model"
-      [interactive]="!result()"
-      [disabled]="saving() || loading() || !!result()"
-      (choiceToggle)="onSelectionChange()"
-      (statementPick)="onSelectionChange()"
-      (memoryChange)="onSelectionChange()"
-      (orderChange)="onSelectionChange()"
-      (classificationChange)="onSelectionChange()"
-      (linksChange)="onSelectionChange()"
-      (gapsChange)="onSelectionChange()"
-      (imageChange)="onSelectionChange()"
-      (lettersChange)="onSelectionChange()"
-      (freeTextChange)="onSelectionChange()"
-      (puzzleChange)="onSelectionChange()"
-      (simonChange)="onSelectionChange()"
+      [interactive]="!play.result()"
+      [disabled]="play.disabled()"
+      [verifyMemoryPair]="play.verifyMemoryPair"
+      (choiceToggle)="play.onSelectionChange()"
+      (statementPick)="play.onSelectionChange()"
+      (memoryChange)="play.onSelectionChange()"
+      (orderChange)="play.onSelectionChange()"
+      (classificationChange)="play.onSelectionChange()"
+      (linksChange)="play.onSelectionChange()"
+      (gapsChange)="play.onSelectionChange()"
+      (imageChange)="play.onSelectionChange()"
+      (lettersChange)="play.onSelectionChange()"
+      (freeTextChange)="play.onSelectionChange()"
+      (puzzleChange)="play.onSelectionChange()"
+      (simonChange)="play.onSelectionChange()"
     />
 
-    @if (!result() && !autoSubmit()) {
+    @if (!play.result() && !play.autoSubmit() && !play.needsReplay() && !play.canRetry()) {
       <button
         type="button"
         class="submit"
         data-testid="play-submit"
-        [disabled]="!canSubmit()"
-        (click)="submit()"
+        [disabled]="!play.canSubmit()"
+        (click)="play.submit()"
       >
-        {{ question()?.formCode === 'order' ? "Valider l'ordre" : 'Valider' }}
+        {{ model.formCode === 'order' ? "Valider l'ordre" : 'Valider' }}
       </button>
     }
 
-    @if (result(); as verdict) {
+    @if (play.result(); as verdict) {
       <div class="verdict" [class.ok]="verdict.passed === true" [class.ko]="verdict.passed !== true" data-testid="play-result">
         <p class="verdict-title">{{ verdict.passed === true ? 'Bravo !' : 'Pas encore' }}</p>
         <p data-testid="play-score">Score : {{ verdict.scorePercent }} %</p>
       </div>
       <div class="after">
-        <button type="button" class="submit secondary" data-testid="play-replay" (click)="replay()">Rejouer</button>
+        <button type="button" class="submit secondary" data-testid="play-replay" (click)="play.replay()">Rejouer</button>
         <a
           [routerLink]="['/learn', subjectId(), 'questions']"
           class="submit secondary link"
@@ -57,5 +58,15 @@
         </a>
       </div>
     }
+  }
+
+  @if (play.saving()) {
+    <p class="status" role="status">Enregistrement…</p>
+  } @else if (play.canRetry()) {
+    <button type="button" class="submit" data-testid="play-retry" (click)="play.retry()">Renvoyer ma réponse</button>
+  } @else if (play.needsReplay()) {
+    <button type="button" class="submit secondary" data-testid="play-replay" (click)="play.replay()">
+      {{ play.model() ? 'Rejouer' : 'Recharger la question' }}
+    </button>
   }
 </section>

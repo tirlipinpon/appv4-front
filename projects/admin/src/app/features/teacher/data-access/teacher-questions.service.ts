@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, Subject, shareReplay } from 'rxjs';
 
+import type { components } from '@appv4/api';
+import type { MemoryMatch, PlayAnswer, PlayQuestion } from '@appv4/ui';
 import type {
   CloneTeacherSubjectQuestionsRequest,
   CreateTeacherSubjectQuestionRequest,
@@ -108,5 +110,34 @@ export class TeacherQuestionsService {
       `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/${questionId}/attempt`,
       body,
     );
+  }
+
+  getPreview(subjectId: number, questionId: number): Observable<PlayQuestion> {
+    return this.http.get<PlayQuestion>(this.previewUrl(subjectId, questionId));
+  }
+
+  gradePreview(subjectId: number, questionId: number, answer: PlayAnswer, previewSequence?: number[]) {
+    return this.http.post<components['schemas']['PreviewVerdict']>(
+      `${this.previewUrl(subjectId, questionId)}/attempts`,
+      { answer, previewSequence },
+    );
+  }
+
+  previewLetterLocks(subjectId: number, questionId: number, attempt: string) {
+    return this.http.post<components['schemas']['ChildLetterLocksResponse']>(
+      `${this.previewUrl(subjectId, questionId)}/letter-locks`,
+      { attempt },
+    );
+  }
+
+  previewMemoryPair(subjectId: number, questionId: number, match: MemoryMatch) {
+    return this.http.post<components['schemas']['MemoryPairResponse']>(
+      `${this.previewUrl(subjectId, questionId)}/memory-pair`,
+      match,
+    );
+  }
+
+  private previewUrl(subjectId: number, questionId: number): string {
+    return `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/${questionId}/preview`;
   }
 }

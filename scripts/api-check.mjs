@@ -12,10 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const generate = resolve(root, 'scripts/api-generate.mjs');
-const schemas = [
-  'projects/admin/src/app/core/api/schema.ts',
-  'projects/learning/src/app/core/api/schema.ts',
-];
+const schemas = ['projects/api/schema.ts'];
 
 const OUT_OF_DATE =
   'schema.ts désynchronisé du contrat OpenAPI.\n' +

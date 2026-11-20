@@ -1,8 +1,9 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { mockQuestionPlay } from './question-play.fixture';
 
 /**
  * Parcours professeur : « Voir comme l'enfant » sur les six formes.
- * L'API teacher est simulée. Le verdict est calculé dans l'aperçu, sans appel enfant.
+ * L'ouverture et la correction passent par les routes d'aperçu simulées.
  */
 
 test.use({ viewport: { width: 1280, height: 1200 } });
@@ -335,6 +336,7 @@ interface SavedQuestion {
 }
 
 async function openPreview(page: Page, question: SavedQuestion): Promise<void> {
+  await page.route((url) => url.pathname.startsWith('/api/'), (route) => route.fulfill({ status: 404 }));
   await page.addInitScript((token) => {
     sessionStorage.setItem('admin.jwt', token);
   }, teacherJwt());
@@ -370,6 +372,16 @@ async function openPreview(page: Page, question: SavedQuestion): Promise<void> {
     },
   );
   await page.route(
+    (url) => url.pathname === '/api/int/teacher/question-gamification',
+    (route) => json(route, {
+      difficulties: [{ code: 'facile', label: 'Facile', pointsByAttempt: [10, 5, 2, 1, 1] }],
+      defaults: {
+        maxAttempts: 1, difficulty: 'facile', difficultyLabel: 'Facile',
+        customizePoints: false, gamificationDisabled: false, points: [10],
+      },
+    }),
+  );
+  await page.route(
     (url) => url.pathname === '/api/int/teacher/question-forms',
     async (route) => {
       await json(route, { forms: [{ code: question.formCode, label: question.formLabel }] });
@@ -381,6 +393,7 @@ async function openPreview(page: Page, question: SavedQuestion): Promise<void> {
       await json(route, { questions: [question], nextCursor: null });
     },
   );
+  await mockQuestionPlay(page, '/api/int/teacher/subjects/4/questions/42/preview', 4, 42, question, true);
   await page.goto('/teacher/questions');
   await page.getByTestId(ui.preview).click();
   await expect(page.getByTestId(ui.dialog)).toBeVisible();
@@ -421,7 +434,7 @@ async function matchMemory(page: Page, pairIds: number[]): Promise<void> {
 async function placeCards(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {
   for (const [cardId, columnId] of pairs) {
     await page.getByTestId(`${ui.classCard}-${cardId}`).click();
-    await page.getByTestId(`${ui.classColumn}-${columnId}`).click();
+    await page.getByTestId(`${ui.classColumn}-${columnId + 9}`).click();
   }
 }
 
@@ -435,7 +448,7 @@ async function placeGaps(page: Page, pairs: readonly (readonly [number, number])
 async function pairLinks(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {
   for (const [leftId, rightId] of pairs) {
     await page.getByTestId(`${ui.linkLeft}-l-${leftId}`).click();
-    await page.getByTestId(`${ui.linkRight}-r-${rightId}`).click();
+    await page.getByTestId(`${ui.linkRight}-r-right-${rightId}`).click();
   }
 }
 

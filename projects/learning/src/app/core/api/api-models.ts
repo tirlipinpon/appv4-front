@@ -2,7 +2,7 @@
  * Alias sur le contrat OpenAPI de l'app enfant.
  * Ne pas redécrire ces formes à la main dans les services.
  */
-import type { components } from './schema';
+import type { components } from '@appv4/api';
 
 export type ChildLoginRequest = components['schemas']['ChildLoginRequest'];
 export type ChildLoginResponse = Required<components['schemas']['ChildLoginResponse']>;

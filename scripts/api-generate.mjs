@@ -1,5 +1,5 @@
 /**
- * Régénère projects/<app>/src/app/core/api/schema.ts depuis
+ * Régénère projects/api/schema.ts pour Admin, Learning et leurs composants partagés depuis
  * ../appv4-back/openapi/openapi.json (SCRUM-148).
  *
  * En CI, passer APPV4_OPENAPI_PATH vers le contrat checkouté d'une révision
@@ -17,7 +17,6 @@ const openapiFromEnv = process.env.APPV4_OPENAPI_PATH?.trim();
 const openapi = openapiFromEnv
   ? resolve(root, openapiFromEnv)
   : resolve(root, '../appv4-back/openapi/openapi.json');
-const apps = ['admin', 'learning'];
 
 if (!existsSync(openapi)) {
   console.error(
@@ -30,13 +29,11 @@ if (!existsSync(openapi)) {
   process.exit(1);
 }
 
-for (const app of apps) {
-  const out = resolve(root, `projects/${app}/src/app/core/api/schema.ts`);
-  mkdirSync(dirname(out), { recursive: true });
-  execFileSync(
-    'npx',
-    ['--yes', 'openapi-typescript@7.13.0', openapi, '-o', out],
-    { stdio: 'inherit', cwd: root, shell: true },
-  );
-  console.log(`OK ${app} → ${out}`);
-}
+const out = resolve(root, 'projects/api/schema.ts');
+mkdirSync(dirname(out), { recursive: true });
+execFileSync(
+  'npx',
+  ['--yes', 'openapi-typescript@7.13.0', openapi, '-o', out],
+  { stdio: 'inherit', cwd: root, shell: true },
+);
+console.log(`OK → ${out}`);

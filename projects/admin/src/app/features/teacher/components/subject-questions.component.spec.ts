@@ -833,7 +833,7 @@ describe('SubjectQuestionsComponent', () => {
     expect(page.editingId()).toBe(13);
   });
 
-  it('previews a free text answer and accepts Paris ignoring case and accents', () => {
+  it('displays the server verdict from a free text preview', () => {
     fixture.detectChanges();
     http.expectOne(formsUrl).flush({
       forms: [{ code: 'texte', label: 'Réponse libre', sortOrder: 11 }],
@@ -853,6 +853,9 @@ describe('SubjectQuestionsComponent', () => {
 
     const root = fixture.nativeElement as HTMLElement;
     (root.querySelector('[data-testid="teacher-question-preview"]') as HTMLButtonElement).click();
+    http.expectOne(`${questionsUrl}/13/preview`).flush({
+      formCode: 'texte', formLabel: 'Réponse libre', prompt: 'Capitale de la France', content: {},
+    });
     fixture.detectChanges();
 
     const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
@@ -862,6 +865,9 @@ describe('SubjectQuestionsComponent', () => {
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     submit.click();
+    const grade = http.expectOne(`${questionsUrl}/13/preview/attempts`);
+    expect(grade.request.body.answer).toEqual(jasmine.objectContaining({ formCode: 'texte', attempt: '  Pâris  ' }));
+    grade.flush({ passed: true, scorePercent: 100 });
     fixture.detectChanges();
 
     expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('Bravo');
@@ -1265,7 +1271,7 @@ describe('SubjectQuestionsComponent', () => {
     expect(page.simonSequence()).toEqual([0, 1, 1]);
   });
 
-  it('previews a simon like the child: watch, replay, then a local verdict without Valider', fakeAsync(() => {
+  it('previews Simon with the issued sequence and the server verdict without Valider', fakeAsync(() => {
     bootSimon([
       {
         id: 16,
@@ -1285,6 +1291,10 @@ describe('SubjectQuestionsComponent', () => {
     expect(root.textContent).toContain('Suite : 1. 2, 2. 1');
 
     (root.querySelector('[data-testid="teacher-question-preview"]') as HTMLButtonElement).click();
+    http.expectOne(`${questionsUrl}/16/preview`).flush({
+      formCode: 'simon', formLabel: 'Simon', prompt: 'Refais la suite',
+      content: { elementType: 'nombres', elements: [{ label: '1' }, { label: '2' }], sequence: [1, 0] },
+    });
     fixture.detectChanges();
     expect(root.textContent).toContain('Regardez');
     expect(root.querySelector('[data-testid="teacher-child-preview-submit"]')).toBeNull();
@@ -1298,6 +1308,10 @@ describe('SubjectQuestionsComponent', () => {
     fixture.detectChanges();
     (root.querySelector('[data-testid="child-play-view-simon-element-1"]') as HTMLButtonElement).click();
     (root.querySelector('[data-testid="child-play-view-simon-element-0"]') as HTMLButtonElement).click();
+    const grade = http.expectOne(`${questionsUrl}/16/preview/attempts`);
+    expect(grade.request.body.previewSequence).toEqual([1, 0]);
+    expect(grade.request.body.answer.simonSequence).toEqual([1, 0]);
+    grade.flush({ passed: true, scorePercent: 100 });
     fixture.detectChanges();
 
     expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('Bravo');

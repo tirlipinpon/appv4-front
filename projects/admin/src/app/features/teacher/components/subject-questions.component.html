@@ -998,7 +998,7 @@
 
   }
 
-  @if (preview(); as previewQuestion) {
+  @if (previewOpen()) {
     <div
       class="child-preview-backdrop"
       role="presentation"
@@ -1018,37 +1018,44 @@
           Fermer
         </button>
       </header>
-      <p class="child-preview-hint">
-        Même rendu que Learning (bouton Valider inclus). Les bonnes réponses ne sont pas affichées sur la carte.
-      </p>
-      <app-child-question-play-view
-        [question]="previewQuestion"
-        [interactive]="previewResult() === null"
-        [disabled]="previewResult() !== null"
-        (choiceToggle)="onPreviewSelectionChange()"
-        (statementPick)="onPreviewSelectionChange()"
-        (memoryChange)="onPreviewSelectionChange()"
-        (orderChange)="onPreviewSelectionChange()"
-        (classificationChange)="onPreviewSelectionChange()"
-        (linksChange)="onPreviewSelectionChange()"
-        (gapsChange)="onPreviewSelectionChange()"
-        (imageChange)="onPreviewSelectionChange()"
-        (lettersChange)="onPreviewSelectionChange()"
-        (freeTextChange)="onPreviewSelectionChange()"
-        (puzzleChange)="onPreviewSelectionChange()"
-        (simonChange)="onPreviewSelectionChange()"
-      />
-      @if (previewResult() === null && !previewAutoSubmit()) {
-        <button
-          type="button"
-          class="child-preview-submit"
-          data-testid="teacher-child-preview-submit"
-          [disabled]="!canPreviewSubmit()"
-          (click)="validateChildPreview()"
-        >
-          {{ preview()?.formCode === 'order' ? "Valider l'ordre" : 'Valider' }}
-        </button>
-      } @else if (previewResult(); as verdict) {
+      @if (previewPlay.loading()) {
+        <p class="child-preview-hint" role="status">Chargement…</p>
+      }
+      @if (previewPlay.error(); as error) {
+        <p class="error" role="alert">{{ error }}</p>
+      }
+      @if (previewPlay.model(); as previewQuestion) {
+        <app-child-question-play-view
+          [question]="previewQuestion"
+          [interactive]="!previewPlay.result()"
+          [disabled]="previewPlay.disabled()"
+          [verifyMemoryPair]="previewPlay.verifyMemoryPair"
+          (choiceToggle)="previewPlay.onSelectionChange()"
+          (statementPick)="previewPlay.onSelectionChange()"
+          (memoryChange)="previewPlay.onSelectionChange()"
+          (orderChange)="previewPlay.onSelectionChange()"
+          (classificationChange)="previewPlay.onSelectionChange()"
+          (linksChange)="previewPlay.onSelectionChange()"
+          (gapsChange)="previewPlay.onSelectionChange()"
+          (imageChange)="previewPlay.onSelectionChange()"
+          (lettersChange)="previewPlay.onSelectionChange()"
+          (freeTextChange)="previewPlay.onSelectionChange()"
+          (puzzleChange)="previewPlay.onSelectionChange()"
+          (simonChange)="previewPlay.onSelectionChange()"
+        />
+        @if (!previewPlay.result() && !previewPlay.autoSubmit() && !previewPlay.needsReplay() && !previewPlay.canRetry()) {
+          <button
+            type="button"
+            class="child-preview-submit"
+            data-testid="teacher-child-preview-submit"
+            [disabled]="!previewPlay.canSubmit()"
+            (click)="previewPlay.submit()"
+          >
+            {{ previewQuestion.formCode === 'order' ? "Valider l'ordre" : 'Valider' }}
+          </button>
+        }
+      }
+      @if (previewPlay.result(); as verdict) {
         <div
           class="child-preview-verdict"
           [class.ok]="verdict.passed === true"
@@ -1057,15 +1064,18 @@
         >
           <p class="child-preview-verdict-title">{{ verdict.passed === true ? 'Bravo !' : 'Pas encore' }}</p>
           <p>Score : {{ verdict.scorePercent }} %</p>
-          <p class="child-preview-verdict-note">Aperçu local — rien n’est envoyé à l’API enfant.</p>
         </div>
+      }
+      @if (previewPlay.canRetry()) {
+        <button type="button" class="child-preview-submit" (click)="previewPlay.retry()">Renvoyer la réponse</button>
+      } @else if (previewPlay.result() || previewPlay.needsReplay()) {
         <button
           type="button"
           class="child-preview-submit secondary"
           data-testid="teacher-child-preview-replay"
-          (click)="replayChildPreview()"
+          (click)="previewPlay.replay()"
         >
-          Rejouer
+          {{ previewPlay.model() ? 'Rejouer' : 'Recharger la question' }}
         </button>
       }
     </div>

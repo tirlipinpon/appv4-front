@@ -4,13 +4,7 @@
     <h1 data-testid="subject-questions-title">{{ subjectName() || 'Questions' }}</h1>
   </header>
 
-  @if (loading()) {
-    <p class="status" data-testid="subject-questions-loading">Chargement…</p>
-  } @else if (error(); as message) {
-    <p class="status error" role="alert" data-testid="subject-questions-error">{{ message }}</p>
-  } @else if (questions().length === 0) {
-    <p class="status" data-testid="subject-questions-empty">Aucune question pour l’instant.</p>
-  } @else {
+  @if (questions().length > 0) {
     <ul class="list" data-testid="subject-questions-list">
       @for (question of questions(); track question.questionId) {
         <li>
@@ -45,5 +39,18 @@
         </li>
       }
     </ul>
+  } @else if (!loading() && !error()) {
+    <p class="status" data-testid="subject-questions-empty">Aucune question pour l’instant.</p>
+  }
+
+  @if (loading()) {
+    <p class="status" role="status" data-testid="subject-questions-loading">Chargement…</p>
+  } @else if (error(); as message) {
+    <p class="status error" role="alert" data-testid="subject-questions-error">{{ message }}</p>
+    <button type="button" class="next-page" data-testid="subject-questions-retry" (click)="loadMore()">Réessayer</button>
+  } @else if (nextCursor() !== null) {
+    <button type="button" class="next-page" data-testid="subject-questions-next" (click)="loadMore()">
+      Plus de questions
+    </button>
   }
 </section>

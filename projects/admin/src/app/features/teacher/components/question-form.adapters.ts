@@ -1,4 +1,4 @@
-import type { components } from '../../../core/api/schema';
+import type { components } from '@appv4/api';
 import type { CreateTeacherSubjectQuestionRequest } from '../../../core/api/api-models';
 import { ClickZone, compactClickOrders } from './click-zone';
 import { draftFromItem, gamificationInput } from './question-gamification';
@@ -149,11 +149,14 @@ export function buildSaveBody(
     return null;
   }
   const body = bodyForForm(code, draft);
+  if (!body) {
+    return null;
+  }
   const gamification = gamificationInput(draft.gamification);
   return gamification ? { ...body, gamification } : body;
 }
 
-function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateTeacherSubjectQuestionRequest {
+function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateTeacherSubjectQuestionRequest | null {
   switch (code) {
     case FORM.MEMORY:
       return {
@@ -174,15 +177,20 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
           ...(draft.timelineEnabled ? { axisLabel: item.axisLabel } : {}),
         })),
       };
-    case FORM.TRUE_FALSE:
+    case FORM.TRUE_FALSE: {
+      const statements = draft.statements.filter((row) => row.label.trim() !== '');
+      if (statements.some((row) => row.truthful == null)) {
+        return null;
+      }
       return {
         formCode: code,
         prompt: draft.prompt,
-        statements: draft.statements.map((row) => ({
+        statements: statements.map((row) => ({
           label: row.label,
-          ...(row.truthful == null ? {} : { truthful: row.truthful }),
+          truthful: row.truthful === true,
         })),
       };
+    }
     case FORM.LINKS:
       return {
         formCode: code,
@@ -259,10 +267,13 @@ function bodyForForm(code: KnownFormCode, draft: QuestionDraftSnapshot): CreateT
         })),
       };
     case FORM.SIMON:
+      if (draft.simonType === null) {
+        return null;
+      }
       return {
         formCode: code,
         prompt: draft.prompt,
-        ...(draft.simonType === null ? {} : { elementType: draft.simonType }),
+        elementType: draft.simonType,
         elements: draft.simonElements.map((element) => ({
           label: element.label,
           ...(draft.simonType === SIMON_ELEMENT_TYPE.COLORS ? { color: element.color } : {}),

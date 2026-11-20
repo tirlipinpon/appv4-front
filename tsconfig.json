@@ -16,6 +16,7 @@
     "experimentalDecorators": true,
     "moduleResolution": "bundler",
     "paths": {
+      "@appv4/api": ["./projects/api/schema.ts"],
       "@appv4/ui": ["./projects/ui/src/public-api.ts"]
     },
     "importHelpers": true,
