@@ -83,6 +83,11 @@
         </button>
       }
     </div>
+    @if (memoryError()) {
+      <p class="child-play-view-memory-status" role="alert">
+        Impossible de vérifier les cartes. Tu peux les retourner à nouveau.
+      </p>
+    }
     @if (memoryStatus()) {
       <p class="child-play-view-memory-status" data-testid="child-play-view-memory-status">
         {{ memoryStatus() }}

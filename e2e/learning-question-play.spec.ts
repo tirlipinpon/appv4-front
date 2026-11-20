@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { mockQuestionPlay, type QuestionFixture } from './question-play.fixture';
 
 /**
  * Parcours enfant : jouer les six formes (QCM, Memory, Ordre, Vrai/Faux,
@@ -34,17 +35,6 @@ const ui = {
 
 const SUBJECT_ID = 4;
 const QUESTION_ID = 42;
-
-interface AttemptBody {
-  selectedChoiceIds?: number[];
-  statements?: { statementId: number; value: boolean }[];
-  matchedPairIds?: number[];
-  orderedItemIds?: number[];
-  placements?: { cardId: number; columnId: number }[];
-  linkMatches?: { leftId: number; rightId: number }[];
-  gapFills?: { holeIndex: number; wordId: number }[];
-  attempt?: string;
-}
 
 test.describe('Jouer une question', { tag: ['@learning', '@mock'] }, () => {
   test.describe.configure({ mode: 'parallel' });
@@ -240,14 +230,14 @@ test.describe('Jouer une question', { tag: ['@learning', '@mock'] }, () => {
   });
 });
 
-function freeTextQuestion(): Record<string, unknown> {
+function freeTextQuestion(): QuestionFixture {
   return {
     formCode: 'texte',
     prompt: 'Capitale de la France',
   };
 }
 
-function qcmQuestion(): Record<string, unknown> {
+function qcmQuestion(): QuestionFixture {
   return {
     formCode: 'qcm',
     prompt: 'Lequel est un fruit ?',
@@ -258,7 +248,7 @@ function qcmQuestion(): Record<string, unknown> {
   };
 }
 
-function memoryQuestion(): Record<string, unknown> {
+function memoryQuestion(): QuestionFixture {
   return {
     formCode: 'memory',
     prompt: 'Retrouve les paires',
@@ -269,7 +259,7 @@ function memoryQuestion(): Record<string, unknown> {
   };
 }
 
-function orderQuestion(): Record<string, unknown> {
+function orderQuestion(): QuestionFixture {
   return {
     formCode: 'order',
     prompt: 'Remets la journée dans l ordre',
@@ -282,7 +272,7 @@ function orderQuestion(): Record<string, unknown> {
   };
 }
 
-function trueFalseQuestion(): Record<string, unknown> {
+function trueFalseQuestion(): QuestionFixture {
   return {
     formCode: 'vrai_faux',
     prompt: 'Vrai ou faux ?',
@@ -293,7 +283,7 @@ function trueFalseQuestion(): Record<string, unknown> {
   };
 }
 
-function classementQuestion(): Record<string, unknown> {
+function classementQuestion(): QuestionFixture {
   return {
     formCode: 'classement',
     prompt: 'Range chaque carte',
@@ -308,7 +298,7 @@ function classementQuestion(): Record<string, unknown> {
   };
 }
 
-function gapsQuestion(): Record<string, unknown> {
+function gapsQuestion(): QuestionFixture {
   return {
     formCode: 'case_vide',
     prompt: 'Complète la phrase',
@@ -321,7 +311,7 @@ function gapsQuestion(): Record<string, unknown> {
   };
 }
 
-function liensQuestion(): Record<string, unknown> {
+function liensQuestion(): QuestionFixture {
   return {
     formCode: 'liens',
     prompt: 'Relie chaque mot',
@@ -332,8 +322,8 @@ function liensQuestion(): Record<string, unknown> {
   };
 }
 
-async function openPlay(page: Page, question: Record<string, unknown>): Promise<void> {
-  const formCode = String(question['formCode']);
+async function openPlay(page: Page, question: QuestionFixture): Promise<void> {
+  await page.route((url) => url.pathname.startsWith('/api/'), (route) => route.fulfill({ status: 404 }));
   await page.addInitScript((token) => {
     sessionStorage.setItem('learning.jwt', token);
   }, 'child-token');
@@ -343,89 +333,14 @@ async function openPlay(page: Page, question: Record<string, unknown>): Promise<
       await json(route, { childId: 1, firstName: 'Akira', hasPhoto: false });
     },
   );
-  await page.route(
-    (url) => url.pathname === `/api/ext/subjects/${SUBJECT_ID}/questions/${QUESTION_ID}/attempts`,
-    async (route) => {
-      const body = route.request().postDataJSON() as AttemptBody;
-      await json(route, grade(formCode, body));
-    },
-  );
-  await page.route(
-    (url) => url.pathname === `/api/ext/subjects/${SUBJECT_ID}/questions/${QUESTION_ID}`,
-    async (route) => {
-      await json(route, question);
-    },
+  await mockQuestionPlay(
+    page, `/api/ext/subjects/${SUBJECT_ID}/questions/${QUESTION_ID}`, SUBJECT_ID, QUESTION_ID, question,
   );
   await page.goto(`/learn/${SUBJECT_ID}/play/${QUESTION_ID}`);
   await expect(page.getByTestId(ui.panel)).toBeVisible();
   await expect(page.getByTestId(ui.prompt)).toBeVisible();
 }
 
-function grade(formCode: string, body: AttemptBody): { attemptId: number; scorePercent: number; passed: boolean } {
-  if (formCode === 'qcm') {
-    const selected = [...(body.selectedChoiceIds ?? [])].sort((a, b) => a - b);
-    const passed = selected.length === 1 && selected[0] === 2;
-    return { attemptId: 1, scorePercent: passed ? 100 : 0, passed };
-  }
-  if (formCode === 'vrai_faux') {
-    const answers = new Map((body.statements ?? []).map((row) => [row.statementId, row.value]));
-    const expected: [number, boolean][] = [
-      [1, true],
-      [2, false],
-    ];
-    const ok = expected.filter(([id, value]) => answers.get(id) === value).length;
-    return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed: ok === expected.length };
-  }
-  if (formCode === 'memory') {
-    const ids = new Set(body.matchedPairIds ?? []);
-    const passed = ids.size === 2 && ids.has(1) && ids.has(2);
-    return { attemptId: 1, scorePercent: passed ? 100 : 0, passed };
-  }
-  if (formCode === 'order') {
-    const ordered = body.orderedItemIds ?? [];
-    const expected = [1, 2, 3];
-    const ok = expected.filter((id, index) => ordered[index] === id).length;
-    return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed: ok === expected.length };
-  }
-  if (formCode === 'texte') {
-    const passed = freeTextSame('Paris', body.attempt ?? '');
-    return { attemptId: 1, scorePercent: passed ? 100 : 0, passed };
-  }
-  if (formCode === 'case_vide') {
-    const fills = new Map((body.gapFills ?? []).map((row) => [row.holeIndex, row.wordId]));
-    const expected: [number, number][] = [
-      [0, 10],
-      [1, 11],
-    ];
-    const ok = expected.filter(([hole, wordId]) => fills.get(hole) === wordId).length;
-    const passed = ok === expected.length && (body.gapFills ?? []).length === expected.length;
-    return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed };
-  }
-  if (formCode === 'classement') {
-    const byCard = new Map((body.placements ?? []).map((row) => [row.cardId, row.columnId]));
-    const expected: [number, number][] = [
-      [1, 10],
-      [2, 11],
-    ];
-    const ok = expected.filter(([cardId, columnId]) => byCard.get(cardId) === columnId).length;
-    const passed = ok === expected.length && (body.placements ?? []).length === expected.length;
-    return { attemptId: 1, scorePercent: Math.round((100 * ok) / expected.length), passed };
-  }
-  const matches = body.linkMatches ?? [];
-  const ok = matches.filter((match) => match.leftId === match.rightId).length;
-  const passed = ok === 2 && matches.length === 2;
-  return { attemptId: 1, scorePercent: Math.round((100 * ok) / 2), passed };
-}
-
-function freeTextSame(expected: string, attempt: string): boolean {
-  const normalize = (value: string) =>
-    value
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\p{M}+/gu, '');
-  return attempt.trim() !== '' && normalize(expected) === normalize(attempt);
-}
 
 async function submitAndExpect(page: Page, passed: boolean, score?: string): Promise<void> {
   await expect(page.getByTestId(ui.submit)).toBeEnabled();
@@ -492,7 +407,7 @@ async function dragGap(page: Page, wordId: number, holeIndex: number): Promise<v
 async function pairLinks(page: Page, pairs: readonly (readonly [number, number])[]): Promise<void> {
   for (const [leftId, rightId] of pairs) {
     await page.getByTestId(`${ui.linkLeft}-l-${leftId}`).click();
-    await page.getByTestId(`${ui.linkRight}-r-${rightId}`).click();
+    await page.getByTestId(`${ui.linkRight}-r-right-${rightId}`).click();
   }
 }
 

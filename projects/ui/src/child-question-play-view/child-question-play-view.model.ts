@@ -1,4 +1,4 @@
-/** Données d'aperçu / jeu enfant — ids optionnels (preview teacher sans ids). */
+/** Données de rendu communes à Learning et à l'aperçu professeur. */
 export interface ChildPlayViewChoice {
   choiceId?: number;
   label: string;
@@ -9,17 +9,16 @@ export interface ChildPlayViewStatement {
   label: string;
 }
 
-export interface ChildPlayViewPair {
-  pairId?: number;
-  questionSide: string;
-  answerSide: string;
+export interface ChildPlayViewMemoryCard {
+  cardId: string;
+  label: string;
 }
 
 export interface ChildPlayViewItem {
   itemId?: number;
   label: string;
   /** Jalon de frise (ex. « 20 minutes »). Affiché seulement si `timelineEnabled`. */
-  axisLabel?: string;
+  axisLabel?: string | null;
 }
 
 export interface ChildPlayViewColumn {
@@ -32,10 +31,9 @@ export interface ChildPlayViewCard {
   label: string;
 }
 
-export interface ChildPlayViewLink {
-  linkId?: number;
-  leftLabel: string;
-  rightLabel: string;
+export interface ChildPlayViewLinkOption {
+  optionId: string;
+  label: string;
 }
 
 export interface ChildPlayViewWord {
@@ -71,12 +69,13 @@ export interface ChildPlayViewQuestion {
   prompt?: string;
   choices?: ChildPlayViewChoice[];
   statements?: ChildPlayViewStatement[];
-  pairs?: ChildPlayViewPair[];
+  memoryCards?: ChildPlayViewMemoryCard[];
   items?: ChildPlayViewItem[];
   timelineEnabled?: boolean;
   columns?: ChildPlayViewColumn[];
   cards?: ChildPlayViewCard[];
-  links?: ChildPlayViewLink[];
+  linkLefts?: ChildPlayViewLinkOption[];
+  linkRights?: ChildPlayViewLinkOption[];
   /** Phrase avec `___` pour chaque trou. */
   sentence?: string;
   /** Banque mélangée : mots justes et leurres, sans les distinguer. */
@@ -94,13 +93,8 @@ export interface ChildPlayViewQuestion {
    * Fourni par l'API play (sans révéler le mot).
    */
   letterMask?: string;
-  /**
-   * Mot attendu — aperçu teacher seulement, pour verrouiller en vert sans appel API.
-   * Learn ne le reçoit pas.
-   */
-  letterExpected?: string;
   /** Mode de plateau puzzle : `fond` | `blanc` | `trous`. */
-  boardMode?: string;
+  boardMode?: string | null;
   /** Fond dédié (mode fond), base64 ou data URL. */
   boardImageWebp?: string;
   /** Magnétisme, fraction de largeur (ex. 0,08). */
@@ -118,7 +112,7 @@ export interface ChildPlayViewQuestion {
 export interface ChildPlayViewSimonElement {
   label: string;
   /** Code #rrggbb, genre couleurs seulement. */
-  color?: string;
+  color?: string | null;
 }
 
 export interface ChildPlayViewPuzzlePiece {

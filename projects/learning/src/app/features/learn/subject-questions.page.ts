@@ -1,8 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
-import { QuestionFormMarkComponent } from '@appv4/ui';
+import { isPlayableQuestionForm, QuestionFormMarkComponent } from '@appv4/ui';
 
 import type { ChildLearningQuestionItem } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
@@ -23,24 +25,46 @@ export class SubjectQuestionsPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(ChildPlayService);
+  private readonly destroyRef = inject(DestroyRef);
+  private pending?: Subscription;
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly subjectName = signal('');
   protected readonly subjectId = signal(0);
   protected readonly questions = signal<ChildLearningQuestionItem[]>([]);
+  protected readonly nextCursor = signal<number | null>(0);
+  protected readonly canPlay = isPlayableQuestionForm;
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('subjectId'));
-    if (!Number.isFinite(id) || id <= 0) {
-      void this.router.navigateByUrl('/learn');
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.pending?.unsubscribe();
+      const id = Number(params.get('subjectId'));
+      if (!Number.isSafeInteger(id) || id <= 0) {
+        void this.router.navigateByUrl('/learn');
+        return;
+      }
+      this.subjectId.set(id);
+      this.subjectName.set('');
+      this.questions.set([]);
+      this.nextCursor.set(0);
+      this.loadMore();
+    });
+  }
+
+  protected loadMore(): void {
+    const cursor = this.nextCursor();
+    if (cursor === null) {
       return;
     }
-    this.subjectId.set(id);
-    this.api.listQuestions(id).subscribe({
+    this.pending?.unsubscribe();
+    this.loading.set(true);
+    this.error.set(null);
+    this.pending = this.api.listQuestions(this.subjectId(), cursor).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (body) => {
-        this.subjectName.set(body.subjectName ?? '');
-        this.questions.set(shuffleCopy(body.questions ?? []));
+        this.subjectName.set(body.subjectName);
+        this.questions.update((current) => [...current, ...shuffleCopy(body.questions)]);
+        this.nextCursor.set(body.nextCursor ?? null);
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
@@ -50,20 +74,4 @@ export class SubjectQuestionsPage implements OnInit {
     });
   }
 
-  protected canPlay(code: string | undefined): boolean {
-    return (
-      code === 'vrai_faux' ||
-      code === 'qcm' ||
-      code === 'memory' ||
-      code === 'order' ||
-      code === 'classement' ||
-      code === 'liens' ||
-      code === 'case_vide' ||
-      code === 'image_interactive' ||
-      code === 'reponse_libre' ||
-      code === 'texte' ||
-      code === 'puzzle' ||
-      code === 'simon'
-    );
-  }
 }

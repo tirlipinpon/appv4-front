@@ -20,14 +20,14 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
+import { Observable, Subscription } from 'rxjs';
 
 import type {
   ChildPlayViewCard,
   ChildPlayViewChoice,
   ChildPlayViewColumn,
   ChildPlayViewItem,
-  ChildPlayViewLink,
-  ChildPlayViewPair,
+  ChildPlayViewLinkOption,
   ChildPlayViewPuzzlePiece,
   ChildPlayViewQuestion,
   ChildPlayViewSimonElement,
@@ -37,6 +37,7 @@ import type {
   ChildPlayViewWord,
 } from './child-question-play-view.model';
 import { QuestionFormMarkComponent } from '../question-form-mark/question-form-mark.component';
+import { isPlayableQuestionForm } from './play-form-rules';
 import {
   PUZZLE_MAGNET_DEFAULT,
   clampPuzzleMagnet,
@@ -47,7 +48,6 @@ import {
   punchPuzzlePieces,
   puzzlePieceFrame,
   puzzlePieceHome,
-  withinPuzzleMagnet,
   type PuzzleFrame,
   type PuzzlePoint,
 } from './puzzle-play';
@@ -56,13 +56,17 @@ export interface OrderItemView {
   key: string;
   itemId?: number;
   label: string;
-  axisLabel?: string;
+  axisLabel?: string | null;
 }
 
 export interface MemoryCardView {
   key: string;
-  pairKey: string;
   label: string;
+}
+
+export interface MemoryMatch {
+  firstCardId: string;
+  secondCardId: string;
 }
 
 export interface ClassCardView {
@@ -80,7 +84,7 @@ export interface ClassColumnView {
 
 export interface LinkSideView {
   key: string;
-  linkId?: number;
+  optionId: string;
   label: string;
 }
 
@@ -133,19 +137,6 @@ const SIMON_START_MS = 700;
 const SIMON_LIT_MS = 600;
 const SIMON_GAP_MS = 300;
 const SIMON_TAP_MS = 250;
-
-/** Même règle que le back : 3 à 8 pas, avec remise. */
-function drawSimonSequence(elementCount: number): number[] {
-  if (elementCount < 1) {
-    return [];
-  }
-  const length = Math.max(3, Math.min(8, elementCount));
-  const steps: number[] = [];
-  for (let step = 0; step < length; step++) {
-    steps.push(Math.floor(Math.random() * elementCount));
-  }
-  return steps;
-}
 
 /** Texte lisible sur un fond #rrggbb : sombre sur une couleur claire, blanc sinon. */
 function textOnColor(hex: string): string {
@@ -209,20 +200,6 @@ function randomTrueFalseOrder(): readonly boolean[] {
   return Math.random() < 0.5 ? [true, false] : [false, true];
 }
 
-function pairKeyOf(pair: ChildPlayViewPair, index: number): string {
-  return pair.pairId != null ? String(pair.pairId) : `i-${index}`;
-}
-
-function buildMemoryCards(pairs: readonly ChildPlayViewPair[]): MemoryCardView[] {
-  const cards: MemoryCardView[] = [];
-  pairs.forEach((pair, index) => {
-    const pairKey = pairKeyOf(pair, index);
-    cards.push({ key: `${pairKey}-q`, pairKey, label: pair.questionSide });
-    cards.push({ key: `${pairKey}-a`, pairKey, label: pair.answerSide });
-  });
-  return cards;
-}
-
 function toOrderViews(items: readonly ChildPlayViewItem[]): OrderItemView[] {
   return items.map((item, index) => ({
     key: item.itemId != null ? String(item.itemId) : `i-${index}-${item.label}`,
@@ -272,13 +249,8 @@ function splitGapSentence(sentence: string): GapPart[] {
   return parts;
 }
 
-function toLinkSide(link: ChildPlayViewLink, index: number, side: 'l' | 'r'): LinkSideView {
-  const idPart = link.linkId != null ? String(link.linkId) : `i-${index}`;
-  return {
-    key: `${side}-${idPart}`,
-    linkId: link.linkId,
-    label: side === 'l' ? link.leftLabel : link.rightLabel,
-  };
+function toLinkSide(option: ChildPlayViewLinkOption, side: 'l' | 'r'): LinkSideView {
+  return { key: `${side}-${option.optionId}`, optionId: option.optionId, label: option.label };
 }
 
 function toClassColumn(column: ChildPlayViewColumn, index: number): ClassColumnView {
@@ -308,6 +280,7 @@ export class ChildQuestionPlayViewComponent {
   /** false = aperçu teacher (cliquable visuellement, sans submit parent). */
   readonly interactive = input(true);
   readonly disabled = input(false);
+  readonly verifyMemoryPair = input<(match: MemoryMatch) => Observable<boolean>>();
 
   readonly choiceToggle = output<number>();
   readonly statementPick = output<{ statementKey: string; value: boolean }>();
@@ -324,6 +297,7 @@ export class ChildQuestionPlayViewComponent {
 
   private readonly layoutTick = signal(0);
   private mismatchTimer: ReturnType<typeof setTimeout> | null = null;
+  private memoryCheck?: Subscription;
   private puzzleBuildSeq = 0;
   private pieceDrag: {
     pointer: number;
@@ -352,21 +326,7 @@ export class ChildQuestionPlayViewComponent {
   protected readonly isFreeText = computed(() => this.question().formCode === 'texte');
   protected readonly isPuzzle = computed(() => this.question().formCode === 'puzzle');
   protected readonly isSimon = computed(() => this.question().formCode === 'simon');
-  protected readonly playable = computed(
-    () =>
-      this.isQcm() ||
-      this.isTrueFalse() ||
-      this.isMemory() ||
-      this.isOrder() ||
-      this.isClassification() ||
-      this.isLinks() ||
-      this.isGaps() ||
-      this.isImage() ||
-      this.isLetters() ||
-      this.isFreeText() ||
-      this.isPuzzle() ||
-      this.isSimon(),
-  );
+  protected readonly playable = computed(() => isPlayableQuestionForm(this.question().formCode));
 
   readonly orderedItems = signal<OrderItemView[]>([]);
 
@@ -482,7 +442,11 @@ export class ChildQuestionPlayViewComponent {
   protected readonly remainingCount = computed(() => this.sourceCards().length);
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.clearSimonTimers());
+    inject(DestroyRef).onDestroy(() => {
+      this.clearSimonTimers();
+      this.clearMismatchTimer();
+      this.memoryCheck?.unsubscribe();
+    });
     effect(() => {
       const question = this.question();
       this.layoutTick();
@@ -528,9 +492,8 @@ export class ChildQuestionPlayViewComponent {
       if (this.question().formCode !== 'liens') {
         return;
       }
-      const links = this.question().links ?? [];
-      this.linkLefts.set(shuffleCopy(links.map((link, index) => toLinkSide(link, index, 'l'))));
-      this.linkRights.set(shuffleCopy(links.map((link, index) => toLinkSide(link, index, 'r'))));
+      this.linkLefts.set(shuffleCopy((this.question().linkLefts ?? []).map((option) => toLinkSide(option, 'l'))));
+      this.linkRights.set(shuffleCopy((this.question().linkRights ?? []).map((option) => toLinkSide(option, 'r'))));
       this.linkPairs.set({});
       this.selectedLinkKey.set(null);
     });
@@ -568,7 +531,7 @@ export class ChildQuestionPlayViewComponent {
 
   protected readonly displayMemoryCards = computed(() => {
     this.layoutTick();
-    return shuffleCopy(buildMemoryCards(this.question().pairs ?? []));
+    return shuffleCopy((this.question().memoryCards ?? []).map(({ cardId, label }) => ({ key: cardId, label })));
   });
 
   protected readonly tfOrders = computed(() => {
@@ -582,20 +545,24 @@ export class ChildQuestionPlayViewComponent {
 
   readonly selectedChoices = signal<ReadonlySet<number>>(new Set());
   readonly statementValues = signal<Readonly<Record<string, boolean>>>({});
-  readonly matchedPairKeys = signal<ReadonlySet<string>>(new Set());
+  readonly memoryMatches = signal<MemoryMatch[]>([]);
+  private readonly matchedCards = computed(() =>
+    new Set(this.memoryMatches().flatMap(({ firstCardId, secondCardId }) => [firstCardId, secondCardId])),
+  );
   readonly flippedKeys = signal<readonly string[]>([]);
   readonly flipBusy = signal(false);
+  protected readonly memoryError = signal(false);
 
   protected readonly memoryStatus = computed(() => {
-    const pairs = this.question().pairs ?? [];
-    const matched = this.matchedPairKeys().size;
-    if (pairs.length === 0 || matched === 0) {
+    const pairs = this.displayMemoryCards().length / 2;
+    const matched = this.memoryMatches().length;
+    if (pairs === 0 || matched === 0) {
       return '';
     }
-    if (matched >= pairs.length) {
+    if (matched >= pairs) {
       return 'Toutes les paires sont trouvées.';
     }
-    return `Paires trouvées : ${matched}. Il en reste ${pairs.length - matched}.`;
+    return `Paires trouvées : ${matched}. Il en reste ${pairs - matched}.`;
   });
 
   protected readonly linksStatus = computed(() => {
@@ -613,9 +580,11 @@ export class ChildQuestionPlayViewComponent {
   /** Relance le mélange (rejouer / nouvel aperçu). */
   reshuffle(): void {
     this.clearMismatchTimer();
+    this.memoryCheck?.unsubscribe();
+    this.memoryError.set(false);
     this.selectedChoices.set(new Set());
     this.statementValues.set({});
-    this.matchedPairKeys.set(new Set());
+    this.memoryMatches.set([]);
     this.flippedKeys.set([]);
     this.flipBusy.set(false);
     this.selectedClassCardKey.set(null);
@@ -702,11 +671,6 @@ export class ChildQuestionPlayViewComponent {
     );
   }
 
-  /** Aperçu teacher : recalcule les verts à partir de {@code letterExpected}. */
-  refreshLocalLetterLocksFromExpected(): void {
-    this.refreshLocalLetterLocks();
-  }
-
   protected isSpaceSlot(index: number): boolean {
     return this.letterMaskValue()[index] === ' ';
   }
@@ -732,7 +696,6 @@ export class ChildQuestionPlayViewComponent {
     this.letterBoxes.update((rows) => rows.map((row, i) => (i === index ? letter : row)));
     field.value = letter;
     this.clearLetterWrongs();
-    this.refreshLocalLetterLocks();
     if (letter !== '') {
       const next = this.nextEditableSlot(index);
       if (next !== null) {
@@ -757,7 +720,6 @@ export class ChildQuestionPlayViewComponent {
     event.preventDefault();
     this.letterBoxes.update((rows) => rows.map((row, i) => (i === prev ? '' : row)));
     this.clearLetterWrongs();
-    this.refreshLocalLetterLocks();
     this.focusLetterSlot(prev);
     this.lettersChange.emit();
   }
@@ -779,31 +741,8 @@ export class ChildQuestionPlayViewComponent {
     if (fromApi != null && fromApi !== '') {
       return fromApi;
     }
-    const expected = this.question().letterExpected;
-    if (expected != null && expected !== '') {
-      return [...expected].map((ch) => (/\s/.test(ch) ? ' ' : '#')).join('');
-    }
     const count = this.question().letterCount ?? 0;
     return count > 0 ? '#'.repeat(count) : '';
-  }
-
-  private refreshLocalLetterLocks(): void {
-    const expected = this.question().letterExpected;
-    if (expected == null || expected === '') {
-      return;
-    }
-    const boxes = this.letterBoxes();
-    const locks = [...expected].map((expCh, index) => {
-      if (/\s/.test(expCh)) {
-        return true;
-      }
-      const typed = boxes[index] ?? '';
-      if (typed === '') {
-        return false;
-      }
-      return typed.toLowerCase() === expCh.toLowerCase();
-    });
-    this.letterLocks.set(locks);
   }
 
   private nextEditableSlot(from: number): number | null {
@@ -865,26 +804,9 @@ export class ChildQuestionPlayViewComponent {
     return statements.every((s, i) => values[this.statementKey(s, i)] !== undefined);
   }
 
-  matchedPairIds(): number[] {
-    const matched = this.matchedPairKeys();
-    const out: number[] = [];
-    (this.question().pairs ?? []).forEach((pair, index) => {
-      const key = pairKeyOf(pair, index);
-      if (!matched.has(key)) {
-        return;
-      }
-      if (pair.pairId != null) {
-        out.push(pair.pairId);
-      } else {
-        out.push(index + 1);
-      }
-    });
-    return out;
-  }
-
   allPairsMatched(): boolean {
-    const pairs = this.question().pairs ?? [];
-    return pairs.length > 0 && this.matchedPairKeys().size >= pairs.length;
+    const cards = this.displayMemoryCards().length;
+    return cards > 0 && this.matchedCards().size === cards;
   }
 
   orderedItemIds(): number[] {
@@ -918,16 +840,16 @@ export class ChildQuestionPlayViewComponent {
     return total > 0 && this.sourceCards().length === 0 && this.placements().length === total;
   }
 
-  linkMatches(): { leftId: number; rightId: number }[] {
+  linkSelections(): { leftId: string; rightId: string }[] {
     const pairs = this.linkPairs();
     const rights = new Map(this.linkRights().map((row) => [row.key, row]));
-    const out: { leftId: number; rightId: number }[] = [];
+    const out: { leftId: string; rightId: string }[] = [];
     for (const left of this.linkLefts()) {
       const right = rights.get(pairs[left.key] ?? '');
-      if (left.linkId == null || right?.linkId == null) {
+      if (!right) {
         continue;
       }
-      out.push({ leftId: left.linkId, rightId: right.linkId });
+      out.push({ leftId: left.optionId, rightId: right.optionId });
     }
     return out;
   }
@@ -979,30 +901,9 @@ export class ChildQuestionPlayViewComponent {
     return out;
   }
 
-  /** Aperçu teacher : pièces assez près de leur home (même rayon que le serveur). */
-  puzzleCorrectCount(): { ok: number; total: number } {
-    const pieces = this.puzzlePieces();
-    const magnet = this.puzzleMagnet();
-    let ok = 0;
-    for (const piece of pieces) {
-      if (piece.placement == null) {
-        continue;
-      }
-      if (withinPuzzleMagnet(piece.placement.x, piece.placement.y, piece.home, magnet)) {
-        ok += 1;
-      }
-    }
-    return { ok, total: pieces.length };
-  }
-
   /** Simon : positions touchées sur la manche en cours (`simonSequence` de la tentative). */
   simonReplay(): number[] {
     return [...this.simonReplayed()];
-  }
-
-  /** Suite montrée (API, ou tirage local pour l'aperçu professeur). */
-  simonIssuedSequence(): number[] {
-    return [...this.simonIssued()];
   }
 
   /** Simon : la dernière manche, refaite en entier. */
@@ -1078,7 +979,7 @@ export class ChildQuestionPlayViewComponent {
 
   /**
    * Simon : montre la manche en cours depuis le premier pas, puis laisse rejouer.
-   * La première fois, prend la suite de l'API, ou en tire une si l'aperçu n'en a pas.
+   * La suite fournie à l'ouverture est conservée sur toutes les manches.
    */
   private startSimon(q: ChildPlayViewQuestion): void {
     this.clearSimonTimers();
@@ -1091,8 +992,7 @@ export class ChildQuestionPlayViewComponent {
     }
     if (this.simonIssued().length === 0) {
       const fromApi = (q.sequence ?? []).filter((step) => Number.isInteger(step));
-      const count = q.elements?.length ?? 0;
-      this.simonIssued.set(fromApi.length > 0 ? fromApi : drawSimonSequence(count));
+      this.simonIssued.set(fromApi);
       this.simonRound.set(1);
     }
     const prefix = this.simonIssued().slice(0, this.simonRound());
@@ -1625,11 +1525,11 @@ export class ChildQuestionPlayViewComponent {
   }
 
   protected cardFaceUp(card: MemoryCardView): boolean {
-    return this.matchedPairKeys().has(card.pairKey) || this.flippedKeys().includes(card.key);
+    return this.cardMatched(card) || this.flippedKeys().includes(card.key);
   }
 
   protected cardMatched(card: MemoryCardView): boolean {
-    return this.matchedPairKeys().has(card.pairKey);
+    return this.matchedCards().has(card.key);
   }
 
   protected onChoice(choice: ChildPlayViewChoice): void {
@@ -1660,7 +1560,7 @@ export class ChildQuestionPlayViewComponent {
     if (!this.interactive() || this.disabled() || this.flipBusy()) {
       return;
     }
-    if (this.matchedPairKeys().has(card.pairKey) || this.flippedKeys().includes(card.key)) {
+    if (this.cardMatched(card) || this.flippedKeys().includes(card.key)) {
       return;
     }
     const open = this.flippedKeys();
@@ -1668,27 +1568,39 @@ export class ChildQuestionPlayViewComponent {
       return;
     }
     if (open.length === 0) {
+      this.memoryError.set(false);
       this.flippedKeys.set([card.key]);
       this.memoryChange.emit();
       return;
     }
-    const firstKey = open[0]!;
-    const first = this.displayMemoryCards().find((c) => c.key === firstKey);
-    const nextFlipped = [firstKey, card.key];
-    this.flippedKeys.set(nextFlipped);
-    if (first && first.pairKey === card.pairKey) {
-      this.matchedPairKeys.update((current) => new Set([...current, card.pairKey]));
-      this.flippedKeys.set([]);
-      this.memoryChange.emit();
+    const match = { firstCardId: open[0]!, secondCardId: card.key };
+    this.flippedKeys.set([match.firstCardId, match.secondCardId]);
+    this.flipBusy.set(true);
+    const verify = this.verifyMemoryPair();
+    if (!verify) {
+      this.memoryError.set(true);
+      this.finishMemoryTurn();
       return;
     }
-    this.flipBusy.set(true);
-    this.clearMismatchTimer();
-    this.mismatchTimer = setTimeout(() => {
-      this.flippedKeys.set([]);
-      this.flipBusy.set(false);
-      this.memoryChange.emit();
-    }, 700);
+    this.memoryCheck = verify(match).subscribe({
+      next: (matched) => {
+        if (matched) {
+          this.memoryMatches.update((current) => [...current, match]);
+          this.finishMemoryTurn();
+        } else {
+          this.mismatchTimer = setTimeout(() => this.finishMemoryTurn(), 700);
+        }
+      },
+      error: () => {
+        this.memoryError.set(true);
+        this.finishMemoryTurn();
+      },
+    });
+  }
+
+  private finishMemoryTurn(): void {
+    this.flippedKeys.set([]);
+    this.flipBusy.set(false);
     this.memoryChange.emit();
   }
 

@@ -21,7 +21,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import {
   ChildQuestionPlayViewComponent,
   QuestionFormMarkComponent,
-  type ChildPlayViewQuestion,
+  QuestionPlaySession,
 } from '@appv4/ui';
 
 import type { TeacherSubjectFollowersResponse } from '../../../core/api/api-models';
@@ -198,212 +198,28 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly followers = signal<TeacherSubjectFollowersResponse | null>(null);
   readonly letterMessages = signal<Readonly<Record<number, string>>>({});
   readonly letterBusyId = signal<number | null>(null);
-  /** Aperçu rendu enfant (popup). */
-  readonly preview = signal<ChildPlayViewQuestion | null>(null);
-  readonly previewSource = signal<SavedQuestion | null>(null);
-  readonly previewResult = signal<{ passed: boolean; scorePercent: number } | null>(null);
-  readonly previewSelectionTick = signal(0);
+  readonly previewOpen = signal(false);
   private readonly previewView = viewChild(ChildQuestionPlayViewComponent);
+  readonly previewPlay = new QuestionPlaySession(this.destroyRef, this.previewView, httpErrorMessage);
   private followSeq = 0;
 
-  readonly canPreviewSubmit = computed(() => {
-    this.previewSelectionTick();
-    const view = this.previewView();
-    const model = this.preview();
-    if (!view || !model || this.previewResult()) {
-      return false;
-    }
-    if (model.formCode === 'qcm') {
-      return view.selectedChoiceIds().length > 0;
-    }
-    if (model.formCode === 'vrai_faux') {
-      return view.allStatementsAnswered();
-    }
-    if (model.formCode === 'memory') {
-      return view.allPairsMatched();
-    }
-    if (model.formCode === 'order') {
-      return view.hasOrderItems();
-    }
-    if (model.formCode === 'classement') {
-      return view.allCardsPlaced();
-    }
-    if (model.formCode === 'liens') {
-      return view.allLinksMatched();
-    }
-    if (model.formCode === 'case_vide') {
-      return view.allGapsFilled();
-    }
-    if (model.formCode === 'image_interactive') {
-      return view.imageReady();
-    }
-    if (model.formCode === 'reponse_libre') {
-      return view.allLettersFilled();
-    }
-    if (model.formCode === 'texte') {
-      return view.freeTextAttempt().trim().length > 0;
-    }
-    if (model.formCode === 'puzzle') {
-      return view.allPuzzlePiecesPlaced();
-    }
-    if (model.formCode === 'simon') {
-      return view.simonComplete() || view.simonMissed();
-    }
-    return false;
-  });
-
-  /** Formes notées au dernier geste, sans bouton Valider : Simon, image à clics ordonnés. */
-  readonly previewAutoSubmit = computed(() => {
-    const model = this.preview();
-    return (
-      model?.formCode === 'simon' || (model?.formCode === 'image_interactive' && model.clicksOrdered !== false)
-    );
-  });
-
   openChildPreview(question: SavedQuestion): void {
-    this.previewSource.set(question);
-    this.previewResult.set(null);
-    this.previewSelectionTick.set(0);
-    this.preview.set({
-      formCode: question.formCode,
-      formLabel: question.formLabel || this.formOf(question.formCode)?.label,
-      formIconCode: this.formOf(question.formCode)?.iconCode,
-      formColor: this.formOf(question.formCode)?.color,
-      prompt:
-        question.formCode === 'memory'
-          ? question.prompt || 'Memory'
-          : question.formCode === 'order'
-            ? question.prompt || 'Ordre'
-            : question.prompt || undefined,
-      choices: question.choices.map((choice, index) => ({
-        choiceId: index + 1,
-        label: choice.label,
-      })),
-      statements: question.statements.map((row, index) => ({
-        statementId: index + 1,
-        label: row.label,
-      })),
-      pairs: question.pairs.map((pair, index) => ({
-        pairId: index + 1,
-        questionSide: pair.questionSide,
-        answerSide: pair.answerSide,
-      })),
-      items: question.items.map((item, index) => ({
-        itemId: index + 1,
-        label: item.label,
-        axisLabel: item.axisLabel,
-      })),
-      timelineEnabled: question.timelineEnabled,
-      columns: question.columns.map((column, index) => ({
-        columnId: index + 1,
-        label: column.label,
-      })),
-      cards: question.cards.map((card, index) => ({
-        cardId: index + 1,
-        label: card.label,
-      })),
-      links: question.links.map((link, index) => ({
-        linkId: index + 1,
-        leftLabel: link.leftLabel,
-        rightLabel: link.rightLabel,
-      })),
-      sentence: question.sentence,
-      clicksOrdered: question.clicksOrdered,
-      clickZones:
-        question.formCode === 'image_interactive'
-          ? question.zones.map((zone, index) => ({
-              zoneId: index + 1,
-              shape: zone.shape,
-              points: zone.points,
-            }))
-          : undefined,
-      clickSteps:
-        question.formCode === 'image_interactive'
-          ? question.zones
-              .map((zone, index) => ({ zone, zoneId: index + 1 }))
-              .filter((row) => row.zone.correct)
-              .sort((a, b) =>
-                question.clicksOrdered !== false
-                  ? (a.zone.clickOrder ?? 0) - (b.zone.clickOrder ?? 0)
-                  : a.zoneId - b.zoneId,
-              )
-              .map((row) => ({ zoneId: row.zoneId, prompt: row.zone.label }))
-          : undefined,
-      letterCount:
-        question.formCode === 'reponse_libre' ? Array.from(question.expectedAnswer).length : undefined,
-      letterMask:
-        question.formCode === 'reponse_libre'
-          ? Array.from(question.expectedAnswer)
-              .map((ch) => (/\s/.test(ch) ? ' ' : '#'))
-              .join('')
-          : undefined,
-      letterExpected: question.formCode === 'reponse_libre' ? question.expectedAnswer : undefined,
-      words: [
-        ...question.answers.map((word, index) => ({ wordId: index + 1, label: word.label })),
-        ...question.decoys.map((word, index) => ({
-          wordId: question.answers.length + index + 1,
-          label: word.label,
-        })),
-      ],
-      imageWebp:
-        question.formCode === 'image_interactive' || question.formCode === 'puzzle'
-          ? question.imageDataUrl
-          : undefined,
-      boardMode: question.formCode === 'puzzle' ? question.boardMode : undefined,
-      boardImageWebp: question.formCode === 'puzzle' ? question.boardImageDataUrl || undefined : undefined,
-      snapDistance: question.formCode === 'puzzle' ? question.snapDistance : undefined,
-      puzzlePieces:
-        question.formCode === 'puzzle'
-          ? question.zones.map((zone, index) => ({
-              pieceId: index + 1,
-              label: zone.label,
-              shape: zone.shape,
-              points: zone.points,
-              slotX: zone.slot?.x,
-              slotY: zone.slot?.y,
-              slotWidth: zone.slot?.width,
-            }))
-          : undefined,
-      elementType: question.formCode === 'simon' ? (question.elementType ?? undefined) : undefined,
-      elements:
-        question.formCode === 'simon'
-          ? question.elements.map((element) => ({ label: element.label, color: element.color || undefined }))
-          : undefined,
-      sequence: question.formCode === 'simon' ? [...question.sequence] : undefined,
+    const subjectId = this.subjectId;
+    const questionId = question.id;
+    this.previewOpen.set(true);
+    this.previewPlay.open({
+      open: () => this.api.getPreview(subjectId, questionId),
+      grade: (answer, played) => this.api.gradePreview(
+        subjectId, questionId, answer, played.formCode === 'simon' ? played.content.sequence : undefined,
+      ),
+      letterLocks: (attempt) => this.api.previewLetterLocks(subjectId, questionId, attempt),
+      memoryPair: (match) => this.api.previewMemoryPair(subjectId, questionId, match),
     });
   }
 
   closeChildPreview(): void {
-    this.preview.set(null);
-    this.previewSource.set(null);
-    this.previewResult.set(null);
-  }
-
-  onPreviewSelectionChange(): void {
-    this.previewSelectionTick.update((n) => n + 1);
-    if (this.previewAutoSubmit() && this.canPreviewSubmit()) {
-      this.validateChildPreview();
-    }
-  }
-
-  validateChildPreview(): void {
-    const view = this.previewView();
-    const source = this.previewSource();
-    if (!view || !source || !this.canPreviewSubmit()) {
-      return;
-    }
-    const verdict = gradePreview(source, view);
-    this.previewResult.set(verdict);
-    if (source.formCode === 'reponse_libre') {
-      view.refreshLocalLetterLocksFromExpected();
-      view.markLetterWrongs(verdict.passed !== true);
-    }
-  }
-
-  replayChildPreview(): void {
-    this.previewResult.set(null);
-    this.previewView()?.reshuffle();
-    this.previewSelectionTick.update((n) => n + 1);
+    this.previewOpen.set(false);
+    this.previewPlay.close();
   }
 
   ngOnInit(): void {
@@ -1164,6 +980,7 @@ export class SubjectQuestionsComponent implements OnInit {
       gamification: this.gamification(),
     });
     if (!body) {
+      this.error.set('Complète les réponses de la question.');
       return;
     }
     this.saving.set(true);
@@ -1260,176 +1077,4 @@ export class SubjectQuestionsComponent implements OnInit {
         },
       });
   }
-}
-
-/** Verdict local d'aperçu (données teacher déjà connues) — pas d'appel API. */
-function gradePreview(
-  source: SavedQuestion,
-  view: ChildQuestionPlayViewComponent,
-): { passed: boolean; scorePercent: number } {
-  if (source.formCode === 'vrai_faux') {
-    const answers = new Map(view.statementAnswers().map((row) => [row.statementId, row.value]));
-    let ok = 0;
-    source.statements.forEach((row, index) => {
-      if (answers.get(index + 1) === row.truthful) {
-        ok++;
-      }
-    });
-    const total = source.statements.length || 1;
-    const scorePercent = Math.round((100 * ok) / total);
-    return { passed: ok === source.statements.length, scorePercent };
-  }
-  if (source.formCode === 'qcm') {
-    const selected = new Set(view.selectedChoiceIds());
-    const expected = new Set(
-      source.choices.flatMap((choice, index) => (choice.correct ? [index + 1] : [])),
-    );
-    const same =
-      selected.size === expected.size && [...selected].every((id) => expected.has(id));
-    return { passed: same, scorePercent: same ? 100 : 0 };
-  }
-  if (source.formCode === 'memory') {
-    const matched = view.matchedPairIds().length;
-    const total = source.pairs.length || 1;
-    const scorePercent = Math.round((100 * matched) / total);
-    return { passed: matched === source.pairs.length, scorePercent };
-  }
-  if (source.formCode === 'order') {
-    const ordered = view.orderedItemIds();
-    let ok = 0;
-    source.items.forEach((_, index) => {
-      if (ordered[index] === index + 1) {
-        ok++;
-      }
-    });
-    const total = source.items.length || 1;
-    const scorePercent = Math.round((100 * ok) / total);
-    return { passed: ok === source.items.length, scorePercent };
-  }
-  if (source.formCode === 'classement') {
-    const byCard = new Map(view.placements().map((row) => [row.cardId, row.columnId]));
-    let ok = 0;
-    source.cards.forEach((card, index) => {
-      if (byCard.get(index + 1) === card.columnIndex + 1) {
-        ok++;
-      }
-    });
-    const total = source.cards.length || 1;
-    const scorePercent = Math.round((100 * ok) / total);
-    return { passed: ok === source.cards.length, scorePercent };
-  }
-  if (source.formCode === 'liens') {
-    const matches = view.linkMatches();
-    let ok = 0;
-    for (const match of matches) {
-      if (match.leftId === match.rightId) {
-        ok++;
-      }
-    }
-    const total = source.links.length || 1;
-    const scorePercent = Math.round((100 * ok) / total);
-    return { passed: ok === source.links.length && matches.length === source.links.length, scorePercent };
-  }
-  if (source.formCode === 'case_vide') {
-    const fills = new Map(view.gapFills().map((row) => [row.holeIndex, row.wordId]));
-    let ok = 0;
-    source.answers.forEach((_, index) => {
-      if (fills.get(index) === index + 1) {
-        ok++;
-      }
-    });
-    const total = source.answers.length || 1;
-    const scorePercent = Math.round((100 * ok) / total);
-    return {
-      passed: ok === source.answers.length && fills.size === source.answers.length,
-      scorePercent,
-    };
-  }
-  if (source.formCode === 'image_interactive') {
-    const clicks = view.zoneClicks();
-    const rows = source.zones.map((zone, index) => ({ zone, id: index + 1 }));
-    if (source.clicksOrdered !== false) {
-      const expected = rows
-        .filter((row) => row.zone.correct)
-        .sort((a, b) => (a.zone.clickOrder ?? 0) - (b.zone.clickOrder ?? 0));
-      let ok = 0;
-      expected.forEach((row, index) => {
-        if (clicks[index] === row.id) {
-          ok++;
-        }
-      });
-      const total = expected.length || 1;
-      return {
-        passed: expected.length > 0 && ok === expected.length && clicks.length === expected.length,
-        scorePercent: Math.round((100 * ok) / total),
-      };
-    }
-    const correctIds = new Set(rows.flatMap((row) => (row.zone.correct ? [row.id] : [])));
-    let ok = 0;
-    for (const id of clicks) {
-      if (correctIds.has(id)) {
-        ok++;
-      }
-    }
-    const total = correctIds.size || 1;
-    return {
-      passed: source.requireAllCorrect ? ok === correctIds.size && correctIds.size > 0 : ok >= 1,
-      scorePercent: Math.round((100 * ok) / total),
-    };
-  }
-  if (source.formCode === 'texte') {
-    const passed = freeTextAccepted(source.expectedAnswer, view.freeTextAttempt());
-    return { passed, scorePercent: passed ? 100 : 0 };
-  }
-  if (source.formCode === 'reponse_libre') {
-    const attempt = view.letterAttempt();
-    const expected = source.expectedAnswer;
-    let total = 0;
-    let ok = 0;
-    for (let i = 0; i < expected.length; i++) {
-      const expCh = expected[i] ?? '';
-      if (/\s/.test(expCh)) {
-        continue;
-      }
-      total += 1;
-      const typed = (attempt[i] ?? '').toLowerCase();
-      if (typed !== '' && typed === expCh.toLowerCase()) {
-        ok += 1;
-      }
-    }
-    const scorePercent = total === 0 ? 0 : Math.round((100 * ok) / total);
-    return { passed: scorePercent === 100, scorePercent };
-  }
-  if (source.formCode === 'puzzle') {
-    const { ok, total } = view.puzzleCorrectCount();
-    const scorePercent = total === 0 ? 0 : Math.round((100 * ok) / total);
-    return { passed: total > 0 && ok === total, scorePercent };
-  }
-  if (source.formCode === 'simon') {
-    const issued = view.simonIssuedSequence();
-    const replay = view.simonReplay();
-    let matched = 0;
-    while (matched < replay.length && replay[matched] === issued[matched]) {
-      matched += 1;
-    }
-    const exact = issued.length > 0 && matched === issued.length && replay.length === issued.length;
-    const scorePercent = issued.length === 0 ? 0 : Math.round((100 * matched) / issued.length);
-    return { passed: exact, scorePercent };
-  }
-  return { passed: false, scorePercent: 0 };
-}
-
-/** Même règle que FreeTextMatch : bord, casse et accents ignorés ; l'espace au milieu compte. */
-function freeTextAccepted(expected: string, attempt: string): boolean {
-  const normalize = (value: string) =>
-    value
-      .trim()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/\p{M}+/gu, '');
-  if (attempt.trim() === '') {
-    return false;
-  }
-  const stored = normalize(expected);
-  return stored !== '' && stored === normalize(attempt);
 }

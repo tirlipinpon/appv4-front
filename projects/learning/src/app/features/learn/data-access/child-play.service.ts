@@ -2,15 +2,17 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import type { components } from '@appv4/api';
+import type { MemoryMatch, PlayAnswer, PlayQuestion } from '@appv4/ui';
 import type {
   ChildAttemptResultResponse,
   ChildLearningQuestionsResponse,
   ChildLetterLocksResponse,
-  ChildPlayQuestionResponse,
-  SubmitChildAttemptRequest,
 } from '../../../core/api/api-models';
 import { ChildAuthService } from '../../../core/auth/child-auth.service';
 import { environment } from '../../../../environments/environment';
+
+type ChildSubmission = Extract<components['schemas']['SubmitChildAttemptRequest'], { formCode: PlayAnswer['formCode'] }>;
 
 /**
  * Questions et tentatives enfant (LEARN-30 / BACK-16).
@@ -21,16 +23,17 @@ export class ChildPlayService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(ChildAuthService);
 
-  listQuestions(subjectId: number): Observable<ChildLearningQuestionsResponse> {
+  listQuestions(subjectId: number, afterId: number): Observable<ChildLearningQuestionsResponse> {
     return this.http.get<ChildLearningQuestionsResponse>(
       `${environment.apiBaseUrl}/subjects/${subjectId}/questions`,
-      { headers: this.headers() },
+      { headers: this.headers(), params: { afterId, limit: 50 } },
     );
   }
 
-  getQuestion(subjectId: number, questionId: number): Observable<ChildPlayQuestionResponse> {
-    return this.http.get<ChildPlayQuestionResponse>(
-      `${environment.apiBaseUrl}/subjects/${subjectId}/questions/${questionId}`,
+  openQuestion(subjectId: number, questionId: number): Observable<PlayQuestion> {
+    return this.http.post<PlayQuestion>(
+      `${environment.apiBaseUrl}/subjects/${subjectId}/questions/${questionId}/play`,
+      null,
       { headers: this.headers() },
     );
   }
@@ -38,11 +41,19 @@ export class ChildPlayService {
   submitAttempt(
     subjectId: number,
     questionId: number,
-    body: SubmitChildAttemptRequest,
+    body: ChildSubmission,
   ): Observable<ChildAttemptResultResponse> {
     return this.http.post<ChildAttemptResultResponse>(
       `${environment.apiBaseUrl}/subjects/${subjectId}/questions/${questionId}/attempts`,
       body,
+      { headers: this.headers() },
+    );
+  }
+
+  checkMemoryPair(subjectId: number, questionId: number, match: MemoryMatch) {
+    return this.http.post<components['schemas']['MemoryPairResponse']>(
+      `${environment.apiBaseUrl}/subjects/${subjectId}/questions/${questionId}/memory-pair`,
+      match,
       { headers: this.headers() },
     );
   }

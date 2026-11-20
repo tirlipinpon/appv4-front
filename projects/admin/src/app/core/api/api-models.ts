@@ -5,7 +5,7 @@
  * <p>Les réponses SpringDoc sortent souvent sans {@code required} → champs optionnels.
  * On force {@code Required<>} pour les DTO qu'on sait toujours peuplés côté back.
  */
-import type { components } from './schema';
+import type { components } from '@appv4/api';
 
 export type JwtTokenResponse = Required<components['schemas']['JwtTokenResponse']>;
 export type AuthorizeUrlResponse = Required<components['schemas']['AuthorizeUrlResponse']>;

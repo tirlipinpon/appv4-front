@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
+import { of } from 'rxjs';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { ChildAuthService } from '../../core/auth/child-auth.service';
@@ -18,9 +19,7 @@ describe('PlayQuestionPage', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: {
-              paramMap: convertToParamMap({ subjectId: '5', questionId: '42' }),
-            },
+            paramMap: of(convertToParamMap({ subjectId: '5', questionId: '42' })),
           },
         },
       ],
@@ -33,7 +32,7 @@ describe('PlayQuestionPage', () => {
 
   it('réponse libre : un champ, Valider envoie attempt, un blanc ne part pas', () => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'texte',
@@ -41,6 +40,7 @@ describe('PlayQuestionPage', () => {
       iconCode: 'text',
       color: '#1aa6a6',
       prompt: 'Capitale de la France',
+      content: {},
     });
     fixture.detectChanges();
 
@@ -66,7 +66,7 @@ describe('PlayQuestionPage', () => {
     submit.click();
 
     const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
-    expect(attempt.request.body).toEqual({ attempt: '  Pâris  ' });
+    expect(attempt.request.body).toEqual(jasmine.objectContaining({ formCode: 'texte', attempt: '  Pâris  ' }));
     attempt.flush({ passed: true, scorePercent: 100 });
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
@@ -76,7 +76,7 @@ describe('PlayQuestionPage', () => {
   it('annule les vérifications de lettres remplacées par une frappe, une validation ou un rejeu', () => {
     const { fixture, http } = setup();
     const url = 'http://localhost:8080/api/ext/subjects/5/questions/42';
-    http.expectOne(url).flush({ formCode: 'reponse_libre', letterMask: '__', letterCount: 2 });
+    http.expectOne(url + '/play').flush({ formCode: 'reponse_libre', content: { letterMask: '##', letterCount: 2 } });
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     const typeLetter = (index: number, value: string) => {
@@ -92,7 +92,7 @@ describe('PlayQuestionPage', () => {
     (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
     expect(second.cancelled).toBeTrue();
     const attempt = http.expectOne(`${url}/attempts`);
-    expect(attempt.request.body).toEqual({ attempt: 'ab' });
+    expect(attempt.request.body).toEqual(jasmine.objectContaining({ formCode: 'reponse_libre', attempt: 'ab' }));
     attempt.flush({ passed: false });
     const finalCheck = http.expectOne(`${url}/letter-locks`);
     fixture.detectChanges();
@@ -103,7 +103,7 @@ describe('PlayQuestionPage', () => {
 
   it('désactive la soumission pour une forme inconnue', () => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({ formCode: 'future' });
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({ formCode: 'future' });
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('[data-testid="play-error"]')?.textContent).toContain('pas encore jouable');
@@ -113,16 +113,18 @@ describe('PlayQuestionPage', () => {
 
   it('affiche order via le composant partagé et envoie orderedItemIds', () => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'order',
       prompt: '',
-      items: [
-        { itemId: 1, label: 'Lundi' },
-        { itemId: 2, label: 'Mardi' },
-        { itemId: 3, label: 'Mercredi' },
-      ],
+      content: {
+        items: [
+          { itemId: 1, label: 'Lundi' },
+          { itemId: 2, label: 'Mardi' },
+          { itemId: 3, label: 'Mercredi' },
+        ],
+      },
     });
     fixture.detectChanges();
 
@@ -143,16 +145,18 @@ describe('PlayQuestionPage', () => {
 
   it('order avec ligne du temps affiche le jalon renvoyé par l’API sur chaque étape', () => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'order',
       prompt: '',
-      timelineEnabled: true,
-      items: [
-        { itemId: 1, label: 'Se lever', axisLabel: '7 h' },
-        { itemId: 2, label: 'Partir à l’école', axisLabel: '8 h' },
-      ],
+      content: {
+        timelineEnabled: true,
+        items: [
+          { itemId: 1, label: 'Se lever', axisLabel: '7 h' },
+          { itemId: 2, label: 'Partir à l’école', axisLabel: '8 h' },
+        ],
+      },
     });
     fixture.detectChanges();
 
@@ -166,15 +170,17 @@ describe('PlayQuestionPage', () => {
 
   it('affiche memory via le composant partagé et envoie les paires trouvées', () => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'memory',
       prompt: '',
-      pairs: [
-        { pairId: 1, questionSide: 'Chat', answerSide: 'Miaou' },
-        { pairId: 2, questionSide: 'Pomme', answerSide: 'Fruit' },
-      ],
+      content: {
+        memoryCards: [
+          { cardId: '1-q', label: 'Chat' }, { cardId: '1-a', label: 'Miaou' },
+          { cardId: '2-q', label: 'Pomme' }, { cardId: '2-a', label: 'Fruit' },
+        ],
+      },
     });
     fixture.detectChanges();
 
@@ -190,13 +196,19 @@ describe('PlayQuestionPage', () => {
       root.querySelector(`[data-testid="child-play-view-memory-card-${key}"]`) as HTMLButtonElement;
     byKey('1-q').click();
     byKey('1-a').click();
+    http.expectOne((req) => req.url.endsWith('/memory-pair')).flush({ matched: true });
+    fixture.detectChanges();
     byKey('2-q').click();
     byKey('2-a').click();
+    http.expectOne((req) => req.url.endsWith('/memory-pair')).flush({ matched: true });
     fixture.detectChanges();
 
     (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
     const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
-    expect(attempt.request.body.matchedPairIds).toEqual(jasmine.arrayContaining([1, 2]));
+    expect(attempt.request.body.memoryMatches).toEqual([
+      { firstCardId: '1-q', secondCardId: '1-a' },
+      { firstCardId: '2-q', secondCardId: '2-a' },
+    ]);
     attempt.flush({ passed: true, scorePercent: 100 });
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
@@ -205,15 +217,17 @@ describe('PlayQuestionPage', () => {
 
   it('affiche vrai_faux via le composant partagé et envoie la réponse API', () => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'vrai_faux',
       prompt: 'Coche',
-      statements: [
-        { statementId: 1, label: '2 + 2 = 4' },
-        { statementId: 2, label: '2 + 2 = 5' },
-      ],
+      content: {
+        statements: [
+          { statementId: 1, label: '2 + 2 = 4' },
+          { statementId: 2, label: '2 + 2 = 5' },
+        ],
+      },
     });
     fixture.detectChanges();
 
@@ -241,15 +255,15 @@ describe('PlayQuestionPage', () => {
 
   it('affiche liens et envoie les associations choisies', () => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'liens',
       prompt: 'Relie.',
-      links: [
-        { linkId: 1, leftLabel: 'Pomme', rightLabel: 'Fruit' },
-        { linkId: 2, leftLabel: 'Chien', rightLabel: 'Animal' },
-      ],
+      content: {
+        linkLefts: [{ optionId: '1', label: 'Pomme' }, { optionId: '2', label: 'Chien' }],
+        linkRights: [{ optionId: 'a', label: 'Fruit' }, { optionId: 'b', label: 'Animal' }],
+      },
     });
     fixture.detectChanges();
 
@@ -258,17 +272,17 @@ describe('PlayQuestionPage', () => {
     const click = (id: string) =>
       (root.querySelector(`[data-testid="${id}"]`) as HTMLButtonElement).click();
     click('child-play-view-link-left-l-1');
-    click('child-play-view-link-right-r-1');
+    click('child-play-view-link-right-r-a');
     click('child-play-view-link-left-l-2');
-    click('child-play-view-link-right-r-2');
+    click('child-play-view-link-right-r-b');
     fixture.detectChanges();
 
     (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
     const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
-    expect(attempt.request.body.linkMatches).toEqual(
+    expect(attempt.request.body.linkSelections).toEqual(
       jasmine.arrayContaining([
-        { leftId: 1, rightId: 1 },
-        { leftId: 2, rightId: 2 },
+        { leftId: '1', rightId: 'a' },
+        { leftId: '2', rightId: 'b' },
       ]),
     );
     attempt.flush({ passed: true, scorePercent: 100 });
@@ -279,17 +293,19 @@ describe('PlayQuestionPage', () => {
 
   it('affiche case vide et envoie les mots placés', () => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'case_vide',
       prompt: 'Complète.',
-      sentence: 'Le ___ mange une ___.',
-      words: [
-        { wordId: 10, label: 'chat' },
-        { wordId: 11, label: 'pomme' },
-        { wordId: 12, label: 'voiture' },
-      ],
+      content: {
+        sentence: 'Le ___ mange une ___.',
+        words: [
+          { wordId: 10, label: 'chat' },
+          { wordId: 11, label: 'pomme' },
+          { wordId: 12, label: 'voiture' },
+        ],
+      },
     });
     fixture.detectChanges();
 
@@ -319,17 +335,20 @@ describe('PlayQuestionPage', () => {
 
   it('simon : montre la suite, puis envoie la reprise au dernier pas, sans bouton Valider', fakeAsync(() => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42').flush({
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'simon',
       prompt: 'Refais la suite',
-      elementType: 'couleurs',
-      elements: [
-        { label: 'rouge', color: '#ff0000' },
-        { label: 'bleu', color: '#0000ff' },
-      ],
-      sequence: [1, 0, 1],
+      challengeId: 'shown-simon-challenge',
+      content: {
+        elementType: 'couleurs',
+        elements: [
+          { label: 'rouge', color: '#ff0000' },
+          { label: 'bleu', color: '#0000ff' },
+        ],
+        sequence: [1, 0, 1],
+      },
     });
     fixture.detectChanges();
 
@@ -371,25 +390,35 @@ describe('PlayQuestionPage', () => {
     element(0).click();
     element(1).click();
     const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
-    expect(attempt.request.body).toEqual({ simonSequence: [1, 0, 1] });
-    attempt.flush({ passed: true, scorePercent: 100 });
+    expect(attempt.request.body).toEqual(jasmine.objectContaining({
+      formCode: 'simon', challengeId: 'shown-simon-challenge', simonSequence: [1, 0, 1], submissionId: jasmine.any(String),
+    }));
+    attempt.flush({}, { status: 503, statusText: 'Unavailable' });
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-retry"]') as HTMLButtonElement).click();
+    const retry = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+    expect(retry.request.body).toEqual(attempt.request.body);
+    retry.flush({ passed: true, scorePercent: 100 });
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
 
     (root.querySelector('[data-testid="play-replay"]') as HTMLButtonElement).click();
-    const again = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42');
-    expect(again.request.method).toBe('GET');
+    const again = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play');
+    expect(again.request.method).toBe('POST');
     again.flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'simon',
       prompt: 'Refais la suite',
-      elementType: 'couleurs',
-      elements: [
-        { label: 'rouge', color: '#ff0000' },
-        { label: 'bleu', color: '#0000ff' },
-      ],
-      sequence: [0, 1, 0],
+      challengeId: 'shown-simon-challenge',
+      content: {
+        elementType: 'couleurs',
+        elements: [
+          { label: 'rouge', color: '#ff0000' },
+          { label: 'bleu', color: '#0000ff' },
+        ],
+        sequence: [0, 1, 0],
+      },
     });
     fixture.detectChanges();
     tick(1);
@@ -399,4 +428,36 @@ describe('PlayQuestionPage', () => {
     flush();
     http.verify();
   }));
+
+  it('permet de renvoyer les clics ordonnés après une erreur transitoire', () => {
+    const { fixture, http } = setup();
+    const url = 'http://localhost:8080/api/ext/subjects/5/questions/42';
+    http.expectOne(url + '/play').flush({
+      formCode: 'image_interactive',
+      content: {
+        imageWebp: 'AA==',
+        clicksOrdered: true,
+        clickZones: [{ zoneId: 1, shape: 'rect', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }] }],
+        clickSteps: [{ zoneId: 1, prompt: 'Clique au centre' }],
+      },
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const image = root.querySelector<HTMLElement>('[data-testid="child-play-view-click-image"]')!;
+    spyOn(image, 'getBoundingClientRect').and.returnValue(new DOMRect(0, 0, 100, 100));
+    image.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 50, clientY: 50 }));
+    const first = http.expectOne(url + '/attempts');
+    expect(first.request.body).toEqual(jasmine.objectContaining({
+      formCode: 'image_interactive', zoneClicks: [{ zoneId: 1 }], submissionId: jasmine.any(String),
+    }));
+    first.flush({}, { status: 503, statusText: 'Unavailable' });
+    fixture.detectChanges();
+    root.querySelector<HTMLButtonElement>('[data-testid="play-retry"]')!.click();
+    const retry = http.expectOne(url + '/attempts');
+    expect(retry.request.body).toEqual(first.request.body);
+    retry.flush({ attemptId: 8, passed: true, scorePercent: 100 });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+    http.verify();
+  });
 });

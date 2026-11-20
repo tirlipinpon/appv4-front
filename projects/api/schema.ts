@@ -146,6 +146,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/subjects/{subjectId}/questions/{questionId}/preview/memory-pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vérifier deux cartes en simulation */
+        post: operations["checkTeacherPreviewMemoryPair"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{subjectId}/questions/{questionId}/preview/letter-locks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vérifier des lettres en simulation */
+        post: operations["checkTeacherPreviewLetterLocks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{subjectId}/questions/{questionId}/preview/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Corriger une réponse en simulation */
+        post: operations["gradeTeacherQuestionPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects/{subjectId}/questions/{questionId}/attempt": {
         parameters: {
             query?: never;
@@ -644,6 +695,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/subjects/{subjectId}/questions/{questionId}/play": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ouvrir une partie sur une question */
+        post: operations["openChildPlayQuestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ext/subjects/{subjectId}/questions/{questionId}/memory-pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vérifier deux cartes retournées */
+        post: operations["checkChildMemoryPair"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/subjects/{subjectId}/questions/{questionId}/letter-locks": {
         parameters: {
             query?: never;
@@ -653,7 +738,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Verrouiller les lettres déjà justes (sans enregistrer) */
+        /** Vérifier les lettres déjà saisies */
         post: operations["checkChildLetterLocks"];
         delete?: never;
         options?: never;
@@ -689,6 +774,23 @@ export interface paths {
         put?: never;
         /** Connexion enfant par prénom et code */
         post: operations["loginChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/teacher/subjects/{subjectId}/questions/{questionId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ouvrir un aperçu professeur */
+        get: operations["getTeacherQuestionPreview"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1076,7 +1178,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lire une question jouable (sans solution) */
+        /**
+         * Lire une question pour un ancien client
+         * @deprecated
+         */
         get: operations["getChildPlayQuestion"];
         put?: never;
         post?: never;
@@ -1175,39 +1280,7 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        CreateTeacherSubjectQuestionRequest: {
-            formCode?: string;
-            prompt?: string;
-            choices?: components["schemas"]["TeacherQuestionChoiceInput"][];
-            pairs?: components["schemas"]["TeacherQuestionPairInput"][];
-            items?: components["schemas"]["TeacherQuestionItemInput"][];
-            statements?: components["schemas"]["TeacherQuestionStatementInput"][];
-            links?: components["schemas"]["TeacherQuestionLinkInput"][];
-            columns?: components["schemas"]["TeacherQuestionColumnInput"][];
-            cards?: components["schemas"]["TeacherQuestionCardInput"][];
-            sentence?: string;
-            answers?: components["schemas"]["TeacherQuestionGapWordInput"][];
-            decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
-            expectedAnswer?: string;
-            imageWebp?: string;
-            boardMode?: string;
-            boardImageWebp?: string;
-            requireAllCorrect?: boolean;
-            zones?: components["schemas"]["TeacherQuestionZoneInput"][];
-            pieces?: components["schemas"]["TeacherQuestionPieceInput"][];
-            /** Format: double */
-            snapDistance?: number;
-            timelineEnabled?: boolean;
-            clicksOrdered?: boolean;
-            /** @description Simon seulement : couleurs, nombres, lettres ou formes. */
-            elementType?: string;
-            /** @description Simon seulement : au moins deux éléments du genre choisi, dans l'ordre voulu. */
-            elements?: components["schemas"]["TeacherQuestionSimonElementInput"][];
-            /** @description Simon seulement : la suite à refaire, au moins deux pas. Chaque pas est la position 0-based d'un élément de elements. */
-            sequence?: number[];
-            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
-            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
-        };
+        CreateTeacherSubjectQuestionRequest: components["schemas"]["PlayQcmTeacherQuestionInput"] | components["schemas"]["PlayTrueFalseTeacherQuestionInput"] | components["schemas"]["PlayMemoryTeacherQuestionInput"] | components["schemas"]["PlayOrderTeacherQuestionInput"] | components["schemas"]["PlayClassificationTeacherQuestionInput"] | components["schemas"]["PlayLinksTeacherQuestionInput"] | components["schemas"]["PlayGapsTeacherQuestionInput"] | components["schemas"]["PlayImageTeacherQuestionInput"] | components["schemas"]["PlayLettersTeacherQuestionInput"] | components["schemas"]["PlayTextTeacherQuestionInput"] | components["schemas"]["PlayPuzzleTeacherQuestionInput"] | components["schemas"]["PlaySimonTeacherQuestionInput"];
         TeacherQuestionCardInput: {
             label?: string;
             /** Format: int32 */
@@ -1271,7 +1344,7 @@ export interface components {
         };
         TeacherQuestionStatementInput: {
             label?: string;
-            truthful?: boolean;
+            truthful: boolean;
         };
         TeacherQuestionZoneInput: {
             label?: string;
@@ -1586,6 +1659,72 @@ export interface components {
             name?: string;
             iconCode?: string;
         };
+        SubmitMemoryMatch: {
+            /** Format: uuid */
+            firstCardId: string;
+            /** Format: uuid */
+            secondCardId: string;
+        };
+        MemoryPairResponse: {
+            matched: boolean;
+        };
+        ChildLetterLocksRequest: {
+            attempt: string;
+        };
+        ChildLetterLocksResponse: {
+            locks: boolean[];
+        };
+        PreviewAttemptRequest: {
+            answer: components["schemas"]["PreviewPlayAnswer"];
+            previewSequence?: number[];
+        };
+        SubmitChildAttemptRequest: components["schemas"]["PlayQcmAttempt"] | components["schemas"]["PlayQcmAttemptLegacy"] | components["schemas"]["PlayTrueFalseAttempt"] | components["schemas"]["PlayTrueFalseAttemptLegacy"] | components["schemas"]["PlayMemoryAttempt"] | components["schemas"]["PlayMemoryAttemptLegacy"] | components["schemas"]["PlayOrderAttempt"] | components["schemas"]["PlayOrderAttemptLegacy"] | components["schemas"]["PlayClassificationAttempt"] | components["schemas"]["PlayClassificationAttemptLegacy"] | components["schemas"]["PlayLinksAttempt"] | components["schemas"]["PlayLinksAttemptLegacy"] | components["schemas"]["PlayGapsAttempt"] | components["schemas"]["PlayGapsAttemptLegacy"] | components["schemas"]["PlayImageAttempt"] | components["schemas"]["PlayImageAttemptLegacy"] | components["schemas"]["PlayLettersAttempt"] | components["schemas"]["PlayLettersAttemptLegacy"] | components["schemas"]["PlayTextAttempt"] | components["schemas"]["PlayPuzzleAttempt"] | components["schemas"]["PlayPuzzleAttemptLegacy"] | components["schemas"]["PlaySimonChildAttempt"] | components["schemas"]["PlaySimonAttemptLegacy"];
+        SubmitGapFillAnswer: {
+            /** Format: int32 */
+            holeIndex: number;
+            /** Format: int64 */
+            wordId: number;
+        };
+        SubmitLinkMatchAnswer: {
+            /** Format: int64 */
+            leftId: number;
+            /** Format: int64 */
+            rightId: number;
+        };
+        SubmitLinkSelection: {
+            /** Format: uuid */
+            leftId: string;
+            /** Format: uuid */
+            rightId: string;
+        };
+        SubmitPlacementAnswer: {
+            /** Format: int64 */
+            cardId: number;
+            /** Format: int64 */
+            columnId: number;
+        };
+        SubmitPuzzlePiecePlacement: {
+            /** Format: int64 */
+            pieceId: number;
+            /** Format: double */
+            x: number;
+            /** Format: double */
+            y: number;
+        };
+        SubmitStatementAnswer: {
+            /** Format: int64 */
+            statementId: number;
+            value: boolean;
+        };
+        SubmitZoneClickAnswer: {
+            /** Format: int64 */
+            zoneId: number;
+        };
+        PreviewVerdict: {
+            /** Format: int32 */
+            scorePercent: number;
+            passed: boolean;
+        };
         LetterAttemptRequest: {
             attempt?: string;
         };
@@ -1722,67 +1861,139 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
         };
-        ChildLetterLocksRequest: {
-            attempt?: string;
+        Payload: unknown;
+        PlayCard: {
+            /** Format: int64 */
+            cardId: number;
+            label: string;
         };
-        ChildLetterLocksResponse: {
-            locks?: boolean[];
+        PlayChoice: {
+            /** Format: int64 */
+            choiceId: number;
+            label: string;
         };
-        SubmitChildAttemptRequest: {
-            selectedChoiceIds?: number[];
-            statements?: components["schemas"]["SubmitStatementAnswer"][];
-            matchedPairIds?: number[];
-            orderedItemIds?: number[];
-            placements?: components["schemas"]["SubmitPlacementAnswer"][];
-            linkMatches?: components["schemas"]["SubmitLinkMatchAnswer"][];
-            gapFills?: components["schemas"]["SubmitGapFillAnswer"][];
-            zoneClicks?: components["schemas"]["SubmitZoneClickAnswer"][];
-            puzzlePlacements?: components["schemas"]["SubmitPuzzlePiecePlacement"][];
-            attempt?: string;
-            /** @description Simon seulement : positions 0-based des éléments touchés, dans l'ordre, une par pas de la suite (même longueur). */
-            simonSequence?: number[];
+        PlayClassification: components["schemas"]["Payload"] & {
+            columns?: components["schemas"]["PlayColumn"][];
+            cards?: components["schemas"]["PlayCard"][];
         };
-        SubmitGapFillAnswer: {
+        PlayClickPoint: {
+            /** Format: double */
+            x: number;
+            /** Format: double */
+            y: number;
+        };
+        PlayClickStep: {
+            /** Format: int64 */
+            zoneId: number;
+            prompt: string;
+        };
+        PlayClickZone: {
+            /** Format: int64 */
+            zoneId: number;
+            shape: string;
+            points: components["schemas"]["PlayClickPoint"][];
+        };
+        PlayColumn: {
+            /** Format: int64 */
+            columnId: number;
+            label: string;
+        };
+        PlayGapWord: {
+            /** Format: int64 */
+            wordId: number;
+            label: string;
+        };
+        PlayGaps: components["schemas"]["Payload"] & {
+            sentence?: string;
+            words?: components["schemas"]["PlayGapWord"][];
+        };
+        PlayImage: components["schemas"]["Payload"] & {
+            imageWebp?: string;
+            clicksOrdered?: boolean;
+            clickZones?: components["schemas"]["PlayClickZone"][];
+            clickSteps?: components["schemas"]["PlayClickStep"][];
+        };
+        PlayItem: {
+            /** Format: int64 */
+            itemId: number;
+            label: string;
+            axisLabel?: string;
+        };
+        PlayLetters: components["schemas"]["Payload"] & {
             /** Format: int32 */
-            holeIndex?: number;
-            /** Format: int64 */
-            wordId?: number;
+            letterCount?: number;
+            letterMask?: string;
         };
-        SubmitLinkMatchAnswer: {
-            /** Format: int64 */
-            leftId?: number;
-            /** Format: int64 */
-            rightId?: number;
+        PlayLinkOption: {
+            /** Format: uuid */
+            optionId: string;
+            label: string;
         };
-        SubmitPlacementAnswer: {
-            /** Format: int64 */
-            cardId?: number;
-            /** Format: int64 */
-            columnId?: number;
+        PlayLinks: components["schemas"]["Payload"] & {
+            linkLefts?: components["schemas"]["PlayLinkOption"][];
+            linkRights?: components["schemas"]["PlayLinkOption"][];
         };
-        SubmitPuzzlePiecePlacement: {
-            /** Format: int64 */
-            pieceId?: number;
+        PlayMemory: components["schemas"]["Payload"] & {
+            memoryCards?: components["schemas"]["PlayMemoryCard"][];
+        };
+        PlayMemoryCard: {
+            /** Format: uuid */
+            cardId: string;
+            label: string;
+        };
+        PlayOrder: components["schemas"]["Payload"] & {
+            items?: components["schemas"]["PlayItem"][];
+            timelineEnabled?: boolean;
+        };
+        PlayPuzzle: components["schemas"]["Payload"] & {
+            imageWebp?: string;
+            boardMode?: string;
+            boardImageWebp?: string;
             /** Format: double */
-            x?: number;
+            snapDistance?: number;
+            puzzlePieces?: components["schemas"]["PlayPuzzlePiece"][];
+        };
+        PlayPuzzlePiece: {
+            /** Format: int64 */
+            pieceId: number;
+            label: string;
+            shape: string;
+            points: components["schemas"]["PlayClickPoint"][];
             /** Format: double */
-            y?: number;
+            slotX?: number;
+            /** Format: double */
+            slotY?: number;
+            /** Format: double */
+            slotWidth?: number;
         };
-        SubmitStatementAnswer: {
-            /** Format: int64 */
-            statementId?: number;
-            value?: boolean;
+        PlayQcm: components["schemas"]["Payload"] & {
+            choices?: components["schemas"]["PlayChoice"][];
         };
-        SubmitZoneClickAnswer: {
+        PlayQuestionResponse: components["schemas"]["PlayQcmQuestion"] | components["schemas"]["PlayTrueFalseQuestion"] | components["schemas"]["PlayMemoryQuestion"] | components["schemas"]["PlayOrderQuestion"] | components["schemas"]["PlayClassificationQuestion"] | components["schemas"]["PlayLinksQuestion"] | components["schemas"]["PlayGapsQuestion"] | components["schemas"]["PlayImageQuestion"] | components["schemas"]["PlayLettersQuestion"] | components["schemas"]["PlayTextQuestion"] | components["schemas"]["PlayPuzzleQuestion"] | components["schemas"]["PlaySimonQuestion"];
+        PlaySimon: components["schemas"]["Payload"] & {
+            elementType?: string;
+            elements?: components["schemas"]["PlaySimonElement"][];
+            sequence?: number[];
+        };
+        PlaySimonElement: {
+            label: string;
+            color?: string;
+        };
+        PlayStatement: {
             /** Format: int64 */
-            zoneId?: number;
+            statementId: number;
+            label: string;
+        };
+        PlayText: components["schemas"]["Payload"];
+        PlayTrueFalse: components["schemas"]["Payload"] & {
+            statements?: components["schemas"]["PlayStatement"][];
         };
         ChildAttemptResultResponse: {
             /** Format: int64 */
-            attemptId?: number;
+            attemptId: number;
             /** Format: int32 */
-            scorePercent?: number;
-            passed?: boolean;
+            scorePercent: number;
+            passed: boolean;
         };
         ChildLoginRequest: {
             firstName?: string;
@@ -2137,11 +2348,11 @@ export interface components {
         };
         ChildLearningQuestionItem: {
             /** Format: int64 */
-            questionId?: number;
-            formCode?: string;
-            prompt?: string;
+            questionId: number;
+            formCode: string;
+            prompt: string;
             /** @description Libellé de la forme, celui du catalogue professeur. */
-            formLabel?: string;
+            formLabel: string;
             /** @description Code du dessin de la forme. Null si la forme n'a pas d'identité. */
             iconCode?: string;
             /** @description Couleur #rrggbb de la forme. Null si pas d'identité. */
@@ -2149,80 +2360,14 @@ export interface components {
         };
         ChildLearningQuestionsResponse: {
             /** Format: int64 */
-            subjectId?: number;
-            subjectName?: string;
-            questions?: components["schemas"]["ChildLearningQuestionItem"][];
-        };
-        ChildPlayCardItem: {
-            /** Format: int64 */
-            cardId?: number;
-            label?: string;
-        };
-        ChildPlayChoiceItem: {
-            /** Format: int64 */
-            choiceId?: number;
-            label?: string;
-        };
-        ChildPlayClickPointItem: {
-            /** Format: double */
-            x?: number;
-            /** Format: double */
-            y?: number;
-        };
-        ChildPlayClickStepItem: {
-            /** Format: int64 */
-            zoneId?: number;
-            prompt?: string;
-        };
-        ChildPlayClickZoneItem: {
-            /** Format: int64 */
-            zoneId?: number;
-            shape?: string;
-            points?: components["schemas"]["ChildPlayClickPointItem"][];
-        };
-        ChildPlayColumnItem: {
-            /** Format: int64 */
-            columnId?: number;
-            label?: string;
-        };
-        ChildPlayGapWordItem: {
-            /** Format: int64 */
-            wordId?: number;
-            label?: string;
-        };
-        ChildPlayItemItem: {
-            /** Format: int64 */
-            itemId?: number;
-            label?: string;
-            axisLabel?: string;
-        };
-        ChildPlayLinkItem: {
-            /** Format: int64 */
-            linkId?: number;
-            leftLabel?: string;
-            rightLabel?: string;
-        };
-        ChildPlayPairItem: {
-            /** Format: int64 */
-            pairId?: number;
-            questionSide?: string;
-            answerSide?: string;
-        };
-        ChildPlayPuzzlePieceItem: {
-            /** Format: int64 */
-            pieceId?: number;
-            label?: string;
-            shape?: string;
-            points?: components["schemas"]["ChildPlayClickPointItem"][];
-            /** Format: double */
-            slotX?: number;
-            /** Format: double */
-            slotY?: number;
+            subjectId: number;
+            subjectName: string;
+            questions: components["schemas"]["ChildLearningQuestionItem"][];
             /**
-             * Format: double
-             * @description Largeur de la pièce sur le fond dédié (0–1 de la largeur du plateau). Absente : taille de la découpe.
+             * Format: int64
+             * @description Dernier identifiant de la page, à renvoyer dans afterId.
              */
-            slotWidth?: number;
+            nextCursor?: number;
         };
         ChildPlayQuestionResponse: {
             /** Format: int64 */
@@ -2231,50 +2376,11 @@ export interface components {
             subjectId?: number;
             formCode?: string;
             prompt?: string;
-            choices?: components["schemas"]["ChildPlayChoiceItem"][];
-            statements?: components["schemas"]["ChildPlayStatementItem"][];
-            pairs?: components["schemas"]["ChildPlayPairItem"][];
-            items?: components["schemas"]["ChildPlayItemItem"][];
-            columns?: components["schemas"]["ChildPlayColumnItem"][];
-            cards?: components["schemas"]["ChildPlayCardItem"][];
-            timelineEnabled?: boolean;
-            links?: components["schemas"]["ChildPlayLinkItem"][];
-            sentence?: string;
-            words?: components["schemas"]["ChildPlayGapWordItem"][];
-            imageWebp?: string;
-            clicksOrdered?: boolean;
-            clickZones?: components["schemas"]["ChildPlayClickZoneItem"][];
-            clickSteps?: components["schemas"]["ChildPlayClickStepItem"][];
-            /** Format: int32 */
-            letterCount?: number;
-            letterMask?: string;
-            boardMode?: string;
-            boardImageWebp?: string;
-            /** Format: double */
-            snapDistance?: number;
-            puzzlePieces?: components["schemas"]["ChildPlayPuzzlePieceItem"][];
-            /** @description Simon seulement : couleurs, nombres, lettres ou formes. */
-            elementType?: string;
-            /** @description Simon seulement : éléments à afficher, non mélangés. Leur position (0, 1, 2…) est celle que sequence désigne et que simonSequence renvoie. */
-            elements?: components["schemas"]["ChildPlaySimonElementItem"][];
-            /** @description Simon seulement : la suite à montrer, dans l'ordre où les éléments s'allument (positions 0-based dans elements). */
-            sequence?: number[];
-            /** @description Libellé de la forme, ou null. */
             formLabel?: string;
-            /** @description Dessin de la forme, ou null. */
             iconCode?: string;
-            /** @description Couleur #rrggbb de la forme, ou null. */
             color?: string;
-        };
-        ChildPlaySimonElementItem: {
-            label?: string;
-            /** @description Code #rrggbb pour le genre couleurs. Absent pour les autres genres. */
-            color?: string;
-        };
-        ChildPlayStatementItem: {
-            /** Format: int64 */
-            statementId?: number;
-            label?: string;
+            /** Format: uuid */
+            challengeId?: string;
         };
         ChildProgressResponse: {
             /** Format: int32 */
@@ -2295,6 +2401,525 @@ export interface components {
             /** Format: int64 */
             childId?: number;
             firstName?: string;
+        };
+        PlayQcmQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "qcm";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayQcm"];
+        };
+        PlayTrueFalseQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "vrai_faux";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayTrueFalse"];
+        };
+        PlayMemoryQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "memory";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayMemory"];
+        };
+        PlayOrderQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "order";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayOrder"];
+        };
+        PlayClassificationQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "classement";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayClassification"];
+        };
+        PlayLinksQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "liens";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayLinks"];
+        };
+        PlayGapsQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "case_vide";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayGaps"];
+        };
+        PlayImageQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "image_interactive";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayImage"];
+        };
+        PlayLettersQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "reponse_libre";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayLetters"];
+        };
+        PlayTextQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "texte";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayText"];
+        };
+        PlayPuzzleQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "puzzle";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlayPuzzle"];
+        };
+        PlaySimonQuestion: {
+            /** Format: int64 */
+            questionId: number;
+            /** Format: int64 */
+            subjectId: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "simon";
+            prompt: string;
+            formLabel: string;
+            iconCode?: string;
+            color?: string;
+            /** Format: uuid */
+            challengeId?: string;
+            content: components["schemas"]["PlaySimon"];
+        };
+        PlayQcmAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            selectedChoiceIds: number[];
+            /** @enum {string} */
+            formCode: "qcm";
+        };
+        PlayQcmAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            selectedChoiceIds: number[];
+        };
+        PlayTrueFalseAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            statements: components["schemas"]["SubmitStatementAnswer"][];
+            /** @enum {string} */
+            formCode: "vrai_faux";
+        };
+        PlayTrueFalseAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            statements: components["schemas"]["SubmitStatementAnswer"][];
+        };
+        PlayMemoryAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            memoryMatches: components["schemas"]["SubmitMemoryMatch"][];
+            /** @enum {string} */
+            formCode: "memory";
+        };
+        PlayMemoryAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            matchedPairIds: number[];
+        };
+        PlayOrderAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            orderedItemIds: number[];
+            /** @enum {string} */
+            formCode: "order";
+        };
+        PlayOrderAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            orderedItemIds: number[];
+        };
+        PlayClassificationAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            placements: components["schemas"]["SubmitPlacementAnswer"][];
+            /** @enum {string} */
+            formCode: "classement";
+        };
+        PlayClassificationAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            placements: components["schemas"]["SubmitPlacementAnswer"][];
+        };
+        PlayLinksAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            linkSelections: components["schemas"]["SubmitLinkSelection"][];
+            /** @enum {string} */
+            formCode: "liens";
+        };
+        PlayLinksAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            linkMatches: components["schemas"]["SubmitLinkMatchAnswer"][];
+        };
+        PlayGapsAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            gapFills: components["schemas"]["SubmitGapFillAnswer"][];
+            /** @enum {string} */
+            formCode: "case_vide";
+        };
+        PlayGapsAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            gapFills: components["schemas"]["SubmitGapFillAnswer"][];
+        };
+        PlayImageAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            zoneClicks: components["schemas"]["SubmitZoneClickAnswer"][];
+            /** @enum {string} */
+            formCode: "image_interactive";
+        };
+        PlayImageAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            zoneClicks: components["schemas"]["SubmitZoneClickAnswer"][];
+        };
+        PlayLettersAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            attempt: string;
+            /** @enum {string} */
+            formCode: "reponse_libre";
+        };
+        PlayLettersAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            attempt: string;
+        };
+        PlayTextAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            attempt: string;
+            /** @enum {string} */
+            formCode: "texte";
+        };
+        PlayPuzzleAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            puzzlePlacements: components["schemas"]["SubmitPuzzlePiecePlacement"][];
+            /** @enum {string} */
+            formCode: "puzzle";
+        };
+        PlayPuzzleAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            puzzlePlacements: components["schemas"]["SubmitPuzzlePiecePlacement"][];
+        };
+        PlaySimonAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            simonSequence: number[];
+            /** @enum {string} */
+            formCode: "simon";
+        };
+        PlaySimonChildAttempt: {
+            /** Format: uuid */
+            submissionId?: string;
+            simonSequence: number[];
+            /** @enum {string} */
+            formCode: "simon";
+            /** Format: uuid */
+            challengeId: string;
+        };
+        PlaySimonAttemptLegacy: {
+            /** Format: uuid */
+            submissionId?: string;
+            simonSequence: number[];
+            /** Format: uuid */
+            challengeId?: string;
+        };
+        PreviewPlayAnswer: components["schemas"]["PlayQcmAttempt"] | components["schemas"]["PlayTrueFalseAttempt"] | components["schemas"]["PlayMemoryAttempt"] | components["schemas"]["PlayOrderAttempt"] | components["schemas"]["PlayClassificationAttempt"] | components["schemas"]["PlayLinksAttempt"] | components["schemas"]["PlayGapsAttempt"] | components["schemas"]["PlayImageAttempt"] | components["schemas"]["PlayLettersAttempt"] | components["schemas"]["PlayTextAttempt"] | components["schemas"]["PlayPuzzleAttempt"] | components["schemas"]["PlaySimonAttempt"];
+        PlayQcmTeacherQuestionInput: {
+            prompt: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            choices: components["schemas"]["TeacherQuestionChoiceInput"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "qcm";
+        };
+        PlayTrueFalseTeacherQuestionInput: {
+            prompt?: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            statements: components["schemas"]["TeacherQuestionStatementInput"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "vrai_faux";
+        };
+        PlayMemoryTeacherQuestionInput: {
+            prompt?: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            pairs: components["schemas"]["TeacherQuestionPairInput"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "memory";
+        };
+        PlayOrderTeacherQuestionInput: {
+            prompt?: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            items: components["schemas"]["TeacherQuestionItemInput"][];
+            timelineEnabled?: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "order";
+        };
+        PlayClassificationTeacherQuestionInput: {
+            prompt?: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            columns: components["schemas"]["TeacherQuestionColumnInput"][];
+            cards: components["schemas"]["TeacherQuestionCardInput"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "classement";
+        };
+        PlayLinksTeacherQuestionInput: {
+            prompt?: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            links: components["schemas"]["TeacherQuestionLinkInput"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "liens";
+        };
+        PlayGapsTeacherQuestionInput: {
+            prompt?: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            sentence: string;
+            answers: components["schemas"]["TeacherQuestionGapWordInput"][];
+            decoys?: components["schemas"]["TeacherQuestionGapWordInput"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "case_vide";
+        };
+        PlayImageTeacherQuestionInput: {
+            prompt?: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            imageWebp: string;
+            zones: components["schemas"]["TeacherQuestionZoneInput"][];
+            clicksOrdered?: boolean;
+            requireAllCorrect?: boolean;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "image_interactive";
+        };
+        PlayLettersTeacherQuestionInput: {
+            prompt: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            expectedAnswer: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "reponse_libre";
+        };
+        PlayTextTeacherQuestionInput: {
+            prompt: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            expectedAnswer: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "texte";
+        };
+        PlayPuzzleTeacherQuestionInput: {
+            prompt?: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            imageWebp: string;
+            pieces: components["schemas"]["TeacherQuestionPieceInput"][];
+            boardMode?: string;
+            boardImageWebp?: string;
+            /** Format: double */
+            snapDistance?: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "puzzle";
+        };
+        PlaySimonTeacherQuestionInput: {
+            prompt?: string;
+            /** @description Essais, difficulté et points. Absent : 1 essai, Facile, gamification allumée. */
+            gamification?: components["schemas"]["TeacherQuestionGamificationInput"];
+            /** @description Simon seulement : couleurs, nombres, lettres ou formes. */
+            elementType: string;
+            /** @description Simon seulement : au moins deux éléments du genre choisi, dans l'ordre voulu. */
+            elements: components["schemas"]["TeacherQuestionSimonElementInput"][];
+            /**
+             * @deprecated
+             * @description Ancien champ Simon. La suite est désormais tirée à l'ouverture.
+             */
+            sequence?: number[];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            formCode: "simon";
         };
     };
     responses: never;
@@ -2872,6 +3497,87 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    checkTeacherPreviewMemoryPair: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitMemoryMatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemoryPairResponse"];
+                };
+            };
+        };
+    };
+    checkTeacherPreviewLetterLocks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChildLetterLocksRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildLetterLocksResponse"];
+                };
+            };
+        };
+    };
+    gradeTeacherQuestionPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewAttemptRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PreviewVerdict"];
                 };
             };
         };
@@ -3988,6 +4694,78 @@ export interface operations {
             };
         };
     };
+    openChildPlayQuestion: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Contenu jouable correspondant à la forme */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlayQuestionResponse"];
+                };
+            };
+            /** @description Badge enfant invalide */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Matière ou question absente */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    checkChildMemoryPair: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitMemoryMatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MemoryPairResponse"];
+                };
+            };
+        };
+    };
     checkChildLetterLocks: {
         parameters: {
             query?: never;
@@ -4006,40 +4784,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Verrous par case */
+            /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "*/*": components["schemas"]["ChildLetterLocksResponse"];
-                };
-            };
-            /** @description Forme non lettre par lettre */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuthErrorBody"];
-                };
-            };
-            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuthErrorBody"];
-                };
-            };
-            /** @description Matière ou question absente / non liée */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
         };
@@ -4062,7 +4813,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Tentative enregistrée */
+            /** @description Verdict de la soumission, y compris en cas de relance du même identifiant */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -4071,7 +4822,7 @@ export interface operations {
                     "*/*": components["schemas"]["ChildAttemptResultResponse"];
                 };
             };
-            /** @description Réponse invalide ou forme non jouable */
+            /** @description Réponse invalide ou incompatible avec la forme */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4080,7 +4831,7 @@ export interface operations {
                     "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
-            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            /** @description Badge enfant invalide */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -4089,8 +4840,17 @@ export interface operations {
                     "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
-            /** @description Matière ou question absente / non liée */
+            /** @description Matière ou question absente */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Partie expirée, déjà jouée ou clé de soumission utilisée ailleurs */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4129,6 +4889,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    getTeacherQuestionPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlayQuestionResponse"];
                 };
             };
         };
@@ -4767,7 +5550,10 @@ export interface operations {
     };
     listChildLearningSubjectQuestions: {
         parameters: {
-            query?: never;
+            query?: {
+                afterId?: number;
+                limit?: number;
+            };
             header?: {
                 Authorization?: string;
             };
@@ -4821,7 +5607,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Contenu jouable */
+            /** @description Contenu jouable avec les champs historiques à plat */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4830,7 +5616,7 @@ export interface operations {
                     "*/*": components["schemas"]["ChildPlayQuestionResponse"];
                 };
             };
-            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            /** @description Badge enfant invalide */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -4839,7 +5625,7 @@ export interface operations {
                     "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
-            /** @description Matière ou question absente / non liée */
+            /** @description Matière ou question absente */
             404: {
                 headers: {
                     [name: string]: unknown;
