@@ -26,7 +26,7 @@ export interface CroppedPhoto {
  * Réduit le plus grand côté à 1600 px sans agrandir, puis convertit en WebP.
  * Un GIF animé devient sa première image.
  */
-export async function preparePhoto(file: File): Promise<PreparedPhoto> {
+export async function preparePhoto(file: File, maxSide = MAX_PHOTO_SIDE): Promise<PreparedPhoto> {
   if (!ALLOWED_TYPES.has(file.type)) {
     throw new Error(PHOTO_NOT_IMAGE);
   }
@@ -41,7 +41,7 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
   }
   try {
     const longest = Math.max(bitmap.width, bitmap.height);
-    const scale = longest > MAX_PHOTO_SIDE ? MAX_PHOTO_SIDE / longest : 1;
+    const scale = longest > maxSide ? maxSide / longest : 1;
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
     const canvas = draw(bitmap, 0, 0, bitmap.width, bitmap.height, width, height);

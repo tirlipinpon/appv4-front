@@ -57,11 +57,13 @@ export interface OrderItemView {
   itemId?: number;
   label: string;
   axisLabel?: string | null;
+  imageWebp?: string;
 }
 
 export interface MemoryCardView {
   key: string;
   label: string;
+  imageWebp?: string;
 }
 
 export interface MemoryMatch {
@@ -73,6 +75,7 @@ export interface ClassCardView {
   key: string;
   cardId?: number;
   label: string;
+  imageWebp?: string;
 }
 
 export interface ClassColumnView {
@@ -86,6 +89,7 @@ export interface LinkSideView {
   key: string;
   optionId: string;
   label: string;
+  imageWebp?: string;
 }
 
 export interface GapWordView {
@@ -206,6 +210,7 @@ function toOrderViews(items: readonly ChildPlayViewItem[]): OrderItemView[] {
     itemId: item.itemId,
     label: item.label,
     axisLabel: item.axisLabel,
+    imageWebp: item.imageWebp,
   }));
 }
 
@@ -214,6 +219,7 @@ function toClassCard(card: ChildPlayViewCard, index: number): ClassCardView {
     key: card.cardId != null ? String(card.cardId) : `c-${index}-${card.label}`,
     cardId: card.cardId,
     label: card.label,
+    imageWebp: card.imageWebp,
   };
 }
 
@@ -250,7 +256,7 @@ function splitGapSentence(sentence: string): GapPart[] {
 }
 
 function toLinkSide(option: ChildPlayViewLinkOption, side: 'l' | 'r'): LinkSideView {
-  return { key: `${side}-${option.optionId}`, optionId: option.optionId, label: option.label };
+  return { key: `${side}-${option.optionId}`, optionId: option.optionId, label: option.label, imageWebp: option.imageWebp };
 }
 
 function toClassColumn(column: ChildPlayViewColumn, index: number): ClassColumnView {
@@ -385,6 +391,10 @@ export class ChildQuestionPlayViewComponent {
   protected readonly simonTotal = computed(() => this.simonRound());
 
   protected readonly imageSrc = computed(() => imageSource(this.question().imageWebp));
+
+  protected pieceSrc(raw: string | null | undefined): string {
+    return imageSource(raw ?? undefined);
+  }
   protected readonly puzzleMagnet = computed(() => {
     const value = this.question().snapDistance;
     return value == null || !Number.isFinite(value)
@@ -531,7 +541,11 @@ export class ChildQuestionPlayViewComponent {
 
   protected readonly displayMemoryCards = computed(() => {
     this.layoutTick();
-    return shuffleCopy((this.question().memoryCards ?? []).map(({ cardId, label }) => ({ key: cardId, label })));
+    return shuffleCopy((this.question().memoryCards ?? []).map(({ cardId, label, imageWebp }) => ({
+      key: cardId,
+      label,
+      imageWebp,
+    })));
   });
 
   protected readonly tfOrders = computed(() => {

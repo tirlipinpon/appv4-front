@@ -32,32 +32,49 @@ export const HOLE = '___';
 export interface ChoiceDraft {
   label: string;
   correct: boolean;
+  imageDataUrl?: string;
+  /** Vrai quand la liste sait qu'une image existe, sans en envoyer les octets. */
+  hasImage?: boolean;
 }
 
 export interface SavedChoice {
   label: string;
   correct: boolean;
+  imageDataUrl?: string;
+  hasImage?: boolean;
 }
 
 export interface PairDraft {
   questionSide: string;
   answerSide: string;
+  questionImageDataUrl?: string;
+  answerImageDataUrl?: string;
+  questionHasImage?: boolean;
+  answerHasImage?: boolean;
 }
 
 export interface ItemDraft {
   label: string;
   /** Jalon de frise (ex. « 20 minutes »). Vide si timeline désactivée. */
   axisLabel: string;
+  imageDataUrl?: string;
+  hasImage?: boolean;
 }
 
 export interface StatementDraft {
   label: string;
   truthful: boolean | null;
+  imageDataUrl?: string;
+  hasImage?: boolean;
 }
 
 export interface LinkDraft {
   leftLabel: string;
   rightLabel: string;
+  leftImageDataUrl?: string;
+  rightImageDataUrl?: string;
+  leftHasImage?: boolean;
+  rightHasImage?: boolean;
 }
 
 export interface ColumnDraft {
@@ -68,16 +85,21 @@ export interface ColumnDraft {
 export interface CardDraft {
   label: string;
   columnIndex: number;
+  imageDataUrl?: string;
+  hasImage?: boolean;
 }
 
 export interface GapWordDraft {
   label: string;
 }
 
-/** Élément d'un Simon. `color` (#rrggbb) ne compte que pour le genre couleurs. */
+/** Élément d'un Simon. Une seule face : texte, couleur #rrggbb, ou image. */
 export interface SimonElementDraft {
   label: string;
   color: string;
+  imageDataUrl?: string;
+  /** Vrai quand la liste sait qu'une image existe, sans en envoyer les octets. */
+  hasImage?: boolean;
 }
 
 /**
@@ -147,23 +169,20 @@ export function isSimonColor(value: string): boolean {
 
 /**
  * Garde-fou avant l'envoi d'un Simon : ce qui manque encore, ou null.
- * Mêmes messages que l'API ; elle reste seule juge du reste (nombre, lettre, doublon).
+ * Chaque élément est une image, une couleur, ou un texte. L'API reste juge du WebP.
  */
-export function simonDraftError(
-  type: SimonElementType | null,
-  elements: readonly SimonElementDraft[],
-): string | null {
-  if (type === null) {
-    return "Choisis un genre d'éléments : couleurs, nombres, lettres ou formes.";
-  }
+export function simonDraftError(elements: readonly SimonElementDraft[]): string | null {
   if (elements.length < 2) {
     return 'Il faut au moins deux éléments.';
   }
-  if (elements.some((element) => element.label.trim() === '')) {
-    return 'Chaque élément doit avoir un nom.';
-  }
-  if (type === SIMON_ELEMENT_TYPE.COLORS && elements.some((element) => !isSimonColor(element.color))) {
-    return 'Avec le genre couleurs, chaque élément doit avoir un code couleur comme #ff0000.';
+  for (const element of elements) {
+    const faces = [element.label.trim(), element.color.trim(), element.imageDataUrl ?? ''].filter((value) => value !== '');
+    if (faces.length !== 1) {
+      return 'Chaque élément est une image, une couleur, ou un texte.';
+    }
+    if (element.color.trim() !== '' && !isSimonColor(element.color)) {
+      return 'Une couleur s\'écrit comme #ff0000.';
+    }
   }
   return null;
 }

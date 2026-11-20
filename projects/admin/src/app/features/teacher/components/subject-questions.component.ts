@@ -26,8 +26,10 @@ import {
 
 import type { TeacherSubjectFollowersResponse } from '../../../core/api/api-models';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
+import { preparePhoto } from '../../../shared/prepare-photo/prepare-photo';
 import { TeacherQuestionsService } from '../data-access/teacher-questions.service';
 import { ClickZoneEditorComponent } from './click-zone-editor.component';
+import { PieceFaceComponent } from './piece-face.component';
 import { LetterBoxesComponent } from './letter-boxes.component';
 import { ClickZone } from './click-zone';
 import { buildSaveBody, parseSavedQuestion, requireSavedQuestion } from './question-form.adapters';
@@ -117,6 +119,7 @@ interface FormChoice {
     MatSelectModule,
     MatSlideToggleModule,
     ClickZoneEditorComponent,
+    PieceFaceComponent,
     LetterBoxesComponent,
     ChildQuestionPlayViewComponent,
     QuestionFormMarkComponent,
@@ -141,6 +144,7 @@ export class SubjectQuestionsComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly saving = signal(false);
+  readonly imagesLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly forms = signal<FormChoice[]>([]);
   readonly selectedCode = signal<string | null>(null);
@@ -177,7 +181,7 @@ export class SubjectQuestionsComponent implements OnInit {
    */
   private readonly simonChecked = signal(false);
   readonly simonError = computed(() =>
-    this.simonChecked() ? simonDraftError(this.simonType(), this.simonElements()) : null,
+    this.simonChecked() ? simonDraftError(this.simonElements()) : null,
   );
   /** Question en cours de correction. Vide = on prépare une nouvelle question. */
   readonly editingId = signal<number | null>(null);
@@ -409,7 +413,44 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setChoiceLabel(index: number, value: string): void {
-    this.choices.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+    this.choices.update((rows) =>
+      rows.map((row, i) => (i === index ? { label: value, correct: row.correct } : row)),
+    );
+  }
+
+  setChoiceFace(index: number, face: 'text' | 'image'): void {
+    this.choices.update((rows) =>
+      rows.map((row, i) =>
+        i === index
+          ? face === 'image'
+            ? { label: '', correct: row.correct, hasImage: true }
+            : { label: '', correct: row.correct }
+          : row,
+      ),
+    );
+  }
+
+  onChoiceImagePending(index: number): void {
+    this.choices.update((rows) =>
+      rows.map((row, i) =>
+        i === index ? { label: '', correct: row.correct, hasImage: true, imageDataUrl: '' } : row,
+      ),
+    );
+  }
+
+  onChoiceImageReady(index: number, dataUrl: string): void {
+    this.choices.update((rows) =>
+      rows.map((row, i) =>
+        i === index ? { label: '', correct: row.correct, hasImage: true, imageDataUrl: dataUrl } : row,
+      ),
+    );
+  }
+
+  onChoiceImageFailed(index: number, message: string): void {
+    this.choices.update((rows) =>
+      rows.map((row, i) => (i === index ? { label: '', correct: row.correct, hasImage: true } : row)),
+    );
+    this.error.set(message);
   }
 
   setChoiceCorrect(index: number, correct: boolean): void {
@@ -425,7 +466,56 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setPairSide(index: number, side: 'questionSide' | 'answerSide', value: string): void {
-    this.pairs.update((rows) => rows.map((row, i) => (i === index ? { ...row, [side]: value } : row)));
+    this.pairs.update((rows) =>
+      rows.map((row, i) => {
+        if (i !== index) {
+          return row;
+        }
+        if (side === 'questionSide') {
+          const next = { ...row, questionSide: value };
+          delete next.questionImageDataUrl;
+          delete next.questionHasImage;
+          return next;
+        }
+        const next = { ...row, answerSide: value };
+        delete next.answerImageDataUrl;
+        delete next.answerHasImage;
+        return next;
+      }),
+    );
+  }
+
+  setPairFace(index: number, side: 'question' | 'answer', face: 'text' | 'image'): void {
+    this.pairs.update((rows) =>
+      rows.map((row, i) => {
+        if (i !== index) {
+          return row;
+        }
+        if (side === 'question') {
+          const next = { ...row, questionSide: '' };
+          delete next.questionImageDataUrl;
+          delete next.questionHasImage;
+          return face === 'image' ? { ...next, questionHasImage: true } : next;
+        }
+        const next = { ...row, answerSide: '' };
+        delete next.answerImageDataUrl;
+        delete next.answerHasImage;
+        return face === 'image' ? { ...next, answerHasImage: true } : next;
+      }),
+    );
+  }
+
+  onPairImagePending(index: number, side: 'question' | 'answer'): void {
+    this.patchPairImage(index, side, '');
+  }
+
+  onPairImageReady(index: number, side: 'question' | 'answer', dataUrl: string): void {
+    this.patchPairImage(index, side, dataUrl);
+  }
+
+  onPairImageFailed(index: number, side: 'question' | 'answer', message: string): void {
+    this.setPairFace(index, side, 'image');
+    this.error.set(message);
   }
 
   addPair(): void {
@@ -437,7 +527,42 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setItemLabel(index: number, value: string): void {
-    this.items.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+    this.items.update((rows) =>
+      rows.map((row, i) => (i === index ? { label: value, axisLabel: row.axisLabel } : row)),
+    );
+  }
+
+  setItemFace(index: number, face: 'text' | 'image'): void {
+    this.items.update((rows) =>
+      rows.map((row, i) =>
+        i === index
+          ? face === 'image'
+            ? { label: '', axisLabel: row.axisLabel, hasImage: true }
+            : { label: '', axisLabel: row.axisLabel }
+          : row,
+      ),
+    );
+  }
+
+  onItemImagePending(index: number): void {
+    this.items.update((rows) =>
+      rows.map((row, i) =>
+        i === index ? { label: '', axisLabel: row.axisLabel, hasImage: true, imageDataUrl: '' } : row,
+      ),
+    );
+  }
+
+  onItemImageReady(index: number, dataUrl: string): void {
+    this.items.update((rows) =>
+      rows.map((row, i) =>
+        i === index ? { label: '', axisLabel: row.axisLabel, hasImage: true, imageDataUrl: dataUrl } : row,
+      ),
+    );
+  }
+
+  onItemImageFailed(index: number, message: string): void {
+    this.setItemFace(index, 'image');
+    this.error.set(message);
   }
 
   setItemAxisLabel(index: number, value: string): void {
@@ -466,7 +591,42 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setStatementLabel(index: number, value: string): void {
-    this.statements.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+    this.statements.update((rows) =>
+      rows.map((row, i) => (i === index ? { label: value, truthful: row.truthful } : row)),
+    );
+  }
+
+  setStatementFace(index: number, face: 'text' | 'image'): void {
+    this.statements.update((rows) =>
+      rows.map((row, i) =>
+        i === index
+          ? face === 'image'
+            ? { label: '', truthful: row.truthful, hasImage: true }
+            : { label: '', truthful: row.truthful }
+          : row,
+      ),
+    );
+  }
+
+  onStatementImagePending(index: number): void {
+    this.statements.update((rows) =>
+      rows.map((row, i) =>
+        i === index ? { label: '', truthful: row.truthful, hasImage: true, imageDataUrl: '' } : row,
+      ),
+    );
+  }
+
+  onStatementImageReady(index: number, dataUrl: string): void {
+    this.statements.update((rows) =>
+      rows.map((row, i) =>
+        i === index ? { label: '', truthful: row.truthful, hasImage: true, imageDataUrl: dataUrl } : row,
+      ),
+    );
+  }
+
+  onStatementImageFailed(index: number, message: string): void {
+    this.setStatementFace(index, 'image');
+    this.error.set(message);
   }
 
   setStatementSide(index: number, truthful: boolean): void {
@@ -484,7 +644,56 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setLinkSide(index: number, side: 'leftLabel' | 'rightLabel', value: string): void {
-    this.links.update((rows) => rows.map((row, i) => (i === index ? { ...row, [side]: value } : row)));
+    this.links.update((rows) =>
+      rows.map((row, i) => {
+        if (i !== index) {
+          return row;
+        }
+        if (side === 'leftLabel') {
+          const next = { ...row, leftLabel: value };
+          delete next.leftImageDataUrl;
+          delete next.leftHasImage;
+          return next;
+        }
+        const next = { ...row, rightLabel: value };
+        delete next.rightImageDataUrl;
+        delete next.rightHasImage;
+        return next;
+      }),
+    );
+  }
+
+  setLinkFace(index: number, side: 'left' | 'right', face: 'text' | 'image'): void {
+    this.links.update((rows) =>
+      rows.map((row, i) => {
+        if (i !== index) {
+          return row;
+        }
+        if (side === 'left') {
+          const next = { ...row, leftLabel: '' };
+          delete next.leftImageDataUrl;
+          delete next.leftHasImage;
+          return face === 'image' ? { ...next, leftHasImage: true } : next;
+        }
+        const next = { ...row, rightLabel: '' };
+        delete next.rightImageDataUrl;
+        delete next.rightHasImage;
+        return face === 'image' ? { ...next, rightHasImage: true } : next;
+      }),
+    );
+  }
+
+  onLinkImagePending(index: number, side: 'left' | 'right'): void {
+    this.patchLinkImage(index, side, '');
+  }
+
+  onLinkImageReady(index: number, side: 'left' | 'right', dataUrl: string): void {
+    this.patchLinkImage(index, side, dataUrl);
+  }
+
+  onLinkImageFailed(index: number, side: 'left' | 'right', message: string): void {
+    this.setLinkFace(index, side, 'image');
+    this.error.set(message);
   }
 
   addLink(): void {
@@ -515,7 +724,42 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setCardLabel(index: number, value: string): void {
-    this.cards.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+    this.cards.update((rows) =>
+      rows.map((row, i) => (i === index ? { label: value, columnIndex: row.columnIndex } : row)),
+    );
+  }
+
+  setCardFace(index: number, face: 'text' | 'image'): void {
+    this.cards.update((rows) =>
+      rows.map((row, i) =>
+        i === index
+          ? face === 'image'
+            ? { label: '', columnIndex: row.columnIndex, hasImage: true }
+            : { label: '', columnIndex: row.columnIndex }
+          : row,
+      ),
+    );
+  }
+
+  onCardImagePending(index: number): void {
+    this.cards.update((rows) =>
+      rows.map((row, i) =>
+        i === index ? { label: '', columnIndex: row.columnIndex, hasImage: true, imageDataUrl: '' } : row,
+      ),
+    );
+  }
+
+  onCardImageReady(index: number, dataUrl: string): void {
+    this.cards.update((rows) =>
+      rows.map((row, i) =>
+        i === index ? { label: '', columnIndex: row.columnIndex, hasImage: true, imageDataUrl: dataUrl } : row,
+      ),
+    );
+  }
+
+  onCardImageFailed(index: number, message: string): void {
+    this.setCardFace(index, 'image');
+    this.error.set(message);
   }
 
   setCardColumn(index: number, columnIndex: number): void {
@@ -570,11 +814,174 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   setSimonElementLabel(index: number, value: string): void {
-    this.simonElements.update((rows) => rows.map((row, i) => (i === index ? { ...row, label: value } : row)));
+    this.simonElements.update((rows) =>
+      rows.map((row, i) =>
+        i === index
+          ? { ...row, label: value, ...(value.trim() ? { color: '', imageDataUrl: undefined } : {}) }
+          : row,
+      ),
+    );
   }
 
   setSimonElementColor(index: number, value: string): void {
-    this.simonElements.update((rows) => rows.map((row, i) => (i === index ? { ...row, color: value } : row)));
+    this.simonElements.update((rows) =>
+      rows.map((row, i) =>
+        i === index
+          ? { ...row, color: value, ...(value.trim() ? { label: '', imageDataUrl: undefined } : {}) }
+          : row,
+      ),
+    );
+  }
+
+  setSimonElementImage(index: number, dataUrl: string): void {
+    this.simonElements.update((rows) =>
+      rows.map((row, i) =>
+        i === index ? { label: '', color: '', imageDataUrl: dataUrl } : row,
+      ),
+    );
+  }
+
+  onSimonImage(index: number, event: Event): void {
+    const input = event.target;
+    const file = input instanceof HTMLInputElement ? input.files?.[0] : undefined;
+    if (!file) {
+      return;
+    }
+    this.setSimonElementImage(index, '');
+    preparePhoto(file, 256)
+      .then((photo) => this.setSimonElementImage(index, photo.dataUrl))
+      .catch((error: unknown) => {
+        if (input instanceof HTMLInputElement) {
+          input.value = '';
+        }
+        this.simonElements.update((rows) =>
+          rows.map((row, i) => (i === index ? { label: '', color: '', imageDataUrl: undefined } : row)),
+        );
+        this.error.set(error instanceof Error ? error.message : 'Image refusée.');
+      });
+  }
+
+  private patchPairImage(index: number, side: 'question' | 'answer', dataUrl: string): void {
+    this.pairs.update((rows) =>
+      rows.map((row, i) => {
+        if (i !== index) {
+          return row;
+        }
+        return side === 'question'
+          ? { ...row, questionSide: '', questionHasImage: true, questionImageDataUrl: dataUrl }
+          : { ...row, answerSide: '', answerHasImage: true, answerImageDataUrl: dataUrl };
+      }),
+    );
+  }
+
+  private patchLinkImage(index: number, side: 'left' | 'right', dataUrl: string): void {
+    this.links.update((rows) =>
+      rows.map((row, i) => {
+        if (i !== index) {
+          return row;
+        }
+        return side === 'left'
+          ? { ...row, leftLabel: '', leftHasImage: true, leftImageDataUrl: dataUrl }
+          : { ...row, rightLabel: '', rightHasImage: true, rightImageDataUrl: dataUrl };
+      }),
+    );
+  }
+
+  private loadPieceImages(questionId: number): void {
+    this.imagesLoading.set(true);
+    this.api.get(this.subjectId, questionId).subscribe({
+      next: (item) => {
+        this.imagesLoading.set(false);
+        if (this.editingId() !== questionId) {
+          return;
+        }
+        try {
+          this.applyLoadedPieces(requireSavedQuestion(item));
+        } catch {
+          this.error.set('Les images de cette question ne se sont pas chargées.');
+        }
+      },
+      error: () => {
+        this.imagesLoading.set(false);
+        this.error.set('Les images de cette question ne se sont pas chargées.');
+      },
+    });
+  }
+
+  private applyLoadedPieces(saved: SavedQuestion): void {
+    this.choices.set(saved.choices.length ? saved.choices.map((row) => ({ ...row })) : emptyChoices());
+    this.pairs.set(saved.pairs.length ? saved.pairs.map((row) => ({ ...row })) : emptyPairs());
+    this.items.set(saved.items.length ? saved.items.map((row) => ({ ...row })) : emptyItems());
+    this.statements.set(saved.statements.length ? saved.statements.map((row) => ({ ...row })) : emptyStatements());
+    this.links.set(saved.links.length ? saved.links.map((row) => ({ ...row })) : emptyLinks());
+    this.cards.set(saved.cards.length ? saved.cards.map((row) => ({ ...row })) : emptyCards());
+    this.simonElements.set(
+      saved.elements.length
+        ? saved.elements.map((row) => ({
+            label: row.label,
+            color: row.color,
+            imageDataUrl: row.imageDataUrl,
+            hasImage: row.hasImage,
+          }))
+        : emptySimonElements(),
+    );
+  }
+
+  private questionMissesImageBytes(question: SavedQuestion): boolean {
+    return (
+      question.choices.some((row) => row.hasImage && !row.imageDataUrl) ||
+      question.pairs.some(
+        (row) =>
+          (row.questionHasImage && !row.questionImageDataUrl) ||
+          (row.answerHasImage && !row.answerImageDataUrl),
+      ) ||
+      question.items.some((row) => row.hasImage && !row.imageDataUrl) ||
+      question.statements.some((row) => row.hasImage && !row.imageDataUrl) ||
+      question.links.some(
+        (row) => (row.leftHasImage && !row.leftImageDataUrl) || (row.rightHasImage && !row.rightImageDataUrl),
+      ) ||
+      question.cards.some((row) => row.hasImage && !row.imageDataUrl) ||
+      question.elements.some((row) => row.hasImage && !row.imageDataUrl)
+    );
+  }
+
+  private pieceImageProblem(): string | null {
+    if (this.imagesLoading()) {
+      return 'Attends que les images apparaissent, puis enregistre.';
+    }
+    const waiting = this.activeFaces().some((face) => face.imageDataUrl === '');
+    if (waiting) {
+      return 'Attends que les images apparaissent, puis enregistre.';
+    }
+    const missing = this.activeFaces().some((face) => face.hasImage && !face.imageDataUrl);
+    return missing ? 'Chaque pièce est un texte ou une image.' : null;
+  }
+
+  private activeFaces(): { hasImage?: boolean; imageDataUrl?: string }[] {
+    switch (this.selectedCode()) {
+      case FORM.QCM:
+        return this.choices();
+      case FORM.MEMORY:
+        return this.pairs().flatMap((row) => [
+          { hasImage: row.questionHasImage, imageDataUrl: row.questionImageDataUrl },
+          { hasImage: row.answerHasImage, imageDataUrl: row.answerImageDataUrl },
+        ]);
+      case FORM.ORDER:
+        return this.items();
+      case FORM.TRUE_FALSE:
+        return this.statements();
+      case FORM.LINKS:
+        return this.links().flatMap((row) => [
+          { hasImage: row.leftHasImage, imageDataUrl: row.leftImageDataUrl },
+          { hasImage: row.rightHasImage, imageDataUrl: row.rightImageDataUrl },
+        ]);
+      case FORM.CLASSIFICATION:
+        return this.cards();
+      case FORM.SIMON:
+        return this.simonElements();
+      default:
+        return [];
+    }
   }
 
   addSimonElement(): void {
@@ -618,42 +1025,18 @@ export class SubjectQuestionsComponent implements OnInit {
     this.editingId.set(question.id);
     this.selectedCode.set(question.formCode);
     this.prompt.set(question.prompt);
-    this.choices.set(
-      question.choices.length
-        ? question.choices.map((choice) => ({ label: choice.label, correct: choice.correct }))
-        : emptyChoices(),
-    );
-    this.pairs.set(
-      question.pairs.length
-        ? question.pairs.map((pair) => ({ questionSide: pair.questionSide, answerSide: pair.answerSide }))
-        : emptyPairs(),
-    );
-    this.items.set(
-      question.items.length
-        ? question.items.map((item) => ({ label: item.label, axisLabel: item.axisLabel }))
-        : emptyItems(),
-    );
+    this.choices.set(question.choices.length ? question.choices.map((choice) => ({ ...choice })) : emptyChoices());
+    this.pairs.set(question.pairs.length ? question.pairs.map((pair) => ({ ...pair })) : emptyPairs());
+    this.items.set(question.items.length ? question.items.map((item) => ({ ...item })) : emptyItems());
     this.timelineEnabled.set(question.timelineEnabled);
-    this.statements.set(
-      question.statements.length
-        ? question.statements.map((row) => ({ label: row.label, truthful: row.truthful }))
-        : emptyStatements(),
-    );
-    this.links.set(
-      question.links.length
-        ? question.links.map((row) => ({ leftLabel: row.leftLabel, rightLabel: row.rightLabel }))
-        : emptyLinks(),
-    );
+    this.statements.set(question.statements.length ? question.statements.map((row) => ({ ...row })) : emptyStatements());
+    this.links.set(question.links.length ? question.links.map((row) => ({ ...row })) : emptyLinks());
     this.columns.set(
       question.columns.length
         ? question.columns.map((row) => ({ label: row.label }))
         : emptyColumns(),
     );
-    this.cards.set(
-      question.cards.length
-        ? question.cards.map((row) => ({ label: row.label, columnIndex: row.columnIndex }))
-        : emptyCards(),
-    );
+    this.cards.set(question.cards.length ? question.cards.map((row) => ({ ...row })) : emptyCards());
     this.sentence.set(question.sentence);
     this.expectedAnswer.set(question.expectedAnswer);
     this.clickImage.set(question.imageDataUrl);
@@ -668,9 +1051,17 @@ export class SubjectQuestionsComponent implements OnInit {
     this.simonType.set(question.elementType);
     this.simonElements.set(
       question.elements.length
-        ? question.elements.map((row) => ({ label: row.label, color: row.color }))
+        ? question.elements.map((row) => ({
+            label: row.label,
+            color: row.color,
+            imageDataUrl: row.imageDataUrl,
+            hasImage: row.hasImage,
+          }))
         : emptySimonElements(),
     );
+    if (this.questionMissesImageBytes(question)) {
+      this.loadPieceImages(question.id);
+    }
     this.simonSequence.set([...question.sequence]);
     this.simonChecked.set(false);
     this.gamification.set(question.gamification ? copyDraft(question.gamification) : null);
@@ -945,6 +1336,11 @@ export class SubjectQuestionsComponent implements OnInit {
       this.clickZones().some((zone) => zone.slot == null)
     ) {
       this.error.set('Sur le fond, ouvre « Voir le plateau (fond) » et pose chaque pièce à sa place.');
+      return;
+    }
+    const imageProblem = this.pieceImageProblem();
+    if (imageProblem) {
+      this.error.set(imageProblem);
       return;
     }
     if (code === FORM.SIMON) {

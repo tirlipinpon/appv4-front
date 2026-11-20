@@ -48,6 +48,12 @@ export class TeacherQuestionsService {
       .pipe(shareReplay({ bufferSize: 1, refCount: true })));
   }
 
+  get(subjectId: number, questionId: number): Observable<TeacherSubjectQuestionItem> {
+    return this.http.get<TeacherSubjectQuestionItem>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/${questionId}`,
+    );
+  }
+
   list(subjectId: number, afterId = 0): Observable<TeacherSubjectQuestionsResponse> {
     const url = `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions`;
     return afterId > 0

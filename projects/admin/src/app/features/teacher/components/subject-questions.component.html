@@ -126,15 +126,18 @@
           </mat-form-field>
           @for (choice of choices(); track $index) {
             <div class="choice">
-              <mat-form-field appearance="outline" class="field">
-                <mat-label>Proposition</mat-label>
-                <input
-                  matInput
-                  [value]="choice.label"
-                  [disabled]="saving()"
-                  (input)="setChoiceLabel($index, inputValue($event))"
-                />
-              </mat-form-field>
+              <app-piece-face
+                legend="Proposition"
+                [text]="choice.label"
+                [imageDataUrl]="choice.imageDataUrl"
+                [hasImage]="choice.hasImage === true"
+                [disabled]="saving() || imagesLoading()"
+                (textChange)="setChoiceLabel($index, $event)"
+                (face)="setChoiceFace($index, $event)"
+                (imagePending)="onChoiceImagePending($index)"
+                (imageReady)="onChoiceImageReady($index, $event)"
+                (imageFailed)="onChoiceImageFailed($index, $event)"
+              />
               <mat-checkbox
                 [checked]="choice.correct"
                 [disabled]="saving()"
@@ -173,24 +176,30 @@
           </mat-form-field>
           @for (pair of pairs(); track $index) {
             <div class="choice">
-              <mat-form-field appearance="outline" class="field">
-                <mat-label>Côté question</mat-label>
-                <input
-                  matInput
-                  [value]="pair.questionSide"
-                  [disabled]="saving()"
-                  (input)="setPairSide($index, 'questionSide', inputValue($event))"
-                />
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="field">
-                <mat-label>Côté réponse</mat-label>
-                <input
-                  matInput
-                  [value]="pair.answerSide"
-                  [disabled]="saving()"
-                  (input)="setPairSide($index, 'answerSide', inputValue($event))"
-                />
-              </mat-form-field>
+              <app-piece-face
+                legend="Côté question"
+                [text]="pair.questionSide"
+                [imageDataUrl]="pair.questionImageDataUrl"
+                [hasImage]="pair.questionHasImage === true"
+                [disabled]="saving() || imagesLoading()"
+                (textChange)="setPairSide($index, 'questionSide', $event)"
+                (face)="setPairFace($index, 'question', $event)"
+                (imagePending)="onPairImagePending($index, 'question')"
+                (imageReady)="onPairImageReady($index, 'question', $event)"
+                (imageFailed)="onPairImageFailed($index, 'question', $event)"
+              />
+              <app-piece-face
+                legend="Côté réponse"
+                [text]="pair.answerSide"
+                [imageDataUrl]="pair.answerImageDataUrl"
+                [hasImage]="pair.answerHasImage === true"
+                [disabled]="saving() || imagesLoading()"
+                (textChange)="setPairSide($index, 'answerSide', $event)"
+                (face)="setPairFace($index, 'answer', $event)"
+                (imagePending)="onPairImagePending($index, 'answer')"
+                (imageReady)="onPairImageReady($index, 'answer', $event)"
+                (imageFailed)="onPairImageFailed($index, 'answer', $event)"
+              />
               <button mat-button type="button" [disabled]="saving()" (click)="removePair($index)">Enlever</button>
             </div>
           }
@@ -221,15 +230,18 @@
           <p class="hint">Étapes (ordre juste)</p>
           @for (item of items(); track $index) {
             <div class="choice">
-              <mat-form-field appearance="outline" class="field">
-                <mat-label>Étape</mat-label>
-                <input
-                  matInput
-                  [value]="item.label"
-                  [disabled]="saving()"
-                  (input)="setItemLabel($index, inputValue($event))"
-                />
-              </mat-form-field>
+              <app-piece-face
+                legend="Étape"
+                [text]="item.label"
+                [imageDataUrl]="item.imageDataUrl"
+                [hasImage]="item.hasImage === true"
+                [disabled]="saving() || imagesLoading()"
+                (textChange)="setItemLabel($index, $event)"
+                (face)="setItemFace($index, $event)"
+                (imagePending)="onItemImagePending($index)"
+                (imageReady)="onItemImageReady($index, $event)"
+                (imageFailed)="onItemImageFailed($index, $event)"
+              />
               @if (timelineEnabled()) {
                 <mat-form-field appearance="outline" class="field">
                   <mat-label>Libellé d'axe</mat-label>
@@ -298,15 +310,18 @@
           </mat-form-field>
           @for (statement of statements(); track $index) {
             <div class="choice">
-              <mat-form-field appearance="outline" class="field">
-                <mat-label>Phrase</mat-label>
-                <input
-                  matInput
-                  [value]="statement.label"
-                  [disabled]="saving()"
-                  (input)="setStatementLabel($index, inputValue($event))"
-                />
-              </mat-form-field>
+              <app-piece-face
+                legend="Phrase"
+                [text]="statement.label"
+                [imageDataUrl]="statement.imageDataUrl"
+                [hasImage]="statement.hasImage === true"
+                [disabled]="saving() || imagesLoading()"
+                (textChange)="setStatementLabel($index, $event)"
+                (face)="setStatementFace($index, $event)"
+                (imagePending)="onStatementImagePending($index)"
+                (imageReady)="onStatementImageReady($index, $event)"
+                (imageFailed)="onStatementImageFailed($index, $event)"
+              />
               <div class="sides">
                 <button
                   class="side vrai"
@@ -358,24 +373,30 @@
           </mat-form-field>
           @for (link of links(); track $index) {
             <div class="choice">
-              <mat-form-field appearance="outline" class="field">
-                <mat-label>Mot</mat-label>
-                <input
-                  matInput
-                  [value]="link.leftLabel"
-                  [disabled]="saving()"
-                  (input)="setLinkSide($index, 'leftLabel', inputValue($event))"
-                />
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="field">
-                <mat-label>Réponse</mat-label>
-                <input
-                  matInput
-                  [value]="link.rightLabel"
-                  [disabled]="saving()"
-                  (input)="setLinkSide($index, 'rightLabel', inputValue($event))"
-                />
-              </mat-form-field>
+              <app-piece-face
+                legend="Mot"
+                [text]="link.leftLabel"
+                [imageDataUrl]="link.leftImageDataUrl"
+                [hasImage]="link.leftHasImage === true"
+                [disabled]="saving() || imagesLoading()"
+                (textChange)="setLinkSide($index, 'leftLabel', $event)"
+                (face)="setLinkFace($index, 'left', $event)"
+                (imagePending)="onLinkImagePending($index, 'left')"
+                (imageReady)="onLinkImageReady($index, 'left', $event)"
+                (imageFailed)="onLinkImageFailed($index, 'left', $event)"
+              />
+              <app-piece-face
+                legend="Réponse"
+                [text]="link.rightLabel"
+                [imageDataUrl]="link.rightImageDataUrl"
+                [hasImage]="link.rightHasImage === true"
+                [disabled]="saving() || imagesLoading()"
+                (textChange)="setLinkSide($index, 'rightLabel', $event)"
+                (face)="setLinkFace($index, 'right', $event)"
+                (imagePending)="onLinkImagePending($index, 'right')"
+                (imageReady)="onLinkImageReady($index, 'right', $event)"
+                (imageFailed)="onLinkImageFailed($index, 'right', $event)"
+              />
               <button mat-button type="button" [disabled]="saving()" (click)="removeLink($index)">Enlever</button>
             </div>
           }
@@ -426,15 +447,18 @@
           <p class="hint">Cartes</p>
           @for (card of cards(); track $index) {
             <div class="choice">
-              <mat-form-field appearance="outline" class="field">
-                <mat-label>Carte</mat-label>
-                <input
-                  matInput
-                  [value]="card.label"
-                  [disabled]="saving()"
-                  (input)="setCardLabel($index, inputValue($event))"
-                />
-              </mat-form-field>
+              <app-piece-face
+                legend="Carte"
+                [text]="card.label"
+                [imageDataUrl]="card.imageDataUrl"
+                [hasImage]="card.hasImage === true"
+                [disabled]="saving() || imagesLoading()"
+                (textChange)="setCardLabel($index, $event)"
+                (face)="setCardFace($index, $event)"
+                (imagePending)="onCardImagePending($index)"
+                (imageReady)="onCardImageReady($index, $event)"
+                (imageFailed)="onCardImageFailed($index, $event)"
+              />
               <mat-form-field appearance="outline" class="field">
                 <mat-label>Colonne juste</mat-label>
                 <mat-select
@@ -652,35 +676,42 @@
           </div>
           @for (element of simonElements(); track $index) {
             <div class="choice">
-              <mat-form-field appearance="outline" class="field">
-                <mat-label>Élément {{ $index + 1 }}</mat-label>
-                <input
-                  matInput
-                  [value]="element.label"
-                  [disabled]="saving()"
-                  (input)="setSimonElementLabel($index, inputValue($event))"
+              @if (element.imageDataUrl) {
+                <img
+                  [src]="element.imageDataUrl"
+                  alt=""
+                  style="display: block; max-width: 8rem; max-height: 6rem; object-fit: contain"
                 />
-              </mat-form-field>
-              @if (simonType() === 'couleurs') {
+              } @else if (element.hasImage || element.imageDataUrl === '') {
+                <p>Image en cours…</p>
+              } @else {
+                <mat-form-field appearance="outline" class="field">
+                  <mat-label>Élément {{ $index + 1 }}</mat-label>
+                  <input
+                    matInput
+                    [value]="element.label"
+                    [disabled]="saving()"
+                    (input)="setSimonElementLabel($index, inputValue($event))"
+                  />
+                </mat-form-field>
+              }
+              @if (simonType() === 'couleurs' && !element.imageDataUrl) {
                 <input
                   class="simon-picker"
                   type="color"
                   [attr.aria-label]="'Couleur de l’élément ' + ($index + 1)"
-                  [value]="element.color"
+                  [value]="element.color || '#000000'"
                   [disabled]="saving()"
                   (input)="setSimonElementColor($index, inputValue($event))"
                 />
-                <mat-form-field appearance="outline" class="simon-code">
-                  <mat-label>Code couleur</mat-label>
-                  <input
-                    matInput
-                    placeholder="#ff0000"
-                    [value]="element.color"
-                    [disabled]="saving()"
-                    (input)="setSimonElementColor($index, inputValue($event))"
-                  />
-                </mat-form-field>
               }
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                [attr.aria-label]="'Image de l’élément ' + ($index + 1)"
+                [disabled]="saving()"
+                (change)="onSimonImage($index, $event)"
+              />
               <button mat-button type="button" [disabled]="saving()" (click)="removeSimonElement($index)">
                 Enlever
               </button>
@@ -831,7 +862,7 @@
             @if (question.formCode === 'memory') {
               <ul class="answers">
                 @for (pair of question.pairs; track $index) {
-                  <li>{{ pair.questionSide }} — {{ pair.answerSide }}</li>
+                  <li>@if (pair.questionImageDataUrl) {<img class="piece-thumb" [src]="pair.questionImageDataUrl" alt="" />}@else {{{ pair.questionSide }}} — @if (pair.answerImageDataUrl) {<img class="piece-thumb" [src]="pair.answerImageDataUrl" alt="" />}@else {{{ pair.answerSide }}}</li>
                 }
               </ul>
             } @else if (question.formCode === 'order') {
@@ -841,7 +872,11 @@
                     @if (question.timelineEnabled === true && item.axisLabel !== '') {
                       <span class="hint">{{ item.axisLabel }} — </span>
                     }
-                    {{ item.label }}
+                    @if (item.imageDataUrl) {
+                      <img class="piece-thumb" [src]="item.imageDataUrl" alt="" />
+                    } @else {
+                      {{ item.label }}
+                    }
                   </li>
                 }
               </ol>
@@ -882,10 +917,13 @@
               <ul class="answers">
                 @for (element of question.elements; track $index) {
                   <li>
-                    @if (element.color) {
+                    @if (element.imageDataUrl) {
+                      <img class="piece-thumb" [src]="element.imageDataUrl" alt="" />
+                    } @else if (element.color) {
                       <span class="swatch" [style.background]="element.color"></span>
+                    } @else {
+                      {{ element.label }}
                     }
-                    {{ element.label }}
                   </li>
                 }
               </ul>
@@ -920,7 +958,7 @@
             } @else if (question.formCode === 'liens') {
               <ul class="answers">
                 @for (link of question.links; track $index) {
-                  <li>{{ link.leftLabel }} — {{ link.rightLabel }}</li>
+                  <li>@if (link.leftImageDataUrl) {<img class="piece-thumb" [src]="link.leftImageDataUrl" alt="" />}@else {{{ link.leftLabel }}} — @if (link.rightImageDataUrl) {<img class="piece-thumb" [src]="link.rightImageDataUrl" alt="" />}@else {{{ link.rightLabel }}}</li>
                 }
               </ul>
             } @else if (question.formCode === 'classement') {
@@ -931,7 +969,13 @@
                     <ul>
                       @for (card of question.cards; track $index) {
                         @if (card.columnIndex === colIndex) {
-                          <li>{{ card.label }}</li>
+                          <li>
+                            @if (card.imageDataUrl) {
+                              <img class="piece-thumb" [src]="card.imageDataUrl" alt="" />
+                            } @else {
+                              {{ card.label }}
+                            }
+                          </li>
                         }
                       }
                     </ul>
@@ -942,7 +986,11 @@
               <ul class="answers">
                 @for (statement of question.statements; track $index) {
                   <li>
-                    {{ statement.label }}
+                    @if (statement.imageDataUrl) {
+                      <img class="piece-thumb" [src]="statement.imageDataUrl" alt="" />
+                    } @else {
+                      {{ statement.label }}
+                    }
                     <span class="mark">{{ statement.truthful ? 'Vrai' : 'Faux' }}</span>
                   </li>
                 }
@@ -951,7 +999,11 @@
               <ul class="answers">
                 @for (choice of question.choices; track $index) {
                   <li [class.correct]="choice.correct">
-                    {{ choice.label }}
+                    @if (choice.imageDataUrl) {
+                      <img class="piece-thumb" [src]="choice.imageDataUrl" alt="" />
+                    } @else {
+                      {{ choice.label }}
+                    }
                     @if (choice.correct) {
                       <span class="mark">Bonne réponse</span>
                     }

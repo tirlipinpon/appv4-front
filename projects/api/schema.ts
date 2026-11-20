@@ -11,7 +11,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Lire une question avec ses images */
+        get: operations["getTeacherSubjectQuestion"];
         /** Corriger une question déjà enregistrée */
         put: operations["updateTeacherSubjectQuestion"];
         post?: never;
@@ -1285,10 +1286,12 @@ export interface components {
             label?: string;
             /** Format: int32 */
             columnIndex?: number;
+            imageWebp?: string;
         };
         TeacherQuestionChoiceInput: {
             label?: string;
             correct?: boolean;
+            imageWebp?: string;
         };
         TeacherQuestionColumnInput: {
             label?: string;
@@ -1307,14 +1310,19 @@ export interface components {
         TeacherQuestionItemInput: {
             label?: string;
             axisLabel?: string;
+            imageWebp?: string;
         };
         TeacherQuestionLinkInput: {
             leftLabel?: string;
             rightLabel?: string;
+            leftImageWebp?: string;
+            rightImageWebp?: string;
         };
         TeacherQuestionPairInput: {
             questionSide?: string;
             answerSide?: string;
+            questionImageWebp?: string;
+            answerImageWebp?: string;
         };
         TeacherQuestionPieceInput: {
             label?: string;
@@ -1337,14 +1345,17 @@ export interface components {
             y?: number;
         };
         TeacherQuestionSimonElementInput: {
-            /** @description Nom affiché : rouge, 7, B, cercle. Nombres : un nombre. Lettres : une seule lettre. */
+            /** @description Texte libre. Absent si l'élément est une image ou une couleur. */
             label?: string;
-            /** @description Genre couleurs seulement, obligatoire : code #rrggbb. Absent pour les autres genres. */
+            /** @description Code #rrggbb si l'élément est une couleur sans mot. */
             color?: string;
+            /** @description WebP base64 si l'élément est une image. */
+            imageWebp?: string;
         };
         TeacherQuestionStatementInput: {
             label?: string;
             truthful: boolean;
+            imageWebp?: string;
         };
         TeacherQuestionZoneInput: {
             label?: string;
@@ -1364,12 +1375,16 @@ export interface components {
             label?: string;
             /** Format: int64 */
             correctColumnId?: number;
+            imageWebp?: string;
+            hasImage?: boolean;
         };
         TeacherQuestionChoiceItem: {
             /** Format: int64 */
             id?: number;
             label?: string;
             correct?: boolean;
+            imageWebp?: string;
+            hasImage?: boolean;
         };
         TeacherQuestionColumnItem: {
             /** Format: int64 */
@@ -1395,18 +1410,28 @@ export interface components {
             id?: number;
             label?: string;
             axisLabel?: string;
+            imageWebp?: string;
+            hasImage?: boolean;
         };
         TeacherQuestionLinkItem: {
             /** Format: int64 */
             id?: number;
             leftLabel?: string;
             rightLabel?: string;
+            leftImageWebp?: string;
+            leftHasImage?: boolean;
+            rightImageWebp?: string;
+            rightHasImage?: boolean;
         };
         TeacherQuestionPairItem: {
             /** Format: int64 */
             id?: number;
             questionSide?: string;
             answerSide?: string;
+            questionImageWebp?: string;
+            questionHasImage?: boolean;
+            answerImageWebp?: string;
+            answerHasImage?: boolean;
         };
         TeacherQuestionPieceItem: {
             /** Format: int64 */
@@ -1434,14 +1459,17 @@ export interface components {
             /** Format: int64 */
             id?: number;
             label?: string;
-            /** @description Code #rrggbb en minuscules pour le genre couleurs. Absent pour les autres genres. */
             color?: string;
+            imageWebp?: string;
+            hasImage?: boolean;
         };
         TeacherQuestionStatementItem: {
             /** Format: int64 */
             id?: number;
             label?: string;
             truthful?: boolean;
+            imageWebp?: string;
+            hasImage?: boolean;
         };
         TeacherQuestionZoneItem: {
             /** Format: int64 */
@@ -1866,11 +1894,13 @@ export interface components {
             /** Format: int64 */
             cardId: number;
             label: string;
+            imageWebp?: string;
         };
         PlayChoice: {
             /** Format: int64 */
             choiceId: number;
             label: string;
+            imageWebp?: string;
         };
         PlayClassification: components["schemas"]["Payload"] & {
             columns?: components["schemas"]["PlayColumn"][];
@@ -1918,6 +1948,7 @@ export interface components {
             itemId: number;
             label: string;
             axisLabel?: string;
+            imageWebp?: string;
         };
         PlayLetters: components["schemas"]["Payload"] & {
             /** Format: int32 */
@@ -1928,6 +1959,7 @@ export interface components {
             /** Format: uuid */
             optionId: string;
             label: string;
+            imageWebp?: string;
         };
         PlayLinks: components["schemas"]["Payload"] & {
             linkLefts?: components["schemas"]["PlayLinkOption"][];
@@ -1940,6 +1972,7 @@ export interface components {
             /** Format: uuid */
             cardId: string;
             label: string;
+            imageWebp?: string;
         };
         PlayOrder: components["schemas"]["Payload"] & {
             items?: components["schemas"]["PlayItem"][];
@@ -1978,11 +2011,13 @@ export interface components {
         PlaySimonElement: {
             label: string;
             color?: string;
+            imageWebp?: string;
         };
         PlayStatement: {
             /** Format: int64 */
             statementId: number;
             label: string;
+            imageWebp?: string;
         };
         PlayText: components["schemas"]["Payload"];
         PlayTrueFalse: components["schemas"]["Payload"] & {
@@ -2930,6 +2965,38 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getTeacherSubjectQuestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subjectId: number;
+                questionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Question, octets des images inclus */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectQuestionItem"];
+                };
+            };
+            /** @description Matière ou question absente pour ce professeur */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TeacherSubjectQuestionItem"];
+                };
+            };
+        };
+    };
     updateTeacherSubjectQuestion: {
         parameters: {
             query?: never;
