@@ -30,10 +30,10 @@ export class ChildPlayService {
     );
   }
 
-  openQuestion(subjectId: number, questionId: number): Observable<PlayQuestion> {
+  openQuestion(subjectId: number, questionId: number, playId: string | null): Observable<PlayQuestion> {
     return this.http.post<PlayQuestion>(
       `${environment.apiBaseUrl}/subjects/${subjectId}/questions/${questionId}/play`,
-      null,
+      playId ? { playId } : null,
       { headers: this.headers() },
     );
   }
@@ -42,10 +42,11 @@ export class ChildPlayService {
     subjectId: number,
     questionId: number,
     body: ChildSubmission,
+    playId: string | null,
   ): Observable<ChildAttemptResultResponse> {
     return this.http.post<ChildAttemptResultResponse>(
       `${environment.apiBaseUrl}/subjects/${subjectId}/questions/${questionId}/attempts`,
-      body,
+      playId ? { ...body, playId } : body,
       { headers: this.headers() },
     );
   }

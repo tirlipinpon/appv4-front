@@ -1889,6 +1889,10 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
         };
+        OpenPlayRequest: {
+            /** Format: uuid */
+            playId?: string;
+        };
         Payload: unknown;
         PlayCard: {
             /** Format: int64 */
@@ -2029,6 +2033,13 @@ export interface components {
             /** Format: int32 */
             scorePercent: number;
             passed: boolean;
+            /** Format: int32 */
+            attemptRank: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
+            /** Format: int32 */
+            pointsAwarded: number;
+            replayAvailable: boolean;
         };
         ChildLoginRequest: {
             firstName?: string;
@@ -2453,6 +2464,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayQcm"];
         };
         PlayTrueFalseQuestion: {
@@ -2471,6 +2486,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayTrueFalse"];
         };
         PlayMemoryQuestion: {
@@ -2489,6 +2508,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayMemory"];
         };
         PlayOrderQuestion: {
@@ -2507,6 +2530,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayOrder"];
         };
         PlayClassificationQuestion: {
@@ -2525,6 +2552,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayClassification"];
         };
         PlayLinksQuestion: {
@@ -2543,6 +2574,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayLinks"];
         };
         PlayGapsQuestion: {
@@ -2561,6 +2596,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayGaps"];
         };
         PlayImageQuestion: {
@@ -2579,6 +2618,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayImage"];
         };
         PlayLettersQuestion: {
@@ -2597,6 +2640,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayLetters"];
         };
         PlayTextQuestion: {
@@ -2615,6 +2662,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayText"];
         };
         PlayPuzzleQuestion: {
@@ -2633,6 +2684,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayPuzzle"];
         };
         PlaySimonQuestion: {
@@ -2651,11 +2706,17 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlaySimon"];
         };
         PlayQcmAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             selectedChoiceIds: number[];
             /** @enum {string} */
             formCode: "qcm";
@@ -2663,11 +2724,15 @@ export interface components {
         PlayQcmAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             selectedChoiceIds: number[];
         };
         PlayTrueFalseAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             statements: components["schemas"]["SubmitStatementAnswer"][];
             /** @enum {string} */
             formCode: "vrai_faux";
@@ -2675,11 +2740,15 @@ export interface components {
         PlayTrueFalseAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             statements: components["schemas"]["SubmitStatementAnswer"][];
         };
         PlayMemoryAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             memoryMatches: components["schemas"]["SubmitMemoryMatch"][];
             /** @enum {string} */
             formCode: "memory";
@@ -2687,11 +2756,15 @@ export interface components {
         PlayMemoryAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             matchedPairIds: number[];
         };
         PlayOrderAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             orderedItemIds: number[];
             /** @enum {string} */
             formCode: "order";
@@ -2699,11 +2772,15 @@ export interface components {
         PlayOrderAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             orderedItemIds: number[];
         };
         PlayClassificationAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             placements: components["schemas"]["SubmitPlacementAnswer"][];
             /** @enum {string} */
             formCode: "classement";
@@ -2711,11 +2788,15 @@ export interface components {
         PlayClassificationAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             placements: components["schemas"]["SubmitPlacementAnswer"][];
         };
         PlayLinksAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             linkSelections: components["schemas"]["SubmitLinkSelection"][];
             /** @enum {string} */
             formCode: "liens";
@@ -2723,11 +2804,15 @@ export interface components {
         PlayLinksAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             linkMatches: components["schemas"]["SubmitLinkMatchAnswer"][];
         };
         PlayGapsAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             gapFills: components["schemas"]["SubmitGapFillAnswer"][];
             /** @enum {string} */
             formCode: "case_vide";
@@ -2735,11 +2820,15 @@ export interface components {
         PlayGapsAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             gapFills: components["schemas"]["SubmitGapFillAnswer"][];
         };
         PlayImageAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             zoneClicks: components["schemas"]["SubmitZoneClickAnswer"][];
             /** @enum {string} */
             formCode: "image_interactive";
@@ -2747,11 +2836,15 @@ export interface components {
         PlayImageAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             zoneClicks: components["schemas"]["SubmitZoneClickAnswer"][];
         };
         PlayLettersAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             attempt: string;
             /** @enum {string} */
             formCode: "reponse_libre";
@@ -2759,11 +2852,15 @@ export interface components {
         PlayLettersAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             attempt: string;
         };
         PlayTextAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             attempt: string;
             /** @enum {string} */
             formCode: "texte";
@@ -2771,6 +2868,8 @@ export interface components {
         PlayPuzzleAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             puzzlePlacements: components["schemas"]["SubmitPuzzlePiecePlacement"][];
             /** @enum {string} */
             formCode: "puzzle";
@@ -2778,11 +2877,15 @@ export interface components {
         PlayPuzzleAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             puzzlePlacements: components["schemas"]["SubmitPuzzlePiecePlacement"][];
         };
         PlaySimonAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             simonSequence: number[];
             /** @enum {string} */
             formCode: "simon";
@@ -2790,6 +2893,8 @@ export interface components {
         PlaySimonChildAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             simonSequence: number[];
             /** @enum {string} */
             formCode: "simon";
@@ -2799,6 +2904,8 @@ export interface components {
         PlaySimonAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             simonSequence: number[];
             /** Format: uuid */
             challengeId?: string;
@@ -4773,7 +4880,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OpenPlayRequest"];
+            };
+        };
         responses: {
             /** @description Contenu jouable correspondant à la forme */
             200: {
@@ -4916,7 +5027,7 @@ export interface operations {
                     "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
-            /** @description Partie expirée, déjà jouée ou clé de soumission utilisée ailleurs */
+            /** @description Partie Simon expirée, clé de soumission utilisée ailleurs, ou page sans essai restant */
             409: {
                 headers: {
                     [name: string]: unknown;

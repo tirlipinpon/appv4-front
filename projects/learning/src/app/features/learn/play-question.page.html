@@ -30,7 +30,7 @@
       (simonChange)="play.onSelectionChange()"
     />
 
-    @if (!play.result() && !play.autoSubmit() && !play.needsReplay() && !play.canRetry()) {
+    @if (!play.result() && !play.autoSubmit() && !play.needsReplay() && !play.canRetry() && !play.attemptsExhausted()) {
       <button
         type="button"
         class="submit"
@@ -42,13 +42,22 @@
       </button>
     }
 
+    @if (play.attemptsRemaining() !== null) {
+      <p data-testid="play-attempts">Essais restants : {{ play.attemptsRemaining() }}</p>
+    }
+
     @if (play.result(); as verdict) {
       <div class="verdict" [class.ok]="verdict.passed === true" [class.ko]="verdict.passed !== true" data-testid="play-result">
         <p class="verdict-title">{{ verdict.passed === true ? 'Bravo !' : 'Pas encore' }}</p>
         <p data-testid="play-score">Score : {{ verdict.scorePercent }} %</p>
+        @if (verdict.pointsAwarded !== undefined && verdict.pointsAwarded !== null) {
+          <p data-testid="play-points">Points : {{ verdict.pointsAwarded }}</p>
+        }
       </div>
       <div class="after">
-        <button type="button" class="submit secondary" data-testid="play-replay" (click)="play.replay()">Rejouer</button>
+        @if (verdict.replayAvailable === true) {
+          <button type="button" class="submit secondary" data-testid="play-replay" (click)="play.replay()">Rejouer</button>
+        }
         <a
           [routerLink]="['/learn', subjectId(), 'questions']"
           class="submit secondary link"

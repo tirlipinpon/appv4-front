@@ -93,7 +93,7 @@ describe('PlayQuestionPage', () => {
     expect(second.cancelled).toBeTrue();
     const attempt = http.expectOne(`${url}/attempts`);
     expect(attempt.request.body).toEqual(jasmine.objectContaining({ formCode: 'reponse_libre', attempt: 'ab' }));
-    attempt.flush({ passed: false });
+    attempt.flush({ passed: false, replayAvailable: true });
     const finalCheck = http.expectOne(`${url}/letter-locks`);
     fixture.detectChanges();
     (root.querySelector('[data-testid="play-replay"]') as HTMLButtonElement).click();
@@ -335,7 +335,9 @@ describe('PlayQuestionPage', () => {
 
   it('simon : montre la suite, puis envoie la reprise au dernier pas, sans bouton Valider', fakeAsync(() => {
     const { fixture, http } = setup();
-    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+    const opened = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play');
+    const playId = opened.request.body.playId as string;
+    opened.flush({
       questionId: 42,
       subjectId: 5,
       formCode: 'simon',
@@ -398,13 +400,14 @@ describe('PlayQuestionPage', () => {
     (root.querySelector('[data-testid="play-retry"]') as HTMLButtonElement).click();
     const retry = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
     expect(retry.request.body).toEqual(attempt.request.body);
-    retry.flush({ passed: true, scorePercent: 100 });
+    retry.flush({ passed: true, scorePercent: 100, replayAvailable: true, attemptsRemaining: 1, pointsAwarded: 10 });
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
 
     (root.querySelector('[data-testid="play-replay"]') as HTMLButtonElement).click();
     const again = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play');
     expect(again.request.method).toBe('POST');
+    expect(again.request.body).toEqual({ playId });
     again.flush({
       questionId: 42,
       subjectId: 5,
@@ -458,6 +461,103 @@ describe('PlayQuestionPage', () => {
     retry.flush({ attemptId: 8, passed: true, scorePercent: 100 });
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="play-result"]')?.textContent).toContain('Bravo');
+    http.verify();
+  });
+
+  it('affiche les essais restants et les points, et retire Rejouer quand la page est finie', () => {
+    const { fixture, http } = setup();
+    const opened = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play');
+    const playId = opened.request.body.playId as string;
+    opened.flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      maxAttempts: 2,
+      attemptsRemaining: 2,
+      content: {},
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="play-attempts"]')?.textContent).toContain('2');
+
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    input.value = 'Paris';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+    expect(attempt.request.body.playId).toBe(playId);
+    attempt.flush({
+      passed: true,
+      scorePercent: 100,
+      attemptRank: 2,
+      attemptsRemaining: 0,
+      pointsAwarded: 10,
+      replayAvailable: false,
+    });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-score"]')?.textContent).toContain('100');
+    expect(root.querySelector('[data-testid="play-points"]')?.textContent).toContain('10');
+    expect(root.querySelector('[data-testid="play-attempts"]')?.textContent).toContain('0');
+    expect(root.querySelector('[data-testid="play-replay"]')).toBeNull();
+    http.verify();
+  });
+
+  it('affiche le barème renvoyé et laisse Rejouer tant qu’il reste un essai', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      maxAttempts: 2,
+      attemptsRemaining: 2,
+      content: {},
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    input.value = 'Paris';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    const attempt = http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts');
+    attempt.flush({
+      passed: true,
+      scorePercent: 100,
+      attemptRank: 1,
+      attemptsRemaining: 1,
+      pointsAwarded: 20,
+      replayAvailable: true,
+    });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-points"]')?.textContent).toContain('20');
+    expect(root.querySelector('[data-testid="play-attempts"]')?.textContent).toContain('1');
+    expect(root.querySelector('[data-testid="play-replay"]')).not.toBeNull();
+    http.verify();
+  });
+
+  it('ne propose pas Rejouer quand le serveur dit que la page n’a plus d’essai', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      maxAttempts: 1,
+      attemptsRemaining: 0,
+      content: {},
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    input.value = 'Paris';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts').flush(
+      { message: "Cette partie n'a plus d'essai." },
+      { status: 409, statusText: 'Conflict' },
+    );
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-error"]')?.textContent).toContain("plus d'essai");
+    expect(root.querySelector('[data-testid="play-replay"]')).toBeNull();
+    expect(root.querySelector('[data-testid="play-submit"]')).toBeNull();
     http.verify();
   });
 });

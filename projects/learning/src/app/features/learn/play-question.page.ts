@@ -36,10 +36,11 @@ export class PlayQuestionPage implements OnInit {
       }
       this.subjectId.set(subjectId);
       this.play.open({
-        open: () => this.api.openQuestion(subjectId, questionId),
+        open: () => this.api.openQuestion(subjectId, questionId, this.play.playId()),
         grade: (answer, question) => {
+          const playId = this.play.playId();
           if (answer.formCode !== 'simon') {
-            return this.api.submitAttempt(subjectId, questionId, answer);
+            return this.api.submitAttempt(subjectId, questionId, answer, playId);
           }
           if (!question.challengeId) {
             return throwError(() => new HttpErrorResponse({
@@ -47,7 +48,7 @@ export class PlayQuestionPage implements OnInit {
               error: { message: 'Cette partie Simon n’a pas pu démarrer. Rejoue pour obtenir une nouvelle suite.' },
             }));
           }
-          return this.api.submitAttempt(subjectId, questionId, { ...answer, challengeId: question.challengeId });
+          return this.api.submitAttempt(subjectId, questionId, { ...answer, challengeId: question.challengeId }, playId);
         },
         letterLocks: (attempt) => this.api.checkLetterLocks(subjectId, questionId, attempt),
         memoryPair: (match) => this.api.checkMemoryPair(subjectId, questionId, match),
