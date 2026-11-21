@@ -117,7 +117,7 @@ describe('ProfilePage', () => {
     (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
     const saved = http.expectOne('http://localhost:8080/api/ext/avatar');
     expect(saved.request.method).toBe('PUT');
-    expect(saved.request.body).toEqual({ styleCode: 'fun-emoji', presetId: 'plain', pins: [] });
+    expect(saved.request.body).toEqual({ styleCode: 'fun-emoji', presetId: 'plain' });
     saved.flush({
       ...withChoices,
       styleCode: 'fun-emoji',
@@ -126,6 +126,48 @@ describe('ProfilePage', () => {
     });
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="profile-style"]')?.textContent).toContain('Fun Emoji');
+    http.verify();
+  });
+
+  it('enregistre un autre style sans renvoyer la variante d une zone fermée', () => {
+    const person = {
+      ...lorelei,
+      presetId: 'bare',
+      zones: [{ ...lorelei.zones[0], selectedCode: 'happy01' }],
+      styles: [
+        {
+          code: 'lorelei',
+          name: 'Lorelei',
+          credit: null,
+          zoneCodes: ['mouth'],
+          presets: [{ id: 'bare', name: 'Bare' }, { id: 'sepia', name: 'Sepia' }],
+        },
+        {
+          code: 'adventurer',
+          name: 'Adventurer',
+          credit: null,
+          zoneCodes: ['mouth'],
+          presets: [{ id: 'bare', name: 'Bare' }],
+        },
+      ],
+    };
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(person);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-preset-sepia"]') as HTMLButtonElement).click();
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    const palette = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(palette.request.body).toEqual({ styleCode: 'lorelei', presetId: 'sepia' });
+    palette.flush({ ...person, presetId: 'sepia' });
+    fixture.detectChanges();
+
+    (root.querySelector('[data-testid="profile-style-choice-adventurer"]') as HTMLButtonElement).click();
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    const style = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(style.request.body).toEqual({ styleCode: 'adventurer', presetId: 'bare' });
+    style.flush({ ...lorelei, styleCode: 'adventurer', styleName: 'Adventurer', presetId: 'bare' });
     http.verify();
   });
 

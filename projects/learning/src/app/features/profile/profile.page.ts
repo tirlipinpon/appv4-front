@@ -176,10 +176,15 @@ export class ProfilePage implements OnInit {
     const allowed = new Set(
       this.avatar()?.styles?.find((style) => style.code === styleCode)?.zoneCodes ?? [],
     );
+    const open = new Set(
+      (this.avatar()?.zones ?? [])
+        .filter((zone) => zone.open === true && !!zone.code && allowed.has(zone.code))
+        .map((zone) => zone.code as string),
+    );
     const pins = Object.entries(this.draftPins())
-      .filter(([zone]) => allowed.has(zone))
+      .filter(([zone]) => open.has(zone))
       .map(([zoneCode, variantCode]) => ({ zoneCode, variantCode }));
-    this.avatarApi.save(styleCode, this.draftPreset(), pins).subscribe({
+    this.avatarApi.save(styleCode, this.draftPreset(), pins.length > 0 ? pins : null).subscribe({
       next: (person) => {
         this.saving.set(false);
         this.keepDraft(person);
