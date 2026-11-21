@@ -76,9 +76,10 @@
     @if (sameStyle() && person.zones) {
       <div class="avatar-zones" data-testid="profile-zones">
         @for (zone of openZones(); track zone.code) {
+          @if (partsReady()) {
           <details class="avatar-fold" [attr.data-testid]="'profile-zone-' + zone.code">
             <summary>
-              <app-avatar-zone-icon [code]="zone.code" />
+              <app-avatar-zone-icon [code]="zone.code ?? null" />
               <span class="avatar-fold-label">{{ zone.label }}</span>
               <span class="avatar-fold-side" [attr.data-testid]="'profile-open-' + zone.code">Ouvert</span>
             </summary>
@@ -104,11 +105,12 @@
               </ul>
             }
           </details>
+          }
         }
         @for (zone of closedZones(); track zone.code) {
           <article class="avatar-later" [attr.data-testid]="'profile-zone-' + zone.code">
             <span class="avatar-lock-badge">
-              <app-avatar-zone-icon [code]="zone.code" />
+              <app-avatar-zone-icon [code]="zone.code ?? null" />
               <svg class="avatar-lock" viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="6" y="11" width="12" height="9" rx="2" />
                 <path d="M8 11V8a4 4 0 0 1 8 0v3" />

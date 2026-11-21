@@ -208,7 +208,7 @@ const KIND: Record<string, string> = {
   `,
 })
 export class AvatarZoneIcon {
-  readonly code = input<string | null>(null);
+  readonly code = input<string | null | undefined>(null);
 
   protected kind(): string {
     const code = this.code();

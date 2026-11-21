@@ -300,6 +300,14 @@ describe('ProfilePage', () => {
     http.expectOne('http://localhost:8080/api/ext/avatar').flush(openMouth);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="profile-open-mouth"]')).toBeNull();
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    const unlocked = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(unlocked.request.body).toEqual({ styleCode: 'lorelei' });
+    unlocked.flush(openMouth);
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-open-mouth"]')).not.toBeNull();
+
     const before = root.querySelector('[data-testid="profile-face"]')?.getAttribute('src');
     const mouth = root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement;
     mouth.click();
@@ -338,7 +346,11 @@ describe('ProfilePage', () => {
     expect(root.querySelector('[data-testid="profile-variant-hair-variant01"]')).toBeNull();
     expect(root.querySelector('[data-testid="profile-threshold-hair"]')?.textContent).toContain('140 XP');
     expect(root.querySelector('[data-testid="profile-missing-hair"]')?.textContent).toContain('encore 120 XP');
+    expect(root.querySelector('[data-testid="profile-open-mouth"]')).toBeNull();
 
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(openMouth);
+    fixture.detectChanges();
     (root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement).click();
     (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -358,6 +370,9 @@ describe('ProfilePage', () => {
     http.expectOne('http://localhost:8080/api/ext/avatar').flush(openMouth);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(openMouth);
+    fixture.detectChanges();
     (root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();

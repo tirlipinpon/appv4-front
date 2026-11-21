@@ -25,6 +25,7 @@ export class ProfilePage implements OnInit {
   protected readonly draftStyle = signal<string | null>(null);
   protected readonly draftPreset = signal<string | null>(null);
   protected readonly draftPins = signal<Record<string, string>>({});
+  protected readonly partsReady = signal(false);
   private readonly tiles = new Map<string, string | null>();
 
   ngOnInit(): void {
@@ -91,6 +92,7 @@ export class ProfilePage implements OnInit {
     if (!code) {
       return;
     }
+    this.partsReady.set(false);
     this.draftStyle.set(code);
     this.draftPreset.set(this.draftPresets()[0]?.id ?? null);
     const allowed = new Set(
@@ -190,6 +192,7 @@ export class ProfilePage implements OnInit {
     if (!id) {
       return;
     }
+    this.partsReady.set(false);
     this.draftPreset.set(id);
     this.saveError.set(null);
   }
@@ -216,6 +219,7 @@ export class ProfilePage implements OnInit {
       next: (person) => {
         this.saving.set(false);
         this.keepDraft(person);
+        this.partsReady.set(true);
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
