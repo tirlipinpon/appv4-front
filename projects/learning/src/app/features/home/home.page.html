@@ -97,4 +97,26 @@
       <p class="home-progress-status" data-testid="home-mission-empty">Aucune mission aujourd'hui.</p>
     }
   </section>
+
+  @if (badgesLoading()) {
+    <p class="home-progress-status" data-testid="home-badges-loading">Chargement…</p>
+  } @else if (badgesError()) {
+    <p class="home-progress-status home-progress-error" data-testid="home-badges-error">{{ badgesError() }}</p>
+  } @else if (badges(); as collection) {
+    @if ((collection.gainedToday ?? []).length > 0) {
+      <section class="home-badges" data-testid="home-badges-today">
+        <h2>Aujourd'hui</h2>
+        <ul>
+          @for (gained of collection.gainedToday ?? []; track gained.code) {
+            <li [attr.data-testid]="'home-badge-' + gained.code">
+              <a routerLink="/rewards">{{ gained.name }} · {{ gained.level }}</a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    @if (collection.notice?.label) {
+      <p class="home-badge-notice" data-testid="home-badge-notice">{{ collection.notice.label }}</p>
+    }
+  }
 </section>

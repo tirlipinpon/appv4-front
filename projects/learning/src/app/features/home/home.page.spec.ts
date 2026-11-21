@@ -41,6 +41,7 @@ describe('HomePage', () => {
       weekDays: [false, false, true, false, false, false, false],
     });
     http.expectOne('http://localhost:8080/api/ext/today').flush({ mission: null });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
     fixture.detectChanges();
 
     const stats = fixture.nativeElement.querySelector('[data-testid="home-progress-stats"]');
@@ -107,6 +108,7 @@ describe('HomePage', () => {
         ],
       },
     });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
     fixture.detectChanges();
 
     const mission = fixture.nativeElement.querySelector('[data-testid="home-mission"]');
@@ -172,6 +174,7 @@ describe('HomePage', () => {
         ],
       },
     });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="home-mission-status"]').textContent).toContain(
@@ -180,6 +183,39 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="home-mission-play"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="home-task-play-3"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="home-continue"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="home-badges-today"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="home-badge-notice"]')).toBeNull();
+    http.verify();
+  });
+
+  it('affiche le niveau gagné aujourd hui et l avertissement renvoyés', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/progress').flush({
+      xpTotal: 0,
+      currentStreak: 0,
+      leagueLabel: 'Bronze',
+      weekDays: [false, false, false, false, false, false, false],
+    });
+    http.expectOne('http://localhost:8080/api/ext/today').flush({ mission: null });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({
+      badges: [],
+      gainedToday: [{ code: 'etoiles_jaunes', name: 'Étoiles jaunes', level: 1 }],
+      notice: {
+        label: "Mathématiques : 2 questions ne sont pas encore jaunes.",
+        subjectName: 'Mathématiques',
+        remainingCount: 2,
+      },
+    });
+    fixture.detectChanges();
+
+    const today = fixture.nativeElement.querySelector('[data-testid="home-badges-today"]');
+    expect(today.textContent).toContain('Étoiles jaunes');
+    expect(today.textContent).toContain('1');
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector('[data-testid="home-badge-etoiles_jaunes"] a');
+    expect(link.getAttribute('href')).toBe('/rewards');
+    expect(fixture.nativeElement.querySelector('[data-testid="home-badge-notice"]').textContent).toContain(
+      'Mathématiques : 2 questions ne sont pas encore jaunes.',
+    );
     http.verify();
   });
 });

@@ -1243,6 +1243,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/badges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la collection de badges */
+        get: operations["readChildBadges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/auth/session": {
         parameters: {
             query?: never;
@@ -2462,6 +2479,35 @@ export interface components {
             firstName?: string;
             avatarCode?: string;
             hasPhoto?: boolean;
+        };
+        ChildBadgeGainedResponse: {
+            code?: string;
+            name?: string;
+            /** Format: int32 */
+            level?: number;
+        };
+        ChildBadgeNoticeResponse: {
+            label?: string;
+            subjectName?: string;
+            /** Format: int32 */
+            remainingCount?: number;
+        };
+        ChildBadgeResponse: {
+            code?: string;
+            name?: string;
+            /** Format: int32 */
+            level?: number;
+            /** Format: int32 */
+            retainedValue?: number;
+            /** Format: int32 */
+            nextThreshold?: number;
+            /** Format: date */
+            unlockedOn?: string;
+        };
+        ChildBadgesResponse: {
+            badges?: components["schemas"]["ChildBadgeResponse"][];
+            gainedToday?: components["schemas"]["ChildBadgeGainedResponse"][];
+            notice?: components["schemas"]["ChildBadgeNoticeResponse"];
         };
         ChildSessionResponse: {
             /** Format: int64 */
@@ -6026,6 +6072,37 @@ export interface operations {
             };
             /** @description Pas de photo sur la fiche */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildBadges: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Neuf badges, bloc du jour, avertissement éventuel */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildBadgesResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

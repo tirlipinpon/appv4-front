@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 
 import type { ChildTodayMission, ChildTodayTask } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
+import { ChildHomeBadgesService } from './data-access/child-home-badges.service';
 import { ChildProgressService } from './data-access/child-progress.service';
 import { ChildTodayService } from './data-access/child-today.service';
 
@@ -23,6 +24,7 @@ const WEEK_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const;
 export class HomePage implements OnInit {
   private readonly progressApi = inject(ChildProgressService);
   private readonly todayApi = inject(ChildTodayService);
+  private readonly badgesApi = inject(ChildHomeBadgesService);
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -32,6 +34,9 @@ export class HomePage implements OnInit {
   protected readonly todayLoading = signal(true);
   protected readonly todayError = signal<string | null>(null);
   protected readonly today = this.todayApi.today;
+  protected readonly badgesLoading = signal(true);
+  protected readonly badgesError = signal<string | null>(null);
+  protected readonly badges = this.badgesApi.badges;
 
   protected readonly weekCells = computed(() => {
     const days = this.progress()?.weekDays ?? [];
@@ -83,6 +88,16 @@ export class HomePage implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.todayLoading.set(false);
         this.todayError.set(apiErrorMessage(err, 'Impossible de charger la mission.'));
+      },
+    });
+    this.badgesApi.load().subscribe({
+      next: () => {
+        this.badgesLoading.set(false);
+        this.badgesError.set(null);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.badgesLoading.set(false);
+        this.badgesError.set(apiErrorMessage(err, 'Impossible de charger les badges.'));
       },
     });
   }
