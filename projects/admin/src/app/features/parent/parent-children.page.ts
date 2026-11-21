@@ -31,6 +31,7 @@ import { SpaceHeader } from '../../core/layout/space-header';
 import { SchoolCatalogService } from '../../core/api/school-catalog.service';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { CHILD_AVATARS, avatarEmoji } from '../../shared/avatars/account-avatars';
+import { avatarDataUri } from '../../../../../learning/src/app/features/profile/data-access/avatar-face';
 import { PhotoObjectUrlBag } from '../../shared/photos/photo-object-url-bag';
 import {
   AGE_INVALID,
@@ -90,6 +91,26 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   readonly sexes = CHILD_SEXES;
   readonly sexLabel = sexLabel;
   readonly emoji = avatarEmoji;
+
+  characterSrc(child: ParentChildResponse): string | null {
+    const face = child.character;
+    const styleCode = face?.styleCode;
+    if (!styleCode || child.id == null) {
+      return null;
+    }
+    const pins: Record<string, string> = {};
+    for (const pin of face?.pins ?? []) {
+      if (pin.zoneCode && pin.variantCode) {
+        pins[pin.zoneCode] = pin.variantCode;
+      }
+    }
+    return avatarDataUri({
+      seed: String(child.id),
+      styleCode,
+      options: face?.options ?? null,
+      pins,
+    });
+  }
 
   readonly children = signal<ParentChildResponse[]>([]);
   readonly schools = signal<ParentSchoolOption[]>([]);

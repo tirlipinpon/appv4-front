@@ -3,11 +3,13 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 
 import type { ChildAvatarResponse } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
+import { AvatarZoneIcon } from './components/avatar-zone-icon';
 import { avatarDataUri } from './data-access/avatar-face';
 import { ChildAvatarService } from './data-access/child-avatar.service';
 
 @Component({
   selector: 'app-profile-page',
+  imports: [AvatarZoneIcon],
   templateUrl: './profile.page.html',
   styleUrl: './profile.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,6 +25,7 @@ export class ProfilePage implements OnInit {
   protected readonly draftStyle = signal<string | null>(null);
   protected readonly draftPreset = signal<string | null>(null);
   protected readonly draftPins = signal<Record<string, string>>({});
+  private readonly tiles = new Map<string, string | null>();
 
   ngOnInit(): void {
     this.avatarApi.clear();
@@ -58,6 +61,44 @@ export class ProfilePage implements OnInit {
     return person?.styles?.find((style) => style.code === code)?.presets ?? [];
   }
 
+  protected presetName(): string | null {
+    return this.draftPresets().find((preset) => preset.id === this.draftPreset())?.name ?? null;
+  }
+
+  protected presetSwatch(): string | null {
+    const options = this.paletteOptions();
+    const raw = options?.['backgroundColor'] ?? options?.['skinColor'] ?? options?.['hairColor'];
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    if (typeof value !== 'string') {
+      return null;
+    }
+    const hex = value.replace('#', '');
+    if (!/^[0-9a-fA-F]{6}$/.test(hex) && !/^[0-9a-fA-F]{3}$/.test(hex)) {
+      return null;
+    }
+    return `#${hex}`;
+  }
+
+  protected draftZones() {
+    const code = this.draftStyle();
+    const fromStyle = this.avatar()?.styles?.find((style) => style.code === code)?.zones;
+    if (fromStyle?.length) {
+      return fromStyle;
+    }
+    if (this.sameStyle()) {
+      return this.avatar()?.zones ?? [];
+    }
+    return [];
+  }
+
+  protected openZones() {
+    return this.draftZones().filter((zone) => zone.open === true);
+  }
+
+  protected closedZones() {
+    return this.draftZones().filter((zone) => zone.open !== true);
+  }
+
   protected chooseStyle(code: string | undefined): void {
     if (!code) {
       return;
@@ -78,7 +119,7 @@ export class ProfilePage implements OnInit {
   }
 
   protected chooseVariant(zoneCode: string | undefined, variantCode: string | undefined): void {
-    const zone = this.avatar()?.zones?.find((item) => item.code === zoneCode);
+    const zone = this.draftZones().find((item) => item.code === zoneCode);
     if (!zone || zone.open !== true || !zoneCode || !variantCode) {
       return;
     }
@@ -93,6 +134,33 @@ export class ProfilePage implements OnInit {
     return this.draftPins()[zoneCode] === variantCode ? true : null;
   }
 
+  protected tileUri(zoneCode: string | undefined, variantCode: string | undefined): string | null {
+    const person = this.avatar();
+    const seed = person?.seed;
+    const styleCode = this.draftStyle();
+    if (!person || !seed || !styleCode || !zoneCode || !variantCode) {
+      return null;
+    }
+    const key = `${seed}|${styleCode}|${this.draftPreset() ?? ''}|${zoneCode}|${variantCode}`;
+    const cached = this.tiles.get(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const uri = avatarDataUri({
+      seed,
+      styleCode,
+      options: this.paletteOptions(),
+      pins: { [zoneCode]: variantCode },
+    });
+    this.tiles.set(key, uri);
+    return uri;
+  }
+
+  protected sameStyle(): boolean {
+    const person = this.avatar();
+    return !!person && person.styleCode === this.draftStyle();
+  }
+
   protected faceUri(): string | null {
     const person = this.avatar();
     const seed = person?.seed;
@@ -100,20 +168,27 @@ export class ProfilePage implements OnInit {
     if (!person || !seed || !styleCode) {
       return null;
     }
-    const sameStyle = person.styleCode === styleCode;
-    const preset = sameStyle
-      ? person.presets?.find((item) => item.id === this.draftPreset())
-      : undefined;
     return avatarDataUri({
       seed,
       styleCode,
-      options: preset?.options ?? null,
+      options: this.paletteOptions(),
       pins: this.draftPins(),
     });
   }
 
+  private paletteOptions(): Record<string, unknown> | null {
+    const chosen = this.draftPresets().find((item) => item.id === this.draftPreset());
+    if (chosen?.options) {
+      return chosen.options;
+    }
+    if (this.avatar()?.styleCode !== this.draftStyle()) {
+      return null;
+    }
+    return this.avatar()?.presets?.find((item) => item.id === this.draftPreset())?.options ?? null;
+  }
+
   protected choiceText(): string {
-    const zones = this.avatar()?.zones ?? [];
+    const zones = this.draftZones();
     return zones
       .map((zone) => {
         const chosen = zone.code ? this.draftPins()[zone.code] : undefined;
@@ -141,10 +216,18 @@ export class ProfilePage implements OnInit {
     const allowed = new Set(
       this.avatar()?.styles?.find((style) => style.code === styleCode)?.zoneCodes ?? [],
     );
-    const pins = Object.entries(this.draftPins())
-      .filter(([zone]) => allowed.has(zone))
-      .map(([zoneCode, variantCode]) => ({ zoneCode, variantCode }));
-    this.avatarApi.save(styleCode, this.draftPreset(), pins).subscribe({
+    const open = new Set(
+      (this.avatar()?.zones ?? [])
+        .filter((zone) => zone.open === true && !!zone.code && allowed.has(zone.code))
+        .map((zone) => zone.code as string),
+    );
+    const styleChanges = this.avatar()?.styleCode !== styleCode;
+    const pins = styleChanges
+      ? []
+      : Object.entries(this.draftPins())
+          .filter(([zone]) => open.has(zone))
+          .map(([zoneCode, variantCode]) => ({ zoneCode, variantCode }));
+    this.avatarApi.save(styleCode, this.draftPreset(), pins.length > 0 ? pins : null).subscribe({
       next: (person) => {
         this.saving.set(false);
         this.keepDraft(person);

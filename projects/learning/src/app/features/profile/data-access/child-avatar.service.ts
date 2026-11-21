@@ -28,12 +28,12 @@ export class ChildAvatarService {
   save(
     styleCode: string,
     presetId: string | null,
-    pins: { zoneCode: string; variantCode: string }[],
+    pins: { zoneCode: string; variantCode: string }[] | null,
   ): Observable<ChildAvatarResponse> {
     const body: SaveChildAvatarStyleRequest = {
       styleCode,
       ...(presetId ? { presetId } : {}),
-      pins,
+      ...(pins != null ? { pins } : {}),
     };
     return this.http
       .put<ChildAvatarResponse>(`${environment.apiBaseUrl}/avatar`, body, {
