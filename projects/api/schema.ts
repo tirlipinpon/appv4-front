@@ -2545,6 +2545,8 @@ export interface components {
             nextThreshold?: number;
             /** Format: date */
             unlockedOn?: string;
+            /** Format: int32 */
+            progressValue?: number;
         };
         ChildBadgesResponse: {
             badges?: components["schemas"]["ChildBadgeResponse"][];

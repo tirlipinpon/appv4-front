@@ -32,13 +32,13 @@ describe('RewardsPage', () => {
       badges: [
         { code: 'premiere_etoile_jaune', name: 'Première étoile jaune', level: 1, retainedValue: 1, unlockedOn: '2026-11-21' },
         { code: 'matiere_au_jaune', name: 'Matière au jaune', level: 1, retainedValue: 1 },
-        { code: 'etoiles_jaunes', name: 'Étoiles jaunes', level: 0, retainedValue: 4, nextThreshold: 5 },
-        { code: 'rattrapage', name: 'Rattrapage', level: 1, retainedValue: 1, nextThreshold: 2, unlockedOn: '2026-11-19' },
-        { code: 'bonnes_reponses_affilee', name: "Bonnes réponses d'affilée", level: 0, retainedValue: 0, nextThreshold: 3 },
-        { code: 'bonnes_reponses_du_jour', name: 'Bonnes réponses du jour', level: 0, retainedValue: 0, nextThreshold: 3 },
-        { code: 'jours_affilee', name: "Jours d'affilée", level: 0, retainedValue: 0, nextThreshold: 2 },
-        { code: 'jours_joues', name: 'Jours joués', level: 0, retainedValue: 2, nextThreshold: 3 },
-        { code: 'missions_terminees', name: 'Missions terminées', level: 1, retainedValue: 1, nextThreshold: 2, unlockedOn: '2026-11-18' },
+        { code: 'etoiles_jaunes', name: 'Étoiles jaunes', level: 0, retainedValue: 4, progressValue: 4, nextThreshold: 5 },
+        { code: 'rattrapage', name: 'Rattrapage', level: 1, retainedValue: 1, progressValue: 1, nextThreshold: 2, unlockedOn: '2026-11-19' },
+        { code: 'bonnes_reponses_affilee', name: "Bonnes réponses d'affilée", level: 0, retainedValue: 0, progressValue: 0, nextThreshold: 3 },
+        { code: 'bonnes_reponses_du_jour', name: 'Bonnes réponses du jour', level: 0, retainedValue: 0, progressValue: 0, nextThreshold: 3 },
+        { code: 'jours_affilee', name: "Jours d'affilée", level: 0, retainedValue: 0, progressValue: 0, nextThreshold: 2 },
+        { code: 'jours_joues', name: 'Jours joués', level: 0, retainedValue: 2, progressValue: 2, nextThreshold: 3 },
+        { code: 'missions_terminees', name: 'Missions terminées', level: 1, retainedValue: 1, progressValue: 1, nextThreshold: 2, unlockedOn: '2026-11-18' },
       ],
       gainedToday: [],
     });
@@ -59,12 +59,13 @@ describe('RewardsPage', () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/badges').flush({
       badges: [
-        { code: 'missions_terminees', name: 'Missions terminées', level: 1, retainedValue: 1, nextThreshold: 2 },
+        { code: 'missions_terminees', name: 'Missions terminées', level: 1, retainedValue: 1, progressValue: 1, nextThreshold: 2 },
         {
           code: 'lecons_finies',
           name: 'Leçons finies',
           level: 1,
           retainedValue: 1,
+          progressValue: 1,
           nextThreshold: 2,
           unlockedOn: '2026-11-21',
         },
@@ -78,6 +79,32 @@ describe('RewardsPage', () => {
     expect(cards.indexOf('reward-missions_terminees')).toBeLessThan(cards.indexOf('reward-lecons_finies'));
     expect(fixture.nativeElement.querySelector('[data-testid="reward-gauge-lecons_finies"]').textContent).toContain('1 / 2');
     expect(fixture.nativeElement.querySelector('[data-testid="reward-date-lecons_finies"]').textContent).toContain('2026-11-21');
+    http.verify();
+  });
+
+  it('affiche la serie en cours et conserve la date du niveau', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({
+      badges: [
+        {
+          code: 'bonnes_reponses_affilee',
+          name: "Bonnes réponses d'affilée",
+          level: 1,
+          retainedValue: 3,
+          progressValue: 0,
+          nextThreshold: 4,
+          unlockedOn: '2026-11-18',
+        },
+      ],
+      gainedToday: [],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="reward-gauge-bonnes_reponses_affilee"]').textContent)
+      .toContain('0 / 4');
+    expect(fixture.nativeElement.querySelector('[data-testid="reward-date-bonnes_reponses_affilee"]').textContent)
+      .toContain('2026-11-18');
+    expect(fixture.nativeElement.textContent).toContain('Niveau 1');
     http.verify();
   });
 
