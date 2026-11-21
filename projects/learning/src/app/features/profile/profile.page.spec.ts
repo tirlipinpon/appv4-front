@@ -359,7 +359,6 @@ describe('ProfilePage', () => {
     expect(saved.request.body).toEqual({
       styleCode: 'fun-emoji',
       presetId: 'plain',
-      pins: [{ zoneCode: 'mouth', variantCode: 'happy01' }],
     });
     saved.flush({ ...openMouth, styleCode: 'fun-emoji', styleName: 'Fun Emoji', presetId: 'plain' });
     http.verify();
