@@ -19,12 +19,9 @@
     </article>
 
     @if (person.styles?.length) {
-      <details class="avatar-fold" data-testid="profile-available">
+      <details class="avatar-fold" data-testid="profile-styles-toggle">
         <summary>
           <span>{{ styleName() }}</span>
-          @if (presetName()) {
-            <span class="avatar-fold-side">{{ presetName() }}</span>
-          }
         </summary>
         <ul class="avatar-chips" data-testid="profile-styles">
           @for (style of person.styles; track style.code) {
@@ -42,24 +39,30 @@
             </li>
           }
         </ul>
-        @if (draftPresets().length) {
-          <ul class="avatar-chips" data-testid="profile-presets">
-            @for (preset of draftPresets(); track preset.id) {
-              <li>
-                <button
-                  type="button"
-                  class="avatar-chip"
-                  [class.avatar-chip--on]="draftPreset() === preset.id"
-                  [attr.data-testid]="'profile-preset-' + preset.id"
-                  [attr.aria-pressed]="draftPreset() === preset.id"
-                  (click)="choosePreset(preset.id)"
-                >
-                  {{ preset.name }}
-                </button>
-              </li>
-            }
-          </ul>
-        }
+      </details>
+    }
+
+    @if (draftPresets().length) {
+      <details class="avatar-fold" data-testid="profile-presets-toggle">
+        <summary>
+          <span>{{ presetName() }}</span>
+        </summary>
+        <ul class="avatar-chips" data-testid="profile-presets">
+          @for (preset of draftPresets(); track preset.id) {
+            <li>
+              <button
+                type="button"
+                class="avatar-chip"
+                [class.avatar-chip--on]="draftPreset() === preset.id"
+                [attr.data-testid]="'profile-preset-' + preset.id"
+                [attr.aria-pressed]="draftPreset() === preset.id"
+                (click)="choosePreset(preset.id)"
+              >
+                {{ preset.name }}
+              </button>
+            </li>
+          }
+        </ul>
       </details>
     }
 
