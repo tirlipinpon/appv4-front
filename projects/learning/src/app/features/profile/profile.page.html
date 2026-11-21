@@ -107,18 +107,26 @@
         }
         @for (zone of closedZones(); track zone.code) {
           <article class="avatar-later" [attr.data-testid]="'profile-zone-' + zone.code">
-            <app-avatar-zone-icon [code]="zone.code" />
-            <div>
+            <span class="avatar-lock-badge">
+              <app-avatar-zone-icon [code]="zone.code" />
+              <svg class="avatar-lock" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="6" y="11" width="12" height="9" rx="2" />
+                <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+              </svg>
+            </span>
+            <div class="avatar-later-copy">
               <h2>{{ zone.label }}</h2>
-              @if (zone.thresholdLabel) {
-                <p [attr.data-testid]="'profile-threshold-' + zone.code">{{ zone.thresholdLabel }}</p>
-              }
               @if (zone.missingLabel) {
                 <p class="avatar-missing" [attr.data-testid]="'profile-missing-' + zone.code">
                   {{ zone.missingLabel }}
                 </p>
               }
             </div>
+            @if (zone.thresholdLabel) {
+              <p class="avatar-lock-chip" [attr.data-testid]="'profile-threshold-' + zone.code">
+                {{ zone.thresholdLabel }}
+              </p>
+            }
           </article>
         }
       </div>
