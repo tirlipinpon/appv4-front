@@ -2084,6 +2084,8 @@ export interface components {
              * @description Nombre d'étoiles jaunes après cet essai. Zéro s'il n'y en a pas.
              */
             yellowCount: number;
+            /** @description Leçon finie. si cet essai vide la leçon. */
+            lessonFinishedLabel?: string;
         };
         ChildLoginRequest: {
             firstName?: string;

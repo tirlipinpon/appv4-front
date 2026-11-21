@@ -37,6 +37,7 @@
                 <a
                   class="subject-board-lesson-row"
                   [routerLink]="['/learn', b.subjectId, 'play', question.questionId]"
+                  [state]="lessonQueue(lesson)"
                   [attr.data-testid]="'subject-board-lesson-' + question.questionId"
                 >
                   <span>{{ question.prompt }}</span>

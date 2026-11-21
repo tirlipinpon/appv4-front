@@ -9,6 +9,7 @@ import { isPlayableQuestionForm, QuestionFormMarkComponent } from '@appv4/ui';
 import type { ChildLearningQuestionItem } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { ChildPlayService } from './data-access/child-play.service';
+import type { PlayQueueState } from './play-queue';
 import { shuffleCopy } from './shuffle';
 
 /**
@@ -35,6 +36,15 @@ export class SubjectQuestionsPage implements OnInit {
   protected readonly questions = signal<ChildLearningQuestionItem[]>([]);
   protected readonly nextCursor = signal<number | null>(0);
   protected readonly canPlay = isPlayableQuestionForm;
+
+  protected questionsQueue(): PlayQueueState {
+    return {
+      source: 'questions',
+      queue: this.questions()
+        .map((question) => question.questionId)
+        .filter((id): id is number => id != null),
+    };
+  }
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
