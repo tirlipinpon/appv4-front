@@ -1243,6 +1243,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/featured": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les questions proposées à l'accueil */
+        get: operations["readChildFeaturedQuestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/badges": {
         parameters: {
             query?: never;
@@ -2479,6 +2496,13 @@ export interface components {
             firstName?: string;
             avatarCode?: string;
             hasPhoto?: boolean;
+        };
+        ChildFeaturedQuestionItem: {
+            /** Format: int64 */
+            subjectId?: number;
+            /** Format: int64 */
+            questionId?: number;
+            prompt?: string;
         };
         ChildBadgeGainedResponse: {
             code?: string;
@@ -6072,6 +6096,37 @@ export interface operations {
             };
             /** @description Pas de photo sur la fiche */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildFeaturedQuestions: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Au plus trois énoncés, ou une liste vide */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildFeaturedQuestionItem"][];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

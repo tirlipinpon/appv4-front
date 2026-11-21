@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import type { ChildTodayMission, ChildTodayTask } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { BadgeMedalComponent } from '../../shared/badges/badge-medal';
+import { ChildFeaturedQuestionsService } from './data-access/child-featured-questions.service';
 import { ChildHomeBadgesService } from './data-access/child-home-badges.service';
 import { ChildProgressService } from './data-access/child-progress.service';
 import { ChildTodayService } from './data-access/child-today.service';
@@ -12,8 +13,9 @@ import { ChildTodayService } from './data-access/child-today.service';
 const WEEK_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const;
 
 /**
- * Accueil : progression (LEARN-31), mission (LEARN-32) et reprise (LEARN-33).
- * Affiche uniquement ce que les API progress et today renvoient.
+ * Accueil : progression (LEARN-31), mission (LEARN-32), reprise (LEARN-33)
+ * et questions proposées (LEARN-35).
+ * Affiche uniquement ce que les lectures renvoient.
  */
 @Component({
   selector: 'app-home-page',
@@ -26,6 +28,7 @@ export class HomePage implements OnInit {
   private readonly progressApi = inject(ChildProgressService);
   private readonly todayApi = inject(ChildTodayService);
   private readonly badgesApi = inject(ChildHomeBadgesService);
+  private readonly featuredApi = inject(ChildFeaturedQuestionsService);
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -38,6 +41,9 @@ export class HomePage implements OnInit {
   protected readonly badgesLoading = signal(true);
   protected readonly badgesError = signal<string | null>(null);
   protected readonly badges = this.badgesApi.badges;
+  protected readonly featuredLoading = signal(true);
+  protected readonly featuredError = signal<string | null>(null);
+  protected readonly featured = this.featuredApi.featured;
 
   protected readonly weekCells = computed(() => {
     const days = this.progress()?.weekDays ?? [];
@@ -99,6 +105,16 @@ export class HomePage implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.badgesLoading.set(false);
         this.badgesError.set(apiErrorMessage(err, 'Impossible de charger les badges.'));
+      },
+    });
+    this.featuredApi.load().subscribe({
+      next: () => {
+        this.featuredLoading.set(false);
+        this.featuredError.set(null);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.featuredLoading.set(false);
+        this.featuredError.set(apiErrorMessage(err, 'Impossible de charger les questions.'));
       },
     });
   }
