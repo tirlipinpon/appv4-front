@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 
 import type { ChildAvatarResponse } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
+import { avatarDataUri } from './data-access/avatar-face';
 import { ChildAvatarService } from './data-access/child-avatar.service';
 
 @Component({
@@ -90,6 +91,25 @@ export class ProfilePage implements OnInit {
       return null;
     }
     return this.draftPins()[zoneCode] === variantCode ? true : null;
+  }
+
+  protected faceUri(): string | null {
+    const person = this.avatar();
+    const seed = person?.seed;
+    const styleCode = this.draftStyle();
+    if (!person || !seed || !styleCode) {
+      return null;
+    }
+    const sameStyle = person.styleCode === styleCode;
+    const preset = sameStyle
+      ? person.presets?.find((item) => item.id === this.draftPreset())
+      : undefined;
+    return avatarDataUri({
+      seed,
+      styleCode,
+      options: preset?.options ?? null,
+      pins: this.draftPins(),
+    });
   }
 
   protected choiceText(): string {
