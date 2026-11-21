@@ -1,19 +1,34 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+
+import { apiErrorMessage } from '../../core/auth/child-auth.service';
+import { ChildAvatarService } from './data-access/child-avatar.service';
 
 @Component({
   selector: 'app-profile-page',
-  template: `
-    <section class="learn-panel" data-testid="profile-panel">
-      <h1>Profil</h1>
-      <p>Ton profil détaillé arrivera ici.</p>
-    </section>
-  `,
-  styles: `
-    :host { display: block; }
-    .learn-panel { text-align: center; padding: 24px 8px; }
-    h1 { margin: 0 0 8px; font-size: 1.6rem; font-weight: 800; }
-    p { margin: 0; color: var(--app-text-muted); }
-  `,
+  templateUrl: './profile.page.html',
+  styleUrl: './profile.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProfilePage {}
+export class ProfilePage implements OnInit {
+  private readonly avatarApi = inject(ChildAvatarService);
+
+  protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
+  protected readonly avatar = this.avatarApi.avatar;
+
+  ngOnInit(): void {
+    this.avatarApi.clear();
+    this.avatarApi.load().subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.error.set(null);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.avatarApi.clear();
+        this.error.set(apiErrorMessage(err, 'Impossible de charger le personnage.'));
+      },
+    });
+  }
+}
