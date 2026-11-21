@@ -12,6 +12,7 @@
             <a
               class="row playable"
               [routerLink]="['/learn', subjectId(), 'play', question.questionId]"
+              [state]="questionsQueue()"
               [attr.data-testid]="'subject-question-' + question.questionId"
             >
               <span class="form">

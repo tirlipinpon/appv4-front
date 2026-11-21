@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { knownSubjectIcon, subjectCardTint, subjectIconSrc } from '../../shared/subject-icons/subject-icons';
 import { ChildSubjectBoardService } from './data-access/child-subject-board.service';
+import type { PlayQueueState } from './play-queue';
 
 /**
  * Page matière Learn. La leçon affichée est celle renvoyée par le board.
@@ -62,5 +63,14 @@ export class SubjectBoardPage implements OnInit {
 
   protected iconEmoji(iconCode: string | null | undefined): string | null {
     return knownSubjectIcon(iconCode)?.emoji ?? null;
+  }
+
+  protected lessonQueue(lesson: { questions?: { questionId?: number }[] | null }): PlayQueueState {
+    return {
+      source: 'lesson',
+      queue: (lesson.questions ?? [])
+        .map((question) => question.questionId)
+        .filter((id): id is number => id != null),
+    };
   }
 }

@@ -53,6 +53,9 @@
         @if (verdict.pointsAwarded !== undefined && verdict.pointsAwarded !== null) {
           <p data-testid="play-points">Points : {{ verdict.pointsAwarded }}</p>
         }
+        @if (lessonFinishedLabel(verdict); as finished) {
+          <p data-testid="play-lesson-finished">{{ finished }}</p>
+        }
         @if (verdict.mark === 'yellow') {
           <p class="mark">
             <span class="star star-yellow" data-testid="play-star" aria-hidden="true">★</span>
@@ -67,6 +70,16 @@
       <div class="after">
         @if (verdict.replayAvailable === true) {
           <button type="button" class="submit secondary" data-testid="play-replay" (click)="play.replay()">Rejouer</button>
+        }
+        @if (nextId(); as following) {
+          <a
+            [routerLink]="['/learn', subjectId(), 'play', following]"
+            [state]="sameQueue()"
+            class="submit secondary link"
+            data-testid="play-next"
+          >
+            Question suivante
+          </a>
         }
         <a
           [routerLink]="['/learn', subjectId(), 'questions']"

@@ -7,6 +7,7 @@ import { throwError } from 'rxjs';
 import { ChildQuestionPlayViewComponent, QuestionPlaySession } from '@appv4/ui';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { ChildPlayService } from './data-access/child-play.service';
+import { nextQuestionId, readPlayQueue, type PlayQueueState } from './play-queue';
 
 @Component({
   selector: 'app-play-question-page',
@@ -23,10 +24,13 @@ export class PlayQuestionPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly subjectId = signal(0);
+  private readonly questionId = signal(0);
+  protected readonly queue = signal<PlayQueueState>({ source: 'questions', queue: [] });
   protected readonly play = new QuestionPlaySession(this.destroyRef, this.view, apiErrorMessage);
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.queue.set(readPlayQueue(history.state));
       const subjectId = Number(params.get('subjectId'));
       const questionId = Number(params.get('questionId'));
       if (!Number.isSafeInteger(subjectId) || subjectId <= 0 || !Number.isSafeInteger(questionId) || questionId <= 0) {
@@ -35,6 +39,7 @@ export class PlayQuestionPage implements OnInit {
         return;
       }
       this.subjectId.set(subjectId);
+      this.questionId.set(questionId);
       this.play.open({
         open: () => this.api.openQuestion(subjectId, questionId, this.play.playId()),
         grade: (answer, question) => {
@@ -54,5 +59,24 @@ export class PlayQuestionPage implements OnInit {
         memoryPair: (match) => this.api.checkMemoryPair(subjectId, questionId, match),
       });
     });
+  }
+
+  protected nextId(): number | null {
+    return nextQuestionId(this.queue().queue, this.questionId());
+  }
+
+  protected sameQueue(): PlayQueueState {
+    return this.queue();
+  }
+
+  protected lessonFinishedLabel(verdict: {
+    passed?: boolean;
+    lessonFinishedLabel?: string | null;
+  }): string | null {
+    if (this.queue().source !== 'lesson' || this.nextId() !== null) {
+      return null;
+    }
+    const label = verdict.lessonFinishedLabel;
+    return label == null || label === '' ? null : label;
   }
 }
