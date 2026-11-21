@@ -48,11 +48,16 @@
         @for (child of children(); track child.id) {
           <li class="child" [class.inactive]="child.active === false" [attr.data-testid]="'child-' + child.id">
             <div class="identity">
-              @if (child.hasPhoto && photos()[child.id!]) {
-                <img class="portrait" [src]="photos()[child.id!]" [alt]="child.firstName + ' ' + child.lastName" />
-              } @else {
-                <span class="portrait avatar" [attr.aria-label]="child.avatarCode">{{ emoji(child.avatarCode) }}</span>
-              }
+              <div class="faces">
+                @if (child.hasPhoto && photos()[child.id!]) {
+                  <img class="portrait" [src]="photos()[child.id!]" [alt]="child.firstName + ' ' + child.lastName" />
+                } @else {
+                  <span class="portrait avatar" [attr.aria-label]="child.avatarCode">{{ emoji(child.avatarCode) }}</span>
+                }
+                @if (characterSrc(child); as src) {
+                  <img class="portrait character" data-testid="child-character" [src]="src" alt="" />
+                }
+              </div>
               <div>
                 <strong>{{ child.firstName }} {{ child.lastName }}</strong>
                 <span class="badge" data-testid="child-sex">{{ sexLabel(child.sex) }}</span>

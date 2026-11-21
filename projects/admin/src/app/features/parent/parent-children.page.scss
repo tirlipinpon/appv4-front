@@ -41,6 +41,13 @@
   min-width: 0;
 }
 
+.faces {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+}
+
 .family {
   display: flex;
   flex-direction: column;
@@ -150,6 +157,10 @@
   place-items: center;
   background: var(--app-primary-soft);
   font-size: 1.6rem;
+}
+
+.character {
+  background: #241c3a;
 }
 
 .form {

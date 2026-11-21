@@ -1692,6 +1692,17 @@ export interface components {
             /** @description AUCUN, FRERE, SOEUR, DEMI_FRERE, DEMI_SOEUR, JUMEAU, JUMELLE, COUSIN ou COUSINE. */
             link?: string;
         };
+        ParentChildCharacter: {
+            styleCode?: string;
+            options?: {
+                [key: string]: unknown;
+            };
+            pins?: components["schemas"]["ParentChildCharacterPin"][];
+        };
+        ParentChildCharacterPin: {
+            zoneCode?: string;
+            variantCode?: string;
+        };
         ParentChildLink: {
             /** Format: int64 */
             otherChildId?: number;
@@ -1731,6 +1742,8 @@ export interface components {
             extraSubjectCount?: number;
             /** @description L'autre enfant du lien, pour afficher sa photo ou son avatar, et le mot court. */
             links?: components["schemas"]["ParentChildLink"][];
+            /** @description Personnage choisi par l'enfant. Lorelei s'il n'a encore rien enregistré. */
+            character?: components["schemas"]["ParentChildCharacter"];
         };
         AvatarPinRequest: {
             zoneCode?: string;

@@ -68,6 +68,15 @@ describe('ParentChildrenPage liens', () => {
     http.verify();
   });
 
+  it('dessine le personnage renvoyé pour la fiche', () => {
+    const src = page.characterSrc({
+      ...lea,
+      character: { styleCode: 'lorelei', options: { backgroundColor: ['ffffff'] }, pins: [] },
+    });
+    expect(src).toContain('svg');
+    expect(page.characterSrc(lea)).toBeNull();
+  });
+
   it('propose les mots du garçon choisi, et vide Sœur quand on passe de Léa à Noah', () => {
     page.openForm();
     page.onLinkTarget(1);
