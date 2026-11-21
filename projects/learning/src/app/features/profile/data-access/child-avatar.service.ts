@@ -25,10 +25,15 @@ export class ChildAvatarService {
       .pipe(tap((response) => this.avatar.set(response)));
   }
 
-  save(styleCode: string, presetId: string | null): Observable<ChildAvatarResponse> {
+  save(
+    styleCode: string,
+    presetId: string | null,
+    pins: { zoneCode: string; variantCode: string }[],
+  ): Observable<ChildAvatarResponse> {
     const body: SaveChildAvatarStyleRequest = {
       styleCode,
       ...(presetId ? { presetId } : {}),
+      pins,
     };
     return this.http
       .put<ChildAvatarResponse>(`${environment.apiBaseUrl}/avatar`, body, {

@@ -1732,9 +1732,14 @@ export interface components {
             /** @description L'autre enfant du lien, pour afficher sa photo ou son avatar, et le mot court. */
             links?: components["schemas"]["ParentChildLink"][];
         };
+        AvatarPinRequest: {
+            zoneCode?: string;
+            variantCode?: string;
+        };
         SaveChildAvatarStyleRequest: {
             styleCode?: string;
             presetId?: string;
+            pins?: components["schemas"]["AvatarPinRequest"][];
         };
         ChildAvatarPresetCard: {
             id?: string;
@@ -1777,6 +1782,7 @@ export interface components {
             missingLabel?: string;
             open?: boolean;
             variants?: components["schemas"]["ChildAvatarVariantCard"][];
+            selectedCode?: string;
         };
         CreateTeacherSubjectRequest: {
             /** Format: int64 */

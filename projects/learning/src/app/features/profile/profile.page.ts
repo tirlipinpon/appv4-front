@@ -21,6 +21,7 @@ export class ProfilePage implements OnInit {
   protected readonly avatar = this.avatarApi.avatar;
   protected readonly draftStyle = signal<string | null>(null);
   protected readonly draftPreset = signal<string | null>(null);
+  protected readonly draftPins = signal<Record<string, string>>({});
 
   ngOnInit(): void {
     this.avatarApi.clear();
@@ -62,7 +63,44 @@ export class ProfilePage implements OnInit {
     }
     this.draftStyle.set(code);
     this.draftPreset.set(this.draftPresets()[0]?.id ?? null);
+    const allowed = new Set(
+      this.avatar()?.styles?.find((style) => style.code === code)?.zoneCodes ?? [],
+    );
+    const kept: Record<string, string> = {};
+    for (const [zone, variant] of Object.entries(this.draftPins())) {
+      if (allowed.has(zone)) {
+        kept[zone] = variant;
+      }
+    }
+    this.draftPins.set(kept);
     this.saveError.set(null);
+  }
+
+  protected chooseVariant(zoneCode: string | undefined, variantCode: string | undefined): void {
+    const zone = this.avatar()?.zones?.find((item) => item.code === zoneCode);
+    if (!zone || zone.open !== true || !zoneCode || !variantCode) {
+      return;
+    }
+    this.draftPins.update((pins) => ({ ...pins, [zoneCode]: variantCode }));
+    this.saveError.set(null);
+  }
+
+  protected pressed(zoneCode: string | undefined, variantCode: string | undefined): true | null {
+    if (!zoneCode || !variantCode) {
+      return null;
+    }
+    return this.draftPins()[zoneCode] === variantCode ? true : null;
+  }
+
+  protected choiceText(): string {
+    const zones = this.avatar()?.zones ?? [];
+    return zones
+      .map((zone) => {
+        const chosen = zone.code ? this.draftPins()[zone.code] : undefined;
+        return zone.variants?.find((variant) => variant.code === chosen)?.label;
+      })
+      .filter((label): label is string => !!label)
+      .join(' ');
   }
 
   protected choosePreset(id: string | undefined): void {
@@ -80,7 +118,13 @@ export class ProfilePage implements OnInit {
     }
     this.saving.set(true);
     this.saveError.set(null);
-    this.avatarApi.save(styleCode, this.draftPreset()).subscribe({
+    const allowed = new Set(
+      this.avatar()?.styles?.find((style) => style.code === styleCode)?.zoneCodes ?? [],
+    );
+    const pins = Object.entries(this.draftPins())
+      .filter(([zone]) => allowed.has(zone))
+      .map(([zoneCode, variantCode]) => ({ zoneCode, variantCode }));
+    this.avatarApi.save(styleCode, this.draftPreset(), pins).subscribe({
       next: (person) => {
         this.saving.set(false);
         this.keepDraft(person);
@@ -99,5 +143,12 @@ export class ProfilePage implements OnInit {
   private keepDraft(person: ChildAvatarResponse): void {
     this.draftStyle.set(person.styleCode ?? null);
     this.draftPreset.set(person.presetId ?? null);
+    const pins: Record<string, string> = {};
+    for (const zone of person.zones ?? []) {
+      if (zone.code && zone.selectedCode) {
+        pins[zone.code] = zone.selectedCode;
+      }
+    }
+    this.draftPins.set(pins);
   }
 }

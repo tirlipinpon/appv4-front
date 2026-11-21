@@ -8,6 +8,7 @@
   } @else if (avatar(); as person) {
     <article class="profile-preview" data-testid="profile-preview">
       <p class="profile-style" data-testid="profile-style">{{ styleName() }}</p>
+      <p class="profile-choices" data-testid="profile-choices">{{ choiceText() }}</p>
       @if (styleCredit()) {
         <p class="profile-credit" data-testid="profile-credit">{{ styleCredit() }}</p>
       }
@@ -75,8 +76,10 @@
               <li>
                 <button
                   type="button"
-                  disabled
+                  [disabled]="zone.open !== true"
+                  [attr.aria-pressed]="pressed(zone.code, variant.code)"
                   [attr.data-testid]="'profile-variant-' + zone.code + '-' + variant.code"
+                  (click)="chooseVariant(zone.code, variant.code)"
                 >
                   {{ variant.label }}
                 </button>
