@@ -59,6 +59,18 @@ export class ProfilePage implements OnInit {
     return person?.styles?.find((style) => style.code === code)?.presets ?? [];
   }
 
+  protected presetName(): string | null {
+    return this.draftPresets().find((preset) => preset.id === this.draftPreset())?.name ?? null;
+  }
+
+  protected openZones() {
+    return (this.avatar()?.zones ?? []).filter((zone) => zone.open === true);
+  }
+
+  protected closedZones() {
+    return (this.avatar()?.zones ?? []).filter((zone) => zone.open !== true);
+  }
+
   protected chooseStyle(code: string | undefined): void {
     if (!code) {
       return;

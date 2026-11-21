@@ -19,63 +19,59 @@
     </article>
 
     @if (person.styles?.length) {
-      <ul class="avatar-chips" data-testid="profile-styles">
-        @for (style of person.styles; track style.code) {
-          <li>
-            <button
-              type="button"
-              class="avatar-chip"
-              [class.avatar-chip--on]="draftStyle() === style.code"
-              [attr.data-testid]="'profile-style-choice-' + style.code"
-              [attr.aria-pressed]="draftStyle() === style.code"
-              (click)="chooseStyle(style.code)"
-            >
-              {{ style.name }}
-            </button>
-          </li>
+      <details class="avatar-fold" data-testid="profile-available">
+        <summary>
+          <span>{{ styleName() }}</span>
+          @if (presetName()) {
+            <span class="avatar-fold-side">{{ presetName() }}</span>
+          }
+        </summary>
+        <ul class="avatar-chips" data-testid="profile-styles">
+          @for (style of person.styles; track style.code) {
+            <li>
+              <button
+                type="button"
+                class="avatar-chip"
+                [class.avatar-chip--on]="draftStyle() === style.code"
+                [attr.data-testid]="'profile-style-choice-' + style.code"
+                [attr.aria-pressed]="draftStyle() === style.code"
+                (click)="chooseStyle(style.code)"
+              >
+                {{ style.name }}
+              </button>
+            </li>
+          }
+        </ul>
+        @if (draftPresets().length) {
+          <ul class="avatar-chips" data-testid="profile-presets">
+            @for (preset of draftPresets(); track preset.id) {
+              <li>
+                <button
+                  type="button"
+                  class="avatar-chip"
+                  [class.avatar-chip--on]="draftPreset() === preset.id"
+                  [attr.data-testid]="'profile-preset-' + preset.id"
+                  [attr.aria-pressed]="draftPreset() === preset.id"
+                  (click)="choosePreset(preset.id)"
+                >
+                  {{ preset.name }}
+                </button>
+              </li>
+            }
+          </ul>
         }
-      </ul>
-    }
-
-    @if (draftPresets().length) {
-      <ul class="avatar-chips" data-testid="profile-presets">
-        @for (preset of draftPresets(); track preset.id) {
-          <li>
-            <button
-              type="button"
-              class="avatar-chip"
-              [class.avatar-chip--on]="draftPreset() === preset.id"
-              [attr.data-testid]="'profile-preset-' + preset.id"
-              [attr.aria-pressed]="draftPreset() === preset.id"
-              (click)="choosePreset(preset.id)"
-            >
-              {{ preset.name }}
-            </button>
-          </li>
-        }
-      </ul>
+      </details>
     }
 
     @if (sameStyle() && person.zones) {
-      <ul class="avatar-zones" data-testid="profile-zones">
-        @for (zone of person.zones; track zone.code) {
-          <li class="avatar-zone" [attr.data-testid]="'profile-zone-' + zone.code">
-            <header class="avatar-zone-head">
-              <h2>{{ zone.label }}</h2>
-              @if (zone.open === true) {
-                <p class="avatar-zone-state" [attr.data-testid]="'profile-open-' + zone.code">Ouvert</p>
-              } @else if (zone.thresholdLabel) {
-                <p class="avatar-zone-state" [attr.data-testid]="'profile-threshold-' + zone.code">
-                  {{ zone.thresholdLabel }}
-                </p>
-              }
-            </header>
-            @if (zone.missingLabel) {
-              <p class="avatar-missing" [attr.data-testid]="'profile-missing-' + zone.code">
-                {{ zone.missingLabel }}
-              </p>
-            }
-            @if (zone.open === true && zone.variants) {
+      <div class="avatar-zones" data-testid="profile-zones">
+        @for (zone of openZones(); track zone.code) {
+          <details class="avatar-fold" [attr.data-testid]="'profile-zone-' + zone.code">
+            <summary>
+              <span>{{ zone.label }}</span>
+              <span class="avatar-fold-side" [attr.data-testid]="'profile-open-' + zone.code">Ouvert</span>
+            </summary>
+            @if (zone.variants) {
               <ul class="avatar-grid">
                 @for (variant of zone.variants; track variant.code) {
                   <li>
@@ -96,9 +92,22 @@
                 }
               </ul>
             }
-          </li>
+          </details>
         }
-      </ul>
+        @for (zone of closedZones(); track zone.code) {
+          <article class="avatar-later" [attr.data-testid]="'profile-zone-' + zone.code">
+            <h2>{{ zone.label }}</h2>
+            @if (zone.thresholdLabel) {
+              <p [attr.data-testid]="'profile-threshold-' + zone.code">{{ zone.thresholdLabel }}</p>
+            }
+            @if (zone.missingLabel) {
+              <p class="avatar-missing" [attr.data-testid]="'profile-missing-' + zone.code">
+                {{ zone.missingLabel }}
+              </p>
+            }
+          </article>
+        }
+      </div>
     }
 
     <button
