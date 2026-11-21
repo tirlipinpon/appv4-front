@@ -104,19 +104,25 @@
     <p class="home-progress-status home-progress-error" data-testid="home-badges-error">{{ badgesError() }}</p>
   } @else if (badges(); as collection) {
     @if ((collection.gainedToday ?? []).length > 0) {
-      <section class="home-badges" data-testid="home-badges-today">
-        <h2>Aujourd'hui</h2>
-        <ul>
+      <section class="home-today" data-testid="home-badges-today">
+        <p class="home-today-eyebrow">Aujourd'hui</p>
+        <ul class="home-today-list">
           @for (gained of collection.gainedToday ?? []; track gained.code) {
-            <li [attr.data-testid]="'home-badge-' + gained.code">
-              <a routerLink="/rewards">{{ gained.name }} · {{ gained.level }}</a>
+            <li class="home-today-card" [attr.data-testid]="'home-badge-' + gained.code">
+              <a class="home-today-link" routerLink="/rewards">
+                <app-badge-medal [code]="gained.code ?? ''" [level]="gained.level ?? 0" size="sm" />
+                <span class="home-today-copy">
+                  <span class="home-today-name">{{ gained.name }}</span>
+                  <span class="home-today-meta">Niveau {{ gained.level }}</span>
+                </span>
+              </a>
             </li>
           }
         </ul>
       </section>
     }
     @if (collection.notice?.label) {
-      <p class="home-badge-notice" data-testid="home-badge-notice">{{ collection.notice.label }}</p>
+      <p class="home-today-notice" data-testid="home-badge-notice">{{ collection.notice.label }}</p>
     }
   }
 </section>
