@@ -1,0 +1,80 @@
+import type { StyleDefinition } from '@dicebear/core';
+import adventurer from '@dicebear/styles/adventurer.json';
+import adventurerNeutral from '@dicebear/styles/adventurer-neutral.json';
+import avataaars from '@dicebear/styles/avataaars.json';
+import avataaarsNeutral from '@dicebear/styles/avataaars-neutral.json';
+import bigEars from '@dicebear/styles/big-ears.json';
+import bigEarsNeutral from '@dicebear/styles/big-ears-neutral.json';
+import bigSmile from '@dicebear/styles/big-smile.json';
+import bottts from '@dicebear/styles/bottts.json';
+import botttsNeutral from '@dicebear/styles/bottts-neutral.json';
+import cameo from '@dicebear/styles/cameo.json';
+import clay from '@dicebear/styles/clay.json';
+import critters from '@dicebear/styles/critters.json';
+import croodles from '@dicebear/styles/croodles.json';
+import croodlesNeutral from '@dicebear/styles/croodles-neutral.json';
+import cutouts from '@dicebear/styles/cutouts.json';
+import dylan from '@dicebear/styles/dylan.json';
+import funEmoji from '@dicebear/styles/fun-emoji.json';
+import gaze from '@dicebear/styles/gaze.json';
+import lineFace from '@dicebear/styles/line-face.json';
+import lorelei from '@dicebear/styles/lorelei.json';
+import loreleiNeutral from '@dicebear/styles/lorelei-neutral.json';
+import marbles from '@dicebear/styles/marbles.json';
+import micah from '@dicebear/styles/micah.json';
+import miniavs from '@dicebear/styles/miniavs.json';
+import moods from '@dicebear/styles/moods.json';
+import notionists from '@dicebear/styles/notionists.json';
+import notionistsNeutral from '@dicebear/styles/notionists-neutral.json';
+import openPeeps from '@dicebear/styles/open-peeps.json';
+import personas from '@dicebear/styles/personas.json';
+import pixelArt from '@dicebear/styles/pixel-art.json';
+import pixelArtNeutral from '@dicebear/styles/pixel-art-neutral.json';
+import pixelbot from '@dicebear/styles/pixelbot.json';
+import shadows from '@dicebear/styles/shadows.json';
+import sprouts from '@dicebear/styles/sprouts.json';
+import thumbs from '@dicebear/styles/thumbs.json';
+import toonHead from '@dicebear/styles/toon-head.json';
+import voxelArt from '@dicebear/styles/voxel-art.json';
+import voxelBot from '@dicebear/styles/voxel-bot.json';
+
+export const CHARACTER_STYLES: Record<string, StyleDefinition> = {
+  adventurer: adventurer as StyleDefinition,
+  'adventurer-neutral': adventurerNeutral as StyleDefinition,
+  avataaars: avataaars as StyleDefinition,
+  'avataaars-neutral': avataaarsNeutral as StyleDefinition,
+  'big-ears': bigEars as StyleDefinition,
+  'big-ears-neutral': bigEarsNeutral as StyleDefinition,
+  'big-smile': bigSmile as StyleDefinition,
+  bottts: bottts as StyleDefinition,
+  'bottts-neutral': botttsNeutral as StyleDefinition,
+  cameo: cameo as StyleDefinition,
+  clay: clay as StyleDefinition,
+  critters: critters as StyleDefinition,
+  croodles: croodles as StyleDefinition,
+  'croodles-neutral': croodlesNeutral as StyleDefinition,
+  cutouts: cutouts as StyleDefinition,
+  dylan: dylan as StyleDefinition,
+  'fun-emoji': funEmoji as StyleDefinition,
+  gaze: gaze as StyleDefinition,
+  'line-face': lineFace as StyleDefinition,
+  lorelei: lorelei as StyleDefinition,
+  'lorelei-neutral': loreleiNeutral as StyleDefinition,
+  marbles: marbles as StyleDefinition,
+  micah: micah as StyleDefinition,
+  miniavs: miniavs as StyleDefinition,
+  moods: moods as StyleDefinition,
+  notionists: notionists as StyleDefinition,
+  'notionists-neutral': notionistsNeutral as StyleDefinition,
+  'open-peeps': openPeeps as StyleDefinition,
+  personas: personas as StyleDefinition,
+  'pixel-art': pixelArt as StyleDefinition,
+  'pixel-art-neutral': pixelArtNeutral as StyleDefinition,
+  pixelbot: pixelbot as StyleDefinition,
+  shadows: shadows as StyleDefinition,
+  sprouts: sprouts as StyleDefinition,
+  thumbs: thumbs as StyleDefinition,
+  'toon-head': toonHead as StyleDefinition,
+  'voxel-art': voxelArt as StyleDefinition,
+  'voxel-bot': voxelBot as StyleDefinition,
+};

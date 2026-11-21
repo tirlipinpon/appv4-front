@@ -7,6 +7,9 @@
     <p class="profile-status profile-error" role="alert" data-testid="profile-error">{{ message }}</p>
   } @else if (avatar(); as person) {
     <article class="profile-preview" data-testid="profile-preview">
+      @if (faceUri(); as src) {
+        <img class="profile-face" data-testid="profile-face" [src]="src" alt="" />
+      }
       <p class="profile-style" data-testid="profile-style">{{ styleName() }}</p>
       <p class="profile-choices" data-testid="profile-choices">{{ choiceText() }}</p>
       @if (styleCredit()) {
