@@ -2500,6 +2500,7 @@ export interface components {
         ChildFeaturedQuestionItem: {
             /** Format: int64 */
             subjectId?: number;
+            subjectName?: string;
             /** Format: int64 */
             questionId?: number;
             prompt?: string;
