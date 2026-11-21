@@ -1758,6 +1758,11 @@ export interface components {
             name?: string;
             credit?: string;
             zoneCodes?: string[];
+            presets?: components["schemas"]["ChildAvatarStylePreset"][];
+        };
+        ChildAvatarStylePreset: {
+            id?: string;
+            name?: string;
         };
         ChildAvatarVariantCard: {
             code?: string;
