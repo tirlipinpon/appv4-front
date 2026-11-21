@@ -55,6 +55,32 @@ describe('RewardsPage', () => {
     http.verify();
   });
 
+  it('affiche Leçons finies après Missions terminées quand l API l envoie', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({
+      badges: [
+        { code: 'missions_terminees', name: 'Missions terminées', level: 1, retainedValue: 1, nextThreshold: 2 },
+        {
+          code: 'lecons_finies',
+          name: 'Leçons finies',
+          level: 1,
+          retainedValue: 1,
+          nextThreshold: 2,
+          unlockedOn: '2026-11-21',
+        },
+      ],
+      gainedToday: [],
+    });
+    fixture.detectChanges();
+
+    const cards = [...fixture.nativeElement.querySelectorAll('[data-testid^="reward-"]')]
+      .map((node: Element) => node.getAttribute('data-testid'));
+    expect(cards.indexOf('reward-missions_terminees')).toBeLessThan(cards.indexOf('reward-lecons_finies'));
+    expect(fixture.nativeElement.querySelector('[data-testid="reward-gauge-lecons_finies"]').textContent).toContain('1 / 2');
+    expect(fixture.nativeElement.querySelector('[data-testid="reward-date-lecons_finies"]').textContent).toContain('2026-11-21');
+    http.verify();
+  });
+
   it('affiche le libellé d avertissement renvoyé par l API', () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/badges').flush({

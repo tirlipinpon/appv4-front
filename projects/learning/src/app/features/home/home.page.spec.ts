@@ -191,6 +191,29 @@ describe('HomePage', () => {
     http.verify();
   });
 
+  it('affiche Leçons finies dans les gains du jour quand l API l envoie', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/progress').flush({
+      xpTotal: 0,
+      currentStreak: 0,
+      leagueLabel: 'Bronze',
+      weekDays: [false, false, false, false, false, false, false],
+    });
+    http.expectOne('http://localhost:8080/api/ext/today').flush({ mission: null });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({
+      badges: [],
+      gainedToday: [{ code: 'lecons_finies', name: 'Leçons finies', level: 1 }],
+    });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([]);
+    fixture.detectChanges();
+
+    const today = fixture.nativeElement.querySelector('[data-testid="home-badges-today"]');
+    expect(today.textContent).toContain('Leçons finies');
+    expect(today.textContent).toContain('1');
+    expect(fixture.nativeElement.querySelector('[data-testid="home-badge-notice"]')).toBeNull();
+    http.verify();
+  });
+
   it('affiche le niveau gagné aujourd hui et l avertissement renvoyés', () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/progress').flush({
