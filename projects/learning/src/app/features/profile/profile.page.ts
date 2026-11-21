@@ -23,6 +23,7 @@ export class ProfilePage implements OnInit {
   protected readonly draftStyle = signal<string | null>(null);
   protected readonly draftPreset = signal<string | null>(null);
   protected readonly draftPins = signal<Record<string, string>>({});
+  private readonly tiles = new Map<string, string | null>();
 
   ngOnInit(): void {
     this.avatarApi.clear();
@@ -91,6 +92,34 @@ export class ProfilePage implements OnInit {
       return null;
     }
     return this.draftPins()[zoneCode] === variantCode ? true : null;
+  }
+
+  protected tileUri(zoneCode: string | undefined, variantCode: string | undefined): string | null {
+    const person = this.avatar();
+    const seed = person?.seed;
+    const styleCode = this.draftStyle();
+    if (!person || !seed || !styleCode || !zoneCode || !variantCode || person.styleCode !== styleCode) {
+      return null;
+    }
+    const key = `${seed}|${styleCode}|${this.draftPreset() ?? ''}|${zoneCode}|${variantCode}`;
+    const cached = this.tiles.get(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const preset = person.presets?.find((item) => item.id === this.draftPreset());
+    const uri = avatarDataUri({
+      seed,
+      styleCode,
+      options: preset?.options ?? null,
+      pins: { [zoneCode]: variantCode },
+    });
+    this.tiles.set(key, uri);
+    return uri;
+  }
+
+  protected sameStyle(): boolean {
+    const person = this.avatar();
+    return !!person && person.styleCode === this.draftStyle();
   }
 
   protected faceUri(): string | null {
