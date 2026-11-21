@@ -25,7 +25,6 @@ export class ProfilePage implements OnInit {
   protected readonly draftStyle = signal<string | null>(null);
   protected readonly draftPreset = signal<string | null>(null);
   protected readonly draftPins = signal<Record<string, string>>({});
-  protected readonly partsReady = signal(false);
   private readonly tiles = new Map<string, string | null>();
 
   ngOnInit(): void {
@@ -80,19 +79,30 @@ export class ProfilePage implements OnInit {
     return `#${hex}`;
   }
 
+  protected draftZones() {
+    const code = this.draftStyle();
+    const fromStyle = this.avatar()?.styles?.find((style) => style.code === code)?.zones;
+    if (fromStyle?.length) {
+      return fromStyle;
+    }
+    if (this.sameStyle()) {
+      return this.avatar()?.zones ?? [];
+    }
+    return [];
+  }
+
   protected openZones() {
-    return (this.avatar()?.zones ?? []).filter((zone) => zone.open === true);
+    return this.draftZones().filter((zone) => zone.open === true);
   }
 
   protected closedZones() {
-    return (this.avatar()?.zones ?? []).filter((zone) => zone.open !== true);
+    return this.draftZones().filter((zone) => zone.open !== true);
   }
 
   protected chooseStyle(code: string | undefined): void {
     if (!code) {
       return;
     }
-    this.partsReady.set(false);
     this.draftStyle.set(code);
     this.draftPreset.set(this.draftPresets()[0]?.id ?? null);
     const allowed = new Set(
@@ -109,7 +119,7 @@ export class ProfilePage implements OnInit {
   }
 
   protected chooseVariant(zoneCode: string | undefined, variantCode: string | undefined): void {
-    const zone = this.avatar()?.zones?.find((item) => item.code === zoneCode);
+    const zone = this.draftZones().find((item) => item.code === zoneCode);
     if (!zone || zone.open !== true || !zoneCode || !variantCode) {
       return;
     }
@@ -128,7 +138,7 @@ export class ProfilePage implements OnInit {
     const person = this.avatar();
     const seed = person?.seed;
     const styleCode = this.draftStyle();
-    if (!person || !seed || !styleCode || !zoneCode || !variantCode || person.styleCode !== styleCode) {
+    if (!person || !seed || !styleCode || !zoneCode || !variantCode) {
       return null;
     }
     const key = `${seed}|${styleCode}|${this.draftPreset() ?? ''}|${zoneCode}|${variantCode}`;
@@ -178,7 +188,7 @@ export class ProfilePage implements OnInit {
   }
 
   protected choiceText(): string {
-    const zones = this.avatar()?.zones ?? [];
+    const zones = this.draftZones();
     return zones
       .map((zone) => {
         const chosen = zone.code ? this.draftPins()[zone.code] : undefined;
@@ -192,7 +202,6 @@ export class ProfilePage implements OnInit {
     if (!id) {
       return;
     }
-    this.partsReady.set(false);
     this.draftPreset.set(id);
     this.saveError.set(null);
   }
@@ -222,7 +231,6 @@ export class ProfilePage implements OnInit {
       next: (person) => {
         this.saving.set(false);
         this.keepDraft(person);
-        this.partsReady.set(true);
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);

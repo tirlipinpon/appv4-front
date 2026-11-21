@@ -1777,6 +1777,7 @@ export interface components {
             credit?: string;
             zoneCodes?: string[];
             presets?: components["schemas"]["ChildAvatarStylePreset"][];
+            zones?: components["schemas"]["ChildAvatarZoneCard"][];
         };
         ChildAvatarStylePreset: {
             id?: string;

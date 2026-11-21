@@ -73,10 +73,9 @@
       </details>
     }
 
-    @if (sameStyle() && person.zones) {
+    @if (openZones().length || closedZones().length) {
       <div class="avatar-zones" data-testid="profile-zones">
         @for (zone of openZones(); track zone.code) {
-          @if (partsReady()) {
           <details class="avatar-fold" [attr.data-testid]="'profile-zone-' + zone.code">
             <summary>
               <app-avatar-zone-icon [code]="zone.code ?? null" />
@@ -105,7 +104,6 @@
               </ul>
             }
           </details>
-          }
         }
         @for (zone of closedZones(); track zone.code) {
           <article class="avatar-later" [attr.data-testid]="'profile-zone-' + zone.code">
