@@ -34,12 +34,12 @@ export class RewardsPage implements OnInit {
   }
 
   protected hasGauge(badge: ChildBadge): boolean {
-    return badge.nextThreshold != null && badge.retainedValue != null;
+    return badge.nextThreshold != null && badge.progressValue != null;
   }
 
   protected gaugeWidth(badge: ChildBadge): number {
     const next = badge.nextThreshold ?? 0;
-    const value = badge.retainedValue ?? 0;
+    const value = badge.progressValue ?? 0;
     if (next <= 0) {
       return 0;
     }

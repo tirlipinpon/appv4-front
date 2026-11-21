@@ -21,7 +21,7 @@
             <p class="rewards-level">Niveau {{ badge.level }}</p>
             @if (hasGauge(badge)) {
               <p class="rewards-gauge" [attr.data-testid]="'reward-gauge-' + badge.code">
-                {{ badge.retainedValue }} / {{ badge.nextThreshold }}
+                {{ badge.progressValue }} / {{ badge.nextThreshold }}
               </p>
               <span class="rewards-meter" aria-hidden="true">
                 <span class="rewards-meter-fill" [style.width.%]="gaugeWidth(badge)"></span>
