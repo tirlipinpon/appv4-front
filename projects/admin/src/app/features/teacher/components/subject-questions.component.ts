@@ -925,10 +925,24 @@ export class SubjectQuestionsComponent implements OnInit {
           }))
         : emptySimonElements(),
     );
+    // Liste / clone sans octets : le détail GET remplit l'image à cliquer et le fond puzzle.
+    this.clickImage.set(saved.imageDataUrl);
+    this.boardMode.set(saved.boardMode);
+    this.boardImage.set(saved.boardImageDataUrl);
+    this.clickZones.set(saved.zones.map((zone) => ({ ...zone, points: zone.points.map((point) => ({ ...point })) })));
   }
 
   private questionMissesImageBytes(question: SavedQuestion): boolean {
+    const mainImageMissing =
+      (question.formCode === FORM.IMAGE_CLICK || question.formCode === FORM.PUZZLE) &&
+      !question.imageDataUrl;
+    const boardMissing =
+      question.formCode === FORM.PUZZLE &&
+      question.boardMode === PUZZLE_BOARD_MODE.FOND &&
+      !question.boardImageDataUrl;
     return (
+      mainImageMissing ||
+      boardMissing ||
       question.choices.some((row) => row.hasImage && !row.imageDataUrl) ||
       question.pairs.some(
         (row) =>

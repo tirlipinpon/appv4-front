@@ -6,7 +6,7 @@
     <p class="field-error" role="alert">{{ message }}</p>
   }
 
-  @if (!loading() && error() === null) {
+  @if (!loading()) {
     <div class="composer">
     <h3 class="zone">{{ editingId() ? 'Modifier la question' : 'Nouvelle question' }}</h3>
     @if (formsLoading()) {
