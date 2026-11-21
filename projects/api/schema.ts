@@ -2412,6 +2412,7 @@ export interface components {
             minutesLeft?: number;
             continueLesson?: components["schemas"]["ChildSubjectContinueLesson"];
             topics?: components["schemas"]["ChildSubjectTopicCard"][];
+            lesson?: components["schemas"]["ChildSubjectLesson"];
         };
         ChildSubjectContinueLesson: {
             /** Format: int64 */
@@ -2425,6 +2426,20 @@ export interface components {
             rewardXp?: number;
             /** Format: int64 */
             playQuestionId?: number;
+        };
+        ChildSubjectLesson: {
+            /** Format: int32 */
+            remainingCount?: number;
+            questions?: components["schemas"]["ChildSubjectLessonQuestion"][];
+        };
+        ChildSubjectLessonQuestion: {
+            /** Format: int64 */
+            questionId?: number;
+            prompt?: string;
+            /** @enum {string} */
+            mark?: "none" | "black" | "yellow";
+            /** Format: int32 */
+            yellowCount?: number;
         };
         ChildSubjectTopicCard: {
             /** Format: int64 */
