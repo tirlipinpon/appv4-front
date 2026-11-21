@@ -68,9 +68,14 @@
     @if (items.length > 0) {
       <section class="home-featured" data-testid="home-featured">
         @for (item of items; track $index) {
-          <a class="home-featured-link" [routerLink]="['/learn', item.subjectId, 'play', item.questionId]">{{
-            item.prompt
-          }}</a>
+          <a class="home-featured-link" [routerLink]="['/learn', item.subjectId, 'play', item.questionId]">
+            <span class="home-featured-mark" aria-hidden="true"></span>
+            <span class="home-featured-copy">
+              <span class="home-featured-subject">{{ item.subjectName }}</span>
+              <span class="home-featured-prompt">{{ item.prompt }}</span>
+            </span>
+            <span class="home-featured-go" aria-hidden="true"></span>
+          </a>
         }
       </section>
     }

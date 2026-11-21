@@ -262,9 +262,9 @@ describe('HomePage', () => {
     });
     http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
     http.expectOne('http://localhost:8080/api/ext/featured').flush([
-      { subjectId: 4, questionId: 11, prompt: 'Combien font 3 + 4 ?' },
-      { subjectId: 5, questionId: 21, prompt: 'Quel animal dit miaou ?' },
-      { subjectId: 8, questionId: 30, prompt: 'Quelle est la capitale de la France ?' },
+      { subjectId: 4, subjectName: 'Mathématiques', questionId: 11, prompt: 'Combien font 3 + 4 ?' },
+      { subjectId: 5, subjectName: 'Mots', questionId: 21, prompt: 'Quel animal dit miaou ?' },
+      { subjectId: 8, subjectName: 'Histoire', questionId: 30, prompt: 'Quelle est la capitale de la France ?' },
     ]);
     fixture.detectChanges();
 
@@ -282,11 +282,14 @@ describe('HomePage', () => {
 
     const links: NodeListOf<HTMLAnchorElement> = block.querySelectorAll('a');
     expect(links.length).toBe(3);
-    expect(links[0].textContent?.trim()).toBe('Combien font 3 + 4 ?');
+    expect(links[0].querySelector('.home-featured-subject')?.textContent?.trim()).toBe('Mathématiques');
+    expect(links[0].querySelector('.home-featured-prompt')?.textContent?.trim()).toBe('Combien font 3 + 4 ?');
     expect(links[0].getAttribute('href')).toBe('/learn/4/play/11');
-    expect(links[1].textContent?.trim()).toBe('Quel animal dit miaou ?');
+    expect(links[1].querySelector('.home-featured-subject')?.textContent?.trim()).toBe('Mots');
+    expect(links[1].querySelector('.home-featured-prompt')?.textContent?.trim()).toBe('Quel animal dit miaou ?');
     expect(links[1].getAttribute('href')).toBe('/learn/5/play/21');
-    expect(links[2].textContent?.trim()).toBe('Quelle est la capitale de la France ?');
+    expect(links[2].querySelector('.home-featured-subject')?.textContent?.trim()).toBe('Histoire');
+    expect(links[2].querySelector('.home-featured-prompt')?.textContent?.trim()).toBe('Quelle est la capitale de la France ?');
     expect(links[2].getAttribute('href')).toBe('/learn/8/play/30');
     expect(block.querySelectorAll('button').length).toBe(0);
     expect(block.querySelector('h1, h2, h3, h4')).toBeNull();
@@ -295,6 +298,9 @@ describe('HomePage', () => {
         .replace('Combien font 3 + 4 ?', '')
         .replace('Quel animal dit miaou ?', '')
         .replace('Quelle est la capitale de la France ?', '')
+        .replace('Mathématiques', '')
+        .replace('Mots', '')
+        .replace('Histoire', '')
         .trim(),
     ).toBe('');
     http.verify();
@@ -311,8 +317,8 @@ describe('HomePage', () => {
     http.expectOne('http://localhost:8080/api/ext/today').flush({ mission: null });
     http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
     http.expectOne('http://localhost:8080/api/ext/featured').flush([
-      { subjectId: 2, questionId: 9, prompt: 'Épelle le mot chat' },
-      { subjectId: 6, questionId: 4, prompt: '2 × 5 = ?' },
+      { subjectId: 2, subjectName: 'Français', questionId: 9, prompt: 'Épelle le mot chat' },
+      { subjectId: 6, subjectName: 'Mathématiques', questionId: 4, prompt: '2 × 5 = ?' },
     ]);
     fixture.detectChanges();
 
@@ -320,9 +326,10 @@ describe('HomePage', () => {
       '[data-testid="home-featured"] a',
     );
     expect(links.length).toBe(2);
-    expect(links[0].textContent?.trim()).toBe('Épelle le mot chat');
+    expect(links[0].querySelector('.home-featured-subject')?.textContent?.trim()).toBe('Français');
+    expect(links[0].querySelector('.home-featured-prompt')?.textContent?.trim()).toBe('Épelle le mot chat');
     expect(links[0].getAttribute('href')).toBe('/learn/2/play/9');
-    expect(links[1].textContent?.trim()).toBe('2 × 5 = ?');
+    expect(links[1].querySelector('.home-featured-prompt')?.textContent?.trim()).toBe('2 × 5 = ?');
     expect(links[1].getAttribute('href')).toBe('/learn/6/play/4');
     http.verify();
   });
@@ -424,7 +431,7 @@ describe('HomePage', () => {
     });
     http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
     http.expectOne('http://localhost:8080/api/ext/featured').flush([
-      { subjectId: 3, questionId: 15, prompt: 'Lis la phrase à voix haute.' },
+      { subjectId: 3, subjectName: 'Français', questionId: 15, prompt: 'Lis la phrase à voix haute.' },
     ]);
     fixture.detectChanges();
 
@@ -432,7 +439,8 @@ describe('HomePage', () => {
     const block: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-featured"]');
     const mission: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-mission"]');
     const link: HTMLAnchorElement = block.querySelector('a')!;
-    expect(link.textContent?.trim()).toBe('Lis la phrase à voix haute.');
+    expect(link.querySelector('.home-featured-subject')?.textContent?.trim()).toBe('Français');
+    expect(link.querySelector('.home-featured-prompt')?.textContent?.trim()).toBe('Lis la phrase à voix haute.');
     expect(link.getAttribute('href')).toBe('/learn/3/play/15');
     expect(block.compareDocumentPosition(mission) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
