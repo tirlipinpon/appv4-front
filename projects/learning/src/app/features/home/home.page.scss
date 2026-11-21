@@ -146,6 +146,28 @@
   color: color-mix(in srgb, var(--app-text, #fff) 72%, transparent);
 }
 
+.home-featured-status {
+  margin-top: 28px;
+}
+
+.home-featured {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-featured-link {
+  display: block;
+  padding: 0.85rem 0.9rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--app-surface-card, #1c1830) 88%, #6d5efc);
+  border: 1px solid color-mix(in srgb, #c1b4ff 28%, transparent);
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .home-mission {
   margin-top: 28px;
 }

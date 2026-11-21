@@ -58,6 +58,24 @@
     </section>
   }
 
+  @if (featuredLoading()) {
+    <p class="home-progress-status home-featured-status" data-testid="home-featured-loading">Chargement…</p>
+  } @else if (featuredError(); as message) {
+    <p class="home-progress-status home-progress-error home-featured-status" data-testid="home-featured-error">
+      {{ message }}
+    </p>
+  } @else if (featured(); as items) {
+    @if (items.length > 0) {
+      <section class="home-featured" data-testid="home-featured">
+        @for (item of items; track $index) {
+          <a class="home-featured-link" [routerLink]="['/learn', item.subjectId, 'play', item.questionId]">{{
+            item.prompt
+          }}</a>
+        }
+      </section>
+    }
+  }
+
   <section class="home-mission" data-testid="home-mission">
     @if (todayLoading()) {
       <p class="home-progress-status" data-testid="home-mission-loading">Chargement…</p>

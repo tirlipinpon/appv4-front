@@ -42,6 +42,7 @@ describe('HomePage', () => {
     });
     http.expectOne('http://localhost:8080/api/ext/today').flush({ mission: null });
     http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([]);
     fixture.detectChanges();
 
     const stats = fixture.nativeElement.querySelector('[data-testid="home-progress-stats"]');
@@ -109,6 +110,7 @@ describe('HomePage', () => {
       },
     });
     http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([]);
     fixture.detectChanges();
 
     const mission = fixture.nativeElement.querySelector('[data-testid="home-mission"]');
@@ -175,6 +177,7 @@ describe('HomePage', () => {
       },
     });
     http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([]);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="home-mission-status"]').textContent).toContain(
@@ -206,6 +209,7 @@ describe('HomePage', () => {
         remainingCount: 2,
       },
     });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([]);
     fixture.detectChanges();
 
     const today = fixture.nativeElement.querySelector('[data-testid="home-badges-today"]');
@@ -216,6 +220,268 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="home-badge-notice"]').textContent).toContain(
       'Mathématiques : 2 questions ne sont pas encore jaunes.',
     );
+    http.verify();
+  });
+
+  it('affiche trois énoncés après Continuer et avant la mission', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/progress').flush({
+      xpTotal: 0,
+      currentStreak: 0,
+      leagueLabel: 'Bronze',
+      weekDays: [false, false, false, false, false, false, false],
+    });
+    http.expectOne('http://localhost:8080/api/ext/today').flush({
+      mission: {
+        id: 8,
+        objective: 'Joue 2 questions aujourd\'hui',
+        progress: 1,
+        target: 2,
+        rewardXp: 20,
+        status: 'en_cours',
+        statusLabel: 'En cours',
+        secondsRemaining: 5400,
+        playSubjectId: 5,
+        playQuestionId: 21,
+        playable: true,
+        tasks: [
+          {
+            id: 2,
+            label: 'Mots',
+            progress: 0,
+            target: 1,
+            rewardXp: 10,
+            status: 'a_faire',
+            statusLabel: 'À faire',
+            subjectId: 5,
+            questionId: 21,
+            playable: true,
+          },
+        ],
+      },
+    });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([
+      { subjectId: 4, questionId: 11, prompt: 'Combien font 3 + 4 ?' },
+      { subjectId: 5, questionId: 21, prompt: 'Quel animal dit miaou ?' },
+      { subjectId: 8, questionId: 30, prompt: 'Quelle est la capitale de la France ?' },
+    ]);
+    fixture.detectChanges();
+
+    const continueBlock: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-continue"]');
+    const block: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-featured"]');
+    const mission: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-mission"]');
+    expect(continueBlock.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(block.compareDocumentPosition(mission) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(continueBlock.contains(block)).toBeFalse();
+    expect(mission.contains(block)).toBeFalse();
+
+    const links: NodeListOf<HTMLAnchorElement> = block.querySelectorAll('a');
+    expect(links.length).toBe(3);
+    expect(links[0].textContent?.trim()).toBe('Combien font 3 + 4 ?');
+    expect(links[0].getAttribute('href')).toBe('/learn/4/play/11');
+    expect(links[1].textContent?.trim()).toBe('Quel animal dit miaou ?');
+    expect(links[1].getAttribute('href')).toBe('/learn/5/play/21');
+    expect(links[2].textContent?.trim()).toBe('Quelle est la capitale de la France ?');
+    expect(links[2].getAttribute('href')).toBe('/learn/8/play/30');
+    expect(block.querySelectorAll('button').length).toBe(0);
+    expect(block.querySelector('h1, h2, h3, h4')).toBeNull();
+    expect(
+      (block.textContent ?? '')
+        .replace('Combien font 3 + 4 ?', '')
+        .replace('Quel animal dit miaou ?', '')
+        .replace('Quelle est la capitale de la France ?', '')
+        .trim(),
+    ).toBe('');
+    http.verify();
+  });
+
+  it('affiche deux énoncés quand la lecture en renvoie deux', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/progress').flush({
+      xpTotal: 0,
+      currentStreak: 0,
+      leagueLabel: 'Bronze',
+      weekDays: [false, false, false, false, false, false, false],
+    });
+    http.expectOne('http://localhost:8080/api/ext/today').flush({ mission: null });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([
+      { subjectId: 2, questionId: 9, prompt: 'Épelle le mot chat' },
+      { subjectId: 6, questionId: 4, prompt: '2 × 5 = ?' },
+    ]);
+    fixture.detectChanges();
+
+    const links: NodeListOf<HTMLAnchorElement> = fixture.nativeElement.querySelectorAll(
+      '[data-testid="home-featured"] a',
+    );
+    expect(links.length).toBe(2);
+    expect(links[0].textContent?.trim()).toBe('Épelle le mot chat');
+    expect(links[0].getAttribute('href')).toBe('/learn/2/play/9');
+    expect(links[1].textContent?.trim()).toBe('2 × 5 = ?');
+    expect(links[1].getAttribute('href')).toBe('/learn/6/play/4');
+    http.verify();
+  });
+
+  it('ne dessine pas de bloc quand la lecture réussit avec une liste vide', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/progress').flush({
+      xpTotal: 0,
+      currentStreak: 0,
+      leagueLabel: 'Bronze',
+      weekDays: [false, false, false, false, false, false, false],
+    });
+    http.expectOne('http://localhost:8080/api/ext/today').flush({
+      mission: {
+        id: 8,
+        objective: 'Joue 1 question aujourd\'hui',
+        progress: 0,
+        target: 1,
+        rewardXp: 10,
+        status: 'en_cours',
+        statusLabel: 'En cours',
+        secondsRemaining: 60,
+        playSubjectId: 4,
+        playQuestionId: 11,
+        playable: true,
+        tasks: [],
+      },
+    });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="home-featured"]')).toBeNull();
+    const mission: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-mission"]');
+    expect(mission.textContent).toContain('Mission du jour');
+    expect(mission.textContent).toContain('Joue 1 question aujourd\'hui');
+    http.verify();
+  });
+
+  it('affiche le message de l API quand la lecture des questions échoue', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/progress').flush({
+      xpTotal: 0,
+      currentStreak: 0,
+      leagueLabel: 'Bronze',
+      weekDays: [false, false, false, false, false, false, false],
+    });
+    http.expectOne('http://localhost:8080/api/ext/today').flush({ mission: null });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush(
+      { message: 'Lecture des questions indisponible.' },
+      { status: 503, statusText: 'Unavailable' },
+    );
+    fixture.detectChanges();
+
+    const error: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-featured-error"]');
+    expect(error.textContent?.trim()).toBe('Lecture des questions indisponible.');
+    expect(error.classList.contains('home-progress-error')).toBeTrue();
+    expect(fixture.nativeElement.querySelector('[data-testid="home-featured"]')).toBeNull();
+    http.verify();
+  });
+
+  it('place les énoncés avant la mission quand Continuer est absent', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/progress').flush({
+      xpTotal: 10,
+      currentStreak: 1,
+      leagueLabel: 'Bronze',
+      weekDays: [true, false, false, false, false, false, false],
+    });
+    http.expectOne('http://localhost:8080/api/ext/today').flush({
+      mission: {
+        id: 9,
+        objective: 'Joue 1 question aujourd\'hui',
+        progress: 1,
+        target: 1,
+        rewardXp: 10,
+        status: 'terminee',
+        statusLabel: 'Terminée',
+        secondsRemaining: 100,
+        playSubjectId: null,
+        playQuestionId: null,
+        playable: false,
+        tasks: [
+          {
+            id: 3,
+            label: 'Maths',
+            progress: 1,
+            target: 1,
+            rewardXp: 10,
+            status: 'faite',
+            statusLabel: 'Faite',
+            subjectId: 4,
+            questionId: 11,
+            playable: false,
+          },
+        ],
+      },
+    });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([
+      { subjectId: 3, questionId: 15, prompt: 'Lis la phrase à voix haute.' },
+    ]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="home-continue"]')).toBeNull();
+    const block: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-featured"]');
+    const mission: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-mission"]');
+    const link: HTMLAnchorElement = block.querySelector('a')!;
+    expect(link.textContent?.trim()).toBe('Lis la phrase à voix haute.');
+    expect(link.getAttribute('href')).toBe('/learn/3/play/15');
+    expect(block.compareDocumentPosition(mission) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(mission.contains(block)).toBeFalse();
+    http.verify();
+  });
+
+  it('affiche Chargement… tant que la lecture des questions n a pas répondu', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/progress').flush({
+      xpTotal: 0,
+      currentStreak: 0,
+      leagueLabel: 'Bronze',
+      weekDays: [false, false, false, false, false, false, false],
+    });
+    http.expectOne('http://localhost:8080/api/ext/today').flush({
+      mission: {
+        id: 8,
+        objective: 'Joue 1 question aujourd\'hui',
+        progress: 0,
+        target: 1,
+        rewardXp: 10,
+        status: 'en_cours',
+        statusLabel: 'En cours',
+        secondsRemaining: 60,
+        playSubjectId: 4,
+        playQuestionId: 11,
+        playable: true,
+        tasks: [],
+      },
+    });
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+    fixture.detectChanges();
+
+    const pending: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-featured-loading"]');
+    const mission: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-mission"]');
+    expect(pending.textContent?.trim()).toBe('Chargement…');
+    expect(pending.classList.contains('home-progress-status')).toBeTrue();
+    expect(fixture.nativeElement.querySelector('[data-testid="home-mission-loading"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="home-featured"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="home-featured-error"]')).toBeNull();
+    expect(pending.compareDocumentPosition(mission) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+
+    http.expectOne('http://localhost:8080/api/ext/featured').flush([
+      { subjectId: 4, questionId: 11, prompt: 'Combien font 3 + 4 ?' },
+    ]);
     http.verify();
   });
 });
