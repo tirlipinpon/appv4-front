@@ -1399,6 +1399,138 @@ describe('SubjectQuestionsComponent', () => {
     });
   });
 
+  it('reloads click image bytes before saving an edit from the stripped list', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'image_interactive', label: 'Image à cliquer', sortOrder: 8 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 42,
+          formCode: 'image_interactive',
+          formLabel: 'Image à cliquer',
+          prompt: 'Trouve le soleil',
+          imageWebp: '',
+          requireAllCorrect: true,
+          clicksOrdered: true,
+          zones: [
+            {
+              label: 'le soleil',
+              correct: true,
+              shape: 'polygon',
+              points: [
+                { x: 0.1, y: 0.2 },
+                { x: 0.3, y: 0.2 },
+                { x: 0.2, y: 0.4 },
+              ],
+              clickOrder: 1,
+            },
+          ],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    buttonNamed('Modifier')?.click();
+    const detail = http.expectOne(`${questionsUrl}/42`);
+    expect(detail.request.method).toBe('GET');
+    detail.flush({
+      id: 42,
+      formCode: 'image_interactive',
+      formLabel: 'Image à cliquer',
+      prompt: 'Trouve le soleil',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      requireAllCorrect: true,
+      clicksOrdered: true,
+      zones: [
+        {
+          label: 'le soleil',
+          correct: true,
+          shape: 'polygon',
+          points: [
+            { x: 0.1, y: 0.2 },
+            { x: 0.3, y: 0.2 },
+            { x: 0.2, y: 0.4 },
+          ],
+          clickOrder: 1,
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Trouve encore le soleil');
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+
+    const put = http.expectOne(`${questionsUrl}/42`);
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body.prompt).toBe('Trouve encore le soleil');
+    expect(put.request.body.imageWebp).toBe('UklGRiQAAABXRUJQVlA4IBgAAAA=');
+    put.flush({
+      id: 42,
+      formCode: 'image_interactive',
+      formLabel: 'Image à cliquer',
+      prompt: 'Trouve encore le soleil',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      requireAllCorrect: true,
+      clicksOrdered: true,
+      zones: [
+        {
+          label: 'le soleil',
+          correct: true,
+          shape: 'polygon',
+          points: [
+            { x: 0.1, y: 0.2 },
+            { x: 0.3, y: 0.2 },
+            { x: 0.2, y: 0.4 },
+          ],
+          clickOrder: 1,
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Trouve encore le soleil');
+  });
+
+  it('keeps the question list visible when a save returns a validation error', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    buttonNamed('Modifier')?.click();
+    fixture.detectChanges();
+    fixture.componentInstance.setPrompt('2 + 3');
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+
+    const put = http.expectOne(`${questionsUrl}/7`);
+    put.flush(
+      { message: "L'image est obligatoire." },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain("L'image est obligatoire.");
+    expect(fixture.nativeElement.textContent).toContain('2 + 2');
+    expect(fixture.nativeElement.querySelector('.saved')).not.toBeNull();
+  });
+
   function buttonNamed(label: string): HTMLButtonElement | undefined {
     return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
       (button) => button.textContent?.includes(label),
