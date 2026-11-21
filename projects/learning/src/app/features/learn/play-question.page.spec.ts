@@ -551,12 +551,38 @@ describe('PlayQuestionPage', () => {
     fixture.detectChanges();
     (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
     http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts').flush(
-      { message: "Cette partie n'a plus d'essai." },
+      { code: 'ATTEMPTS_EXHAUSTED', message: "Cette partie n'a plus d'essai." },
       { status: 409, statusText: 'Conflict' },
     );
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="play-error"]')?.textContent).toContain("plus d'essai");
     expect(root.querySelector('[data-testid="play-replay"]')).toBeNull();
+    expect(root.querySelector('[data-testid="play-submit"]')).toBeNull();
+    http.verify();
+  });
+
+  it('propose encore Rejouer quand le 409 n’est pas le code ATTEMPTS_EXHAUSTED', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      maxAttempts: 1,
+      attemptsRemaining: 0,
+      content: {},
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    input.value = 'Paris';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts').flush(
+      { code: 'CONFLICT', message: "Cette partie n'a plus d'essai." },
+      { status: 409, statusText: 'Conflict' },
+    );
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="play-replay"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="play-submit"]')).toBeNull();
     http.verify();
   });

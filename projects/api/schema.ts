@@ -1706,7 +1706,7 @@ export interface components {
             answer: components["schemas"]["PreviewPlayAnswer"];
             previewSequence?: number[];
         };
-        SubmitChildAttemptRequest: components["schemas"]["PlayQcmAttempt"] | components["schemas"]["PlayQcmAttemptLegacy"] | components["schemas"]["PlayTrueFalseAttempt"] | components["schemas"]["PlayTrueFalseAttemptLegacy"] | components["schemas"]["PlayMemoryAttempt"] | components["schemas"]["PlayMemoryAttemptLegacy"] | components["schemas"]["PlayOrderAttempt"] | components["schemas"]["PlayOrderAttemptLegacy"] | components["schemas"]["PlayClassificationAttempt"] | components["schemas"]["PlayClassificationAttemptLegacy"] | components["schemas"]["PlayLinksAttempt"] | components["schemas"]["PlayLinksAttemptLegacy"] | components["schemas"]["PlayGapsAttempt"] | components["schemas"]["PlayGapsAttemptLegacy"] | components["schemas"]["PlayImageAttempt"] | components["schemas"]["PlayImageAttemptLegacy"] | components["schemas"]["PlayLettersAttempt"] | components["schemas"]["PlayLettersAttemptLegacy"] | components["schemas"]["PlayTextAttempt"] | components["schemas"]["PlayPuzzleAttempt"] | components["schemas"]["PlayPuzzleAttemptLegacy"] | components["schemas"]["PlaySimonChildAttempt"] | components["schemas"]["PlaySimonAttemptLegacy"];
+        SubmitChildAttemptRequest: components["schemas"]["PlayQcmAttemptChild"] | components["schemas"]["PlayQcmAttemptLegacy"] | components["schemas"]["PlayTrueFalseAttemptChild"] | components["schemas"]["PlayTrueFalseAttemptLegacy"] | components["schemas"]["PlayMemoryAttemptChild"] | components["schemas"]["PlayMemoryAttemptLegacy"] | components["schemas"]["PlayOrderAttemptChild"] | components["schemas"]["PlayOrderAttemptLegacy"] | components["schemas"]["PlayClassificationAttemptChild"] | components["schemas"]["PlayClassificationAttemptLegacy"] | components["schemas"]["PlayLinksAttemptChild"] | components["schemas"]["PlayLinksAttemptLegacy"] | components["schemas"]["PlayGapsAttemptChild"] | components["schemas"]["PlayGapsAttemptLegacy"] | components["schemas"]["PlayImageAttemptChild"] | components["schemas"]["PlayImageAttemptLegacy"] | components["schemas"]["PlayLettersAttemptChild"] | components["schemas"]["PlayLettersAttemptLegacy"] | components["schemas"]["PlayTextAttemptChild"] | components["schemas"]["PlayPuzzleAttemptChild"] | components["schemas"]["PlayPuzzleAttemptLegacy"] | components["schemas"]["PlaySimonChildAttempt"] | components["schemas"]["PlaySimonAttemptLegacy"];
         SubmitGapFillAnswer: {
             /** Format: int32 */
             holeIndex: number;
@@ -2040,8 +2040,11 @@ export interface components {
             /** Format: int32 */
             pointsAwarded: number;
             replayAvailable: boolean;
-            /** @description Étoile après cet essai : none, black ou yellow. */
-            mark: string;
+            /**
+             * @description Étoile après cet essai : none, black ou yellow.
+             * @enum {string}
+             */
+            mark: "none" | "black" | "yellow";
             /**
              * Format: int32
              * @description Nombre d'étoiles jaunes après cet essai. Zéro s'il n'y en a pas.
@@ -2410,8 +2413,11 @@ export interface components {
             iconCode?: string;
             /** @description Couleur #rrggbb de la forme. Null si pas d'identité. */
             color?: string;
-            /** @description Étoile de l'enfant sur cette question : none, black ou yellow. */
-            mark: string;
+            /**
+             * @description Étoile de l'enfant sur cette question : none, black ou yellow.
+             * @enum {string}
+             */
+            mark: "none" | "black" | "yellow";
             /**
              * Format: int32
              * @description Nombre d'étoiles jaunes. Zéro s'il n'y en a pas.
@@ -2735,11 +2741,20 @@ export interface components {
             /** @enum {string} */
             formCode: "qcm";
         };
+        PlayQcmAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            selectedChoiceIds: number[];
+            /** @enum {string} */
+            formCode: "qcm";
+        };
         PlayQcmAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             selectedChoiceIds: number[];
         };
         PlayTrueFalseAttempt: {
@@ -2751,11 +2766,20 @@ export interface components {
             /** @enum {string} */
             formCode: "vrai_faux";
         };
+        PlayTrueFalseAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            statements: components["schemas"]["SubmitStatementAnswer"][];
+            /** @enum {string} */
+            formCode: "vrai_faux";
+        };
         PlayTrueFalseAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             statements: components["schemas"]["SubmitStatementAnswer"][];
         };
         PlayMemoryAttempt: {
@@ -2767,11 +2791,20 @@ export interface components {
             /** @enum {string} */
             formCode: "memory";
         };
+        PlayMemoryAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            memoryMatches: components["schemas"]["SubmitMemoryMatch"][];
+            /** @enum {string} */
+            formCode: "memory";
+        };
         PlayMemoryAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             matchedPairIds: number[];
         };
         PlayOrderAttempt: {
@@ -2783,11 +2816,20 @@ export interface components {
             /** @enum {string} */
             formCode: "order";
         };
+        PlayOrderAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            orderedItemIds: number[];
+            /** @enum {string} */
+            formCode: "order";
+        };
         PlayOrderAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             orderedItemIds: number[];
         };
         PlayClassificationAttempt: {
@@ -2799,11 +2841,20 @@ export interface components {
             /** @enum {string} */
             formCode: "classement";
         };
+        PlayClassificationAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            placements: components["schemas"]["SubmitPlacementAnswer"][];
+            /** @enum {string} */
+            formCode: "classement";
+        };
         PlayClassificationAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             placements: components["schemas"]["SubmitPlacementAnswer"][];
         };
         PlayLinksAttempt: {
@@ -2815,11 +2866,20 @@ export interface components {
             /** @enum {string} */
             formCode: "liens";
         };
+        PlayLinksAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            linkSelections: components["schemas"]["SubmitLinkSelection"][];
+            /** @enum {string} */
+            formCode: "liens";
+        };
         PlayLinksAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             linkMatches: components["schemas"]["SubmitLinkMatchAnswer"][];
         };
         PlayGapsAttempt: {
@@ -2831,11 +2891,20 @@ export interface components {
             /** @enum {string} */
             formCode: "case_vide";
         };
+        PlayGapsAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            gapFills: components["schemas"]["SubmitGapFillAnswer"][];
+            /** @enum {string} */
+            formCode: "case_vide";
+        };
         PlayGapsAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             gapFills: components["schemas"]["SubmitGapFillAnswer"][];
         };
         PlayImageAttempt: {
@@ -2847,11 +2916,20 @@ export interface components {
             /** @enum {string} */
             formCode: "image_interactive";
         };
+        PlayImageAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            zoneClicks: components["schemas"]["SubmitZoneClickAnswer"][];
+            /** @enum {string} */
+            formCode: "image_interactive";
+        };
         PlayImageAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             zoneClicks: components["schemas"]["SubmitZoneClickAnswer"][];
         };
         PlayLettersAttempt: {
@@ -2863,11 +2941,20 @@ export interface components {
             /** @enum {string} */
             formCode: "reponse_libre";
         };
+        PlayLettersAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            attempt: string;
+            /** @enum {string} */
+            formCode: "reponse_libre";
+        };
         PlayLettersAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             attempt: string;
         };
         PlayTextAttempt: {
@@ -2875,6 +2962,15 @@ export interface components {
             submissionId?: string;
             /** Format: uuid */
             playId?: string;
+            attempt: string;
+            /** @enum {string} */
+            formCode: "texte";
+        };
+        PlayTextAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             attempt: string;
             /** @enum {string} */
             formCode: "texte";
@@ -2888,11 +2984,20 @@ export interface components {
             /** @enum {string} */
             formCode: "puzzle";
         };
+        PlayPuzzleAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
+            puzzlePlacements: components["schemas"]["SubmitPuzzlePiecePlacement"][];
+            /** @enum {string} */
+            formCode: "puzzle";
+        };
         PlayPuzzleAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             puzzlePlacements: components["schemas"]["SubmitPuzzlePiecePlacement"][];
         };
         PlaySimonAttempt: {
@@ -2908,7 +3013,7 @@ export interface components {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             simonSequence: number[];
             /** @enum {string} */
             formCode: "simon";
@@ -2919,7 +3024,7 @@ export interface components {
             /** Format: uuid */
             submissionId?: string;
             /** Format: uuid */
-            playId?: string;
+            playId: string;
             simonSequence: number[];
             /** Format: uuid */
             challengeId?: string;

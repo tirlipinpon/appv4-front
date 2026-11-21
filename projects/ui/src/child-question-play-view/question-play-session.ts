@@ -2,32 +2,29 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, DestroyRef, signal } from '@angular/core';
 import { Observable, Subscription, map, of } from 'rxjs';
 
+import type { components } from '@appv4/api';
+
 import type { ChildQuestionPlayViewComponent, MemoryMatch } from './child-question-play-view.component';
 import { autoSubmitQuestion, isPlayableQuestionForm, playForms, toPlayModel } from './play-form-rules';
 import type { PlayAnswer, PlayQuestion } from './play-form-rules';
 
-export interface PlayVerdict {
+/** Verdict enfant tel que le contrat le décrit. L'aperçu professeur n'en reprend que le score. */
+export type PlayVerdict = components['schemas']['ChildAttemptResultResponse'];
+
+interface ScoredVerdict {
   passed: boolean;
   scorePercent: number;
-  attemptRank?: number;
-  attemptsRemaining?: number;
-  pointsAwarded?: number;
-  replayAvailable?: boolean;
-  /** Étoile renvoyée par le serveur : none, black ou yellow. */
-  mark?: string;
-  /** Nombre d'étoiles jaunes renvoyé par le serveur. */
-  yellowCount?: number;
 }
 
-export interface QuestionPlayTransport {
+export interface QuestionPlayTransport<T extends ScoredVerdict = PlayVerdict> {
   open(): Observable<PlayQuestion>;
-  grade(answer: PlayAnswer, question: PlayQuestion): Observable<PlayVerdict>;
+  grade(answer: PlayAnswer, question: PlayQuestion): Observable<T>;
   letterLocks(attempt: string): Observable<{ locks: boolean[] }>;
   memoryPair(match: MemoryMatch): Observable<{ matched: boolean }>;
 }
 
 /** État de jeu et réponses en vol, partagé entre Learning et l'aperçu professeur. */
-export class QuestionPlaySession {
+export class QuestionPlaySession<T extends ScoredVerdict = PlayVerdict> {
   readonly question = signal<PlayQuestion | null>(null);
   readonly model = computed(() => {
     const question = this.question();
@@ -36,7 +33,7 @@ export class QuestionPlaySession {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
-  readonly result = signal<PlayVerdict | null>(null);
+  readonly result = signal<T | null>(null);
   readonly needsReplay = signal(false);
   /** Le serveur a refusé : cette page n'a plus d'essai. Rejouer ne doit pas revenir. */
   readonly attemptsExhausted = signal(false);
@@ -47,7 +44,7 @@ export class QuestionPlaySession {
 
   private readonly pending = signal<PlayAnswer | null>(null);
   private readonly selection = signal(0);
-  private transport?: QuestionPlayTransport;
+  private transport?: QuestionPlayTransport<T>;
   private mainRequest?: Subscription;
   private letterRequest?: Subscription;
 
@@ -75,7 +72,7 @@ export class QuestionPlaySession {
     destroy.onDestroy(() => this.cancelRequests());
   }
 
-  open(transport: QuestionPlayTransport): void {
+  open(transport: QuestionPlayTransport<T>): void {
     this.close();
     this.playId.set(crypto.randomUUID());
     this.transport = transport;
@@ -150,7 +147,7 @@ export class QuestionPlaySession {
         this.pending.set(null);
         this.saving.set(false);
         this.result.set(result);
-        if (typeof result.attemptsRemaining === 'number') {
+        if ('attemptsRemaining' in result && typeof result.attemptsRemaining === 'number') {
           this.attemptsRemaining.set(result.attemptsRemaining);
         }
         const view = this.view();
@@ -172,7 +169,7 @@ export class QuestionPlaySession {
     });
   }
 
-  private checkLetters(view: ChildQuestionPlayViewComponent, result?: PlayVerdict): void {
+  private checkLetters(view: ChildQuestionPlayViewComponent, result?: T): void {
     this.letterRequest?.unsubscribe();
     this.letterRequest = this.transport?.letterLocks(view.letterAttemptForLocks()).subscribe({
       next: ({ locks }) => {
@@ -232,11 +229,11 @@ export class QuestionPlaySession {
   }
 }
 
-/** Message renvoyé quand le budget de la page est épuisé. */
+/** Le budget de la page est épuisé quand le serveur renvoie ce code, pas une phrase. */
 function pageBudgetSpent(error: HttpErrorResponse): boolean {
   const body = error.error;
-  if (!body || typeof body !== 'object' || !('message' in body)) {
+  if (!body || typeof body !== 'object' || !('code' in body)) {
     return false;
   }
-  return (body as { message: unknown }).message === "Cette partie n'a plus d'essai.";
+  return (body as { code: unknown }).code === 'ATTEMPTS_EXHAUSTED';
 }

@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import type { components } from '@appv4/api';
-import type { MemoryMatch, PlayAnswer, PlayQuestion } from '@appv4/ui';
+import type { MemoryMatch, PlayQuestion } from '@appv4/ui';
 import type {
   ChildAttemptResultResponse,
   ChildLearningQuestionsResponse,
@@ -12,7 +12,8 @@ import type {
 import { ChildAuthService } from '../../../core/auth/child-auth.service';
 import { environment } from '../../../../environments/environment';
 
-type ChildSubmission = Extract<components['schemas']['SubmitChildAttemptRequest'], { formCode: PlayAnswer['formCode'] }>;
+type DropPlayId<T> = T extends unknown ? Omit<T, 'playId'> : never;
+type ChildAttemptBody = DropPlayId<components['schemas']['SubmitChildAttemptRequest']>;
 
 /**
  * Questions et tentatives enfant (LEARN-30 / BACK-16).
@@ -41,7 +42,7 @@ export class ChildPlayService {
   submitAttempt(
     subjectId: number,
     questionId: number,
-    body: ChildSubmission,
+    body: ChildAttemptBody,
     playId: string | null,
   ): Observable<ChildAttemptResultResponse> {
     return this.http.post<ChildAttemptResultResponse>(
