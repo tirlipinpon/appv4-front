@@ -64,7 +64,10 @@ export async function mockQuestionPlay(
   };
   const playPath = preview ? path : `${path}/play`;
   await page.route((url) => url.pathname === playPath, (route) => route.fulfill({
-    json: { questionId, subjectId, formCode: question.formCode, formLabel: question.formLabel, prompt: question.prompt, content },
+    json: {
+      questionId, subjectId, formCode: question.formCode, formLabel: question.formLabel, prompt: question.prompt,
+      maxAttempts: 2, attemptsRemaining: 2, content,
+    },
   }));
   await page.route((url) => url.pathname === `${path}/memory-pair`, (route) => {
     const match = route.request().postDataJSON() as MemoryMatch;
@@ -74,7 +77,13 @@ export async function mockQuestionPlay(
     const request = route.request().postDataJSON();
     const answer = (preview ? request.answer : request) as AttemptBody;
     const result = fixtureVerdict(question.formCode, answer, columns.map((row) => row.columnId), words.map((row) => row.wordId));
-    return route.fulfill({ status: preview ? 200 : 201, json: { attemptId: 1, ...result } });
+    return route.fulfill({
+      status: preview ? 200 : 201,
+      json: {
+        attemptId: 1, ...result, attemptRank: 1, attemptsRemaining: 1,
+        pointsAwarded: result.passed ? 10 : 0, replayAvailable: true,
+      },
+    });
   });
 }
 

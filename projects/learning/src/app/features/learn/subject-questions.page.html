@@ -22,6 +22,16 @@
                 />
               </span>
               <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
+              @if (question.mark === 'yellow') {
+                <span class="mark">
+                  <span class="star star-yellow" data-testid="question-star" aria-hidden="true">★</span>
+                  <span data-testid="question-yellow-count">{{ question.yellowCount }}</span>
+                </span>
+              } @else if (question.mark === 'black') {
+                <span class="mark">
+                  <span class="star star-black" data-testid="question-star" aria-hidden="true">★</span>
+                </span>
+              }
             </a>
           } @else {
             <div class="row locked" [attr.data-testid]="'subject-question-' + question.questionId">
@@ -33,6 +43,16 @@
                 />
               </span>
               <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
+              @if (question.mark === 'yellow') {
+                <span class="mark">
+                  <span class="star star-yellow" data-testid="question-star" aria-hidden="true">★</span>
+                  <span data-testid="question-yellow-count">{{ question.yellowCount }}</span>
+                </span>
+              } @else if (question.mark === 'black') {
+                <span class="mark">
+                  <span class="star star-black" data-testid="question-star" aria-hidden="true">★</span>
+                </span>
+              }
               <span class="hint">Pas encore jouable</span>
             </div>
           }

@@ -18,6 +18,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
+import type { components } from '@appv4/api';
 import {
   ChildQuestionPlayViewComponent,
   QuestionFormMarkComponent,
@@ -201,7 +202,11 @@ export class SubjectQuestionsComponent implements OnInit {
   readonly letterBusyId = signal<number | null>(null);
   readonly previewOpen = signal(false);
   private readonly previewView = viewChild(ChildQuestionPlayViewComponent);
-  readonly previewPlay = new QuestionPlaySession(this.destroyRef, this.previewView, httpErrorMessage);
+  readonly previewPlay = new QuestionPlaySession<components['schemas']['PreviewVerdict']>(
+    this.destroyRef,
+    this.previewView,
+    httpErrorMessage,
+  );
   private followSeq = 0;
 
   openChildPreview(question: SavedQuestion): void {

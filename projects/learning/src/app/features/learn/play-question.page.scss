@@ -82,6 +82,23 @@ h1 {
   font-weight: 800;
 }
 
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.35rem 0 0;
+  font-weight: 700;
+}
+
+.star-yellow {
+  color: #f5c518;
+}
+
+.star-black {
+  color: #141414;
+  filter: drop-shadow(0 0 1px #fff);
+}
+
 .after {
   display: flex;
   flex-wrap: wrap;

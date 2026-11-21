@@ -1706,7 +1706,7 @@ export interface components {
             answer: components["schemas"]["PreviewPlayAnswer"];
             previewSequence?: number[];
         };
-        SubmitChildAttemptRequest: components["schemas"]["PlayQcmAttempt"] | components["schemas"]["PlayQcmAttemptLegacy"] | components["schemas"]["PlayTrueFalseAttempt"] | components["schemas"]["PlayTrueFalseAttemptLegacy"] | components["schemas"]["PlayMemoryAttempt"] | components["schemas"]["PlayMemoryAttemptLegacy"] | components["schemas"]["PlayOrderAttempt"] | components["schemas"]["PlayOrderAttemptLegacy"] | components["schemas"]["PlayClassificationAttempt"] | components["schemas"]["PlayClassificationAttemptLegacy"] | components["schemas"]["PlayLinksAttempt"] | components["schemas"]["PlayLinksAttemptLegacy"] | components["schemas"]["PlayGapsAttempt"] | components["schemas"]["PlayGapsAttemptLegacy"] | components["schemas"]["PlayImageAttempt"] | components["schemas"]["PlayImageAttemptLegacy"] | components["schemas"]["PlayLettersAttempt"] | components["schemas"]["PlayLettersAttemptLegacy"] | components["schemas"]["PlayTextAttempt"] | components["schemas"]["PlayPuzzleAttempt"] | components["schemas"]["PlayPuzzleAttemptLegacy"] | components["schemas"]["PlaySimonChildAttempt"] | components["schemas"]["PlaySimonAttemptLegacy"];
+        SubmitChildAttemptRequest: components["schemas"]["PlayQcmAttemptChild"] | components["schemas"]["PlayQcmAttemptLegacy"] | components["schemas"]["PlayTrueFalseAttemptChild"] | components["schemas"]["PlayTrueFalseAttemptLegacy"] | components["schemas"]["PlayMemoryAttemptChild"] | components["schemas"]["PlayMemoryAttemptLegacy"] | components["schemas"]["PlayOrderAttemptChild"] | components["schemas"]["PlayOrderAttemptLegacy"] | components["schemas"]["PlayClassificationAttemptChild"] | components["schemas"]["PlayClassificationAttemptLegacy"] | components["schemas"]["PlayLinksAttemptChild"] | components["schemas"]["PlayLinksAttemptLegacy"] | components["schemas"]["PlayGapsAttemptChild"] | components["schemas"]["PlayGapsAttemptLegacy"] | components["schemas"]["PlayImageAttemptChild"] | components["schemas"]["PlayImageAttemptLegacy"] | components["schemas"]["PlayLettersAttemptChild"] | components["schemas"]["PlayLettersAttemptLegacy"] | components["schemas"]["PlayTextAttemptChild"] | components["schemas"]["PlayPuzzleAttemptChild"] | components["schemas"]["PlayPuzzleAttemptLegacy"] | components["schemas"]["PlaySimonChildAttempt"] | components["schemas"]["PlaySimonAttemptLegacy"];
         SubmitGapFillAnswer: {
             /** Format: int32 */
             holeIndex: number;
@@ -1889,6 +1889,10 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
         };
+        OpenPlayRequest: {
+            /** Format: uuid */
+            playId?: string;
+        };
         Payload: unknown;
         PlayCard: {
             /** Format: int64 */
@@ -2029,6 +2033,23 @@ export interface components {
             /** Format: int32 */
             scorePercent: number;
             passed: boolean;
+            /** Format: int32 */
+            attemptRank: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
+            /** Format: int32 */
+            pointsAwarded: number;
+            replayAvailable: boolean;
+            /**
+             * @description Étoile après cet essai : none, black ou yellow.
+             * @enum {string}
+             */
+            mark: "none" | "black" | "yellow";
+            /**
+             * Format: int32
+             * @description Nombre d'étoiles jaunes après cet essai. Zéro s'il n'y en a pas.
+             */
+            yellowCount: number;
         };
         ChildLoginRequest: {
             firstName?: string;
@@ -2392,6 +2413,16 @@ export interface components {
             iconCode?: string;
             /** @description Couleur #rrggbb de la forme. Null si pas d'identité. */
             color?: string;
+            /**
+             * @description Étoile de l'enfant sur cette question : none, black ou yellow.
+             * @enum {string}
+             */
+            mark: "none" | "black" | "yellow";
+            /**
+             * Format: int32
+             * @description Nombre d'étoiles jaunes. Zéro s'il n'y en a pas.
+             */
+            yellowCount: number;
         };
         ChildLearningQuestionsResponse: {
             /** Format: int64 */
@@ -2453,6 +2484,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayQcm"];
         };
         PlayTrueFalseQuestion: {
@@ -2471,6 +2506,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayTrueFalse"];
         };
         PlayMemoryQuestion: {
@@ -2489,6 +2528,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayMemory"];
         };
         PlayOrderQuestion: {
@@ -2507,6 +2550,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayOrder"];
         };
         PlayClassificationQuestion: {
@@ -2525,6 +2572,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayClassification"];
         };
         PlayLinksQuestion: {
@@ -2543,6 +2594,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayLinks"];
         };
         PlayGapsQuestion: {
@@ -2561,6 +2616,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayGaps"];
         };
         PlayImageQuestion: {
@@ -2579,6 +2638,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayImage"];
         };
         PlayLettersQuestion: {
@@ -2597,6 +2660,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayLetters"];
         };
         PlayTextQuestion: {
@@ -2615,6 +2682,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayText"];
         };
         PlayPuzzleQuestion: {
@@ -2633,6 +2704,10 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlayPuzzle"];
         };
         PlaySimonQuestion: {
@@ -2651,11 +2726,26 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+            /** Format: int32 */
+            maxAttempts: number;
+            /** Format: int32 */
+            attemptsRemaining: number;
             content: components["schemas"]["PlaySimon"];
         };
         PlayQcmAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            selectedChoiceIds: number[];
+            /** @enum {string} */
+            formCode: "qcm";
+        };
+        PlayQcmAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             selectedChoiceIds: number[];
             /** @enum {string} */
             formCode: "qcm";
@@ -2663,11 +2753,24 @@ export interface components {
         PlayQcmAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             selectedChoiceIds: number[];
         };
         PlayTrueFalseAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            statements: components["schemas"]["SubmitStatementAnswer"][];
+            /** @enum {string} */
+            formCode: "vrai_faux";
+        };
+        PlayTrueFalseAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             statements: components["schemas"]["SubmitStatementAnswer"][];
             /** @enum {string} */
             formCode: "vrai_faux";
@@ -2675,11 +2778,24 @@ export interface components {
         PlayTrueFalseAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             statements: components["schemas"]["SubmitStatementAnswer"][];
         };
         PlayMemoryAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            memoryMatches: components["schemas"]["SubmitMemoryMatch"][];
+            /** @enum {string} */
+            formCode: "memory";
+        };
+        PlayMemoryAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             memoryMatches: components["schemas"]["SubmitMemoryMatch"][];
             /** @enum {string} */
             formCode: "memory";
@@ -2687,11 +2803,24 @@ export interface components {
         PlayMemoryAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             matchedPairIds: number[];
         };
         PlayOrderAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            orderedItemIds: number[];
+            /** @enum {string} */
+            formCode: "order";
+        };
+        PlayOrderAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             orderedItemIds: number[];
             /** @enum {string} */
             formCode: "order";
@@ -2699,11 +2828,24 @@ export interface components {
         PlayOrderAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             orderedItemIds: number[];
         };
         PlayClassificationAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            placements: components["schemas"]["SubmitPlacementAnswer"][];
+            /** @enum {string} */
+            formCode: "classement";
+        };
+        PlayClassificationAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             placements: components["schemas"]["SubmitPlacementAnswer"][];
             /** @enum {string} */
             formCode: "classement";
@@ -2711,11 +2853,24 @@ export interface components {
         PlayClassificationAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             placements: components["schemas"]["SubmitPlacementAnswer"][];
         };
         PlayLinksAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            linkSelections: components["schemas"]["SubmitLinkSelection"][];
+            /** @enum {string} */
+            formCode: "liens";
+        };
+        PlayLinksAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             linkSelections: components["schemas"]["SubmitLinkSelection"][];
             /** @enum {string} */
             formCode: "liens";
@@ -2723,11 +2878,24 @@ export interface components {
         PlayLinksAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             linkMatches: components["schemas"]["SubmitLinkMatchAnswer"][];
         };
         PlayGapsAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            gapFills: components["schemas"]["SubmitGapFillAnswer"][];
+            /** @enum {string} */
+            formCode: "case_vide";
+        };
+        PlayGapsAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             gapFills: components["schemas"]["SubmitGapFillAnswer"][];
             /** @enum {string} */
             formCode: "case_vide";
@@ -2735,11 +2903,24 @@ export interface components {
         PlayGapsAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             gapFills: components["schemas"]["SubmitGapFillAnswer"][];
         };
         PlayImageAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            zoneClicks: components["schemas"]["SubmitZoneClickAnswer"][];
+            /** @enum {string} */
+            formCode: "image_interactive";
+        };
+        PlayImageAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             zoneClicks: components["schemas"]["SubmitZoneClickAnswer"][];
             /** @enum {string} */
             formCode: "image_interactive";
@@ -2747,11 +2928,24 @@ export interface components {
         PlayImageAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             zoneClicks: components["schemas"]["SubmitZoneClickAnswer"][];
         };
         PlayLettersAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            attempt: string;
+            /** @enum {string} */
+            formCode: "reponse_libre";
+        };
+        PlayLettersAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             attempt: string;
             /** @enum {string} */
             formCode: "reponse_libre";
@@ -2759,11 +2953,24 @@ export interface components {
         PlayLettersAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             attempt: string;
         };
         PlayTextAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            attempt: string;
+            /** @enum {string} */
+            formCode: "texte";
+        };
+        PlayTextAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             attempt: string;
             /** @enum {string} */
             formCode: "texte";
@@ -2771,6 +2978,17 @@ export interface components {
         PlayPuzzleAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
+            puzzlePlacements: components["schemas"]["SubmitPuzzlePiecePlacement"][];
+            /** @enum {string} */
+            formCode: "puzzle";
+        };
+        PlayPuzzleAttemptChild: {
+            /** Format: uuid */
+            submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             puzzlePlacements: components["schemas"]["SubmitPuzzlePiecePlacement"][];
             /** @enum {string} */
             formCode: "puzzle";
@@ -2778,11 +2996,15 @@ export interface components {
         PlayPuzzleAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             puzzlePlacements: components["schemas"]["SubmitPuzzlePiecePlacement"][];
         };
         PlaySimonAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId?: string;
             simonSequence: number[];
             /** @enum {string} */
             formCode: "simon";
@@ -2790,6 +3012,8 @@ export interface components {
         PlaySimonChildAttempt: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             simonSequence: number[];
             /** @enum {string} */
             formCode: "simon";
@@ -2799,6 +3023,8 @@ export interface components {
         PlaySimonAttemptLegacy: {
             /** Format: uuid */
             submissionId?: string;
+            /** Format: uuid */
+            playId: string;
             simonSequence: number[];
             /** Format: uuid */
             challengeId?: string;
@@ -4773,7 +4999,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OpenPlayRequest"];
+            };
+        };
         responses: {
             /** @description Contenu jouable correspondant à la forme */
             200: {
@@ -4916,7 +5146,7 @@ export interface operations {
                     "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
-            /** @description Partie expirée, déjà jouée ou clé de soumission utilisée ailleurs */
+            /** @description Partie Simon expirée, clé de soumission utilisée ailleurs, ou page sans essai restant */
             409: {
                 headers: {
                     [name: string]: unknown;

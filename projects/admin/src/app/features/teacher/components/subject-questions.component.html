@@ -1060,7 +1060,7 @@
           (puzzleChange)="previewPlay.onSelectionChange()"
           (simonChange)="previewPlay.onSelectionChange()"
         />
-        @if (!previewPlay.result() && !previewPlay.autoSubmit() && !previewPlay.needsReplay() && !previewPlay.canRetry()) {
+        @if (!previewPlay.result() && !previewPlay.autoSubmit() && !previewPlay.needsReplay() && !previewPlay.canRetry() && !previewPlay.attemptsExhausted()) {
           <button
             type="button"
             class="child-preview-submit"
