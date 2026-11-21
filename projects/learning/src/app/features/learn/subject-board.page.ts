@@ -7,8 +7,8 @@ import { knownSubjectIcon, subjectCardTint, subjectIconSrc } from '../../shared/
 import { ChildSubjectBoardService } from './data-access/child-subject-board.service';
 
 /**
- * Page matière Learn — données teacher présentes uniquement (nom, icône, grade).
- * Les thèmes / leçons / Continuer board restent hors UI tant qu'un flux teacher ne les crée pas.
+ * Page matière Learn. La leçon affichée est celle renvoyée par le board.
+ * Les thèmes déjà présents dans la réponse restent hors de cet écran.
  */
 @Component({
   selector: 'app-subject-board-page',
