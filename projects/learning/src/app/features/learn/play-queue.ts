@@ -17,10 +17,23 @@ export function readPlayQueue(state: unknown): PlayQueueState {
   };
 }
 
-export function nextQuestionId(queue: number[], currentId: number): number | null {
+export function nextQuestionId(
+  queue: number[],
+  currentId: number,
+  stillToValidate?: number[],
+): number | null {
   const index = queue.indexOf(currentId);
-  if (index < 0 || index + 1 >= queue.length) {
+  if (index >= 0 && index + 1 < queue.length) {
+    return queue[index + 1];
+  }
+  if (stillToValidate == null || stillToValidate.length === 0) {
     return null;
   }
-  return queue[index + 1];
+  const remaining = new Set(stillToValidate);
+  const later = queue.filter((id, position) => position > index && id !== currentId && remaining.has(id));
+  if (later.length > 0) {
+    return later[0];
+  }
+  const earlier = queue.find((id) => id !== currentId && remaining.has(id));
+  return earlier ?? null;
 }
