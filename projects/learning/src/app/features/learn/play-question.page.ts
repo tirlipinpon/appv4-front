@@ -24,6 +24,7 @@ export class PlayQuestionPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly subjectId = signal(0);
+  private readonly questionId = signal(0);
   protected readonly queue = signal<PlayQueueState>({ source: 'questions', queue: [] });
   protected readonly play = new QuestionPlaySession(this.destroyRef, this.view, apiErrorMessage);
 
@@ -38,6 +39,7 @@ export class PlayQuestionPage implements OnInit {
         return;
       }
       this.subjectId.set(subjectId);
+      this.questionId.set(questionId);
       this.play.open({
         open: () => this.api.openQuestion(subjectId, questionId, this.play.playId()),
         grade: (answer, question) => {
@@ -60,7 +62,7 @@ export class PlayQuestionPage implements OnInit {
   }
 
   protected nextId(): number | null {
-    return nextQuestionId(this.queue().queue, Number(this.route.snapshot.paramMap.get('questionId')));
+    return nextQuestionId(this.queue().queue, this.questionId());
   }
 
   protected sameQueue(): PlayQueueState {
