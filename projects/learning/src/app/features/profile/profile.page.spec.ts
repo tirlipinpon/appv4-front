@@ -54,12 +54,7 @@ describe('ProfilePage', () => {
     expect(root.querySelector('[data-testid="profile-face"]')?.getAttribute('src')).toContain('svg');
     expect(root.querySelector('[data-testid="profile-threshold-mouth"]')?.textContent).toContain('20 XP');
     expect(root.querySelector('[data-testid="profile-missing-mouth"]')?.textContent).toContain('encore 20 XP');
-    const variant = root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement;
-    expect(variant).not.toBeNull();
-    expect(variant.disabled).toBeTrue();
-    variant.click();
-    fixture.detectChanges();
-    expect(variant.getAttribute('aria-pressed')).toBeNull();
+    expect(root.querySelector('[data-testid="profile-variant-mouth-happy01"]')).toBeNull();
     http.verify();
   });
 
@@ -267,11 +262,9 @@ describe('ProfilePage', () => {
     http.expectOne('http://localhost:8080/api/ext/avatar').flush(openMouth);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
-    const hair = root.querySelector('[data-testid="profile-variant-hair-variant01"]') as HTMLButtonElement;
-    expect(hair.disabled).toBeTrue();
-    hair.click();
-    fixture.detectChanges();
-    expect(hair.getAttribute('aria-pressed')).toBeNull();
+    expect(root.querySelector('[data-testid="profile-variant-hair-variant01"]')).toBeNull();
+    expect(root.querySelector('[data-testid="profile-threshold-hair"]')?.textContent).toContain('140 XP');
+    expect(root.querySelector('[data-testid="profile-missing-hair"]')?.textContent).toContain('encore 120 XP');
 
     (root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement).click();
     (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();

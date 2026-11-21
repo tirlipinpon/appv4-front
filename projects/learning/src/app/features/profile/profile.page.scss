@@ -61,10 +61,10 @@ h1 {
 .avatar-chips {
   list-style: none;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin: 14px 0 0;
-  padding: 0 0 4px;
-  overflow-x: auto;
+  padding: 0;
 }
 
 .avatar-chip {
@@ -118,14 +118,9 @@ h1 {
   color: color-mix(in srgb, var(--app-text, #fff) 70%, transparent);
 }
 
-.avatar-grid-wrap {
-  position: relative;
-  margin-top: 10px;
-}
-
 .avatar-grid {
   list-style: none;
-  margin: 0;
+  margin: 10px 0 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -162,25 +157,6 @@ h1 {
 .avatar-tile--on {
   border-color: #8b7cff;
   background: color-mix(in srgb, #6d5efc 35%, #120e22);
-}
-
-.avatar-tile:disabled {
-  opacity: 0.55;
-}
-
-.avatar-lock {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: #1a1630;
-  border: 1px solid color-mix(in srgb, #c1b4ff 40%, transparent);
-  font-size: 0.85rem;
-  font-weight: 800;
-  pointer-events: none;
 }
 
 .avatar-save {

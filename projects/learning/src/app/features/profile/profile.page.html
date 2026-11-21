@@ -75,33 +75,27 @@
                 {{ zone.missingLabel }}
               </p>
             }
-            <div class="avatar-grid-wrap">
-              @if (zone.variants) {
-                <ul class="avatar-grid">
-                  @for (variant of zone.variants; track variant.code) {
-                    <li>
-                      <button
-                        type="button"
-                        class="avatar-tile"
-                        [class.avatar-tile--on]="pressed(zone.code, variant.code) === true"
-                        [disabled]="zone.open !== true"
-                        [attr.aria-pressed]="pressed(zone.code, variant.code)"
-                        [attr.data-testid]="'profile-variant-' + zone.code + '-' + variant.code"
-                        (click)="chooseVariant(zone.code, variant.code)"
-                      >
-                        @if (tileUri(zone.code, variant.code); as tile) {
-                          <img [src]="tile" alt="" />
-                        }
-                        <span class="avatar-tile-label">{{ variant.label }}</span>
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
-              @if (zone.open !== true && zone.thresholdLabel) {
-                <p class="avatar-lock">{{ zone.thresholdLabel }}</p>
-              }
-            </div>
+            @if (zone.open === true && zone.variants) {
+              <ul class="avatar-grid">
+                @for (variant of zone.variants; track variant.code) {
+                  <li>
+                    <button
+                      type="button"
+                      class="avatar-tile"
+                      [class.avatar-tile--on]="pressed(zone.code, variant.code) === true"
+                      [attr.aria-pressed]="pressed(zone.code, variant.code)"
+                      [attr.data-testid]="'profile-variant-' + zone.code + '-' + variant.code"
+                      (click)="chooseVariant(zone.code, variant.code)"
+                    >
+                      @if (tileUri(zone.code, variant.code); as tile) {
+                        <img [src]="tile" alt="" />
+                      }
+                      <span class="avatar-tile-label">{{ variant.label }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
           </li>
         }
       </ul>
