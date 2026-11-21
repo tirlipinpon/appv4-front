@@ -129,6 +129,35 @@ describe('ProfilePage', () => {
     http.verify();
   });
 
+  it('change la palette du style choisi avant enregistrement', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush({
+      ...withChoices,
+      styles: withChoices.styles.map((style) =>
+        style.code === 'fun-emoji'
+          ? {
+              ...style,
+              presets: [
+                { id: 'plain', name: 'Plain', options: { backgroundColor: ['ffffff'] } },
+                { id: 'ink', name: 'Ink', options: { backgroundColor: ['000000'] } },
+              ],
+            }
+          : style,
+      ),
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const plain = root.querySelector('[data-testid="profile-face"]')?.getAttribute('src');
+    (root.querySelector('[data-testid="profile-preset-ink"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-preset-ink"]')?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('[data-testid="profile-face"]')?.getAttribute('src')).not.toBe(plain);
+    http.verify();
+  });
+
   it('sans enregistrer, rouvrir Profil revient au style déjà gardé', () => {
     const first = setup();
     first.http.expectOne('http://localhost:8080/api/ext/avatar').flush(withChoices);

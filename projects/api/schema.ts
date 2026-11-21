@@ -1768,6 +1768,9 @@ export interface components {
         ChildAvatarStylePreset: {
             id?: string;
             name?: string;
+            options?: {
+                [key: string]: unknown;
+            };
         };
         ChildAvatarVariantCard: {
             code?: string;

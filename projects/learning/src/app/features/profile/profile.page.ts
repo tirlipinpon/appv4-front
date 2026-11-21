@@ -106,11 +106,10 @@ export class ProfilePage implements OnInit {
     if (cached !== undefined) {
       return cached;
     }
-    const preset = person.presets?.find((item) => item.id === this.draftPreset());
     const uri = avatarDataUri({
       seed,
       styleCode,
-      options: preset?.options ?? null,
+      options: this.paletteOptions(),
       pins: { [zoneCode]: variantCode },
     });
     this.tiles.set(key, uri);
@@ -129,16 +128,23 @@ export class ProfilePage implements OnInit {
     if (!person || !seed || !styleCode) {
       return null;
     }
-    const sameStyle = person.styleCode === styleCode;
-    const preset = sameStyle
-      ? person.presets?.find((item) => item.id === this.draftPreset())
-      : undefined;
     return avatarDataUri({
       seed,
       styleCode,
-      options: preset?.options ?? null,
+      options: this.paletteOptions(),
       pins: this.draftPins(),
     });
+  }
+
+  private paletteOptions(): Record<string, unknown> | null {
+    const chosen = this.draftPresets().find((item) => item.id === this.draftPreset());
+    if (chosen?.options) {
+      return chosen.options;
+    }
+    if (this.avatar()?.styleCode !== this.draftStyle()) {
+      return null;
+    }
+    return this.avatar()?.presets?.find((item) => item.id === this.draftPreset())?.options ?? null;
   }
 
   protected choiceText(): string {
