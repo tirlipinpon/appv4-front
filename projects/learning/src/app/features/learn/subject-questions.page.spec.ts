@@ -67,4 +67,89 @@ describe('SubjectQuestionsPage', () => {
     expect(root.querySelector('[data-testid="subject-question-7"]')).toBeTruthy();
     http.verify();
   });
+
+  it('affiche l’étoile jaune et le compte renvoyés par le serveur', () => {
+    const { fixture, request, http } = setup();
+    request(5, 0).flush({
+      subjectId: 5,
+      subjectName: 'Maths',
+      questions: [{
+        questionId: 12,
+        formCode: 'qcm',
+        prompt: 'Question 12',
+        formLabel: 'QCM',
+        mark: 'yellow',
+        yellowCount: 3,
+      }],
+      nextCursor: null,
+    });
+    fixture.detectChanges();
+    const row = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="subject-question-12"]')!;
+    const star = row.querySelector('[data-testid="question-star"]');
+    expect(star?.textContent).toContain('★');
+    expect(getComputedStyle(star as HTMLElement).color).toBe('rgb(245, 197, 24)');
+    expect(row.querySelector('[data-testid="question-yellow-count"]')?.textContent?.trim()).toBe('3');
+    http.verify();
+  });
+
+  it('affiche une étoile noire sans compte quand le serveur dit black', () => {
+    const { fixture, request, http } = setup();
+    request(5, 0).flush({
+      subjectId: 5,
+      subjectName: 'Maths',
+      questions: [{
+        questionId: 13,
+        formCode: 'qcm',
+        prompt: 'Question 13',
+        formLabel: 'QCM',
+        mark: 'black',
+        yellowCount: 4,
+      }],
+      nextCursor: null,
+    });
+    fixture.detectChanges();
+    const row = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="subject-question-13"]')!;
+    const star = row.querySelector('[data-testid="question-star"]');
+    expect(star?.textContent).toContain('★');
+    expect(getComputedStyle(star as HTMLElement).color).toBe('rgb(20, 20, 20)');
+    expect(row.querySelector('[data-testid="question-yellow-count"]')).toBeNull();
+    expect(row.textContent).not.toContain('4');
+    http.verify();
+  });
+
+  it('n’affiche pas d’étoile quand le serveur n’en pose pas', () => {
+    const { fixture, request, http } = setup();
+    request(5, 0).flush({
+      subjectId: 5,
+      subjectName: 'Maths',
+      questions: [
+        {
+          questionId: 14,
+          formCode: 'qcm',
+          prompt: 'Question 14',
+          formLabel: 'QCM',
+          mark: 'none',
+          yellowCount: 9,
+        },
+        {
+          questionId: 15,
+          formCode: 'qcm',
+          prompt: 'Question 15',
+          formLabel: 'QCM',
+          yellowCount: 8,
+        },
+      ],
+      nextCursor: null,
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    for (const id of [14, 15]) {
+      const row = root.querySelector(`[data-testid="subject-question-${id}"]`)!;
+      expect(row.querySelector('[data-testid="question-star"]')).toBeNull();
+      expect(row.querySelector('[data-testid="question-yellow-count"]')).toBeNull();
+    }
+    expect(root.textContent).not.toContain('9');
+    expect(root.textContent).not.toContain('8');
+    http.verify();
+  });
 });

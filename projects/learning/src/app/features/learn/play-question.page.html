@@ -53,6 +53,16 @@
         @if (verdict.pointsAwarded !== undefined && verdict.pointsAwarded !== null) {
           <p data-testid="play-points">Points : {{ verdict.pointsAwarded }}</p>
         }
+        @if (verdict.mark === 'yellow') {
+          <p class="mark">
+            <span class="star star-yellow" data-testid="play-star" aria-hidden="true">★</span>
+            <span data-testid="play-yellow-count">{{ verdict.yellowCount }}</span>
+          </p>
+        } @else if (verdict.mark === 'black') {
+          <p class="mark">
+            <span class="star star-black" data-testid="play-star" aria-hidden="true">★</span>
+          </p>
+        }
       </div>
       <div class="after">
         @if (verdict.replayAvailable === true) {

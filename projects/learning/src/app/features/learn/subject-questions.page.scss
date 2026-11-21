@@ -76,6 +76,22 @@ a.row {
   font-weight: 600;
 }
 
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 700;
+}
+
+.star-yellow {
+  color: #f5c518;
+}
+
+.star-black {
+  color: #141414;
+  filter: drop-shadow(0 0 1px #fff);
+}
+
 .hint {
   font-size: 0.8rem;
   color: var(--app-text-muted, #64748b);

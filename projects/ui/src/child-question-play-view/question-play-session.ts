@@ -13,6 +13,10 @@ export interface PlayVerdict {
   attemptsRemaining?: number;
   pointsAwarded?: number;
   replayAvailable?: boolean;
+  /** Étoile renvoyée par le serveur : none, black ou yellow. */
+  mark?: string;
+  /** Nombre d'étoiles jaunes renvoyé par le serveur. */
+  yellowCount?: number;
 }
 
 export interface QuestionPlayTransport {

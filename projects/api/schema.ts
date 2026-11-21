@@ -2040,6 +2040,13 @@ export interface components {
             /** Format: int32 */
             pointsAwarded: number;
             replayAvailable: boolean;
+            /** @description Étoile après cet essai : none, black ou yellow. */
+            mark: string;
+            /**
+             * Format: int32
+             * @description Nombre d'étoiles jaunes après cet essai. Zéro s'il n'y en a pas.
+             */
+            yellowCount: number;
         };
         ChildLoginRequest: {
             firstName?: string;
@@ -2403,6 +2410,13 @@ export interface components {
             iconCode?: string;
             /** @description Couleur #rrggbb de la forme. Null si pas d'identité. */
             color?: string;
+            /** @description Étoile de l'enfant sur cette question : none, black ou yellow. */
+            mark: string;
+            /**
+             * Format: int32
+             * @description Nombre d'étoiles jaunes. Zéro s'il n'y en a pas.
+             */
+            yellowCount: number;
         };
         ChildLearningQuestionsResponse: {
             /** Format: int64 */

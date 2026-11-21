@@ -560,4 +560,126 @@ describe('PlayQuestionPage', () => {
     expect(root.querySelector('[data-testid="play-submit"]')).toBeNull();
     http.verify();
   });
+
+  it('affiche l’étoile jaune et le compte du verdict à côté des points', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      content: {},
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    input.value = 'Paris';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts').flush({
+      passed: true,
+      scorePercent: 100,
+      pointsAwarded: 10,
+      mark: 'yellow',
+      yellowCount: 2,
+    });
+    fixture.detectChanges();
+    const verdict = root.querySelector('[data-testid="play-result"]')!;
+    expect(verdict.querySelector('[data-testid="play-points"]')?.textContent).toContain('10');
+    const star = verdict.querySelector('[data-testid="play-star"]');
+    expect(star?.textContent).toContain('★');
+    expect(getComputedStyle(star as HTMLElement).color).toBe('rgb(245, 197, 24)');
+    expect(verdict.querySelector('[data-testid="play-yellow-count"]')?.textContent?.trim()).toBe('2');
+    http.verify();
+  });
+
+  it('affiche une étoile noire sans compte à côté des points du verdict', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      content: {},
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    input.value = 'Paris';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts').flush({
+      passed: false,
+      scorePercent: 0,
+      pointsAwarded: 0,
+      mark: 'black',
+      yellowCount: 4,
+    });
+    fixture.detectChanges();
+    const verdict = root.querySelector('[data-testid="play-result"]')!;
+    expect(verdict.querySelector('[data-testid="play-points"]')?.textContent).toContain('0');
+    const star = verdict.querySelector('[data-testid="play-star"]');
+    expect(star?.textContent).toContain('★');
+    expect(getComputedStyle(star as HTMLElement).color).toBe('rgb(20, 20, 20)');
+    expect(verdict.querySelector('[data-testid="play-yellow-count"]')).toBeNull();
+    expect(verdict.textContent).not.toContain('4');
+    http.verify();
+  });
+
+  it('n’affiche pas d’étoile au verdict quand le serveur n’en pose pas', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      content: {},
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    input.value = 'Paris';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts').flush({
+      passed: true,
+      scorePercent: 100,
+      pointsAwarded: 10,
+      mark: 'none',
+      yellowCount: 9,
+    });
+    fixture.detectChanges();
+    const verdict = root.querySelector('[data-testid="play-result"]')!;
+    expect(verdict.querySelector('[data-testid="play-points"]')?.textContent).toContain('10');
+    expect(verdict.querySelector('[data-testid="play-star"]')).toBeNull();
+    expect(verdict.querySelector('[data-testid="play-yellow-count"]')).toBeNull();
+    expect(verdict.textContent).not.toContain('9');
+    http.verify();
+  });
+
+  it('n’affiche pas d’étoile au verdict quand la marque est absente', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      content: {},
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    input.value = 'Paris';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="play-submit"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/attempts').flush({
+      passed: true,
+      scorePercent: 100,
+      pointsAwarded: 10,
+      yellowCount: 8,
+    });
+    fixture.detectChanges();
+    const verdict = root.querySelector('[data-testid="play-result"]')!;
+    expect(verdict.querySelector('[data-testid="play-points"]')?.textContent).toContain('10');
+    expect(verdict.querySelector('[data-testid="play-star"]')).toBeNull();
+    expect(verdict.querySelector('[data-testid="play-yellow-count"]')).toBeNull();
+    expect(verdict.textContent).not.toContain('8');
+    http.verify();
+  });
 });
