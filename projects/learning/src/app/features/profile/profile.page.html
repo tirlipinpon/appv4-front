@@ -7,18 +7,51 @@
     <p class="profile-status profile-error" role="alert" data-testid="profile-error">{{ message }}</p>
   } @else if (avatar(); as person) {
     <article class="profile-preview" data-testid="profile-preview">
-      <p class="profile-style" data-testid="profile-style">{{ person.styleName }}</p>
-      @if (person.credit) {
-        <p class="profile-credit" data-testid="profile-credit">{{ person.credit }}</p>
+      <p class="profile-style" data-testid="profile-style">{{ styleName() }}</p>
+      @if (styleCredit()) {
+        <p class="profile-credit" data-testid="profile-credit">{{ styleCredit() }}</p>
       }
     </article>
 
-    @if (person.presets?.length) {
-      <ul class="profile-presets" data-testid="profile-presets">
-        @for (preset of person.presets; track preset.id) {
-          <li [attr.data-testid]="'profile-preset-' + preset.id">{{ preset.name }}</li>
+    @if (person.styles?.length) {
+      <ul class="profile-styles" data-testid="profile-styles">
+        @for (style of person.styles; track style.code) {
+          <li>
+            <button
+              type="button"
+              [attr.data-testid]="'profile-style-choice-' + style.code"
+              [attr.aria-pressed]="draftStyle() === style.code"
+              (click)="chooseStyle(style.code)"
+            >
+              {{ style.name }}
+            </button>
+          </li>
         }
       </ul>
+    }
+
+    @if (draftPresets().length) {
+      <ul class="profile-presets" data-testid="profile-presets">
+        @for (preset of draftPresets(); track preset.id) {
+          <li>
+            <button
+              type="button"
+              [attr.data-testid]="'profile-preset-' + preset.id"
+              [attr.aria-pressed]="draftPreset() === preset.id"
+              (click)="choosePreset(preset.id)"
+            >
+              {{ preset.name }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    <button type="button" data-testid="profile-save" [disabled]="saving()" (click)="save()">
+      Enregistrer
+    </button>
+    @if (saveError(); as message) {
+      <p class="profile-status profile-error" role="alert" data-testid="profile-save-error">{{ message }}</p>
     }
 
     @if (person.zones) {

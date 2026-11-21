@@ -36,6 +36,7 @@ export type ChildFeaturedQuestionsResponse =
 export type ChildBadge = components['schemas']['ChildBadgeResponse'];
 export type ChildBadgeGained = components['schemas']['ChildBadgeGainedResponse'];
 export type ChildBadgeNotice = components['schemas']['ChildBadgeNoticeResponse'];
+export type SaveChildAvatarStyleRequest = components['schemas']['SaveChildAvatarStyleRequest'];
 export type ChildAvatarResponse = components['schemas']['ChildAvatarResponse'];
 export type ChildAvatarZoneCard = components['schemas']['ChildAvatarZoneCard'];
 export type ChildAvatarVariantCard = components['schemas']['ChildAvatarVariantCard'];
