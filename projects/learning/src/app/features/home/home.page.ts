@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 
 import type { ChildTodayMission, ChildTodayTask } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
+import { BadgeMedalComponent } from '../../shared/badges/badge-medal';
 import { ChildHomeBadgesService } from './data-access/child-home-badges.service';
 import { ChildProgressService } from './data-access/child-progress.service';
 import { ChildTodayService } from './data-access/child-today.service';
@@ -16,7 +17,7 @@ const WEEK_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const;
  */
 @Component({
   selector: 'app-home-page',
-  imports: [RouterLink],
+  imports: [RouterLink, BadgeMedalComponent],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
