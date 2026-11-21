@@ -111,6 +111,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire le personnage de l'enfant connecté */
+        get: operations["readChildAvatar"];
+        /** Enregistrer le style et la palette de l'enfant */
+        put: operations["saveChildAvatarStyle"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/subjects": {
         parameters: {
             query?: never;
@@ -1713,6 +1731,47 @@ export interface components {
             extraSubjectCount?: number;
             /** @description L'autre enfant du lien, pour afficher sa photo ou son avatar, et le mot court. */
             links?: components["schemas"]["ParentChildLink"][];
+        };
+        SaveChildAvatarStyleRequest: {
+            styleCode?: string;
+            presetId?: string;
+        };
+        ChildAvatarPresetCard: {
+            id?: string;
+            name?: string;
+            options?: {
+                [key: string]: unknown;
+            };
+        };
+        ChildAvatarResponse: {
+            seed?: string;
+            styleCode?: string;
+            styleName?: string;
+            presetId?: string;
+            credit?: string;
+            styles?: components["schemas"]["ChildAvatarStyleCard"][];
+            presets?: components["schemas"]["ChildAvatarPresetCard"][];
+            zones?: components["schemas"]["ChildAvatarZoneCard"][];
+        };
+        ChildAvatarStyleCard: {
+            code?: string;
+            name?: string;
+            credit?: string;
+            zoneCodes?: string[];
+        };
+        ChildAvatarVariantCard: {
+            code?: string;
+            label?: string;
+        };
+        ChildAvatarZoneCard: {
+            code?: string;
+            label?: string;
+            /** Format: int32 */
+            seuil?: number;
+            thresholdLabel?: string;
+            missingLabel?: string;
+            open?: boolean;
+            variants?: components["schemas"]["ChildAvatarVariantCard"][];
         };
         CreateTeacherSubjectRequest: {
             /** Format: int64 */
@@ -3708,6 +3767,81 @@ export interface operations {
             };
             /** @description Enfant introuvable pour ce parent */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildAvatar: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personnage, styles, palettes et zones */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildAvatarResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    saveChildAvatarStyle: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveChildAvatarStyleRequest"];
+            };
+        };
+        responses: {
+            /** @description Personnage relu après enregistrement */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildAvatarResponse"];
+                };
+            };
+            /** @description Style inconnu ou palette d'un autre style */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

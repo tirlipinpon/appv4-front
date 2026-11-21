@@ -1,0 +1,59 @@
+<section class="profile" data-testid="profile-panel">
+  <h1>Profil</h1>
+
+  @if (loading()) {
+    <p class="profile-status" data-testid="profile-loading">Chargement…</p>
+  } @else if (error(); as message) {
+    <p class="profile-status profile-error" role="alert" data-testid="profile-error">{{ message }}</p>
+  } @else if (avatar(); as person) {
+    <article class="profile-preview" data-testid="profile-preview">
+      <p class="profile-style" data-testid="profile-style">{{ person.styleName }}</p>
+      @if (person.credit) {
+        <p class="profile-credit" data-testid="profile-credit">{{ person.credit }}</p>
+      }
+    </article>
+
+    @if (person.presets?.length) {
+      <ul class="profile-presets" data-testid="profile-presets">
+        @for (preset of person.presets; track preset.id) {
+          <li [attr.data-testid]="'profile-preset-' + preset.id">{{ preset.name }}</li>
+        }
+      </ul>
+    }
+
+    @if (person.zones) {
+    <ul class="profile-zones" data-testid="profile-zones">
+      @for (zone of person.zones; track zone.code) {
+        <li class="profile-zone" [attr.data-testid]="'profile-zone-' + zone.code">
+          <p class="profile-zone-label">{{ zone.label }}</p>
+          @if (zone.thresholdLabel) {
+            <p class="profile-threshold" [attr.data-testid]="'profile-threshold-' + zone.code">
+              {{ zone.thresholdLabel }}
+            </p>
+          }
+          @if (zone.missingLabel) {
+            <p class="profile-missing" [attr.data-testid]="'profile-missing-' + zone.code">
+              {{ zone.missingLabel }}
+            </p>
+          }
+          @if (zone.variants) {
+          <ul class="profile-variants">
+            @for (variant of zone.variants; track variant.code) {
+              <li>
+                <button
+                  type="button"
+                  disabled
+                  [attr.data-testid]="'profile-variant-' + zone.code + '-' + variant.code"
+                >
+                  {{ variant.label }}
+                </button>
+              </li>
+            }
+          </ul>
+          }
+        </li>
+      }
+    </ul>
+    }
+  }
+</section>
