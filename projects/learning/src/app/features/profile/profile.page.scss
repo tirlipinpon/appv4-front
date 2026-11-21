@@ -148,6 +148,7 @@ h1 {
 .avatar-chip--on {
   background: #6d5efc;
   border-color: #6d5efc;
+  color: #fff;
 }
 
 .avatar-zones {
@@ -280,4 +281,61 @@ h1 {
 
 .avatar-save:disabled {
   opacity: 0.6;
+}
+
+:host-context(.theme-learn-light) {
+  .avatar-fold,
+  .avatar-preview {
+    background: color-mix(in srgb, #6d5efc 12%, var(--app-surface-card, #fff));
+    border-color: color-mix(in srgb, #6d5efc 32%, var(--app-outline, #e4e7ee));
+  }
+
+  .avatar-later {
+    background: color-mix(in srgb, var(--app-text, #1c2b3a) 5%, var(--app-surface-card, #fff));
+    border-color: color-mix(in srgb, var(--app-text, #1c2b3a) 28%, transparent);
+  }
+
+  .avatar-later h2,
+  .avatar-lock-chip {
+    color: var(--app-text, #1c2b3a);
+  }
+
+  .avatar-later p,
+  .avatar-fold-side,
+  .avatar-choices,
+  .avatar-credit,
+  .avatar-missing,
+  .avatar-tile-label {
+    color: var(--app-text-muted, #6b7385);
+  }
+
+  .avatar-lock-chip {
+    background: #fff;
+    border: 1px solid color-mix(in srgb, var(--app-text, #1c2b3a) 18%, transparent);
+  }
+
+  .avatar-lock {
+    stroke: var(--app-text, #1c2b3a);
+    background: #fff;
+    border-color: color-mix(in srgb, var(--app-text, #1c2b3a) 28%, transparent);
+  }
+
+  .avatar-config-icon,
+  .avatar-face,
+  .avatar-tile img {
+    background: #ece8f8;
+  }
+
+  .avatar-swatch {
+    border-color: color-mix(in srgb, var(--app-text, #1c2b3a) 35%, transparent);
+  }
+
+  .avatar-tile {
+    background: color-mix(in srgb, var(--app-text, #1c2b3a) 6%, #fff);
+  }
+
+  .avatar-tile--on {
+    background: color-mix(in srgb, #6d5efc 16%, #fff);
+    border-color: #6d5efc;
+  }
 }
