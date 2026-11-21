@@ -65,15 +65,33 @@ h1 {
   border: 1px solid color-mix(in srgb, #c1b4ff 22%, transparent);
 }
 
+.avatar-config-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #2a2444;
+  object-fit: cover;
+}
+
+.avatar-swatch {
+  display: inline-block;
+  border: 1px solid color-mix(in srgb, #c1b4ff 40%, transparent);
+}
+
 .avatar-fold summary {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 11px 16px;
   font-weight: 800;
   cursor: pointer;
   list-style: none;
+}
+
+.avatar-fold-label {
+  flex: 1;
+  text-align: left;
 }
 
 .avatar-fold summary::-webkit-details-marker {
@@ -137,6 +155,9 @@ h1 {
 }
 
 .avatar-later {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-top: 10px;
   border-radius: 1.1rem;
   padding: 12px 14px;

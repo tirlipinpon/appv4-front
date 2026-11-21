@@ -21,7 +21,10 @@
     @if (person.styles?.length) {
       <details class="avatar-fold" data-testid="profile-styles-toggle">
         <summary>
-          <span>{{ styleName() }}</span>
+          @if (faceUri(); as src) {
+            <img class="avatar-config-icon" [src]="src" alt="" />
+          }
+          <span class="avatar-fold-label">{{ styleName() }}</span>
         </summary>
         <ul class="avatar-chips" data-testid="profile-styles">
           @for (style of person.styles; track style.code) {
@@ -45,7 +48,11 @@
     @if (draftPresets().length) {
       <details class="avatar-fold" data-testid="profile-presets-toggle">
         <summary>
-          <span>{{ presetName() }}</span>
+          <span
+            class="avatar-config-icon avatar-swatch"
+            [style.background]="presetSwatch()"
+          ></span>
+          <span class="avatar-fold-label">{{ presetName() }}</span>
         </summary>
         <ul class="avatar-chips" data-testid="profile-presets">
           @for (preset of draftPresets(); track preset.id) {
@@ -71,7 +78,8 @@
         @for (zone of openZones(); track zone.code) {
           <details class="avatar-fold" [attr.data-testid]="'profile-zone-' + zone.code">
             <summary>
-              <span>{{ zone.label }}</span>
+              <app-avatar-zone-icon [code]="zone.code" />
+              <span class="avatar-fold-label">{{ zone.label }}</span>
               <span class="avatar-fold-side" [attr.data-testid]="'profile-open-' + zone.code">Ouvert</span>
             </summary>
             @if (zone.variants) {
@@ -99,15 +107,18 @@
         }
         @for (zone of closedZones(); track zone.code) {
           <article class="avatar-later" [attr.data-testid]="'profile-zone-' + zone.code">
-            <h2>{{ zone.label }}</h2>
-            @if (zone.thresholdLabel) {
-              <p [attr.data-testid]="'profile-threshold-' + zone.code">{{ zone.thresholdLabel }}</p>
-            }
-            @if (zone.missingLabel) {
-              <p class="avatar-missing" [attr.data-testid]="'profile-missing-' + zone.code">
-                {{ zone.missingLabel }}
-              </p>
-            }
+            <app-avatar-zone-icon [code]="zone.code" />
+            <div>
+              <h2>{{ zone.label }}</h2>
+              @if (zone.thresholdLabel) {
+                <p [attr.data-testid]="'profile-threshold-' + zone.code">{{ zone.thresholdLabel }}</p>
+              }
+              @if (zone.missingLabel) {
+                <p class="avatar-missing" [attr.data-testid]="'profile-missing-' + zone.code">
+                  {{ zone.missingLabel }}
+                </p>
+              }
+            </div>
           </article>
         }
       </div>

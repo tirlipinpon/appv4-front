@@ -3,11 +3,13 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 
 import type { ChildAvatarResponse } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
+import { AvatarZoneIcon } from './components/avatar-zone-icon';
 import { avatarDataUri } from './data-access/avatar-face';
 import { ChildAvatarService } from './data-access/child-avatar.service';
 
 @Component({
   selector: 'app-profile-page',
+  imports: [AvatarZoneIcon],
   templateUrl: './profile.page.html',
   styleUrl: './profile.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,6 +63,20 @@ export class ProfilePage implements OnInit {
 
   protected presetName(): string | null {
     return this.draftPresets().find((preset) => preset.id === this.draftPreset())?.name ?? null;
+  }
+
+  protected presetSwatch(): string | null {
+    const options = this.paletteOptions();
+    const raw = options?.['backgroundColor'] ?? options?.['skinColor'] ?? options?.['hairColor'];
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    if (typeof value !== 'string') {
+      return null;
+    }
+    const hex = value.replace('#', '');
+    if (!/^[0-9a-fA-F]{6}$/.test(hex) && !/^[0-9a-fA-F]{3}$/.test(hex)) {
+      return null;
+    }
+    return `#${hex}`;
   }
 
   protected openZones() {
