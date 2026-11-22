@@ -38,6 +38,7 @@ function isCredentialAttempt(url: string): boolean {
     url.includes('/auth/signup') ||
     url.includes('/auth/oauth/') ||
     url.includes('/auth/forgot-password') ||
+    url.includes('/auth/recover-identifier') ||
     url.includes('/auth/reset-password')
   );
 }

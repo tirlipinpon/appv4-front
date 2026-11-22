@@ -713,6 +713,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/auth/recover-identifier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retrouver l'email de connexion masqué */
+        post: operations["recoverIdentifier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/auth/oauth/google": {
         parameters: {
             query?: never;
@@ -2328,6 +2345,15 @@ export interface components {
             newPassword: string;
         };
         AuthMessageResponse: {
+            message?: string;
+        };
+        RecoverIdentifierRequest: {
+            displayName?: string;
+            phone?: string;
+            contactEmail?: string;
+        };
+        RecoverIdentifierResponse: {
+            maskedEmail?: string;
             message?: string;
         };
         GoogleLoginRequest: {
@@ -5705,6 +5731,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthMessageResponse"];
+                };
+            };
+        };
+    };
+    recoverIdentifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecoverIdentifierRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecoverIdentifierResponse"];
                 };
             };
         };

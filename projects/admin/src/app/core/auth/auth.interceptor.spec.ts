@@ -61,6 +61,21 @@ describe('authInterceptor', () => {
     expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
 
+  it('la récupération de l’identifiant ne porte pas le jeton courant', () => {
+    const token = bearer();
+    auth.setToken(token);
+    http
+      .post(`${environment.apiBaseUrl}/auth/recover-identifier`, {})
+      .subscribe({ error: () => undefined });
+
+    const request = api.expectOne(`${environment.apiBaseUrl}/auth/recover-identifier`);
+    expect(request.request.headers.has('Authorization')).toBeFalse();
+    request.flush({ message: 'refusé' }, { status: 401, statusText: 'Unauthorized' });
+
+    expect(auth.getToken()).toBe(token);
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+  });
+
   it('un 401 tardif d’un ancien jeton laisse la session plus récente', () => {
     const older = bearer({ exp: Math.floor(Date.now() / 1000) + 30 });
     const newer = bearer({ exp: Math.floor(Date.now() / 1000) + 90, mark: 'newer' });

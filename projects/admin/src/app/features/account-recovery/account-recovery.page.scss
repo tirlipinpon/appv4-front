@@ -1,0 +1,27 @@
+.card {
+  width: min(100%, 32rem);
+}
+
+.full {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.error {
+  color: var(--app-error);
+  margin: 0 0 0.75rem;
+}
+
+.success {
+  color: var(--app-success);
+  margin: 0 0 0.75rem;
+}
+
+.oauth-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.divider {
+  margin: 1.25rem 0;
+}
