@@ -8,6 +8,7 @@ import type {
   ParentChildResponse,
   ParentChildrenResponse,
   PendingInvitationResponse,
+  ShareRequestResponse,
 } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
@@ -58,6 +59,26 @@ export class ParentChildrenService {
       `${environment.apiBaseUrl}/parent/children/${id}/invitations`,
       { email },
     );
+  }
+
+  shareRequests(): Observable<ShareRequestResponse[]> {
+    return this.http.get<ShareRequestResponse[]>(`${environment.apiBaseUrl}/parent/children/demandes`);
+  }
+
+  requestShare(email: string, firstName: string, lastName: string): Observable<InvitationReceiptResponse> {
+    return this.http.post<InvitationReceiptResponse>(`${environment.apiBaseUrl}/parent/children/demandes`, {
+      email,
+      firstName,
+      lastName,
+    });
+  }
+
+  acceptShare(id: number, childId: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/parent/children/demandes/${id}/accept`, { childId });
+  }
+
+  refuseShare(id: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/parent/children/demandes/${id}/refuse`, null);
   }
 
   acceptInvitation(id: number): Observable<ParentChildResponse> {

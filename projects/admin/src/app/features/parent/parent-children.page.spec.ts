@@ -15,6 +15,7 @@ const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
 const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
 const invitationsUrl = 'http://localhost:8080/api/int/parent/children/invitations';
+const demandesUrl = 'http://localhost:8080/api/int/parent/children/demandes';
 
 function child(partial: ParentChildResponse): ParentChildResponse {
   return { referent: true, pendingInvitationCount: 0, ...partial };
@@ -64,6 +65,7 @@ describe('ParentChildrenPage liens', () => {
     fixture.detectChanges();
     http.expectOne(childrenUrl).flush({ children: [lea, noah, camille], schools: [], curricula: [] });
     http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(demandesUrl).flush([]);
     http.expectOne(spacesUrl).flush({ roles: ['parent'], teacherRequest: 'none' });
     http.expectOne(accountUrl).flush({ displayName: 'Tony' });
     fixture.detectChanges();
@@ -328,6 +330,7 @@ describe('ParentChildrenPage liens', () => {
       curricula: [],
     });
     http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(demandesUrl).flush([]);
     page.edit({ ...lea, id: 9, interests: ['formule 1', 'Pokémon'] });
     expect(page.interests()).toEqual(['formule 1', 'Pokémon']);
   });
@@ -449,6 +452,7 @@ describe('ParentChildrenPage liens', () => {
     expect(sent.request.body).toEqual({ email: 'autre@exemple.fr' });
     sent.flush({ message: 'Invitation envoyée' });
     http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(demandesUrl).flush([]);
     http.expectOne(childrenUrl).flush({
       children: [{ ...lea, referent: true, pendingInvitationCount: 1 }],
       schools: [],
@@ -471,9 +475,55 @@ describe('ParentChildrenPage liens', () => {
     expect(accepted.request.method).toBe('POST');
     accepted.flush({ ...lea });
     http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(demandesUrl).flush([]);
     http.expectOne(childrenUrl).flush({ children: [lea], schools: [], curricula: [] });
     fixture.detectChanges();
     expect(page.children().map((item) => item.id)).toEqual([1]);
+  });
+
+  it('envoie une demande et laisse le referent en accepter une', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    page.children.set([{ ...lea, pendingDemandeCount: 1 }]);
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="child-delete"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="child-share-warning"]')?.textContent)
+      .toContain("Une demande de partage est en attente. Retirer la fiche l'annulera.");
+    (root.querySelector('[data-testid="child-pending-cancel"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="child-share-email"]') as HTMLInputElement).value = 'test1@test.com';
+    root.querySelector('[data-testid="child-share-email"]')!.dispatchEvent(new Event('input'));
+    (root.querySelector('[data-testid="child-share-first"]') as HTMLInputElement).value = 'Léa';
+    root.querySelector('[data-testid="child-share-first"]')!.dispatchEvent(new Event('input'));
+    (root.querySelector('[data-testid="child-share-last"]') as HTMLInputElement).value = 'Martin';
+    root.querySelector('[data-testid="child-share-last"]')!.dispatchEvent(new Event('input'));
+    (root.querySelector('[data-testid="child-share-send"]') as HTMLButtonElement).click();
+    const sent = http.expectOne(demandesUrl);
+    expect(sent.request.method).toBe('POST');
+    expect(sent.request.body).toEqual({ email: 'test1@test.com', firstName: 'Léa', lastName: 'Martin' });
+    sent.flush({ message: 'Demande envoyée' });
+    http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(demandesUrl).flush([{
+      id: 8,
+      firstName: 'Léa',
+      lastName: 'Martin',
+      matches: [
+        { childId: 1, firstName: 'Léa', lastName: 'Martin' },
+        { childId: 2, firstName: 'Léa', lastName: 'Martin' },
+      ],
+    }]);
+    http.expectOne(childrenUrl).flush({ children: [lea, noah], schools: [], curricula: [] });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="child-share-sent"]')?.textContent).toContain('Demande envoyée');
+    expect(root.querySelector('[data-testid="child-share-request-label"]')?.textContent).toContain('demande pour Léa Martin');
+
+    (root.querySelector('[data-testid="child-share-accept-1"]') as HTMLButtonElement).click();
+    const accepted = http.expectOne(`${demandesUrl}/8/accept`);
+    expect(accepted.request.body).toEqual({ childId: 1 });
+    accepted.flush(null);
+    http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(demandesUrl).flush([]);
+    http.expectOne(childrenUrl).flush({ children: [lea], schools: [], curricula: [] });
   });
 });
 

@@ -30,6 +30,8 @@ import type {
   ParentGradeList,
   ParentSchoolOption,
   PendingInvitationResponse,
+  ShareRequestChildResponse,
+  ShareRequestResponse,
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { SchoolCatalogService } from '../../core/api/school-catalog.service';
@@ -157,6 +159,11 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   readonly pendingKind = signal<'deactivate' | 'hide' | null>(null);
   readonly pendingChildId = signal<number | null>(null);
   readonly invitations = signal<PendingInvitationResponse[]>([]);
+  readonly shareRequests = signal<ShareRequestResponse[]>([]);
+  readonly shareEmail = signal('');
+  readonly shareFirstName = signal('');
+  readonly shareLastName = signal('');
+  readonly shareNotice = signal<string | null>(null);
   readonly inviteEmails = signal<Record<number, string>>({});
   readonly inviteNotice = signal<string | null>(null);
   readonly inviteNoticeChildId = signal<number | null>(null);
@@ -410,6 +417,48 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     }
     const value = (event.target as HTMLInputElement).value;
     this.inviteEmails.update((current) => ({ ...current, [id]: value }));
+  }
+
+  onShareEmail(event: Event): void {
+    this.shareEmail.set((event.target as HTMLInputElement).value);
+  }
+
+  onShareFirstName(event: Event): void {
+    this.shareFirstName.set((event.target as HTMLInputElement).value);
+  }
+
+  onShareLastName(event: Event): void {
+    this.shareLastName.set((event.target as HTMLInputElement).value);
+  }
+
+  sendShareRequest(): void {
+    this.api.requestShare(this.shareEmail(), this.shareFirstName(), this.shareLastName()).subscribe({
+      next: (receipt) => {
+        this.shareNotice.set(receipt.message ?? null);
+        this.reload();
+      },
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Demande impossible.')),
+    });
+  }
+
+  acceptShare(request: ShareRequestResponse, match: ShareRequestChildResponse): void {
+    if (request.id == null || match.childId == null) {
+      return;
+    }
+    this.api.acceptShare(request.id, match.childId).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Acceptation impossible.')),
+    });
+  }
+
+  refuseShare(request: ShareRequestResponse): void {
+    if (request.id == null) {
+      return;
+    }
+    this.api.refuseShare(request.id).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Refus impossible.')),
+    });
   }
 
   sendInvite(child: ParentChildResponse): void {
@@ -719,6 +768,13 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
       .subscribe({
         next: (rows) => this.invitations.set(rows ?? []),
         error: () => this.invitations.set([]),
+      });
+    this.api
+      .shareRequests()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => this.shareRequests.set(rows ?? []),
+        error: () => this.shareRequests.set([]),
       });
     this.api
       .load()
