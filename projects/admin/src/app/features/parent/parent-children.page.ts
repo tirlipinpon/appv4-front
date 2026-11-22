@@ -57,6 +57,8 @@ import { ParentChildrenService } from './data-access/parent-children.service';
  * À partir d'un enfant déjà inscrit, le formulaire reprend le nom, l'âge, la classe, l'école et l'image.
  * Un nouvel enfant peut aussi être lié à un enfant déjà inscrit. Le prénom et le PIN restent vides.
  */
+const INTEREST_LIMIT = "Dix centres d'intérêt maximum.";
+
 @Component({
   selector: 'app-parent-children-page',
   imports: [
@@ -131,6 +133,8 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   readonly age = signal('');
   readonly country = signal<string | null>(null);
   readonly grade = signal<string | null>(null);
+  readonly interests = signal<string[]>([]);
+  readonly interestDraft = signal('');
   readonly schoolId = signal<number | null>(null);
   readonly schoolText = signal('');
   /** Texte pris en compte pour les suggestions, après la pause de frappe. */
@@ -364,6 +368,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     this.age.set(child.age == null ? '' : String(child.age));
     this.country.set(child.country ?? null);
     this.grade.set(child.grade ?? null);
+    this.interests.set([...(child.interests ?? [])]);
     if (child.schoolId != null) {
       this.schoolId.set(child.schoolId);
       this.schoolText.set(child.schoolName ?? '');
@@ -486,6 +491,50 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
 
   onPinConfirmationInput(event: Event): void {
     this.applyDigits(event, 4, (digits) => this.pinConfirmation.set(digits));
+  }
+
+  onInterestInput(event: Event): void {
+    this.interestDraft.set((event.target as HTMLInputElement).value);
+  }
+
+  addInterest(event: Event): void {
+    event.preventDefault();
+    const input = event.target instanceof HTMLInputElement ? event.target : null;
+    const text = input?.value ?? this.interestDraft();
+    if (text.trim() === '') {
+      return;
+    }
+    if (this.interests().length >= 10) {
+      this.error.set(INTEREST_LIMIT);
+      return;
+    }
+    this.interests.update((list) => [...list, text]);
+    this.interestDraft.set('');
+    if (input) {
+      input.value = '';
+    }
+    if (this.error() === INTEREST_LIMIT) {
+      this.error.set(null);
+    }
+  }
+
+  editInterest(index: number): void {
+    const word = this.interests()[index];
+    if (word == null) {
+      return;
+    }
+    this.interests.update((list) => list.filter((_, item) => item !== index));
+    this.interestDraft.set(word);
+    if (this.error() === INTEREST_LIMIT) {
+      this.error.set(null);
+    }
+  }
+
+  removeInterest(index: number): void {
+    this.interests.update((list) => list.filter((_, item) => item !== index));
+    if (this.error() === INTEREST_LIMIT) {
+      this.error.set(null);
+    }
   }
 
   chooseAvatar(code: string): void {
@@ -657,6 +706,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
       pinConfirmation: this.pinConfirmation(),
       fromChildId: this.fromChildId() ?? undefined,
       link: this.fromChildId() === null ? undefined : this.link(),
+      interests: this.interests(),
     };
   }
 
@@ -715,6 +765,8 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     this.age.set('');
     this.country.set(null);
     this.grade.set(null);
+    this.interests.set([]);
+    this.interestDraft.set('');
     this.schoolId.set(null);
     this.schoolText.set('');
     this.schoolQuery.set('');
