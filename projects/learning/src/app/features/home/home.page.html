@@ -1,20 +1,29 @@
 @if (humeur(); as prompt) {
   @if (prompt.ask === true && (prompt.choices ?? []).length > 0) {
-    <div class="humeur-popup" data-testid="humeur-popup" role="dialog" aria-label="Humeur">
-      @if (prompt.message) {
-        <p data-testid="humeur-message">{{ prompt.message }}</p>
-      }
-      @for (choice of prompt.choices ?? []; track choice.id) {
-        <button type="button" [attr.data-testid]="'humeur-choice-' + choice.id" (click)="chooseHumeur(choice)">
-          @if (choice.icon) {
-            <span data-testid="humeur-choice-icon">{{ choice.icon }}</span>
+    <div class="humeur-popup" data-testid="humeur-popup" role="dialog" aria-modal="true" aria-labelledby="humeur-message">
+      <div class="humeur-card">
+        @if (prompt.message) {
+          <p id="humeur-message" class="humeur-message" data-testid="humeur-message">{{ prompt.message }}</p>
+        }
+        <div class="humeur-grid">
+          @for (choice of prompt.choices ?? []; track choice.id) {
+            <button
+              type="button"
+              class="humeur-choice"
+              [attr.data-testid]="'humeur-choice-' + choice.id"
+              (click)="chooseHumeur(choice)"
+            >
+              @if (choice.icon) {
+                <span class="humeur-choice-icon" data-testid="humeur-choice-icon">{{ choice.icon }}</span>
+              }
+              @if (choice.word) {
+                <span class="humeur-choice-word" data-testid="humeur-choice-word">{{ choice.word }}</span>
+              }
+            </button>
           }
-          @if (choice.word) {
-            <span data-testid="humeur-choice-word">{{ choice.word }}</span>
-          }
-        </button>
-      }
-      <button type="button" data-testid="humeur-close" (click)="closeHumeur()">Fermer</button>
+        </div>
+        <button type="button" class="humeur-close" data-testid="humeur-close" (click)="closeHumeur()">Fermer</button>
+      </div>
     </div>
   }
 }
