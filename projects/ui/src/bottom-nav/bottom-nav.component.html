@@ -1,10 +1,14 @@
-<nav class="ui-bottom-nav" aria-label="Navigation">
+<nav
+  class="ui-bottom-nav"
+  [class.is-top]="placement() === 'top'"
+  [attr.aria-label]="label()"
+>
   @for (item of items(); track item.id) {
     <a
       class="ui-bottom-nav-item"
       [class.is-active]="item.id === activeId()"
       [routerLink]="item.link"
-      [attr.data-testid]="item.testId"
+      [attr.data-testid]="testIdPrefix() + item.testId"
       [attr.aria-current]="item.id === activeId() ? 'page' : null"
     >
       <span class="ui-bottom-nav-label">{{ item.label }}</span>

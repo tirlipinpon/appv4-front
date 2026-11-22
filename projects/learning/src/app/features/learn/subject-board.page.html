@@ -26,37 +26,6 @@
           Voir les questions
         </a>
       </div>
-      @if (b.lesson; as lesson) {
-        <section class="subject-board-lesson" data-testid="subject-board-lesson">
-          <p class="subject-board-lesson-count" data-testid="subject-board-lesson-count">
-            {{ lesson.remainingCount }}
-          </p>
-          <ul class="subject-board-lesson-list">
-            @for (question of lesson.questions ?? []; track question.questionId) {
-              <li>
-                <a
-                  class="subject-board-lesson-row"
-                  [routerLink]="['/learn', b.subjectId, 'play', question.questionId]"
-                  [state]="lessonQueue(lesson)"
-                  [attr.data-testid]="'subject-board-lesson-' + question.questionId"
-                >
-                  <span>{{ question.prompt }}</span>
-                  @if (question.mark === 'yellow') {
-                    <span class="mark">
-                      <span class="star star-yellow" data-testid="lesson-star" aria-hidden="true">★</span>
-                      <span data-testid="lesson-yellow-count">{{ question.yellowCount }}</span>
-                    </span>
-                  } @else if (question.mark === 'black') {
-                    <span class="mark">
-                      <span class="star star-black" data-testid="lesson-star" aria-hidden="true">★</span>
-                    </span>
-                  }
-                </a>
-              </li>
-            }
-          </ul>
-        </section>
-      }
       <div class="subject-board-hero-icon" aria-hidden="true">
         @if (iconSrc(b.iconCode); as src) {
           <img [src]="src" alt="" loading="lazy" />
@@ -65,5 +34,43 @@
         }
       </div>
     </article>
+    @if (b.lesson; as lesson) {
+      <section class="subject-board-lesson" data-testid="subject-board-lesson">
+        <p class="subject-board-lesson-count" data-testid="subject-board-lesson-count">
+          {{ lesson.remainingCount }}
+        </p>
+        <ul class="list">
+          @for (question of lesson.questions ?? []; track question.questionId) {
+            <li>
+              <a
+                class="row playable"
+                [routerLink]="['/learn', b.subjectId, 'play', question.questionId]"
+                [state]="lessonQueue(lesson)"
+                [attr.data-testid]="'subject-board-lesson-' + question.questionId"
+              >
+                <span class="form">
+                  <app-question-form-mark
+                    [iconCode]="question.iconCode"
+                    [color]="question.color"
+                    [label]="question.formLabel ?? ''"
+                  />
+                </span>
+                <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
+                @if (question.mark === 'yellow') {
+                  <span class="mark">
+                    <span class="star star-yellow" data-testid="lesson-star" aria-hidden="true">★</span>
+                    <span data-testid="lesson-yellow-count">{{ question.yellowCount }}</span>
+                  </span>
+                } @else if (question.mark === 'black') {
+                  <span class="mark">
+                    <span class="star star-black" data-testid="lesson-star" aria-hidden="true">★</span>
+                  </span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
   }
 </section>

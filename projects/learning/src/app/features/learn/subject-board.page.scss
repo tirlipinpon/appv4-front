@@ -83,33 +83,66 @@
   font-weight: 800;
 }
 
-.subject-board-lesson-list {
+.list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 0.55rem;
+  align-items: stretch;
 }
 
-.subject-board-lesson-row {
+.list > li {
+  min-width: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 0.9rem;
+}
+
+.row {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 1rem;
   border-radius: 1rem;
-  background: color-mix(in srgb, #fff 8%, transparent);
-  color: inherit;
+  background: var(--app-surface-card, #fff);
+  border: 1px solid var(--app-outline, #e2e8f0);
+}
+
+a.row {
   text-decoration: none;
+  color: inherit;
+}
+
+.row.playable:hover {
+  border-color: var(--app-primary, #6d5efc);
+}
+
+.form {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.prompt {
+  font-weight: 600;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   font-weight: 700;
 }
 
 .star-yellow {
-  color: #f5c542;
+  color: #f5c518;
 }
 
 .star-black {
-  color: #2a2438;
+  color: #141414;
+  filter: drop-shadow(0 0 1px #fff);
 }
 
 .subject-board-hero-icon {

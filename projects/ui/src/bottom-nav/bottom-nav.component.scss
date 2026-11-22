@@ -12,6 +12,12 @@
   box-shadow: var(--app-shadow-soft, none);
 }
 
+.ui-bottom-nav.is-top {
+  border-top: 0;
+  border-bottom: 1px solid var(--app-outline);
+  padding-bottom: 8px;
+}
+
 .ui-bottom-nav-item {
   display: flex;
   align-items: center;
@@ -38,4 +44,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+}
+
+@media (min-width: 48rem) {
+  .ui-bottom-nav-item {
+    font-size: 0.95rem;
+  }
 }

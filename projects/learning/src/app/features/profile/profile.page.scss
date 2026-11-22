@@ -58,6 +58,14 @@ h1 {
   color: color-mix(in srgb, var(--app-text, #fff) 65%, transparent);
 }
 
+.avatar-config {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
 .avatar-fold {
   margin-top: 14px;
   border-radius: 1.4rem;
@@ -152,7 +160,17 @@ h1 {
 }
 
 .avatar-zones {
-  margin: 4px 0 0;
+  margin: 14px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.avatar-config .avatar-fold,
+.avatar-zones .avatar-fold,
+.avatar-zones .avatar-later {
+  margin-top: 0;
 }
 
 .avatar-later {
@@ -231,7 +249,7 @@ h1 {
   margin: 0;
   padding: 0 12px 14px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(4.75rem, 1fr));
   gap: 8px;
 }
 

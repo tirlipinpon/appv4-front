@@ -39,9 +39,37 @@
     <p class="learn-shell-error" role="alert">{{ message }}</p>
   }
 
+  <app-bottom-nav
+    class="learn-shell-menu"
+    [items]="navItems"
+    [activeId]="activeId()"
+    placement="top"
+    label="Menu"
+    testIdPrefix="top-"
+  />
+
   <main class="learn-shell-main">
     <router-outlet />
   </main>
 
   <app-bottom-nav [items]="navItems" [activeId]="activeId()" />
+
+  <button
+    type="button"
+    class="learn-shell-top"
+    data-testid="scroll-top"
+    aria-label="Remonter en haut de la page"
+    (click)="scrollTop()"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M6 14l6-6 6 6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </button>
 </div>
