@@ -135,6 +135,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   readonly grade = signal<string | null>(null);
   readonly interests = signal<string[]>([]);
   readonly interestDraft = signal('');
+  readonly interestSuggestions = signal<string[]>([]);
   readonly schoolId = signal<number | null>(null);
   readonly schoolText = signal('');
   /** Texte pris en compte pour les suggestions, après la pause de frappe. */
@@ -157,6 +158,8 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
 
   private fromQueryHandled = false;
   private schoolTimer: ReturnType<typeof setTimeout> | null = null;
+  private interestTimer: ReturnType<typeof setTimeout> | null = null;
+  private interestSearchSeq = 0;
   /** Photo déjà en base, à remettre si le parent ferme le recadrage sans valider. */
   private keptPhotoBeforeCrop = false;
   private keptPreviewBeforeCrop: string | null = null;
@@ -251,7 +254,9 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.schoolSearchSeq++;
+    this.interestSearchSeq++;
     this.clearSchoolTimer();
+    this.clearInterestTimer();
     this.photoBag.destroy();
     this.photos.set({});
   }
@@ -308,6 +313,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
 
   closeForm(): void {
     this.formOpen.set(false);
+    this.error.set(null);
     this.resetForm();
   }
 
@@ -494,7 +500,9 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   }
 
   onInterestInput(event: Event): void {
-    this.interestDraft.set((event.target as HTMLInputElement).value);
+    const value = (event.target as HTMLInputElement).value;
+    this.interestDraft.set(value);
+    this.scheduleInterestQuery(value);
   }
 
   addInterest(event: Event): void {
@@ -513,6 +521,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     if (input) {
       input.value = '';
     }
+    this.clearInterestQuery();
     if (this.error() === INTEREST_LIMIT) {
       this.error.set(null);
     }
@@ -525,6 +534,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     }
     this.interests.update((list) => list.filter((_, item) => item !== index));
     this.interestDraft.set(word);
+    this.scheduleInterestQuery(word);
     if (this.error() === INTEREST_LIMIT) {
       this.error.set(null);
     }
@@ -532,6 +542,22 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
 
   removeInterest(index: number): void {
     this.interests.update((list) => list.filter((_, item) => item !== index));
+    if (this.error() === INTEREST_LIMIT) {
+      this.error.set(null);
+    }
+  }
+
+  pickInterest(word: string): void {
+    if (this.interests().includes(word)) {
+      return;
+    }
+    if (this.interests().length >= 10) {
+      this.error.set(INTEREST_LIMIT);
+      return;
+    }
+    this.interests.update((list) => [...list, word]);
+    this.interestDraft.set('');
+    this.clearInterestQuery();
     if (this.error() === INTEREST_LIMIT) {
       this.error.set(null);
     }
@@ -767,6 +793,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     this.grade.set(null);
     this.interests.set([]);
     this.interestDraft.set('');
+    this.clearInterestQuery();
     this.schoolId.set(null);
     this.schoolText.set('');
     this.schoolQuery.set('');
@@ -879,6 +906,57 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     if (this.schoolTimer !== null) {
       clearTimeout(this.schoolTimer);
       this.schoolTimer = null;
+    }
+  }
+
+  private scheduleInterestQuery(text: string): void {
+    this.clearInterestTimer();
+    this.interestSearchSeq++;
+    if (text.trim().length < 2) {
+      this.interestSuggestions.set([]);
+      return;
+    }
+    this.interestTimer = setTimeout(() => {
+      this.interestTimer = null;
+      this.searchInterests(text);
+    }, SCHOOL_PAUSE_MS);
+  }
+
+  private searchInterests(text: string): void {
+    const query = text.trim();
+    const seq = this.interestSearchSeq;
+    if (query.length < 2) {
+      this.interestSuggestions.set([]);
+      return;
+    }
+    this.api.suggestInterests(query).subscribe({
+      next: (words) => {
+        if (seq !== this.interestSearchSeq) {
+          return;
+        }
+        const taken = new Set(this.interests());
+        this.interestSuggestions.set((words ?? []).filter((word) => !taken.has(word)));
+      },
+      error: (err: HttpErrorResponse) => {
+        if (seq !== this.interestSearchSeq) {
+          return;
+        }
+        this.interestSuggestions.set([]);
+        this.error.set(this.message(err, 'Suggestions indisponibles.'));
+      },
+    });
+  }
+
+  private clearInterestQuery(): void {
+    this.interestSearchSeq++;
+    this.clearInterestTimer();
+    this.interestSuggestions.set([]);
+  }
+
+  private clearInterestTimer(): void {
+    if (this.interestTimer !== null) {
+      clearTimeout(this.interestTimer);
+      this.interestTimer = null;
     }
   }
 

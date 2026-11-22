@@ -366,6 +366,7 @@ describe('ParentChildrenPage liens', () => {
     expect(page.interests()).toEqual(['formule 1', 'espace']);
     page.removeInterest(0);
     expect(page.interests()).toEqual(['espace']);
+    page.closeForm();
   });
 
   it('ouvre un enfant depuis un frère sans reprendre ses centres d\'intérêt', () => {
@@ -384,6 +385,44 @@ describe('ParentChildrenPage liens', () => {
     expect(page.interests()).toEqual([]);
     http.expectNone(childrenUrl);
   });
+
+  it('propose l’orthographe reçue, sans la montrer si la pastille est déjà là', fakeAsync(() => {
+    page.onInterestInput(textEvent('p'));
+    tick(400);
+    expect(page.interestSuggestions()).toEqual([]);
+    http.expectNone((request) => request.url.includes('interest-suggestions'));
+
+    page.onInterestInput(textEvent('pok'));
+    tick(299);
+    http.expectNone((request) => request.url.includes('interest-suggestions'));
+    tick(1);
+    const offered = http.expectOne((request) => request.url.includes('interest-suggestions'));
+    expect(offered.request.params.get('query')).toBe('pok');
+    offered.flush(['Pokémon']);
+    expect(page.interestSuggestions()).toEqual(['Pokémon']);
+
+    page.pickInterest('Pokémon');
+    expect(page.interests()).toEqual(['Pokémon']);
+    expect(page.interestDraft()).toBe('');
+    expect(page.interestSuggestions()).toEqual([]);
+
+    page.onInterestInput(textEvent('pok'));
+    tick(300);
+    http.expectOne((request) => request.url.includes('interest-suggestions')).flush(['Pokémon']);
+    expect(page.interestSuggestions()).toEqual([]);
+
+    page.editInterest(0);
+    expect(page.interestDraft()).toBe('Pokémon');
+    expect(page.interests()).toEqual([]);
+    tick(300);
+    http.expectOne((request) => request.url.includes('interest-suggestions')).flush(['Pokémon']);
+    expect(page.interestSuggestions()).toEqual(['Pokémon']);
+
+    page.onInterestInput(textEvent('war'));
+    tick(300);
+    http.expectOne((request) => request.url.includes('interest-suggestions')).flush([]);
+    expect(page.interestSuggestions()).toEqual([]);
+  }));
 });
 
 const schools: ParentSchoolOption[] = [
@@ -400,6 +439,12 @@ function fill(page: ParentChildrenPage): void {
   page.country.set('France');
   page.grade.set('6e');
   page.avatarCode.set('fox');
+}
+
+function textEvent(value: string): Event {
+  const input = document.createElement('input');
+  input.value = value;
+  return { target: input } as unknown as Event;
 }
 
 function inputEvent(value: string): Event {
