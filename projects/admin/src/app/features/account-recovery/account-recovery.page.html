@@ -17,7 +17,7 @@
           <p class="success" role="status" data-testid="recovery-message">{{ resultMessage() }}</p>
         }
         @if (error()) {
-          <p class="error" role="alert">{{ error() }}</p>
+          <p class="error" role="alert" data-testid="recovery-alert">{{ error() }}</p>
         }
 
         <button
