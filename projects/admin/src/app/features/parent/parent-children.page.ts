@@ -29,9 +29,11 @@ import type {
   ParentChildResponse,
   ParentGradeList,
   ParentSchoolOption,
+  FicheHolderResponse,
   PendingInvitationResponse,
   ShareRequestChildResponse,
   ShareRequestResponse,
+  TransferResponse,
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { SchoolCatalogService } from '../../core/api/school-catalog.service';
@@ -160,6 +162,11 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   readonly pendingChildId = signal<number | null>(null);
   readonly invitations = signal<PendingInvitationResponse[]>([]);
   readonly shareRequests = signal<ShareRequestResponse[]>([]);
+  readonly transfers = signal<TransferResponse[]>([]);
+  readonly holders = signal<Record<number, FicheHolderResponse[]>>({});
+  readonly transferMessages = signal<Record<number, string>>({});
+  readonly transferHolderIds = signal<Record<number, string>>({});
+  readonly incomingTransfers = computed(() => this.transfers().filter((item) => item.incoming === true));
   readonly shareEmail = signal('');
   readonly shareFirstName = signal('');
   readonly shareLastName = signal('');
@@ -429,6 +436,100 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
 
   onShareLastName(event: Event): void {
     this.shareLastName.set((event.target as HTMLInputElement).value);
+  }
+
+  holdersFor(child: ParentChildResponse): FicheHolderResponse[] {
+    const id = child.id;
+    if (id == null) {
+      return [];
+    }
+    return this.holders()[id] ?? [];
+  }
+
+  transferMessage(child: ParentChildResponse): string {
+    const id = child.id;
+    if (id == null) {
+      return '';
+    }
+    return this.transferMessages()[id] ?? '';
+  }
+
+  onTransferMessage(child: ParentChildResponse, event: Event): void {
+    const id = child.id;
+    if (id == null) {
+      return;
+    }
+    const value = (event.target as HTMLInputElement).value;
+    this.transferMessages.update((current) => ({ ...current, [id]: value }));
+  }
+
+  outgoingTransfers(child: ParentChildResponse): TransferResponse[] {
+    return this.transfers().filter((item) => item.incoming === false && item.childId === child.id);
+  }
+
+  sendTransfer(child: ParentChildResponse): void {
+    const id = child.id;
+    const holderId = this.holdersFor(child)[0]?.userId;
+    if (id == null || holderId == null) {
+      return;
+    }
+    const chosen = Number(this.transferHolderValue(child) || holderId);
+    this.api.startTransfer(id, chosen, this.transferMessage(child)).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Transfert impossible.')),
+    });
+  }
+
+  transferHolderValue(child: ParentChildResponse): string {
+    const id = child.id;
+    if (id == null) {
+      return '';
+    }
+    const chosen = this.transferHolderIds()[id];
+    if (chosen) {
+      return chosen;
+    }
+    const first = this.holdersFor(child)[0]?.userId;
+    return first == null ? '' : String(first);
+  }
+
+  onTransferHolder(child: ParentChildResponse, event: Event): void {
+    const id = child.id;
+    if (id == null) {
+      return;
+    }
+    const value = (event.target as HTMLSelectElement).value;
+    this.transferHolderIds.update((current) => ({ ...current, [id]: value }));
+  }
+
+  acceptTransfer(transfer: TransferResponse): void {
+    if (transfer.id == null) {
+      return;
+    }
+    this.api.acceptTransfer(transfer.id).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Acceptation impossible.')),
+    });
+  }
+
+  refuseTransfer(transfer: TransferResponse): void {
+    if (transfer.id == null) {
+      return;
+    }
+    this.api.refuseTransfer(transfer.id).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Refus impossible.')),
+    });
+  }
+
+  cancelTransfer(transfer: TransferResponse): void {
+    if (transfer.id == null) {
+      return;
+    }
+    this.api.cancelTransfer(transfer.id).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Annulation impossible.')),
+    });
   }
 
   sendShareRequest(): void {
@@ -777,6 +878,13 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
         error: () => this.shareRequests.set([]),
       });
     this.api
+      .transfers()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => this.transfers.set(rows ?? []),
+        error: () => this.transfers.set([]),
+      });
+    this.api
       .load()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -786,6 +894,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
           this.curricula.set(page.curricula ?? []);
           this.loading.set(false);
           this.loadPhotos(page.children ?? []);
+          this.loadHolders(page.children ?? []);
           this.openFromQuery(page.children ?? []);
         },
         error: (err: HttpErrorResponse) => {
@@ -793,6 +902,23 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
           this.error.set(this.message(err, 'Liste indisponible.'));
         },
       });
+  }
+
+  private loadHolders(children: ParentChildResponse[]): void {
+    this.holders.set({});
+    for (const child of children) {
+      if (child.referent !== true || child.id == null) {
+        continue;
+      }
+      const id = child.id;
+      this.api
+        .holders(id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (rows) => this.holders.update((current) => ({ ...current, [id]: rows ?? [] })),
+          error: () => this.holders.update((current) => ({ ...current, [id]: [] })),
+        });
+    }
   }
 
   private loadPhotos(children: ParentChildResponse[]): void {

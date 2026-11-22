@@ -34,6 +34,20 @@
         </section>
       }
 
+      @if (incomingTransfers().length > 0) {
+        <section class="invites" data-testid="child-transfers" aria-label="Transferts">
+          @for (transfer of incomingTransfers(); track transfer.id) {
+            <article class="invite">
+              <p data-testid="child-transfer-incoming">{{ transfer.message }}</p>
+              <button mat-flat-button color="primary" type="button" data-testid="child-transfer-accept" (click)="acceptTransfer(transfer)">
+                Accepter
+              </button>
+              <button mat-button type="button" data-testid="child-transfer-refuse" (click)="refuseTransfer(transfer)">Refuser</button>
+            </article>
+          }
+        </section>
+      }
+
       @if (invitations().length > 0) {
         <section class="invites" data-testid="child-invitations" aria-label="Invitations">
           @for (invitation of invitations(); track invitation.id) {
@@ -148,6 +162,9 @@
                     } @else if ((child.pendingDemandeCount ?? 0) > 1) {
                       <span data-testid="child-share-warning"> Des demandes de partage sont en attente. Retirer la fiche les annulera.</span>
                     }
+                    @if (child.pendingTransferCount === 1) {
+                      <span data-testid="child-transfer-warning"> Un transfert est en attente. Retirer la fiche l'annulera.</span>
+                    }
                   </p>
                   <p class="actions">
                     <button mat-button type="button" data-testid="child-pending-cancel" (click)="cancelPending()">Annuler</button>
@@ -179,6 +196,31 @@
                         <p data-testid="child-invite-sent">{{ notice }}</p>
                       }
                     </form>
+                    @if (holdersFor(child).length > 0) {
+                      <form class="invite" (submit)="$event.preventDefault(); sendTransfer(child)">
+                        <select
+                          data-testid="child-transfer-holder"
+                          [value]="transferHolderValue(child)"
+                          (change)="onTransferHolder(child, $event)"
+                          aria-label="Parent déjà sur la fiche"
+                        >
+                          @for (holder of holdersFor(child); track holder.userId) {
+                            <option [value]="holder.userId">{{ holder.label }}</option>
+                          }
+                        </select>
+                        <input
+                          data-testid="child-transfer-message"
+                          [value]="transferMessage(child)"
+                          (input)="onTransferMessage(child, $event)"
+                          aria-label="Message"
+                        />
+                        <button mat-stroked-button type="submit" data-testid="child-transfer">Transférer</button>
+                      </form>
+                    }
+                    @for (transfer of outgoingTransfers(child); track transfer.id) {
+                      <p data-testid="child-transfer-outgoing">{{ transfer.message }}</p>
+                      <button mat-button type="button" data-testid="child-transfer-cancel" (click)="cancelTransfer(transfer)">Annuler</button>
+                    }
                   }
                 }
               </div>

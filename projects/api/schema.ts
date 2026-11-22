@@ -457,6 +457,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/{id}/transferts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Proposer à un parent déjà sur la fiche d'en devenir le référent */
+        post: operations["startChildTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/children/{id}/reactivate": {
         parameters: {
             query?: never;
@@ -502,6 +519,40 @@ export interface paths {
         put?: never;
         /** Désactiver un enfant du parent connecté */
         post: operations["deactivateParentChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/transferts/{transferId}/refuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuser un transfert */
+        post: operations["refuseChildTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/transferts/{transferId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accepter de devenir le parent référent */
+        post: operations["acceptChildTransfer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1194,6 +1245,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/{id}/holders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les parents déjà en partage */
+        get: operations["listChildHolders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/transferts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les transferts qui concernent ce parent */
+        get: operations["listChildTransfers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/children/invitations": {
         parameters: {
             query?: never;
@@ -1515,6 +1600,23 @@ export interface paths {
         post?: never;
         /** Retirer une matière de la liste d'un enfant */
         delete: operations["removeParentChildSubject"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/transferts/{transferId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Annuler un transfert encore en attente */
+        delete: operations["cancelChildTransfer"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1968,6 +2070,11 @@ export interface components {
              * @description Demandes de partage encore en attente pour ce nom. Zéro si ce parent ne gère pas la fiche.
              */
             pendingDemandeCount?: number;
+            /**
+             * Format: int32
+             * @description Un transfert en attente vaut 1. Zéro si ce parent ne gère pas la fiche.
+             */
+            pendingTransferCount?: number;
         };
         HumeurChoiceRequest: {
             icon?: string;
@@ -2172,6 +2279,11 @@ export interface components {
             iconCode?: string;
             /** @description Teinte #rrggbb de l'icône, ou null. */
             accentColor?: string;
+        };
+        StartTransferBody: {
+            /** Format: int64 */
+            holderUserId?: number;
+            message?: string;
         };
         InviteParentRequest: {
             email?: string;
@@ -2676,6 +2788,22 @@ export interface components {
             name?: string;
             country?: string;
             grades?: string[];
+        };
+        FicheHolderResponse: {
+            /** Format: int64 */
+            userId?: number;
+            label?: string;
+        };
+        TransferResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
+            lastName?: string;
+            message?: string;
+            /** @description Vrai si ce parent peut accepter ou refuser. */
+            incoming?: boolean;
         };
         PendingInvitationResponse: {
             /** Format: int64 */
@@ -5202,6 +5330,30 @@ export interface operations {
             };
         };
     };
+    startChildTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartTransferBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     reactivateParentChild: {
         parameters: {
             query?: never;
@@ -5283,6 +5435,46 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
                 };
+            };
+        };
+    };
+    refuseChildTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transferId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    acceptChildTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transferId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -6596,6 +6788,48 @@ export interface operations {
             };
         };
     };
+    listChildHolders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FicheHolderResponse"][];
+                };
+            };
+        };
+    };
+    listChildTransfers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TransferResponse"][];
+                };
+            };
+        };
+    };
     listParentChildInvitations: {
         parameters: {
             query?: never;
@@ -7179,6 +7413,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
                 };
+            };
+        };
+    };
+    cancelChildTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transferId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
