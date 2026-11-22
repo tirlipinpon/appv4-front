@@ -1,6 +1,9 @@
 @if (humeur(); as prompt) {
   @if (prompt.ask === true && (prompt.choices ?? []).length > 0) {
     <div class="humeur-popup" data-testid="humeur-popup" role="dialog" aria-label="Humeur">
+      @if (prompt.message) {
+        <p data-testid="humeur-message">{{ prompt.message }}</p>
+      }
       @for (choice of prompt.choices ?? []; track choice.id) {
         <button type="button" [attr.data-testid]="'humeur-choice-' + choice.id" (click)="chooseHumeur(choice)">
           @if (choice.icon) {

@@ -543,6 +543,7 @@ describe('HomePage', () => {
     flushHome(http);
     http.expectOne('http://localhost:8080/api/ext/humeur').flush({
       ask: true,
+      message: 'Comment tu te sens ?',
       choices: [
         { id: 3, word: 'calme' },
         { id: 4, icon: '🙂' },
@@ -551,6 +552,7 @@ describe('HomePage', () => {
     fixture.detectChanges();
 
     const popup: HTMLElement = fixture.nativeElement.querySelector('[data-testid="humeur-popup"]');
+    expect(popup.querySelector('[data-testid="humeur-message"]')?.textContent).toContain('Comment tu te sens ?');
     const buttons = [...popup.querySelectorAll('button')].map((button: HTMLElement) => button.textContent);
     expect(buttons[0]).toContain('calme');
     expect(popup.querySelector('[data-testid="humeur-choice-3"] [data-testid="humeur-choice-icon"]')).toBeNull();
