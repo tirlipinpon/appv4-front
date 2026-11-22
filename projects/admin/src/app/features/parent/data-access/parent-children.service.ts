@@ -4,8 +4,10 @@ import { Observable } from 'rxjs';
 
 import type {
   CreateParentChildRequest,
+  InvitationReceiptResponse,
   ParentChildResponse,
   ParentChildrenResponse,
+  PendingInvitationResponse,
 } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
@@ -45,6 +47,24 @@ export class ParentChildrenService {
     return this.http.get<string[]>(`${environment.apiBaseUrl}/parent/interest-suggestions`, {
       params: { query },
     });
+  }
+
+  invitations(): Observable<PendingInvitationResponse[]> {
+    return this.http.get<PendingInvitationResponse[]>(`${environment.apiBaseUrl}/parent/children/invitations`);
+  }
+
+  invite(id: number, email: string): Observable<InvitationReceiptResponse> {
+    return this.http.post<InvitationReceiptResponse>(
+      `${environment.apiBaseUrl}/parent/children/${id}/invitations`,
+      { email },
+    );
+  }
+
+  acceptInvitation(id: number): Observable<ParentChildResponse> {
+    return this.http.post<ParentChildResponse>(
+      `${environment.apiBaseUrl}/parent/children/invitations/${id}/accept`,
+      null,
+    );
   }
 
   photo(id: number): Observable<Blob> {

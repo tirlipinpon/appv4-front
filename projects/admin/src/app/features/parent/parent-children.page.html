@@ -8,6 +8,19 @@
         <button mat-flat-button color="primary" type="button" data-testid="child-add" (click)="openForm()">Ajouter un enfant</button>
       </header>
 
+      @if (invitations().length > 0) {
+        <section class="invites" data-testid="child-invitations" aria-label="Invitations">
+          @for (invitation of invitations(); track invitation.id) {
+            <article class="invite">
+              <p data-testid="child-invitation">{{ invitation.firstName }} {{ invitation.lastName }}</p>
+              <button mat-flat-button color="primary" type="button" data-testid="child-invitation-accept" (click)="acceptInvitation(invitation)">
+                Accepter
+              </button>
+            </article>
+          }
+        </section>
+      }
+
       @if (loading()) {
         <p class="status" role="status">Chargement…</p>
       }
@@ -99,6 +112,11 @@
                 } @else if (pendingKind() === 'hide' && pendingChildId() === child.id) {
                   <p class="confirm" role="alert" data-testid="child-pending">
                     Retirer {{ child.firstName }} {{ child.lastName }} de l'affichage ? La fiche reste enregistrée, elle n'apparaîtra plus ici.
+                    @if (child.pendingInvitationCount === 1) {
+                      <span data-testid="child-invite-warning"> Une invitation est en attente. Retirer la fiche l'annulera.</span>
+                    } @else if ((child.pendingInvitationCount ?? 0) > 1) {
+                      <span data-testid="child-invite-warning"> Des invitations sont en attente. Retirer la fiche les annulera.</span>
+                    }
                   </p>
                   <p class="actions">
                     <button mat-button type="button" data-testid="child-pending-cancel" (click)="cancelPending()">Annuler</button>
@@ -107,13 +125,30 @@
                 } @else {
                   <p class="actions">
                     <button mat-button type="button" data-testid="child-edit" (click)="edit(child)">Modifier</button>
-                    @if (child.active === false) {
-                      <button mat-button type="button" data-testid="child-reactivate" (click)="reactivate(child)">Réactiver</button>
-                    } @else {
-                      <button mat-button type="button" data-testid="child-deactivate" (click)="askDeactivate(child)">Désactiver</button>
+                    @if (child.referent === true) {
+                      @if (child.active === false) {
+                        <button mat-button type="button" data-testid="child-reactivate" (click)="reactivate(child)">Réactiver</button>
+                      } @else {
+                        <button mat-button type="button" data-testid="child-deactivate" (click)="askDeactivate(child)">Désactiver</button>
+                      }
+                      <button mat-button type="button" data-testid="child-delete" (click)="askRemove(child)">Supprimer</button>
                     }
-                    <button mat-button type="button" data-testid="child-delete" (click)="askRemove(child)">Supprimer</button>
                   </p>
+                  @if (child.referent === true) {
+                    <form class="invite" (submit)="$event.preventDefault(); sendInvite(child)">
+                      <input
+                        data-testid="child-invite-email"
+                        type="email"
+                        [value]="inviteEmail(child)"
+                        (input)="onInviteEmail(child, $event)"
+                        aria-label="Email du parent à inviter"
+                      />
+                      <button mat-stroked-button type="submit" data-testid="child-invite">Inviter</button>
+                      @if (inviteNoticeChildId() === child.id && inviteNotice(); as notice) {
+                        <p data-testid="child-invite-sent">{{ notice }}</p>
+                      }
+                    </form>
+                  }
                 }
               </div>
             </div>

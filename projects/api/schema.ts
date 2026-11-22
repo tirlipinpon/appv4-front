@@ -474,6 +474,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/{id}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inviter un email sur la fiche */
+        post: operations["inviteParentOnChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/children/{id}/deactivate": {
         parameters: {
             query?: never;
@@ -485,6 +502,23 @@ export interface paths {
         put?: never;
         /** Désactiver un enfant du parent connecté */
         post: operations["deactivateParentChild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/invitations/{invitationId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accepter une invitation et recevoir la fiche */
+        post: operations["acceptParentChildInvitation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1100,6 +1134,23 @@ export interface paths {
         };
         /** Lire la photo d'un enfant du parent connecté */
         get: operations["getParentChildPhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les invitations adressées au compte */
+        get: operations["listParentChildInvitations"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1836,6 +1887,13 @@ export interface components {
             character?: components["schemas"]["ParentChildCharacter"];
             /** @description Centres d'intérêt, dans l'ordre renvoyé par l'API. */
             interests?: string[];
+            /** @description Vrai si ce parent gère la fiche. */
+            referent?: boolean;
+            /**
+             * Format: int32
+             * @description Invitations encore en attente. Zéro si ce parent ne gère pas la fiche.
+             */
+            pendingInvitationCount?: number;
         };
         HumeurChoiceRequest: {
             icon?: string;
@@ -2040,6 +2098,12 @@ export interface components {
             iconCode?: string;
             /** @description Teinte #rrggbb de l'icône, ou null. */
             accentColor?: string;
+        };
+        InviteParentRequest: {
+            email?: string;
+        };
+        InvitationReceiptResponse: {
+            message?: string;
         };
         SwitchRoleRequest: {
             role: string;
@@ -2529,6 +2593,14 @@ export interface components {
             name?: string;
             country?: string;
             grades?: string[];
+        };
+        PendingInvitationResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
+            lastName?: string;
         };
         AuthorizeUrlResponse: {
             authorizationUrl?: string;
@@ -5063,6 +5135,32 @@ export interface operations {
             };
         };
     };
+    inviteParentOnChild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteParentRequest"];
+            };
+        };
+        responses: {
+            /** @description Invitation envoyée, sans dire si le compte existe */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InvitationReceiptResponse"];
+                };
+            };
+        };
+    };
     deactivateParentChild: {
         parameters: {
             query?: never;
@@ -5088,6 +5186,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    acceptParentChildInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentChildResponse"];
                 };
             };
         };
@@ -6288,6 +6408,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listParentChildInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PendingInvitationResponse"][];
                 };
             };
         };
