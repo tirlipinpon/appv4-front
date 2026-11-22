@@ -24,10 +24,12 @@ test('email parent seul arrive sur /parent, et y revient au login suivant', asyn
   const email = uniqueEmail('parent');
   await signupThroughUi(page, email);
   await chooseRoles(page, { parent: true });
+  await passRecoveryPrompt(page);
   await expect(page).toHaveURL(/\/parent$/);
 
   await page.getByTestId(ui.logout).click();
   await loginThroughUi(page, email);
+  await passRecoveryPrompt(page);
   await expect(page).toHaveURL(/\/parent$/);
   await expect(page).not.toHaveURL(/complete-roles/);
 });
@@ -36,6 +38,7 @@ test('email professeur seul arrive sur la page d attente, et y revient', async (
   const email = uniqueEmail('teacher');
   await signupThroughUi(page, email);
   await chooseRoles(page, { teacher: true });
+  await passRecoveryPrompt(page);
   await expect(page).toHaveURL(/\/teacher-pending$/);
   await expect(page.getByTestId(ui.pendingTitle)).toBeVisible();
 
@@ -47,6 +50,7 @@ test('email avec les deux cases entre dans l espace parent', async ({ page }) =>
   const email = uniqueEmail('both');
   await signupThroughUi(page, email);
   await chooseRoles(page, { parent: true, teacher: true });
+  await passRecoveryPrompt(page);
   await expect(page).toHaveURL(/\/parent$/);
   await expect(page).not.toHaveURL(/select-role/);
 });
@@ -59,6 +63,7 @@ for (const provider of ['google', 'facebook'] as const) {
     await openOAuthCallback(page, provider);
     await expect(page).toHaveURL(/\/complete-roles$/);
     await chooseRoles(page, { parent: true });
+    await passRecoveryPrompt(page);
     await expect(page).toHaveURL(/\/parent$/);
   });
 }
@@ -69,6 +74,7 @@ test('google sur un email deja parent saute la page de choix', async ({ page, re
   const chosen = await completeByApi(request, fresh, ['parent']);
   await interceptOAuth(page, 'google', chosen);
   await openOAuthCallback(page, 'google');
+  await passRecoveryPrompt(page);
   await expect(page).toHaveURL(/\/parent$/);
   await expect(page).not.toHaveURL(/complete-roles/);
 });
@@ -117,6 +123,14 @@ async function loginThroughUi(page: Page, email: string): Promise<void> {
   await page.getByTestId(ui.loginEmail).fill(email);
   await page.getByTestId(ui.loginPassword).fill(PASSWORD);
   await page.getByTestId(ui.loginSubmit).click();
+}
+
+async function passRecoveryPrompt(page: Page): Promise<void> {
+  await page.waitForURL(/\/(recovery-prompt|parent|teacher-pending|select-role)$/);
+  if (!page.url().includes('/recovery-prompt')) {
+    return;
+  }
+  await page.getByTestId('recovery-prompt-skip').click();
 }
 
 async function chooseRoles(page: Page, choice: { parent?: boolean; teacher?: boolean }): Promise<void> {

@@ -713,6 +713,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/auth/recovery-prompt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Passer ou enregistrer la sollicitation de contact */
+        post: operations["answerRecoveryPrompt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/auth/recover-identifier": {
         parameters: {
             query?: never;
@@ -2347,6 +2364,12 @@ export interface components {
         AuthMessageResponse: {
             message?: string;
         };
+        RecoveryPromptRequest: {
+            skip?: boolean;
+            displayName?: string;
+            phone?: string;
+            contactEmail?: string;
+        };
         RecoverIdentifierRequest: {
             displayName?: string;
             phone?: string;
@@ -2861,6 +2884,10 @@ export interface components {
             displayName?: string;
             /** @description Code d'avatar, absent s'il n'y en a pas */
             avatarCode?: string;
+            /** @description Vrai s'il faut encore demander le téléphone et le mail de contact */
+            askRecoveryContact?: boolean;
+            /** @description Phrase de la sollicitation, absente quand il ne faut pas demander */
+            recoveryPrompt?: string;
         };
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
@@ -5732,6 +5759,28 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AuthMessageResponse"];
                 };
+            };
+        };
+    };
+    answerRecoveryPrompt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecoveryPromptRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

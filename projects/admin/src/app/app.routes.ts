@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 
+import { recoveryPromptGuard } from './core/auth/recovery-prompt.guard';
+
 /**
  * Shell routes — chaque feature expose ses propres `*.routes.ts` (lazy).
  * Auth transverse = `core/auth` (guard / interceptor / AuthService).
@@ -38,30 +40,41 @@ export const routes: Routes = [
       import('./features/account-recovery/account-recovery.routes').then((m) => m.ACCOUNT_RECOVERY_ROUTES),
   },
   {
+    path: 'recovery-prompt',
+    loadChildren: () =>
+      import('./features/recovery-prompt/recovery-prompt.routes').then((m) => m.RECOVERY_PROMPT_ROUTES),
+  },
+  {
     path: 'teacher-pending',
+    canActivate: [recoveryPromptGuard],
     loadChildren: () =>
       import('./features/teacher-pending/teacher-pending.routes').then((m) => m.TEACHER_PENDING_ROUTES),
   },
   {
     path: 'select-role',
+    canActivate: [recoveryPromptGuard],
     loadChildren: () =>
       import('./features/select-role/select-role.routes').then((m) => m.SELECT_ROLE_ROUTES),
   },
   {
     path: 'parent',
+    canActivate: [recoveryPromptGuard],
     loadChildren: () => import('./features/parent/parent.routes').then((m) => m.PARENT_ROUTES),
   },
   {
     path: 'teacher',
+    canActivate: [recoveryPromptGuard],
     loadChildren: () => import('./features/teacher/teacher.routes').then((m) => m.TEACHER_ROUTES),
   },
   {
     path: 'admin/humeurs',
+    canActivate: [recoveryPromptGuard],
     loadChildren: () =>
       import('./features/admin/humeurs/humeurs.routes').then((m) => m.HUMEURS_ROUTES),
   },
   {
     path: 'admin/teacher-requests',
+    canActivate: [recoveryPromptGuard],
     loadChildren: () =>
       import('./features/admin/teacher-requests/teacher-requests.routes').then(
         (m) => m.TEACHER_REQUESTS_ROUTES,
@@ -81,6 +94,7 @@ export const routes: Routes = [
   },
   {
     path: '',
+    canActivate: [recoveryPromptGuard],
     loadChildren: () => import('./features/home/home.routes').then((m) => m.HOME_ROUTES),
   },
   { path: '**', redirectTo: '' },
