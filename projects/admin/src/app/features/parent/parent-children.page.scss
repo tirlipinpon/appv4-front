@@ -251,3 +251,26 @@
   margin: 0.5rem 0;
   border-radius: 8px;
 }
+
+.interest-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+}
+
+.interest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  background: var(--app-primary-soft);
+  border-radius: 999px;
+  padding: 0.1rem 0.2rem 0.1rem 0.55rem;
+}
+
+.interest-chip button {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}

@@ -257,6 +257,29 @@
               </mat-select>
             </mat-form-field>
 
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Centres d'intérêt</mat-label>
+              <input
+                matInput
+                data-testid="child-interest"
+                name="interest"
+                autocomplete="off"
+                [value]="interestDraft()"
+                (input)="onInterestInput($event)"
+                (keydown.enter)="addInterest($event)"
+              />
+            </mat-form-field>
+            @if (interests().length > 0) {
+              <div class="interest-chips">
+                @for (word of interests(); track $index) {
+                  <span class="interest-chip">
+                    <button type="button" data-testid="child-interest-chip" (click)="editInterest($index)">{{ word }}</button>
+                    <button type="button" data-testid="child-interest-remove" [attr.aria-label]="'Retirer ' + word" (click)="removeInterest($index)">×</button>
+                  </span>
+                }
+              </div>
+            }
+
             <p class="label">Avatar</p>
             <div class="avatars">
               @for (avatar of avatars; track avatar.code) {

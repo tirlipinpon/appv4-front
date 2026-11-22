@@ -299,6 +299,91 @@ describe('ParentChildrenPage liens', () => {
     expect(page.photoPreview()).toBeNull();
     expect(page.avatarCode()).toBe('fox');
   });
+
+  it('envoie les centres d\'intérêt dans l\'ordre saisi et ne les montre pas sur la carte', () => {
+    page.children.set([{ ...lea, interests: ['Pokémon'] }]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="child-interest-chip"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Pokémon');
+
+    fill(page);
+    page.interestDraft.set('formule 1');
+    page.addInterest(enter());
+    page.interestDraft.set('Pokémon');
+    page.addInterest(enter());
+    page.pin.set('4821');
+    page.pinConfirmation.set('4821');
+    page.save();
+
+    const created = http.expectOne(childrenUrl);
+    expect(created.request.method).toBe('POST');
+    expect(created.request.body.interests).toEqual(['formule 1', 'Pokémon']);
+    created.flush({ id: 9, firstName: 'Léa', interests: ['formule 1', 'Pokémon'] });
+    http.expectOne(childrenUrl).flush({
+      children: [{ ...lea, id: 9, interests: ['formule 1', 'Pokémon'] }],
+      schools: [],
+      curricula: [],
+    });
+    page.edit({ ...lea, id: 9, interests: ['formule 1', 'Pokémon'] });
+    expect(page.interests()).toEqual(['formule 1', 'Pokémon']);
+  });
+
+  it('garde la virgule dans une seule pastille et affiche le refus de l\'API', () => {
+    fill(page);
+    page.interestDraft.set('foot, basket');
+    page.addInterest(enter());
+    expect(page.interests()).toEqual(['foot, basket']);
+    page.pin.set('4821');
+    page.pinConfirmation.set('4821');
+    page.save();
+    const created = http.expectOne(childrenUrl);
+    expect(created.request.body.interests).toEqual(['foot, basket']);
+    created.flush(
+      { message: "Un centre d'intérêt ne peut contenir que des lettres, des chiffres, des espaces, un tiret ou une apostrophe." },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    expect(page.error()).toBe("Un centre d'intérêt ne peut contenir que des lettres, des chiffres, des espaces, un tiret ou une apostrophe.");
+    expect(page.formOpen()).toBeTrue();
+    expect(page.interests()).toEqual(['foot, basket']);
+  });
+
+  it('refuse la onzième pastille avec la phrase de limite', () => {
+    page.interests.set(['mot1', 'mot2', 'mot3', 'mot4', 'mot5', 'mot6', 'mot7', 'mot8', 'mot9', 'mot10']);
+    page.interestDraft.set('encore');
+    page.addInterest(enter());
+    expect(page.interests().length).toBe(10);
+    expect(page.interestDraft()).toBe('encore');
+    expect(page.error()).toBe("Dix centres d'intérêt maximum.");
+  });
+
+  it('remet une pastille dans le champ et la retire du brouillon', () => {
+    page.interests.set(['formule 1', 'Pokémon']);
+    page.editInterest(1);
+    expect(page.interestDraft()).toBe('Pokémon');
+    expect(page.interests()).toEqual(['formule 1']);
+    page.interestDraft.set('espace');
+    page.addInterest(enter());
+    expect(page.interests()).toEqual(['formule 1', 'espace']);
+    page.removeInterest(0);
+    expect(page.interests()).toEqual(['espace']);
+  });
+
+  it('ouvre un enfant depuis un frère sans reprendre ses centres d\'intérêt', () => {
+    page.openFrom({ ...lea, interests: ['espace'], avatarCode: 'fox', hasPhoto: false });
+    expect(page.formOpen()).toBeTrue();
+    expect(page.lastName()).toBe('Martin');
+    expect(page.interests()).toEqual([]);
+  });
+
+  it('ferme le formulaire sans enregistrer les pastilles', () => {
+    page.openForm();
+    page.interestDraft.set('dino');
+    page.addInterest(enter());
+    page.closeForm();
+    expect(page.formOpen()).toBeFalse();
+    expect(page.interests()).toEqual([]);
+    http.expectNone(childrenUrl);
+  });
 });
 
 const schools: ParentSchoolOption[] = [
@@ -321,6 +406,10 @@ function inputEvent(value: string): Event {
   const input = document.createElement('input');
   input.value = value;
   return { target: input } as unknown as Event;
+}
+
+function enter(): Event {
+  return new KeyboardEvent('keydown', { key: 'Enter', cancelable: true });
 }
 
 function fileEvent(file: File): Event {

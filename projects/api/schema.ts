@@ -1762,6 +1762,8 @@ export interface components {
             fromChildId?: number;
             /** @description AUCUN, FRERE, SOEUR, DEMI_FRERE, DEMI_SOEUR, JUMEAU, JUMELLE, COUSIN ou COUSINE. */
             link?: string;
+            /** @description Centres d'intérêt envoyés avec la fiche. Absent : refus. Vide : efface. */
+            interests?: string[];
         };
         ParentChildCharacter: {
             styleCode?: string;
@@ -1815,6 +1817,8 @@ export interface components {
             links?: components["schemas"]["ParentChildLink"][];
             /** @description Personnage choisi par l'enfant. Lorelei s'il n'a encore rien enregistré. */
             character?: components["schemas"]["ParentChildCharacter"];
+            /** @description Centres d'intérêt, dans l'ordre renvoyé par l'API. */
+            interests?: string[];
         };
         HumeurChoiceRequest: {
             icon?: string;
