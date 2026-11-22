@@ -14,8 +14,10 @@ const childrenUrl = 'http://localhost:8080/api/int/parent/children';
 const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
 const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
+const invitationsUrl = 'http://localhost:8080/api/int/parent/children/invitations';
+
 function child(partial: ParentChildResponse): ParentChildResponse {
-  return partial;
+  return { referent: true, pendingInvitationCount: 0, ...partial };
 }
 
 const lea = child({
@@ -61,6 +63,7 @@ describe('ParentChildrenPage liens', () => {
     http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
     http.expectOne(childrenUrl).flush({ children: [lea, noah, camille], schools: [], curricula: [] });
+    http.expectOne(invitationsUrl).flush([]);
     http.expectOne(spacesUrl).flush({ roles: ['parent'], teacherRequest: 'none' });
     http.expectOne(accountUrl).flush({ displayName: 'Tony' });
     fixture.detectChanges();
@@ -324,6 +327,7 @@ describe('ParentChildrenPage liens', () => {
       schools: [],
       curricula: [],
     });
+    http.expectOne(invitationsUrl).flush([]);
     page.edit({ ...lea, id: 9, interests: ['formule 1', 'Pokémon'] });
     expect(page.interests()).toEqual(['formule 1', 'Pokémon']);
   });
@@ -423,6 +427,54 @@ describe('ParentChildrenPage liens', () => {
     http.expectOne((request) => request.url.includes('interest-suggestions')).flush([]);
     expect(page.interestSuggestions()).toEqual([]);
   }));
+
+  it('invite le parent referent et cache les boutons de gestion sinon', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="child-delete"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="child-invite"]')).not.toBeNull();
+
+    page.children.set([{ ...lea, referent: false, pendingInvitationCount: 0 }]);
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="child-delete"]')).toBeNull();
+    expect(root.querySelector('[data-testid="child-deactivate"]')).toBeNull();
+    expect(root.querySelector('[data-testid="child-invite"]')).toBeNull();
+
+    page.children.set([{ ...lea, referent: true, pendingInvitationCount: 1 }]);
+    fixture.detectChanges();
+    const email = root.querySelector('[data-testid="child-invite-email"]') as HTMLInputElement;
+    email.value = 'autre@exemple.fr';
+    email.dispatchEvent(new Event('input'));
+    (root.querySelector('[data-testid="child-invite"]') as HTMLButtonElement).click();
+    const sent = http.expectOne(`${childrenUrl}/1/invitations`);
+    expect(sent.request.body).toEqual({ email: 'autre@exemple.fr' });
+    sent.flush({ message: 'Invitation envoyée' });
+    http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(childrenUrl).flush({
+      children: [{ ...lea, referent: true, pendingInvitationCount: 1 }],
+      schools: [],
+      curricula: [],
+    });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="child-invite-sent"]')?.textContent).toContain('Invitation envoyée');
+
+    (root.querySelector('[data-testid="child-delete"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="child-invite-warning"]')?.textContent)
+      .toContain('Une invitation est en attente. Retirer la fiche l\'annulera.');
+  });
+
+  it('accepte une invitation et recharge la liste', () => {
+    page.invitations.set([{ id: 4, childId: 1, firstName: 'Léa', lastName: 'Martin' }]);
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('[data-testid="child-invitation-accept"]') as HTMLButtonElement).click();
+    const accepted = http.expectOne(`${invitationsUrl}/4/accept`);
+    expect(accepted.request.method).toBe('POST');
+    accepted.flush({ ...lea });
+    http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(childrenUrl).flush({ children: [lea], schools: [], curricula: [] });
+    fixture.detectChanges();
+    expect(page.children().map((item) => item.id)).toEqual([1]);
+  });
 });
 
 const schools: ParentSchoolOption[] = [

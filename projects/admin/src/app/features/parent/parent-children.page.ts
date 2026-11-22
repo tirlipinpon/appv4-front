@@ -29,6 +29,7 @@ import type {
   ParentChildResponse,
   ParentGradeList,
   ParentSchoolOption,
+  PendingInvitationResponse,
 } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { SchoolCatalogService } from '../../core/api/school-catalog.service';
@@ -155,6 +156,10 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   readonly keepPhoto = signal(false);
   readonly pendingKind = signal<'deactivate' | 'hide' | null>(null);
   readonly pendingChildId = signal<number | null>(null);
+  readonly invitations = signal<PendingInvitationResponse[]>([]);
+  readonly inviteEmails = signal<Record<number, string>>({});
+  readonly inviteNotice = signal<string | null>(null);
+  readonly inviteNoticeChildId = signal<number | null>(null);
 
   private fromQueryHandled = false;
   private schoolTimer: ReturnType<typeof setTimeout> | null = null;
@@ -388,6 +393,49 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   askDeactivate(child: ParentChildResponse): void {
     this.pendingKind.set('deactivate');
     this.pendingChildId.set(child.id ?? null);
+  }
+
+  inviteEmail(child: ParentChildResponse): string {
+    const id = child.id;
+    if (id == null) {
+      return '';
+    }
+    return this.inviteEmails()[id] ?? '';
+  }
+
+  onInviteEmail(child: ParentChildResponse, event: Event): void {
+    const id = child.id;
+    if (id == null) {
+      return;
+    }
+    const value = (event.target as HTMLInputElement).value;
+    this.inviteEmails.update((current) => ({ ...current, [id]: value }));
+  }
+
+  sendInvite(child: ParentChildResponse): void {
+    const id = child.id;
+    if (id == null) {
+      return;
+    }
+    this.api.invite(id, this.inviteEmail(child)).subscribe({
+      next: (receipt) => {
+        this.inviteNotice.set(receipt.message ?? null);
+        this.inviteNoticeChildId.set(id);
+        this.reload();
+      },
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Invitation impossible.')),
+    });
+  }
+
+  acceptInvitation(invitation: PendingInvitationResponse): void {
+    const id = invitation.id;
+    if (id == null) {
+      return;
+    }
+    this.api.acceptInvitation(id).subscribe({
+      next: () => this.reload(),
+      error: (err: HttpErrorResponse) => this.error.set(this.message(err, 'Acceptation impossible.')),
+    });
   }
 
   askRemove(child: ParentChildResponse): void {
@@ -665,6 +713,13 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   }
 
   private reload(): void {
+    this.api
+      .invitations()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => this.invitations.set(rows ?? []),
+        error: () => this.invitations.set([]),
+      });
     this.api
       .load()
       .pipe(takeUntilDestroyed(this.destroyRef))
