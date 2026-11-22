@@ -29,22 +29,23 @@ export type KnownFormCode = (typeof FORM)[keyof typeof FORM];
 
 export const HOLE = '___';
 
-export interface ChoiceDraft {
-  label: string;
-  correct: boolean;
+export interface ImageSource {
+  /** Identifiant de la pièce du serveur, conservé même si l'ordre du brouillon change. */
+  sourceId?: number;
+}
+
+export interface PieceImageDraft extends ImageSource {
   imageDataUrl?: string;
   /** Vrai quand la liste sait qu'une image existe, sans en envoyer les octets. */
   hasImage?: boolean;
 }
 
-export interface SavedChoice {
+export interface ChoiceDraft extends PieceImageDraft {
   label: string;
   correct: boolean;
-  imageDataUrl?: string;
-  hasImage?: boolean;
 }
 
-export interface PairDraft {
+export interface PairDraft extends ImageSource {
   questionSide: string;
   answerSide: string;
   questionImageDataUrl?: string;
@@ -53,22 +54,18 @@ export interface PairDraft {
   answerHasImage?: boolean;
 }
 
-export interface ItemDraft {
+export interface ItemDraft extends PieceImageDraft {
   label: string;
   /** Jalon de frise (ex. « 20 minutes »). Vide si timeline désactivée. */
   axisLabel: string;
-  imageDataUrl?: string;
-  hasImage?: boolean;
 }
 
-export interface StatementDraft {
+export interface StatementDraft extends PieceImageDraft {
   label: string;
   truthful: boolean | null;
-  imageDataUrl?: string;
-  hasImage?: boolean;
 }
 
-export interface LinkDraft {
+export interface LinkDraft extends ImageSource {
   leftLabel: string;
   rightLabel: string;
   leftImageDataUrl?: string;
@@ -82,11 +79,9 @@ export interface ColumnDraft {
 }
 
 /** Carte rattachée à une colonne via l'index 0-based dans `columns`. */
-export interface CardDraft {
+export interface CardDraft extends PieceImageDraft {
   label: string;
   columnIndex: number;
-  imageDataUrl?: string;
-  hasImage?: boolean;
 }
 
 export interface GapWordDraft {
@@ -94,12 +89,9 @@ export interface GapWordDraft {
 }
 
 /** Élément d'un Simon. Une seule face : texte, couleur #rrggbb, ou image. */
-export interface SimonElementDraft {
+export interface SimonElementDraft extends PieceImageDraft {
   label: string;
   color: string;
-  imageDataUrl?: string;
-  /** Vrai quand la liste sait qu'une image existe, sans en envoyer les octets. */
-  hasImage?: boolean;
 }
 
 /**
@@ -111,7 +103,7 @@ export interface SavedQuestion {
   prompt: string;
   formCode: string;
   formLabel: string;
-  choices: SavedChoice[];
+  choices: ChoiceDraft[];
   pairs: PairDraft[];
   items: ItemDraft[];
   statements: StatementDraft[];

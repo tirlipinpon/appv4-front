@@ -109,6 +109,9 @@
         <p class="field-error" role="alert">{{ message }}</p>
         <button mat-button type="button" (click)="loadGamification()">Réessayer</button>
       }
+      @if (imagesLoading()) {
+        <p class="hint" role="status">Chargement des images…</p>
+      }
 
       @if (selectedCode() === 'qcm') {
         <div class="editor">
@@ -131,7 +134,7 @@
                 [text]="choice.label"
                 [imageDataUrl]="choice.imageDataUrl"
                 [hasImage]="choice.hasImage === true"
-                [disabled]="saving() || imagesLoading()"
+                [disabled]="saving() || (imagesLoading() && choice.hasImage === true)"
                 (textChange)="setChoiceLabel($index, $event)"
                 (face)="setChoiceFace($index, $event)"
                 (imagePending)="onChoiceImagePending($index)"
@@ -154,7 +157,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -181,7 +184,7 @@
                 [text]="pair.questionSide"
                 [imageDataUrl]="pair.questionImageDataUrl"
                 [hasImage]="pair.questionHasImage === true"
-                [disabled]="saving() || imagesLoading()"
+                [disabled]="saving() || (imagesLoading() && pair.questionHasImage === true)"
                 (textChange)="setPairSide($index, 'questionSide', $event)"
                 (face)="setPairFace($index, 'question', $event)"
                 (imagePending)="onPairImagePending($index, 'question')"
@@ -193,7 +196,7 @@
                 [text]="pair.answerSide"
                 [imageDataUrl]="pair.answerImageDataUrl"
                 [hasImage]="pair.answerHasImage === true"
-                [disabled]="saving() || imagesLoading()"
+                [disabled]="saving() || (imagesLoading() && pair.answerHasImage === true)"
                 (textChange)="setPairSide($index, 'answerSide', $event)"
                 (face)="setPairFace($index, 'answer', $event)"
                 (imagePending)="onPairImagePending($index, 'answer')"
@@ -207,7 +210,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -235,7 +238,7 @@
                 [text]="item.label"
                 [imageDataUrl]="item.imageDataUrl"
                 [hasImage]="item.hasImage === true"
-                [disabled]="saving() || imagesLoading()"
+                [disabled]="saving() || (imagesLoading() && item.hasImage === true)"
                 (textChange)="setItemLabel($index, $event)"
                 (face)="setItemFace($index, $event)"
                 (imagePending)="onItemImagePending($index)"
@@ -288,7 +291,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -315,7 +318,7 @@
                 [text]="statement.label"
                 [imageDataUrl]="statement.imageDataUrl"
                 [hasImage]="statement.hasImage === true"
-                [disabled]="saving() || imagesLoading()"
+                [disabled]="saving() || (imagesLoading() && statement.hasImage === true)"
                 (textChange)="setStatementLabel($index, $event)"
                 (face)="setStatementFace($index, $event)"
                 (imagePending)="onStatementImagePending($index)"
@@ -351,7 +354,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -378,7 +381,7 @@
                 [text]="link.leftLabel"
                 [imageDataUrl]="link.leftImageDataUrl"
                 [hasImage]="link.leftHasImage === true"
-                [disabled]="saving() || imagesLoading()"
+                [disabled]="saving() || (imagesLoading() && link.leftHasImage === true)"
                 (textChange)="setLinkSide($index, 'leftLabel', $event)"
                 (face)="setLinkFace($index, 'left', $event)"
                 (imagePending)="onLinkImagePending($index, 'left')"
@@ -390,7 +393,7 @@
                 [text]="link.rightLabel"
                 [imageDataUrl]="link.rightImageDataUrl"
                 [hasImage]="link.rightHasImage === true"
-                [disabled]="saving() || imagesLoading()"
+                [disabled]="saving() || (imagesLoading() && link.rightHasImage === true)"
                 (textChange)="setLinkSide($index, 'rightLabel', $event)"
                 (face)="setLinkFace($index, 'right', $event)"
                 (imagePending)="onLinkImagePending($index, 'right')"
@@ -404,7 +407,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -452,7 +455,7 @@
                 [text]="card.label"
                 [imageDataUrl]="card.imageDataUrl"
                 [hasImage]="card.hasImage === true"
-                [disabled]="saving() || imagesLoading()"
+                [disabled]="saving() || (imagesLoading() && card.hasImage === true)"
                 (textChange)="setCardLabel($index, $event)"
                 (face)="setCardFace($index, $event)"
                 (imagePending)="onCardImagePending($index)"
@@ -484,7 +487,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -546,7 +549,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -569,7 +572,7 @@
           <app-click-zone-editor
             [imageDataUrl]="clickImage()"
             [zones]="clickZones()"
-            [disabled]="saving()"
+            [disabled]="saving() || imagesLoading()"
             [orderEnabled]="clicksOrdered()"
             (imageSelected)="setClickImage($event)"
             (imageError)="setClickImageError($event)"
@@ -601,7 +604,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -627,7 +630,7 @@
             [boardMode]="boardMode()"
             [boardImageDataUrl]="boardImage()"
             [zones]="clickZones()"
-            [disabled]="saving()"
+            [disabled]="saving() || imagesLoading()"
             [magnet]="puzzleMagnet()"
             (imageSelected)="setClickImage($event)"
             (boardModeChange)="setBoardMode($event)"
@@ -639,7 +642,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -668,7 +671,7 @@
                 [hasImage]="element.hasImage === true"
                 [allowColor]="true"
                 [color]="element.color"
-                [disabled]="saving() || imagesLoading()"
+                [disabled]="saving() || (imagesLoading() && element.hasImage === true)"
                 (textChange)="setSimonElementLabel($index, $event)"
                 (face)="setSimonElementFace($index, $event)"
                 (colorSelected)="setSimonElementFace($index, 'color')"
@@ -694,7 +697,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>
@@ -726,7 +729,7 @@
           @if (editingId()) {
             <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit()">Annuler</button>
           }
-          <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="save()">
+          <button mat-flat-button color="primary" type="button" [disabled]="saving() || imagesLoading()" (click)="save()">
             Enregistrer
           </button>
         </div>

@@ -37,7 +37,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     if (!face) {
       return [];
     }
-    return [{ label: face.label, correct: !!choice.correct, ...face.extra }];
+    return [{ label: face.label, correct: !!choice.correct, ...imageSource(choice.id), ...face.extra }];
   });
   const pairs = (question.pairs ?? []).flatMap((pair) => {
     const questionSide = textFace(pair.questionSide, pair.questionImageWebp, pair.questionHasImage);
@@ -48,6 +48,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     return [{
       questionSide: questionSide.label,
       answerSide: answerSide.label,
+      ...imageSource(pair.id),
       ...(questionSide.extra.imageDataUrl ? { questionImageDataUrl: questionSide.extra.imageDataUrl } : {}),
       ...(questionSide.extra.hasImage ? { questionHasImage: true } : {}),
       ...(answerSide.extra.imageDataUrl ? { answerImageDataUrl: answerSide.extra.imageDataUrl } : {}),
@@ -59,14 +60,14 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     if (!face) {
       return [];
     }
-    return [{ label: face.label, axisLabel: item.axisLabel ?? '', ...face.extra }];
+    return [{ label: face.label, axisLabel: item.axisLabel ?? '', ...imageSource(item.id), ...face.extra }];
   });
   const statements = (question.statements ?? []).flatMap((row) => {
     const face = textFace(row.label, row.imageWebp, row.hasImage);
     if (!face || row.truthful == null) {
       return [];
     }
-    return [{ label: face.label, truthful: row.truthful, ...face.extra }];
+    return [{ label: face.label, truthful: row.truthful, ...imageSource(row.id), ...face.extra }];
   });
   const links = (question.links ?? []).flatMap((row) => {
     const left = textFace(row.leftLabel, row.leftImageWebp, row.leftHasImage);
@@ -77,6 +78,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     return [{
       leftLabel: left.label,
       rightLabel: right.label,
+      ...imageSource(row.id),
       ...(left.extra.imageDataUrl ? { leftImageDataUrl: left.extra.imageDataUrl } : {}),
       ...(left.extra.hasImage ? { leftHasImage: true } : {}),
       ...(right.extra.imageDataUrl ? { rightImageDataUrl: right.extra.imageDataUrl } : {}),
@@ -101,7 +103,7 @@ export function parseSavedQuestion(question: ApiQuestion): SavedQuestion | null 
     if (columnIndex < 0) {
       return [];
     }
-    return [{ label: face.label, columnIndex, ...face.extra }];
+    return [{ label: face.label, columnIndex, ...imageSource(row.id), ...face.extra }];
   });
   const answers = (question.answers ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
   const decoys = (question.decoys ?? []).flatMap((row) => (row.label ? [{ label: row.label }] : []));
@@ -156,6 +158,10 @@ export function requireSavedQuestion(question: ApiQuestion): SavedQuestion {
     throw new Error('Question sans identifiant valide');
   }
   return saved;
+}
+
+function imageSource(id: number | undefined) {
+  return id == null ? {} : { sourceId: id };
 }
 
 /**
@@ -358,6 +364,7 @@ function savedSimonElements(elements: ApiQuestion['elements']): SimonElementDraf
     const draft: SimonElementDraft = {
       label: imageDataUrl || element.color ? '' : (element.label ?? ''),
       color: imageDataUrl ? '' : (element.color ?? ''),
+      ...imageSource(element.id),
     };
     if (imageDataUrl) {
       draft.imageDataUrl = imageDataUrl;
