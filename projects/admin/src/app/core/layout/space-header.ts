@@ -64,6 +64,7 @@ export class SpaceHeader implements OnInit {
           { label: 'Enfants', path: '/parent/enfants', testId: 'parent-nav-children' },
           { label: 'Profil', path: '/parent/profil', testId: 'parent-nav-profile' },
           { label: 'Matières', path: '/parent/matieres', testId: 'parent-nav-subjects' },
+          { label: 'Humeur', path: '/parent/humeur', testId: 'parent-nav-humeur' },
         ],
       };
     }

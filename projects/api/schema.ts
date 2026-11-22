@@ -1057,6 +1057,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/humeurs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la dernière humeur de chaque enfant */
+        get: operations["listParentHumeurs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/children/{id}/photo": {
         parameters: {
             query?: never;
@@ -2458,6 +2475,23 @@ export interface components {
             offers?: components["schemas"]["ChildSubjectOffer"][];
             /** Format: int64 */
             nextCursor?: number;
+        };
+        ParentHumeurChildItem: {
+            /** Format: int64 */
+            id?: number;
+            firstName?: string;
+            lastName?: string;
+            humeur?: components["schemas"]["ParentHumeurItem"];
+        };
+        ParentHumeurItem: {
+            icon?: string;
+            word?: string;
+            label?: string;
+            dateLabel?: string;
+            timeLabel?: string;
+        };
+        ParentHumeurListResponse: {
+            children?: components["schemas"]["ParentHumeurChildItem"][];
         };
         ParentChildrenResponse: {
             children?: components["schemas"]["ParentChildResponse"][];
@@ -6128,6 +6162,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ChildSubjectOfferPage"];
+                };
+            };
+        };
+    };
+    listParentHumeurs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Enfants du parent, avec ou sans humeur */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentHumeurListResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
         };
