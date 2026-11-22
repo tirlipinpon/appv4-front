@@ -8,7 +8,9 @@ import type {
   ParentChildResponse,
   ParentChildrenResponse,
   PendingInvitationResponse,
+  FicheHolderResponse,
   ShareRequestResponse,
+  TransferResponse,
 } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
@@ -79,6 +81,33 @@ export class ParentChildrenService {
 
   refuseShare(id: number): Observable<void> {
     return this.http.post<void>(`${environment.apiBaseUrl}/parent/children/demandes/${id}/refuse`, null);
+  }
+
+  holders(id: number): Observable<FicheHolderResponse[]> {
+    return this.http.get<FicheHolderResponse[]>(`${environment.apiBaseUrl}/parent/children/${id}/holders`);
+  }
+
+  transfers(): Observable<TransferResponse[]> {
+    return this.http.get<TransferResponse[]>(`${environment.apiBaseUrl}/parent/children/transferts`);
+  }
+
+  startTransfer(id: number, holderUserId: number, message: string): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/parent/children/${id}/transferts`, {
+      holderUserId,
+      message,
+    });
+  }
+
+  acceptTransfer(id: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/parent/children/transferts/${id}/accept`, null);
+  }
+
+  refuseTransfer(id: number): Observable<void> {
+    return this.http.post<void>(`${environment.apiBaseUrl}/parent/children/transferts/${id}/refuse`, null);
+  }
+
+  cancelTransfer(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiBaseUrl}/parent/children/transferts/${id}`);
   }
 
   acceptInvitation(id: number): Observable<ParentChildResponse> {

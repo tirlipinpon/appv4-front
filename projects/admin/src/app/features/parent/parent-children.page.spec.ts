@@ -16,6 +16,17 @@ const accountUrl = 'http://localhost:8080/api/int/auth/me';
 
 const invitationsUrl = 'http://localhost:8080/api/int/parent/children/invitations';
 const demandesUrl = 'http://localhost:8080/api/int/parent/children/demandes';
+const transfersUrl = 'http://localhost:8080/api/int/parent/children/transferts';
+
+function expectTransfers(http: HttpTestingController): void {
+  http.expectOne(transfersUrl).flush([]);
+}
+
+function expectHolders(http: HttpTestingController, ids: number[]): void {
+  for (const id of ids) {
+    http.expectOne(`${childrenUrl}/${id}/holders`).flush([]);
+  }
+}
 
 function child(partial: ParentChildResponse): ParentChildResponse {
   return { referent: true, pendingInvitationCount: 0, ...partial };
@@ -64,8 +75,10 @@ describe('ParentChildrenPage liens', () => {
     http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
     http.expectOne(childrenUrl).flush({ children: [lea, noah, camille], schools: [], curricula: [] });
+    expectHolders(http, [1, 2, 3]);
     http.expectOne(invitationsUrl).flush([]);
     http.expectOne(demandesUrl).flush([]);
+    expectTransfers(http);
     http.expectOne(spacesUrl).flush({ roles: ['parent'], teacherRequest: 'none' });
     http.expectOne(accountUrl).flush({ displayName: 'Tony' });
     fixture.detectChanges();
@@ -329,8 +342,10 @@ describe('ParentChildrenPage liens', () => {
       schools: [],
       curricula: [],
     });
+    expectHolders(http, [9]);
     http.expectOne(invitationsUrl).flush([]);
     http.expectOne(demandesUrl).flush([]);
+    expectTransfers(http);
     page.edit({ ...lea, id: 9, interests: ['formule 1', 'Pokémon'] });
     expect(page.interests()).toEqual(['formule 1', 'Pokémon']);
   });
@@ -453,11 +468,13 @@ describe('ParentChildrenPage liens', () => {
     sent.flush({ message: 'Invitation envoyée' });
     http.expectOne(invitationsUrl).flush([]);
     http.expectOne(demandesUrl).flush([]);
+    expectTransfers(http);
     http.expectOne(childrenUrl).flush({
       children: [{ ...lea, referent: true, pendingInvitationCount: 1 }],
       schools: [],
       curricula: [],
     });
+    expectHolders(http, [1]);
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="child-invite-sent"]')?.textContent).toContain('Invitation envoyée');
 
@@ -476,7 +493,9 @@ describe('ParentChildrenPage liens', () => {
     accepted.flush({ ...lea });
     http.expectOne(invitationsUrl).flush([]);
     http.expectOne(demandesUrl).flush([]);
+    expectTransfers(http);
     http.expectOne(childrenUrl).flush({ children: [lea], schools: [], curricula: [] });
+    expectHolders(http, [1]);
     fixture.detectChanges();
     expect(page.children().map((item) => item.id)).toEqual([1]);
   });
@@ -512,7 +531,9 @@ describe('ParentChildrenPage liens', () => {
         { childId: 2, firstName: 'Léa', lastName: 'Martin' },
       ],
     }]);
+    expectTransfers(http);
     http.expectOne(childrenUrl).flush({ children: [lea, noah], schools: [], curricula: [] });
+    expectHolders(http, [1, 2]);
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="child-share-sent"]')?.textContent).toContain('Demande envoyée');
     expect(root.querySelector('[data-testid="child-share-request-label"]')?.textContent).toContain('demande pour Léa Martin');
@@ -523,7 +544,70 @@ describe('ParentChildrenPage liens', () => {
     accepted.flush(null);
     http.expectOne(invitationsUrl).flush([]);
     http.expectOne(demandesUrl).flush([]);
+    expectTransfers(http);
     http.expectOne(childrenUrl).flush({ children: [lea], schools: [], curricula: [] });
+    expectHolders(http, [1]);
+  });
+
+  it('propose le transfert au parent deja sur la fiche et laisse le destinataire repondre', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    page.holders.set({ 1: [{ userId: 4, label: 'Bea' }, { userId: 5, label: 'C' }] });
+    page.children.set([{ ...lea, pendingTransferCount: 1 }, { ...noah, referent: false }]);
+    fixture.detectChanges();
+    const leaCard = root.querySelector('[data-testid="child-1"]') as HTMLElement;
+    const noahCard = root.querySelector('[data-testid="child-2"]') as HTMLElement;
+    expect(noahCard.querySelector('[data-testid="child-transfer"]')).toBeNull();
+    expect(leaCard.querySelector('[data-testid="child-transfer-holder"]')?.textContent).toContain('Bea');
+    expect(leaCard.querySelector('[data-testid="child-transfer-holder"]')?.textContent).toContain('C');
+
+    (leaCard.querySelector('[data-testid="child-delete"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(leaCard.querySelector('[data-testid="child-transfer-warning"]')?.textContent)
+      .toContain("Un transfert est en attente. Retirer la fiche l'annulera.");
+    (leaCard.querySelector('[data-testid="child-pending-cancel"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    (leaCard.querySelector('[data-testid="child-deactivate"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(leaCard.querySelector('[data-testid="child-transfer-warning"]')).toBeNull();
+    (leaCard.querySelector('[data-testid="child-pending-cancel"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const select = leaCard.querySelector('[data-testid="child-transfer-holder"]') as HTMLSelectElement;
+    select.value = '5';
+    select.dispatchEvent(new Event('change'));
+    const message = leaCard.querySelector('[data-testid="child-transfer-message"]') as HTMLInputElement;
+    message.value = 'Tu la gères ?';
+    message.dispatchEvent(new Event('input'));
+    (leaCard.querySelector('[data-testid="child-transfer"]') as HTMLButtonElement).click();
+    const sent = http.expectOne(`${childrenUrl}/1/transferts`);
+    expect(sent.request.method).toBe('POST');
+    expect(sent.request.body).toEqual({ holderUserId: 5, message: 'Tu la gères ?' });
+    sent.flush({ message: 'Le message est manquant.' }, { status: 400, statusText: 'Bad Request' });
+    fixture.detectChanges();
+    expect(root.querySelector('.error')?.textContent).toContain('Le message est manquant.');
+
+    page.transfers.set([{
+      id: 7,
+      childId: 1,
+      firstName: 'Léa',
+      lastName: 'Martin',
+      message: 'Tu la gères ?',
+      incoming: true,
+    }]);
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="child-transfer-incoming"]')?.textContent).toContain('Tu la gères ?');
+    (root.querySelector('[data-testid="child-transfer-accept"]') as HTMLButtonElement).click();
+    const accepted = http.expectOne(`${transfersUrl}/7/accept`);
+    expect(accepted.request.method).toBe('POST');
+    accepted.flush(null);
+    expectTransfers(http);
+    http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(demandesUrl).flush([]);
+    http.expectOne(childrenUrl).flush({ children: [{ ...lea, referent: false }], schools: [], curricula: [] });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="child-transfer"]')).toBeNull();
+    expect(root.querySelector('[data-testid="child-delete"]')).toBeNull();
   });
 });
 
