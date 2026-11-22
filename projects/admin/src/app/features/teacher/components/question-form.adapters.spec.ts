@@ -61,8 +61,8 @@ describe('question-form.adapters', () => {
         formCode: FORM.QCM,
         prompt: 'Combien font 2 + 2 ?',
         choices: [
-          { label: '3', correct: false },
-          { label: '4', correct: true },
+          { label: '3', correct: false, sourceId: 1 },
+          { label: '4', correct: true, sourceId: 2 },
         ],
       }),
     );
@@ -132,8 +132,8 @@ describe('question-form.adapters', () => {
     });
     expect(saved?.columns).toEqual([{ label: 'Oui' }, { label: 'Non' }]);
     expect(saved?.cards).toEqual([
-      { label: 'A', columnIndex: 0 },
-      { label: 'B', columnIndex: 1 },
+      { label: 'A', columnIndex: 0, sourceId: 1 },
+      { label: 'B', columnIndex: 1, sourceId: 2 },
     ]);
 
     expect(
@@ -362,8 +362,8 @@ describe('question-form.adapters', () => {
       jasmine.objectContaining({
         elementType: 'couleurs',
         elements: [
-          { label: '', color: '#ff0000' },
-          { label: '', color: '#0000ff' },
+          { label: '', color: '#ff0000', sourceId: 1 },
+          { label: '', color: '#0000ff', sourceId: 2 },
         ],
         sequence: [0, 1, 0],
       }),

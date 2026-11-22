@@ -1399,6 +1399,168 @@ describe('SubjectQuestionsComponent', () => {
     });
   });
 
+  it('keeps the edited timeline and its reordered image when the detail arrives', () => {
+    const question = {
+      id: 41,
+      formCode: 'order',
+      formLabel: 'Ordre',
+      prompt: 'Les étapes',
+      timelineEnabled: true,
+      items: [
+        { id: 11, label: '', axisLabel: 'Matin', hasImage: true },
+        { id: 12, label: 'Après-midi', axisLabel: '15 h' },
+      ],
+    };
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'order', label: 'Ordre' }] });
+    http.expectOne(questionsUrl).flush({ questions: [question] });
+    fixture.detectChanges();
+
+    buttonNamed('Modifier')?.click();
+    const detail = http.expectOne(`${questionsUrl}/41`);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const axis = [...root.querySelectorAll<HTMLInputElement>('input')].find((input) => input.value === 'Matin')!;
+    axis.value = '8 h';
+    axis.dispatchEvent(new Event('input', { bubbles: true }));
+    buttonNamed('↓')?.click();
+    fixture.detectChanges();
+    expect(buttonNamed('Enregistrer')?.disabled).toBeTrue();
+
+    detail.flush({
+      ...question,
+      items: [{ ...question.items[0], imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=' }, question.items[1]],
+    });
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+
+    const put = http.expectOne(`${questionsUrl}/41`);
+    expect(put.request.body.items).toEqual([
+      { label: 'Après-midi', axisLabel: '15 h' },
+      { imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=', axisLabel: '8 h' },
+    ]);
+    put.flush(question);
+  });
+
+  it('cancels older image loads when switching questions or canceling the edit', () => {
+    const question = {
+      id: 41,
+      formCode: 'qcm',
+      formLabel: 'Choix multiples',
+      prompt: 'Première',
+      choices: [{ id: 11, hasImage: true, correct: true }, { id: 12, label: 'Non', correct: false }],
+    };
+    const another = { ...question, id: 42, prompt: 'Deuxième' };
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'qcm', label: 'Choix multiples' }] });
+    http.expectOne(questionsUrl).flush({ questions: [question, another] });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const edit = [...root.querySelectorAll('button')].filter((button) => button.textContent?.trim() === 'Modifier');
+    edit[0].click();
+    const first = http.expectOne(`${questionsUrl}/41`);
+    edit[1].click();
+    const second = http.expectOne(`${questionsUrl}/42`);
+    expect(first.cancelled).toBeTrue();
+    if (!first.cancelled) {
+      first.flush({}, { status: 500, statusText: 'Server Error' });
+    }
+    fixture.detectChanges();
+    expect(root.textContent).toContain('Chargement des images');
+    expect(fixture.componentInstance.editingId()).toBe(42);
+    expect(fixture.componentInstance.error()).toBeNull();
+
+    buttonNamed('Annuler')?.click();
+    expect(second.cancelled).toBeTrue();
+    if (!second.cancelled) {
+      second.flush(another);
+    }
+    fixture.detectChanges();
+    expect(root.textContent).not.toContain('Chargement des images');
+  });
+
+  it('keeps edited text next to the image loaded for a Memory pair', () => {
+    const question = {
+      id: 43,
+      formCode: 'memory',
+      formLabel: 'Memory',
+      prompt: 'Associe chaque réponse',
+      pairs: [
+        { id: 11, questionHasImage: true, answerSide: 'Chat' },
+        { id: 12, questionSide: 'Balle', answerSide: 'Jouet' },
+      ],
+    };
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'memory', label: 'Memory' }] });
+    http.expectOne(questionsUrl).flush({ questions: [question] });
+    fixture.detectChanges();
+    buttonNamed('Modifier')?.click();
+    const detail = http.expectOne(`${questionsUrl}/43`);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const text = [...root.querySelectorAll<HTMLInputElement>('input')].find((input) => input.value === 'Chat')!;
+    expect(text.disabled).toBeFalse();
+    text.value = 'Chat noir';
+    text.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const image = 'UklGRiQAAABXRUJQVlA4IBgAAAA=';
+    detail.flush({ ...question, pairs: [{ ...question.pairs[0], questionImageWebp: image }, question.pairs[1]] });
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+    const put = http.expectOne(`${questionsUrl}/43`);
+    expect(put.request.body.pairs).toEqual([
+      { questionImageWebp: image, answerSide: 'Chat noir' },
+      { questionSide: 'Balle', answerSide: 'Jouet' },
+    ]);
+    put.flush(question);
+  });
+
+  it('loads the puzzle and its background while keeping the prompt edited during the request', () => {
+    const question = {
+      id: 42,
+      formCode: 'puzzle',
+      formLabel: 'Puzzle',
+      prompt: 'Place la pièce',
+      boardMode: 'fond',
+      snapDistance: 0.04,
+      pieces: [{
+        label: 'Le carré',
+        shape: 'rect',
+        points: [{ x: 0.1, y: 0.1 }, { x: 0.3, y: 0.3 }],
+        slotX: 0.5,
+        slotY: 0.5,
+      }],
+    };
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'puzzle', label: 'Puzzle' }] });
+    http.expectOne(questionsUrl).flush({ questions: [question] });
+    fixture.detectChanges();
+    buttonNamed('Modifier')?.click();
+
+    const detail = http.expectOne(`${questionsUrl}/42`);
+    fixture.componentInstance.setPrompt('Place le carré');
+    const loaded = {
+      ...question,
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      boardImageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAE=',
+    };
+    detail.flush(loaded);
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+
+    const put = http.expectOne(`${questionsUrl}/42`);
+    expect(put.request.body).toEqual(jasmine.objectContaining({
+      prompt: 'Place le carré',
+      boardMode: 'fond',
+      imageWebp: loaded.imageWebp,
+      boardImageWebp: loaded.boardImageWebp,
+      pieces: question.pieces,
+    }));
+    put.flush(loaded);
+  });
+
   it('reloads click image bytes before saving an edit from the stripped list', () => {
     fixture.detectChanges();
     http.expectOne(formsUrl).flush({

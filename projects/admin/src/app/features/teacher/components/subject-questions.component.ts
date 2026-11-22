@@ -17,6 +17,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { finalize, type Subscription } from 'rxjs';
 
 import type { components } from '@appv4/api';
 import {
@@ -32,6 +33,7 @@ import { ClickZoneEditorComponent } from './click-zone-editor.component';
 import { PieceFaceComponent } from './piece-face.component';
 import { LetterBoxesComponent } from './letter-boxes.component';
 import { ClickZone } from './click-zone';
+import { mergeLinkImages, mergePairImages, mergePieceImages } from './question-draft-images';
 import { buildSaveBody, parseSavedQuestion, requireSavedQuestion } from './question-form.adapters';
 import {
   GamificationDraft,
@@ -131,6 +133,7 @@ export class SubjectQuestionsComponent implements OnInit {
   private readonly api = inject(TeacherQuestionsService);
   private readonly destroyRef = inject(DestroyRef);
   private loadSeq = 0;
+  private imageLoad?: Subscription;
 
   @Input({ required: true }) subjectId!: number;
 
@@ -889,47 +892,40 @@ export class SubjectQuestionsComponent implements OnInit {
 
   private loadPieceImages(questionId: number): void {
     this.imagesLoading.set(true);
-    this.api.get(this.subjectId, questionId).subscribe({
+    this.imageLoad = this.api.get(this.subjectId, questionId).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.imagesLoading.set(false)),
+    ).subscribe({
       next: (item) => {
-        this.imagesLoading.set(false);
-        if (this.editingId() !== questionId) {
-          return;
-        }
         try {
-          this.applyLoadedPieces(requireSavedQuestion(item));
+          this.mergeLoadedImages(requireSavedQuestion(item));
         } catch {
           this.error.set('Les images de cette question ne se sont pas chargées.');
         }
       },
       error: () => {
-        this.imagesLoading.set(false);
         this.error.set('Les images de cette question ne se sont pas chargées.');
       },
     });
   }
 
-  private applyLoadedPieces(saved: SavedQuestion): void {
-    this.choices.set(saved.choices.length ? saved.choices.map((row) => ({ ...row })) : emptyChoices());
-    this.pairs.set(saved.pairs.length ? saved.pairs.map((row) => ({ ...row })) : emptyPairs());
-    this.items.set(saved.items.length ? saved.items.map((row) => ({ ...row })) : emptyItems());
-    this.statements.set(saved.statements.length ? saved.statements.map((row) => ({ ...row })) : emptyStatements());
-    this.links.set(saved.links.length ? saved.links.map((row) => ({ ...row })) : emptyLinks());
-    this.cards.set(saved.cards.length ? saved.cards.map((row) => ({ ...row })) : emptyCards());
-    this.simonElements.set(
-      saved.elements.length
-        ? saved.elements.map((row) => ({
-            label: row.label,
-            color: row.color,
-            imageDataUrl: row.imageDataUrl,
-            hasImage: row.hasImage,
-          }))
-        : emptySimonElements(),
-    );
-    // Liste / clone sans octets : le détail GET remplit l'image à cliquer et le fond puzzle.
-    this.clickImage.set(saved.imageDataUrl);
-    this.boardMode.set(saved.boardMode);
-    this.boardImage.set(saved.boardImageDataUrl);
-    this.clickZones.set(saved.zones.map((zone) => ({ ...zone, points: zone.points.map((point) => ({ ...point })) })));
+  private cancelImageLoad(): void {
+    this.imageLoad?.unsubscribe();
+    this.imageLoad = undefined;
+  }
+
+  private mergeLoadedImages(saved: SavedQuestion): void {
+    this.choices.update((rows) => mergePieceImages(rows, saved.choices));
+    this.pairs.update((rows) => mergePairImages(rows, saved.pairs));
+    this.items.update((rows) => mergePieceImages(rows, saved.items));
+    this.statements.update((rows) => mergePieceImages(rows, saved.statements));
+    this.links.update((rows) => mergeLinkImages(rows, saved.links));
+    this.cards.update((rows) => mergePieceImages(rows, saved.cards));
+    this.simonElements.update((rows) => mergePieceImages(rows, saved.elements));
+    this.clickImage.update((image) => image || saved.imageDataUrl);
+    if (this.boardMode() === PUZZLE_BOARD_MODE.FOND && saved.boardMode === PUZZLE_BOARD_MODE.FOND) {
+      this.boardImage.update((image) => image || saved.boardImageDataUrl);
+    }
   }
 
   private questionMissesImageBytes(question: SavedQuestion): boolean {
@@ -960,9 +956,6 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   private pieceImageProblem(): string | null {
-    if (this.imagesLoading()) {
-      return 'Attends que les images apparaissent, puis enregistre.';
-    }
     const waiting = this.activeFaces().some((face) => face.imageDataUrl === '');
     if (waiting) {
       return 'Attends que les images apparaissent, puis enregistre.';
@@ -1036,6 +1029,7 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   beginEdit(question: SavedQuestion): void {
+    this.cancelImageLoad();
     this.editingId.set(question.id);
     this.selectedCode.set(question.formCode);
     this.prompt.set(question.prompt);
@@ -1063,23 +1057,14 @@ export class SubjectQuestionsComponent implements OnInit {
     this.answers.set(question.answers.map((row) => ({ label: row.label })));
     this.decoys.set(question.decoys.length ? question.decoys.map((row) => ({ label: row.label })) : emptyDecoys());
     this.simonType.set(question.elementType);
-    this.simonElements.set(
-      question.elements.length
-        ? question.elements.map((row) => ({
-            label: row.label,
-            color: row.color,
-            imageDataUrl: row.imageDataUrl,
-            hasImage: row.hasImage,
-          }))
-        : emptySimonElements(),
-    );
-    if (this.questionMissesImageBytes(question)) {
-      this.loadPieceImages(question.id);
-    }
+    this.simonElements.set(question.elements.length ? question.elements.map((row) => ({ ...row })) : emptySimonElements());
     this.simonSequence.set([...question.sequence]);
     this.simonChecked.set(false);
     this.gamification.set(question.gamification ? copyDraft(question.gamification) : null);
     this.error.set(null);
+    if (this.questionMissesImageBytes(question)) {
+      this.loadPieceImages(question.id);
+    }
   }
 
   attemptMax(): number | null {
@@ -1299,6 +1284,7 @@ export class SubjectQuestionsComponent implements OnInit {
   }
 
   cancelEdit(): void {
+    this.cancelImageLoad();
     this.editingId.set(null);
     this.prompt.set('');
     this.choices.set(emptyChoices());
@@ -1331,7 +1317,7 @@ export class SubjectQuestionsComponent implements OnInit {
   save(): void {
     const code = this.selectedCode();
     const editingId = this.editingId();
-    if (!isKnownFormCode(code) || this.saving()) {
+    if (!isKnownFormCode(code) || this.saving() || this.imagesLoading()) {
       return;
     }
     if (
