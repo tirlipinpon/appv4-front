@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 
 import type { ChildAvatarResponse } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
@@ -25,6 +25,15 @@ export class ProfilePage implements OnInit {
   protected readonly draftStyle = signal<string | null>(null);
   protected readonly draftPreset = signal<string | null>(null);
   protected readonly draftPins = signal<Record<string, string>>({});
+  private readonly draftStyleCard = computed(() =>
+    this.avatar()?.styles?.find((style) => style.code === this.draftStyle()),
+  );
+  private readonly draftZones = computed(() => {
+    const person = this.avatar();
+    return this.draftStyleCard()?.zones ?? (person?.styleCode === this.draftStyle() ? person?.zones ?? [] : []);
+  });
+  protected readonly openZones = computed(() => this.draftZones().filter((zone) => zone.open === true));
+  protected readonly closedZones = computed(() => this.draftZones().filter((zone) => zone.open !== true));
   private readonly tiles = new Map<string, string | null>();
 
   ngOnInit(): void {
@@ -44,21 +53,15 @@ export class ProfilePage implements OnInit {
   }
 
   protected styleName(): string | null {
-    const person = this.avatar();
-    const code = this.draftStyle();
-    return person?.styles?.find((style) => style.code === code)?.name ?? person?.styleName ?? null;
+    return this.draftStyleCard()?.name ?? this.avatar()?.styleName ?? null;
   }
 
   protected styleCredit(): string | null {
-    const person = this.avatar();
-    const code = this.draftStyle();
-    return person?.styles?.find((style) => style.code === code)?.credit ?? null;
+    return this.draftStyleCard()?.credit ?? null;
   }
 
   protected draftPresets() {
-    const person = this.avatar();
-    const code = this.draftStyle();
-    return person?.styles?.find((style) => style.code === code)?.presets ?? [];
+    return this.draftStyleCard()?.presets ?? [];
   }
 
   protected presetName(): string | null {
@@ -79,48 +82,31 @@ export class ProfilePage implements OnInit {
     return `#${hex}`;
   }
 
-  protected draftZones() {
-    const code = this.draftStyle();
-    const fromStyle = this.avatar()?.styles?.find((style) => style.code === code)?.zones;
-    if (fromStyle?.length) {
-      return fromStyle;
-    }
-    if (this.sameStyle()) {
-      return this.avatar()?.zones ?? [];
-    }
-    return [];
-  }
-
-  protected openZones() {
-    return this.draftZones().filter((zone) => zone.open === true);
-  }
-
-  protected closedZones() {
-    return this.draftZones().filter((zone) => zone.open !== true);
-  }
-
   protected chooseStyle(code: string | undefined): void {
-    if (!code) {
+    if (!code || code === this.draftStyle() || this.saving()) {
       return;
     }
     this.draftStyle.set(code);
     this.draftPreset.set(this.draftPresets()[0]?.id ?? null);
-    const allowed = new Set(
-      this.avatar()?.styles?.find((style) => style.code === code)?.zoneCodes ?? [],
-    );
-    const kept: Record<string, string> = {};
-    for (const [zone, variant] of Object.entries(this.draftPins())) {
-      if (allowed.has(zone)) {
-        kept[zone] = variant;
+    const style = this.draftStyleCard();
+    const compatible = Object.entries(this.draftPins()).filter(([zoneCode, variantCode]) => {
+      if (!style?.zones) {
+        return style?.zoneCodes?.includes(zoneCode) ?? false;
       }
-    }
-    this.draftPins.set(kept);
+      return style.zones.some((zone) =>
+        zone.code === zoneCode && zone.variants?.some((variant) => variant.code === variantCode),
+      );
+    });
+    this.draftPins.set(Object.fromEntries(compatible));
     this.saveError.set(null);
   }
 
   protected chooseVariant(zoneCode: string | undefined, variantCode: string | undefined): void {
-    const zone = this.draftZones().find((item) => item.code === zoneCode);
-    if (!zone || zone.open !== true || !zoneCode || !variantCode) {
+    if (!zoneCode || !variantCode || this.saving()) {
+      return;
+    }
+    const zone = this.openZones().find((item) => item.code === zoneCode);
+    if (!zone?.variants?.some((variant) => variant.code === variantCode)) {
       return;
     }
     this.draftPins.update((pins) => ({ ...pins, [zoneCode]: variantCode }));
@@ -154,11 +140,6 @@ export class ProfilePage implements OnInit {
     });
     this.tiles.set(key, uri);
     return uri;
-  }
-
-  protected sameStyle(): boolean {
-    const person = this.avatar();
-    return !!person && person.styleCode === this.draftStyle();
   }
 
   protected faceUri(): string | null {
@@ -199,7 +180,7 @@ export class ProfilePage implements OnInit {
   }
 
   protected choosePreset(id: string | undefined): void {
-    if (!id) {
+    if (!id || this.saving()) {
       return;
     }
     this.draftPreset.set(id);
@@ -213,20 +194,11 @@ export class ProfilePage implements OnInit {
     }
     this.saving.set(true);
     this.saveError.set(null);
-    const allowed = new Set(
-      this.avatar()?.styles?.find((style) => style.code === styleCode)?.zoneCodes ?? [],
-    );
-    const open = new Set(
-      (this.avatar()?.zones ?? [])
-        .filter((zone) => zone.open === true && !!zone.code && allowed.has(zone.code))
-        .map((zone) => zone.code as string),
-    );
-    const styleChanges = this.avatar()?.styleCode !== styleCode;
-    const pins = styleChanges
-      ? []
-      : Object.entries(this.draftPins())
-          .filter(([zone]) => open.has(zone))
-          .map(([zoneCode, variantCode]) => ({ zoneCode, variantCode }));
+    const selections = this.draftPins();
+    const pins = this.openZones().flatMap(({ code: zoneCode }) => {
+      const variantCode = zoneCode ? selections[zoneCode] : undefined;
+      return zoneCode && variantCode ? [{ zoneCode, variantCode }] : [];
+    });
     this.avatarApi.save(styleCode, this.draftPreset(), pins.length > 0 ? pins : null).subscribe({
       next: (person) => {
         this.saving.set(false);
