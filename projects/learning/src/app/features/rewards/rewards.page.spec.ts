@@ -7,6 +7,7 @@ import { RewardsPage } from './rewards.page';
 
 describe('RewardsPage', () => {
   function setup() {
+    let token = 'child-token';
     TestBed.configureTestingModule({
       imports: [RewardsPage],
       providers: [
@@ -14,14 +15,14 @@ describe('RewardsPage', () => {
         provideHttpClientTesting(),
         {
           provide: ChildAuthService,
-          useValue: { getToken: () => 'child-token' },
+          useValue: { getToken: () => token },
         },
       ],
     });
     const fixture = TestBed.createComponent(RewardsPage);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
-    return { fixture, http };
+    return { fixture, http, setToken: (next: string) => { token = next; } };
   }
 
   it('affiche les neuf badges, la jauge sans date, puis la date renvoyée', () => {
@@ -138,6 +139,34 @@ describe('RewardsPage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="rewards-error"]').textContent).toContain(
       'Session enfant invalide.',
     );
+    http.verify();
+  });
+
+  it('ignore une réponse de badges reçue après le changement de session', () => {
+    const { fixture, http, setToken } = setup();
+    const old = http.expectOne('http://localhost:8080/api/ext/badges');
+    setToken('new-child-token');
+    old.flush({ badges: [{ code: 'etoiles_jaunes', name: 'Étoiles jaunes', level: 1 }] });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="rewards-list"]')).toBeNull();
+
+    fixture.destroy();
+    const next = TestBed.createComponent(RewardsPage);
+    next.detectChanges();
+    const request = http.expectOne('http://localhost:8080/api/ext/badges');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer new-child-token');
+    request.flush({ badges: [{ code: 'rattrapage', name: 'Rattrapage', level: 1 }] });
+    next.detectChanges();
+    expect(next.nativeElement.querySelector('[data-testid="reward-rattrapage"]')).not.toBeNull();
+    expect(next.nativeElement.querySelector('[data-testid="reward-etoiles_jaunes"]')).toBeNull();
+    http.verify();
+  });
+
+  it('annule le chargement quand la collection est fermée', () => {
+    const { fixture, http } = setup();
+    const request = http.expectOne('http://localhost:8080/api/ext/badges');
+    fixture.destroy();
+    expect(request.cancelled).toBeTrue();
     http.verify();
   });
 });
