@@ -21,7 +21,7 @@
       @if (shareRequests().length > 0) {
         <section class="invites" data-testid="child-share-requests" aria-label="Demandes">
           @for (request of shareRequests(); track request.id) {
-            <article class="invite">
+            <article class="invite" [attr.data-testid]="'child-share-' + request.id">
               <p data-testid="child-share-request-label">demande pour {{ request.firstName }} {{ request.lastName }}</p>
               @for (match of request.matches ?? []; track match.childId) {
                 <button mat-flat-button color="primary" type="button" [attr.data-testid]="'child-share-accept-' + match.childId" (click)="acceptShare(request, match)">
@@ -37,7 +37,7 @@
       @if (incomingTransfers().length > 0) {
         <section class="invites" data-testid="child-transfers" aria-label="Transferts">
           @for (transfer of incomingTransfers(); track transfer.id) {
-            <article class="invite">
+            <article class="invite" [attr.data-testid]="'child-transfer-' + transfer.id">
               <p data-testid="child-transfer-incoming">{{ transfer.message }}</p>
               <button mat-flat-button color="primary" type="button" data-testid="child-transfer-accept" (click)="acceptTransfer(transfer)">
                 Accepter
@@ -51,7 +51,7 @@
       @if (invitations().length > 0) {
         <section class="invites" data-testid="child-invitations" aria-label="Invitations">
           @for (invitation of invitations(); track invitation.id) {
-            <article class="invite">
+            <article class="invite" [attr.data-testid]="'child-invitation-' + invitation.id">
               <p data-testid="child-invitation">{{ invitation.firstName }} {{ invitation.lastName }}</p>
               <button mat-flat-button color="primary" type="button" data-testid="child-invitation-accept" (click)="acceptInvitation(invitation)">
                 Accepter
@@ -65,7 +65,7 @@
         <p class="status" role="status">Chargement…</p>
       }
       @if (error() && !formOpen()) {
-        <p class="error" role="alert">{{ error() }}</p>
+        <p class="error" role="alert" data-testid="child-error">{{ error() }}</p>
       }
       @if (!loading() && children().length === 0) {
         <p class="hint" data-testid="child-empty">Aucun enfant pour l'instant.</p>
