@@ -1,10 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+
+import { AvatarRenderer } from '@appv4/ui';
 
 import type { ChildAvatarResponse } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { AvatarZoneIcon } from './components/avatar-zone-icon';
-import { avatarDataUri } from './data-access/avatar-face';
 import { ChildAvatarService } from './data-access/child-avatar.service';
 
 @Component({
@@ -16,6 +17,7 @@ import { ChildAvatarService } from './data-access/child-avatar.service';
 })
 export class ProfilePage implements OnInit {
   private readonly avatarApi = inject(ChildAvatarService);
+  private readonly avatarRenderer = inject(AvatarRenderer);
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -34,7 +36,16 @@ export class ProfilePage implements OnInit {
   });
   protected readonly openZones = computed(() => this.draftZones().filter((zone) => zone.open === true));
   protected readonly closedZones = computed(() => this.draftZones().filter((zone) => zone.open !== true));
-  private readonly tiles = new Map<string, string | null>();
+  private readonly tiles = new Map<string, string>();
+
+  constructor() {
+    effect(() => {
+      const code = this.draftStyle();
+      if (code) {
+        void this.avatarRenderer.load(code);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.avatarApi.clear();
@@ -132,30 +143,32 @@ export class ProfilePage implements OnInit {
     if (cached !== undefined) {
       return cached;
     }
-    const uri = avatarDataUri({
+    const uri = this.avatarRenderer.draw({
       seed,
       styleCode,
       options: this.paletteOptions(),
       pins: { [zoneCode]: variantCode },
     });
-    this.tiles.set(key, uri);
+    if (uri) {
+      this.tiles.set(key, uri);
+    }
     return uri;
   }
 
-  protected faceUri(): string | null {
+  protected readonly faceUri = computed(() => {
     const person = this.avatar();
     const seed = person?.seed;
     const styleCode = this.draftStyle();
     if (!person || !seed || !styleCode) {
       return null;
     }
-    return avatarDataUri({
+    return this.avatarRenderer.draw({
       seed,
       styleCode,
       options: this.paletteOptions(),
       pins: this.draftPins(),
     });
-  }
+  });
 
   private paletteOptions(): Record<string, unknown> | null {
     const chosen = this.draftPresets().find((item) => item.id === this.draftPreset());
