@@ -2,7 +2,7 @@ import { Observable, catchError, map, of, tap } from 'rxjs';
 
 import { takeOAuthState } from './oauth-browser-state';
 
-export type OAuthProviderId = 'google' | 'facebook';
+export type OAuthProviderId = 'google' | 'facebook' | 'apple';
 
 /** Textes et identité d'un fournisseur. Les URLs restent dans le service HTTP. */
 export interface OAuthCallbackCopy {

@@ -2,5 +2,5 @@ import { Routes } from '@angular/router';
 
 import { AccountRecoveryPage } from './account-recovery.page';
 
-/** Stub route pour le lien recovery (SCRUM-109). */
+/** Récupération de l'identifiant, ouverte depuis le mot de passe oublié. */
 export const ACCOUNT_RECOVERY_ROUTES: Routes = [{ path: '', component: AccountRecoveryPage }];
