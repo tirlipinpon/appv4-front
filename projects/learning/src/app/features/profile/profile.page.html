@@ -35,6 +35,7 @@
                 [class.avatar-chip--on]="draftStyle() === style.code"
                 [attr.data-testid]="'profile-style-choice-' + style.code"
                 [attr.aria-pressed]="draftStyle() === style.code"
+                [disabled]="saving()"
                 (click)="chooseStyle(style.code)"
               >
                 {{ style.name }}
@@ -63,6 +64,7 @@
                 [class.avatar-chip--on]="draftPreset() === preset.id"
                 [attr.data-testid]="'profile-preset-' + preset.id"
                 [attr.aria-pressed]="draftPreset() === preset.id"
+                [disabled]="saving()"
                 (click)="choosePreset(preset.id)"
               >
                 {{ preset.name }}
@@ -92,6 +94,7 @@
                       [class.avatar-tile--on]="pressed(zone.code, variant.code) === true"
                       [attr.aria-pressed]="pressed(zone.code, variant.code)"
                       [attr.data-testid]="'profile-variant-' + zone.code + '-' + variant.code"
+                      [disabled]="saving()"
                       (click)="chooseVariant(zone.code, variant.code)"
                     >
                       @if (tileUri(zone.code, variant.code); as tile) {
