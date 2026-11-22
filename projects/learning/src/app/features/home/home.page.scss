@@ -221,17 +221,14 @@
 .home-featured {
   margin-top: 28px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
   gap: 12px;
-  align-items: stretch;
 }
 
 .home-featured-link {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  height: 100%;
-  box-sizing: border-box;
   gap: 14px;
   padding: 0.95rem 1rem 0.95rem 0.85rem;
   border-radius: 1.35rem;
@@ -451,7 +448,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
   gap: 10px;
-  align-items: stretch;
 }
 
 .home-today-card {
