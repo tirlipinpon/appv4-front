@@ -4,12 +4,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { ChildAuthService } from '../../core/auth/child-auth.service';
+import { RewardsPage } from '../rewards/rewards.page';
 import { HomePage } from './home.page';
 
 describe('HomePage', () => {
   function setup() {
     TestBed.configureTestingModule({
-      imports: [HomePage],
+      imports: [HomePage, RewardsPage],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -191,7 +192,7 @@ describe('HomePage', () => {
     http.verify();
   });
 
-  it('affiche Leçons finies dans les gains du jour quand l API l envoie', () => {
+  it('affiche Leçons finies dans les gains du jour et rafraîchit le niveau en ouvrant la collection', () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/progress').flush({
       xpTotal: 0,
@@ -211,6 +212,16 @@ describe('HomePage', () => {
     expect(today.textContent).toContain('Leçons finies');
     expect(today.textContent).toContain('1');
     expect(fixture.nativeElement.querySelector('[data-testid="home-badge-notice"]')).toBeNull();
+
+    fixture.destroy();
+    const collection = TestBed.createComponent(RewardsPage);
+    collection.detectChanges();
+    http.expectOne('http://localhost:8080/api/ext/badges').flush({
+      badges: [{ code: 'lecons_finies', name: 'Leçons finies', level: 2 }],
+    });
+    collection.detectChanges();
+    expect(collection.nativeElement.querySelector('[data-testid="reward-lecons_finies"]').textContent)
+      .toContain('Niveau 2');
     http.verify();
   });
 

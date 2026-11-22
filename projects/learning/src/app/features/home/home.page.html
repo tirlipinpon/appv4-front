@@ -121,11 +121,11 @@
     }
   </section>
 
-  @if (badgesLoading()) {
+  @if (badges.loading()) {
     <p class="home-progress-status" data-testid="home-badges-loading">Chargement…</p>
-  } @else if (badgesError()) {
-    <p class="home-progress-status home-progress-error" data-testid="home-badges-error">{{ badgesError() }}</p>
-  } @else if (badges(); as collection) {
+  } @else if (badges.error()) {
+    <p class="home-progress-status home-progress-error" data-testid="home-badges-error">{{ badges.error() }}</p>
+  } @else if (badges.collection(); as collection) {
     @if ((collection.gainedToday ?? []).length > 0) {
       <section class="home-today" data-testid="home-badges-today">
         <p class="home-today-eyebrow">Aujourd'hui</p>

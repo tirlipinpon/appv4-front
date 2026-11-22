@@ -4,11 +4,11 @@
     <h1>Récompenses</h1>
   </header>
 
-  @if (loading()) {
+  @if (badges.loading()) {
     <p class="rewards-status" data-testid="rewards-loading">Chargement…</p>
-  } @else if (error()) {
-    <p class="rewards-status rewards-error" data-testid="rewards-error">{{ error() }}</p>
-  } @else if (badges(); as collection) {
+  } @else if (badges.error()) {
+    <p class="rewards-status rewards-error" data-testid="rewards-error">{{ badges.error() }}</p>
+  } @else if (badges.collection(); as collection) {
     @if (collection.notice?.label) {
       <p class="rewards-notice" data-testid="rewards-notice">{{ collection.notice.label }}</p>
     }

@@ -1,36 +1,22 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 
 import type { ChildBadge } from '../../core/api/api-models';
-import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { BadgeMedalComponent } from '../../shared/badges/badge-medal';
-import { ChildBadgesService } from './data-access/child-badges.service';
+import { ChildBadgesService } from '../../shared/badges/child-badges.service';
 
 @Component({
   selector: 'app-rewards-page',
   imports: [BadgeMedalComponent],
+  providers: [ChildBadgesService],
   templateUrl: './rewards.page.html',
   styleUrl: './rewards.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RewardsPage implements OnInit {
-  private readonly badgesApi = inject(ChildBadgesService);
-
-  protected readonly loading = signal(true);
-  protected readonly error = signal<string | null>(null);
-  protected readonly badges = this.badgesApi.badges;
+  protected readonly badges = inject(ChildBadgesService);
 
   ngOnInit(): void {
-    this.badgesApi.load().subscribe({
-      next: () => {
-        this.loading.set(false);
-        this.error.set(null);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading.set(false);
-        this.error.set(apiErrorMessage(err, 'Impossible de charger les badges.'));
-      },
-    });
+    this.badges.load();
   }
 
   protected hasGauge(badge: ChildBadge): boolean {
