@@ -818,6 +818,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/humeur": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Savoir s'il faut demander l'humeur, et les choix */
+        get: operations["askChildHumeur"];
+        put?: never;
+        /** Enregistrer un choix ou une fermeture */
+        post: operations["answerChildHumeur"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/auth/login": {
         parameters: {
             query?: never;
@@ -2220,6 +2238,11 @@ export interface components {
             /** @description Leçon finie. si cet essai vide la leçon. */
             lessonFinishedLabel?: string;
         };
+        ChildHumeurAnswerRequest: {
+            /** Format: int64 */
+            choiceId?: number;
+            closed?: boolean;
+        };
         ChildLoginRequest: {
             firstName?: string;
             pin?: string;
@@ -2649,6 +2672,16 @@ export interface components {
             firstName?: string;
             avatarCode?: string;
             hasPhoto?: boolean;
+        };
+        ChildHumeurChoiceItem: {
+            /** Format: int64 */
+            id?: number;
+            icon?: string;
+            word?: string;
+        };
+        ChildHumeurPromptResponse: {
+            ask?: boolean;
+            choices?: components["schemas"]["ChildHumeurChoiceItem"][];
         };
         ChildFeaturedQuestionItem: {
             /** Format: int64 */
@@ -5611,6 +5644,79 @@ export interface operations {
             };
             /** @description Partie Simon expirée, clé de soumission utilisée ailleurs, ou page sans essai restant */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    askChildHumeur: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Demande, ou liste vide */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildHumeurPromptResponse"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    answerChildHumeur: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChildHumeurAnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description Réponse gardée */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Corps ni choix ni fermeture, ou choix inconnu */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
