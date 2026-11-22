@@ -2,11 +2,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import type { ChildTodayMission, ChildTodayTask } from '../../core/api/api-models';
+import type { ChildHumeurChoiceItem, ChildTodayMission, ChildTodayTask } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { BadgeMedalComponent } from '../../shared/badges/badge-medal';
 import { ChildBadgesService } from '../../shared/badges/child-badges.service';
 import { ChildFeaturedQuestionsService } from './data-access/child-featured-questions.service';
+import { ChildHumeurService } from './data-access/child-humeur.service';
 import { ChildProgressService } from './data-access/child-progress.service';
 import { ChildTodayService } from './data-access/child-today.service';
 
@@ -14,7 +15,7 @@ const WEEK_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const;
 
 /**
  * Accueil : progression (LEARN-31), mission (LEARN-32), reprise (LEARN-33)
- * et questions proposées (LEARN-35).
+ * questions proposées (LEARN-35) et humeur (LEARN-72).
  * Affiche uniquement ce que les lectures renvoient.
  */
 @Component({
@@ -29,6 +30,7 @@ export class HomePage implements OnInit {
   private readonly progressApi = inject(ChildProgressService);
   private readonly todayApi = inject(ChildTodayService);
   private readonly featuredApi = inject(ChildFeaturedQuestionsService);
+  private readonly humeurApi = inject(ChildHumeurService);
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -42,6 +44,7 @@ export class HomePage implements OnInit {
   protected readonly featuredLoading = signal(true);
   protected readonly featuredError = signal<string | null>(null);
   protected readonly featured = this.featuredApi.featured;
+  protected readonly humeur = this.humeurApi.prompt;
 
   protected readonly weekCells = computed(() => {
     const days = this.progress()?.weekDays ?? [];
@@ -96,6 +99,9 @@ export class HomePage implements OnInit {
       },
     });
     this.badges.load();
+    this.humeurApi.load().subscribe({
+      error: () => this.humeurApi.clear(),
+    });
     this.featuredApi.load().subscribe({
       next: () => {
         this.featuredLoading.set(false);
@@ -105,6 +111,21 @@ export class HomePage implements OnInit {
         this.featuredLoading.set(false);
         this.featuredError.set(apiErrorMessage(err, 'Impossible de charger les questions.'));
       },
+    });
+  }
+
+  protected chooseHumeur(choice: ChildHumeurChoiceItem): void {
+    if (choice.id == null) {
+      return;
+    }
+    this.humeurApi.answer({ choiceId: choice.id }).subscribe({
+      next: () => this.humeurApi.prompt.set({ ask: false, choices: [] }),
+    });
+  }
+
+  protected closeHumeur(): void {
+    this.humeurApi.answer({ closed: true }).subscribe({
+      next: () => this.humeurApi.prompt.set({ ask: false, choices: [] }),
     });
   }
 

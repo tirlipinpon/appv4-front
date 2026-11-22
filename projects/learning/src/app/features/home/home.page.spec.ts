@@ -56,6 +56,7 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="home-mission-empty"]').textContent).toContain(
       'Aucune mission',
     );
+    settleHumeur(http);
     http.verify();
   });
 
@@ -137,6 +138,7 @@ describe('HomePage', () => {
       '[data-testid="home-continue-play"]',
     );
     expect(continuePlay.getAttribute('href')).toBe('/learn/5/play/21');
+    settleHumeur(http);
     http.verify();
   });
 
@@ -189,6 +191,7 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="home-continue"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="home-badges-today"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="home-badge-notice"]')).toBeNull();
+    settleHumeur(http);
     http.verify();
   });
 
@@ -222,6 +225,7 @@ describe('HomePage', () => {
     collection.detectChanges();
     expect(collection.nativeElement.querySelector('[data-testid="reward-lecons_finies"]').textContent)
       .toContain('Niveau 2');
+    settleHumeur(http);
     http.verify();
   });
 
@@ -254,6 +258,7 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="home-badge-notice"]').textContent).toContain(
       'Mathématiques : 2 questions ne sont pas encore jaunes.',
     );
+    settleHumeur(http);
     http.verify();
   });
 
@@ -337,6 +342,7 @@ describe('HomePage', () => {
         .replace('Histoire', '')
         .trim(),
     ).toBe('');
+    settleHumeur(http);
     http.verify();
   });
 
@@ -365,6 +371,7 @@ describe('HomePage', () => {
     expect(links[0].getAttribute('href')).toBe('/learn/2/play/9');
     expect(links[1].querySelector('.home-featured-prompt')?.textContent?.trim()).toBe('2 × 5 = ?');
     expect(links[1].getAttribute('href')).toBe('/learn/6/play/4');
+    settleHumeur(http);
     http.verify();
   });
 
@@ -400,6 +407,7 @@ describe('HomePage', () => {
     const mission: HTMLElement = fixture.nativeElement.querySelector('[data-testid="home-mission"]');
     expect(mission.textContent).toContain('Mission du jour');
     expect(mission.textContent).toContain('Joue 1 question aujourd\'hui');
+    settleHumeur(http);
     http.verify();
   });
 
@@ -423,6 +431,7 @@ describe('HomePage', () => {
     expect(error.textContent?.trim()).toBe('Lecture des questions indisponible.');
     expect(error.classList.contains('home-progress-error')).toBeTrue();
     expect(fixture.nativeElement.querySelector('[data-testid="home-featured"]')).toBeNull();
+    settleHumeur(http);
     http.verify();
   });
 
@@ -480,6 +489,7 @@ describe('HomePage', () => {
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
     expect(mission.contains(block)).toBeFalse();
+    settleHumeur(http);
     http.verify();
   });
 
@@ -524,6 +534,101 @@ describe('HomePage', () => {
     http.expectOne('http://localhost:8080/api/ext/featured').flush([
       { subjectId: 4, questionId: 11, prompt: 'Combien font 3 + 4 ?' },
     ]);
+    settleHumeur(http);
+    http.verify();
+  });
+
+  it('montre les choix renvoyés et envoie l’identifiant', () => {
+    const { fixture, http } = setup();
+    flushHome(http);
+    http.expectOne('http://localhost:8080/api/ext/humeur').flush({
+      ask: true,
+      choices: [
+        { id: 3, word: 'calme' },
+        { id: 4, icon: '🙂' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const popup: HTMLElement = fixture.nativeElement.querySelector('[data-testid="humeur-popup"]');
+    const buttons = [...popup.querySelectorAll('button')].map((button: HTMLElement) => button.textContent);
+    expect(buttons[0]).toContain('calme');
+    expect(popup.querySelector('[data-testid="humeur-choice-3"] [data-testid="humeur-choice-icon"]')).toBeNull();
+    expect(buttons[1]).toContain('🙂');
+    expect(popup.querySelector('[data-testid="humeur-choice-4"] [data-testid="humeur-choice-word"]')).toBeNull();
+
+    popup.querySelector<HTMLButtonElement>('[data-testid="humeur-choice-3"]')?.click();
+    const sent = http.expectOne((req) => req.method === 'POST' && req.url.endsWith('/humeur'));
+    expect(sent.request.body).toEqual({ choiceId: 3 });
+    sent.flush(null);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="humeur-popup"]')).toBeNull();
+    http.verify();
+  });
+
+  it('ferme sans envoyer un identifiant', () => {
+    const { fixture, http } = setup();
+    flushHome(http);
+    http.expectOne('http://localhost:8080/api/ext/humeur').flush({
+      ask: true,
+      choices: [{ id: 3, word: 'calme' }],
+    });
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-testid="humeur-close"]').click();
+    const sent = http.expectOne((req) => req.method === 'POST' && req.url.endsWith('/humeur'));
+    expect(sent.request.body).toEqual({ closed: true });
+    sent.flush(null);
+    fixture.detectChanges();
+    http.verify();
+  });
+
+  it('ne dessine pas la popup quand la liste est vide', () => {
+    const { fixture, http } = setup();
+    flushHome(http);
+    http.expectOne('http://localhost:8080/api/ext/humeur').flush({ ask: true, choices: [] });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="humeur-popup"]')).toBeNull();
+    http.verify();
+  });
+
+  it('ne dessine pas la popup quand la lecture échoue', () => {
+    const { fixture, http } = setup();
+    flushHome(http);
+    http
+      .expectOne('http://localhost:8080/api/ext/humeur')
+      .flush({ message: 'Session enfant invalide.' }, { status: 401, statusText: 'Unauthorized' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="humeur-popup"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('joie');
+    http.verify();
+  });
+
+  it('ne dessine pas la popup si on ne demande pas', () => {
+    const { fixture, http } = setup();
+    flushHome(http);
+    http.expectOne('http://localhost:8080/api/ext/humeur').flush({ ask: false, choices: [{ id: 1, word: 'joie' }] });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="humeur-popup"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('joie');
     http.verify();
   });
 });
+
+function flushHome(http: HttpTestingController): void {
+  http.expectOne('http://localhost:8080/api/ext/progress').flush({
+    xpTotal: 0,
+    currentStreak: 0,
+    leagueLabel: 'Bronze',
+    weekDays: [false, false, false, false, false, false, false],
+  });
+  http.expectOne('http://localhost:8080/api/ext/today').flush({ mission: null });
+  http.expectOne('http://localhost:8080/api/ext/badges').flush({ badges: [], gainedToday: [] });
+  http.expectOne('http://localhost:8080/api/ext/featured').flush([]);
+}
+
+function settleHumeur(http: HttpTestingController): void {
+  for (const request of http.match((req) => req.url.includes('/api/ext/humeur'))) {
+    request.flush({ ask: false, choices: [] });
+  }
+}

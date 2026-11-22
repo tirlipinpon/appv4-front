@@ -1,3 +1,21 @@
+@if (humeur(); as prompt) {
+  @if (prompt.ask === true && (prompt.choices ?? []).length > 0) {
+    <div class="humeur-popup" data-testid="humeur-popup" role="dialog" aria-label="Humeur">
+      @for (choice of prompt.choices ?? []; track choice.id) {
+        <button type="button" [attr.data-testid]="'humeur-choice-' + choice.id" (click)="chooseHumeur(choice)">
+          @if (choice.icon) {
+            <span data-testid="humeur-choice-icon">{{ choice.icon }}</span>
+          }
+          @if (choice.word) {
+            <span data-testid="humeur-choice-word">{{ choice.word }}</span>
+          }
+        </button>
+      }
+      <button type="button" data-testid="humeur-close" (click)="closeHumeur()">Fermer</button>
+    </div>
+  }
+}
+
 <section class="home-progress" data-testid="home-panel">
   <header class="home-progress-top">
     <p class="home-progress-eyebrow">Progression</p>

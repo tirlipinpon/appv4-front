@@ -2,6 +2,18 @@
   display: block;
 }
 
+.humeur-popup {
+  position: fixed;
+  z-index: 20;
+  inset: 10% 8% auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--app-surface, #fff);
+  border-radius: 1rem;
+}
+
 .home-progress {
   padding: 8px 4px 24px;
   color: var(--app-text, #f5f5ff);
