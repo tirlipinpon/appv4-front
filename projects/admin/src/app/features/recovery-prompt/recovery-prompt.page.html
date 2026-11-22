@@ -1,0 +1,78 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4</span>
+  </mat-toolbar>
+
+  <main class="content content-center">
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Ton téléphone et ton mail de contact</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (sentence()) {
+          <p data-testid="recovery-prompt-sentence">{{ sentence() }}</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert" data-testid="recovery-prompt-alert">{{ error() }}</p>
+        }
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Nom affiché</mat-label>
+          <input
+            matInput
+            type="text"
+            name="displayName"
+            data-testid="recovery-prompt-name"
+            [ngModel]="displayName()"
+            (ngModelChange)="displayName.set($event)"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Téléphone</mat-label>
+          <input
+            matInput
+            type="tel"
+            name="phone"
+            data-testid="recovery-prompt-phone"
+            [ngModel]="phone()"
+            (ngModelChange)="phone.set($event)"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Mail de contact</mat-label>
+          <input
+            matInput
+            type="email"
+            name="contactEmail"
+            data-testid="recovery-prompt-contact"
+            [ngModel]="contactEmail()"
+            (ngModelChange)="contactEmail.set($event)"
+          />
+        </mat-form-field>
+        @if (contactEmailFormatError()) {
+          <p class="error" role="alert">{{ contactEmailFormatError() }}</p>
+        }
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button
+          mat-button
+          type="button"
+          data-testid="recovery-prompt-skip"
+          [disabled]="loading()"
+          (click)="skip()"
+        >
+          Passer
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          data-testid="recovery-prompt-save"
+          [disabled]="!canSave()"
+          (click)="save()"
+        >
+          Enregistrer
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </main>
+</div>
