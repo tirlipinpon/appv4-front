@@ -1,3 +1,4 @@
+export { AvatarRenderer } from './avatar/avatar-renderer';
 export { BottomNavComponent } from './bottom-nav/bottom-nav.component';
 export type { BottomNavItem } from './bottom-nav/bottom-nav.component';
 export { ButtonComponent } from './button/button.component';

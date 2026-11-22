@@ -6,6 +6,7 @@ import {
   OnDestroy,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -21,6 +22,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ImageCropperComponent } from 'ngx-image-cropper';
 
+import { AvatarRenderer } from '@appv4/ui';
+
 import type {
   CreateParentChildRequest,
   ParentChildResponse,
@@ -31,7 +34,6 @@ import { SpaceHeader } from '../../core/layout/space-header';
 import { SchoolCatalogService } from '../../core/api/school-catalog.service';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { CHILD_AVATARS, avatarEmoji } from '../../shared/avatars/account-avatars';
-import { avatarDataUri } from '../../../../../learning/src/app/features/profile/data-access/avatar-face';
 import { PhotoObjectUrlBag } from '../../shared/photos/photo-object-url-bag';
 import {
   AGE_INVALID,
@@ -73,6 +75,7 @@ import { ParentChildrenService } from './data-access/parent-children.service';
 })
 export class ParentChildrenPage implements OnInit, OnDestroy {
   private readonly api = inject(ParentChildrenService);
+  private readonly avatarRenderer = inject(AvatarRenderer);
   private readonly schoolCatalog = inject(SchoolCatalogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly photoBag = new PhotoObjectUrlBag();
@@ -104,7 +107,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
         pins[pin.zoneCode] = pin.variantCode;
       }
     }
-    return avatarDataUri({
+    return this.avatarRenderer.draw({
       seed: String(child.id),
       styleCode,
       options: face?.options ?? null,
@@ -225,6 +228,17 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     const school = child.schoolSubjectCount ?? 0;
     const extra = child.extraSubjectCount ?? 0;
     return `${this.countText(school, 'matière scolaire', 'matières scolaires')} et ${this.countText(extra, 'extra-scolaire', 'extra-scolaires')}`;
+  }
+
+  constructor() {
+    effect(() => {
+      for (const child of this.children()) {
+        const code = child.character?.styleCode;
+        if (child.id != null && code) {
+          void this.avatarRenderer.load(code);
+        }
+      }
+    });
   }
 
   ngOnInit(): void {

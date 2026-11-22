@@ -4,6 +4,8 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 
+import { AvatarRenderer } from '@appv4/ui';
+
 import type { ParentChildResponse, ParentSchoolOption } from '../../core/api/api-models';
 import { IMAGE_REQUIRED, PIN_FORMAT, PIN_MISMATCH } from './child-entry';
 import { ParentChildrenPage } from './parent-children.page';
@@ -68,13 +70,19 @@ describe('ParentChildrenPage liens', () => {
     http.verify();
   });
 
-  it('dessine le personnage renvoyé pour la fiche', () => {
-    const src = page.characterSrc({
+  it('dessine le personnage renvoyé pour la fiche', async () => {
+    page.children.set([{
       ...lea,
       character: { styleCode: 'lorelei', options: { backgroundColor: ['ffffff'] }, pins: [] },
-    });
-    expect(src).toContain('svg');
-    expect(page.characterSrc(lea)).toBeNull();
+    }, noah]);
+    fixture.detectChanges();
+    await TestBed.inject(AvatarRenderer).load('lorelei');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="child-1"] [data-testid="child-character"]')?.getAttribute('src'))
+      .toContain('svg');
+    expect(root.querySelector('[data-testid="child-2"] [data-testid="child-character"]')).toBeNull();
   });
 
   it('propose les mots du garçon choisi, et vide Sœur quand on passe de Léa à Noah', () => {

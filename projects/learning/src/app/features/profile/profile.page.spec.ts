@@ -2,6 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { AvatarRenderer } from '@appv4/ui';
+
 import { ChildAuthService } from '../../core/auth/child-auth.service';
 import { ProfilePage } from './profile.page';
 
@@ -42,11 +44,13 @@ describe('ProfilePage', () => {
     ],
   };
 
-  it('affiche Lorelei et le seuil tant que la zone est fermée, sans sélectionner une variante', () => {
+  it('affiche Lorelei et le seuil tant que la zone est fermée, sans sélectionner une variante', async () => {
     const { fixture, http } = setup();
     const request = http.expectOne('http://localhost:8080/api/ext/avatar');
     expect(request.request.headers.get('Authorization')).toBe('Bearer child-token');
     request.flush(lorelei);
+    fixture.detectChanges();
+    await TestBed.inject(AvatarRenderer).load('lorelei');
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -173,7 +177,7 @@ describe('ProfilePage', () => {
     http.verify();
   });
 
-  it('change la palette du style choisi avant enregistrement', () => {
+  it('change la palette du style choisi avant enregistrement', async () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/avatar').flush({
       ...withChoices,
@@ -194,7 +198,10 @@ describe('ProfilePage', () => {
     const root = fixture.nativeElement as HTMLElement;
     (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();
     fixture.detectChanges();
+    await TestBed.inject(AvatarRenderer).load('fun-emoji');
+    fixture.detectChanges();
     const plain = root.querySelector('[data-testid="profile-face"]')?.getAttribute('src');
+    expect(plain).toContain('svg');
     (root.querySelector('[data-testid="profile-preset-ink"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(root.querySelector('[data-testid="profile-preset-ink"]')?.getAttribute('aria-pressed')).toBe('true');
@@ -408,14 +415,17 @@ describe('ProfilePage', () => {
     http.verify();
   });
 
-  it('choisit une variante ouverte, l’aperçu suit, et l’enregistrement la renvoie', () => {
+  it('choisit une variante ouverte, l’aperçu suit, et l’enregistrement la renvoie', async () => {
     const { fixture, http } = setup();
     http.expectOne('http://localhost:8080/api/ext/avatar').flush(openMouth);
+    fixture.detectChanges();
+    await TestBed.inject(AvatarRenderer).load('lorelei');
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('[data-testid="profile-open-mouth"]')).not.toBeNull();
 
     const before = root.querySelector('[data-testid="profile-face"]')?.getAttribute('src');
+    expect(before).toContain('svg');
     const mouth = root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement;
     mouth.click();
     fixture.detectChanges();
