@@ -3,6 +3,7 @@
 
   <main class="content content-wide">
     <h1>Demandes professeur</h1>
+    <p><a routerLink="/admin/humeurs">Humeurs</a></p>
     <ul class="queue-count">
       <li><strong>{{ pending().length }}</strong> en attente</li>
       <li><strong>{{ approved().length }}</strong> {{ approved().length === 1 ? 'traitée' : 'traitées' }}</li>

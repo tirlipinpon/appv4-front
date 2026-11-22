@@ -56,6 +56,11 @@ export const routes: Routes = [
     loadChildren: () => import('./features/teacher/teacher.routes').then((m) => m.TEACHER_ROUTES),
   },
   {
+    path: 'admin/humeurs',
+    loadChildren: () =>
+      import('./features/admin/humeurs/humeurs.routes').then((m) => m.HUMEURS_ROUTES),
+  },
+  {
     path: 'admin/teacher-requests',
     loadChildren: () =>
       import('./features/admin/teacher-requests/teacher-requests.routes').then(

@@ -111,6 +111,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/admin/humeurs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Modifier un choix d'humeur */
+        put: operations["updateHumeurChoice"];
+        post?: never;
+        /** Retirer un choix d'humeur */
+        delete: operations["deleteHumeurChoice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/avatar": {
         parameters: {
             query?: never;
@@ -708,6 +726,24 @@ export interface paths {
         put?: never;
         /** Accepter une demande professeur */
         post: operations["approveTeacherRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/admin/humeurs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la bibliothèque des humeurs */
+        get: operations["listHumeurChoices"];
+        put?: never;
+        /** Ajouter un choix d'humeur */
+        post: operations["createHumeurChoice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1745,6 +1781,16 @@ export interface components {
             /** @description Personnage choisi par l'enfant. Lorelei s'il n'a encore rien enregistré. */
             character?: components["schemas"]["ParentChildCharacter"];
         };
+        HumeurChoiceRequest: {
+            icon?: string;
+            word?: string;
+        };
+        HumeurChoiceItem: {
+            /** Format: int64 */
+            id?: number;
+            icon?: string;
+            word?: string;
+        };
         AvatarPinRequest: {
             zoneCode?: string;
             variantCode?: string;
@@ -2419,6 +2465,9 @@ export interface components {
         TeacherRequestListResponse: {
             requests?: components["schemas"]["TeacherRequestItem"][];
             truncated?: boolean;
+        };
+        HumeurChoiceListResponse: {
+            choices?: components["schemas"]["HumeurChoiceItem"][];
         };
         ChildTodayMission: {
             /** Format: int64 */
@@ -3794,6 +3843,97 @@ export interface operations {
                 content?: never;
             };
             /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    updateHumeurChoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HumeurChoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Choix modifié, même identifiant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HumeurChoiceItem"];
+                };
+            };
+            /** @description Ni icône ni mot */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le compte n'est pas admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Choix inconnu */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    deleteHumeurChoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Choix retiré */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Le compte n'est pas admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Choix inconnu */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5230,6 +5370,77 @@ export interface operations {
             };
             /** @description Demande inconnue */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listHumeurChoices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Choix dans l'ordre de création */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HumeurChoiceListResponse"];
+                };
+            };
+            /** @description Le compte n'est pas admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    createHumeurChoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HumeurChoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Choix enregistré */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HumeurChoiceItem"];
+                };
+            };
+            /** @description Ni icône ni mot */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le compte n'est pas admin */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

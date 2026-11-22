@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { RouterLink } from '@angular/router';
 
 import type { TeacherRequestItem } from '../../../core/api/api-models';
 import { SpaceHeader } from '../../../core/layout/space-header';
@@ -14,7 +15,7 @@ import { TeacherRequestsService } from './data-access/teacher-requests.service';
  */
 @Component({
   selector: 'app-teacher-requests-page',
-  imports: [MatButtonModule, SpaceHeader],
+  imports: [MatButtonModule, RouterLink, SpaceHeader],
   templateUrl: './teacher-requests.page.html',
   styleUrl: './teacher-requests.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
