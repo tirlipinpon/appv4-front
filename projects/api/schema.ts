@@ -2715,6 +2715,7 @@ export interface components {
         };
         ChildHumeurPromptResponse: {
             ask?: boolean;
+            message?: string;
             choices?: components["schemas"]["ChildHumeurChoiceItem"][];
         };
         ChildFeaturedQuestionItem: {
