@@ -9,9 +9,9 @@
       </header>
 
       <form class="invite" data-testid="child-share-request" (submit)="$event.preventDefault(); sendShareRequest()">
-        <input data-testid="child-share-email" type="email" [value]="shareEmail()" (input)="onShareEmail($event)" aria-label="Email du parent référent" />
-        <input data-testid="child-share-first" [value]="shareFirstName()" (input)="onShareFirstName($event)" aria-label="Prénom" />
-        <input data-testid="child-share-last" [value]="shareLastName()" (input)="onShareLastName($event)" aria-label="Nom" />
+        <input data-testid="child-share-email" type="email" [value]="shareEmail()" (input)="onShareEmail($event)" placeholder="Email du parent référent" aria-label="Email du parent référent" />
+        <input data-testid="child-share-first" [value]="shareFirstName()" (input)="onShareFirstName($event)" placeholder="Prénom de l'enfant" aria-label="Prénom de l'enfant" />
+        <input data-testid="child-share-last" [value]="shareLastName()" (input)="onShareLastName($event)" placeholder="Nom de l'enfant" aria-label="Nom de l'enfant" />
         <button mat-stroked-button type="submit" data-testid="child-share-send">Demander</button>
         @if (shareNotice(); as notice) {
           <p data-testid="child-share-sent">{{ notice }}</p>
@@ -189,6 +189,7 @@
                         type="email"
                         [value]="inviteEmail(child)"
                         (input)="onInviteEmail(child, $event)"
+                        placeholder="Email du parent à inviter"
                         aria-label="Email du parent à inviter"
                       />
                       <button mat-stroked-button type="submit" data-testid="child-invite">Inviter</button>
@@ -212,6 +213,7 @@
                           data-testid="child-transfer-message"
                           [value]="transferMessage(child)"
                           (input)="onTransferMessage(child, $event)"
+                          placeholder="Message"
                           aria-label="Message"
                         />
                         <button mat-stroked-button type="submit" data-testid="child-transfer">Transférer</button>
