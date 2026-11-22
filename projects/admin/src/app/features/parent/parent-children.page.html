@@ -8,6 +8,32 @@
         <button mat-flat-button color="primary" type="button" data-testid="child-add" (click)="openForm()">Ajouter un enfant</button>
       </header>
 
+      <form class="invite" data-testid="child-share-request" (submit)="$event.preventDefault(); sendShareRequest()">
+        <input data-testid="child-share-email" type="email" [value]="shareEmail()" (input)="onShareEmail($event)" aria-label="Email du parent référent" />
+        <input data-testid="child-share-first" [value]="shareFirstName()" (input)="onShareFirstName($event)" aria-label="Prénom" />
+        <input data-testid="child-share-last" [value]="shareLastName()" (input)="onShareLastName($event)" aria-label="Nom" />
+        <button mat-stroked-button type="submit" data-testid="child-share-send">Demander</button>
+        @if (shareNotice(); as notice) {
+          <p data-testid="child-share-sent">{{ notice }}</p>
+        }
+      </form>
+
+      @if (shareRequests().length > 0) {
+        <section class="invites" data-testid="child-share-requests" aria-label="Demandes">
+          @for (request of shareRequests(); track request.id) {
+            <article class="invite">
+              <p data-testid="child-share-request-label">demande pour {{ request.firstName }} {{ request.lastName }}</p>
+              @for (match of request.matches ?? []; track match.childId) {
+                <button mat-flat-button color="primary" type="button" [attr.data-testid]="'child-share-accept-' + match.childId" (click)="acceptShare(request, match)">
+                  Accepter {{ match.firstName }}
+                </button>
+              }
+              <button mat-button type="button" data-testid="child-share-refuse" (click)="refuseShare(request)">Refuser</button>
+            </article>
+          }
+        </section>
+      }
+
       @if (invitations().length > 0) {
         <section class="invites" data-testid="child-invitations" aria-label="Invitations">
           @for (invitation of invitations(); track invitation.id) {
@@ -116,6 +142,11 @@
                       <span data-testid="child-invite-warning"> Une invitation est en attente. Retirer la fiche l'annulera.</span>
                     } @else if ((child.pendingInvitationCount ?? 0) > 1) {
                       <span data-testid="child-invite-warning"> Des invitations sont en attente. Retirer la fiche les annulera.</span>
+                    }
+                    @if (child.pendingDemandeCount === 1) {
+                      <span data-testid="child-share-warning"> Une demande de partage est en attente. Retirer la fiche l'annulera.</span>
+                    } @else if ((child.pendingDemandeCount ?? 0) > 1) {
+                      <span data-testid="child-share-warning"> Des demandes de partage sont en attente. Retirer la fiche les annulera.</span>
                     }
                   </p>
                   <p class="actions">

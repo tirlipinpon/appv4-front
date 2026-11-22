@@ -525,6 +525,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/demandes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les demandes adressées au parent référent */
+        get: operations["listChildShareRequests"];
+        put?: never;
+        /** Demander une fiche par email, prénom et nom */
+        post: operations["requestChildShare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/demandes/{requestId}/refuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuser une demande de partage */
+        post: operations["refuseChildShareRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/demandes/{requestId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accepter une demande pour une fiche */
+        post: operations["acceptChildShareRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/auth/switch-role": {
         parameters: {
             query?: never;
@@ -1468,6 +1520,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/demandes/{requestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Annuler sa demande de partage */
+        delete: operations["cancelChildShareRequest"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1894,6 +1963,11 @@ export interface components {
              * @description Invitations encore en attente. Zéro si ce parent ne gère pas la fiche.
              */
             pendingInvitationCount?: number;
+            /**
+             * Format: int32
+             * @description Demandes de partage encore en attente pour ce nom. Zéro si ce parent ne gère pas la fiche.
+             */
+            pendingDemandeCount?: number;
         };
         HumeurChoiceRequest: {
             icon?: string;
@@ -2104,6 +2178,15 @@ export interface components {
         };
         InvitationReceiptResponse: {
             message?: string;
+        };
+        ShareRequestBody: {
+            email?: string;
+            firstName?: string;
+            lastName?: string;
+        };
+        AcceptShareRequestBody: {
+            /** Format: int64 */
+            childId?: number;
         };
         SwitchRoleRequest: {
             role: string;
@@ -2601,6 +2684,19 @@ export interface components {
             childId?: number;
             firstName?: string;
             lastName?: string;
+        };
+        ShareRequestChildResponse: {
+            /** Format: int64 */
+            childId?: number;
+            firstName?: string;
+            lastName?: string;
+        };
+        ShareRequestResponse: {
+            /** Format: int64 */
+            id?: number;
+            firstName?: string;
+            lastName?: string;
+            matches?: components["schemas"]["ShareRequestChildResponse"][];
         };
         AuthorizeUrlResponse: {
             authorizationUrl?: string;
@@ -5212,6 +5308,94 @@ export interface operations {
             };
         };
     };
+    listChildShareRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ShareRequestResponse"][];
+                };
+            };
+        };
+    };
+    requestChildShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShareRequestBody"];
+            };
+        };
+        responses: {
+            /** @description Demande envoyée, sans dire si l'enfant existe */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InvitationReceiptResponse"];
+                };
+            };
+        };
+    };
+    refuseChildShareRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    acceptChildShareRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptShareRequestBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     switchRole: {
         parameters: {
             query?: never;
@@ -6995,6 +7179,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
                 };
+            };
+        };
+    };
+    cancelChildShareRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
