@@ -85,8 +85,26 @@ describe('SubjectBoardPage', () => {
       lesson: {
         remainingCount: 2,
         questions: [
-          { questionId: 11, prompt: 'Combien font 2 + 2 ?', mark: 'black', yellowCount: 0 },
-          { questionId: 12, prompt: 'Combien font 3 + 1 ?', mark: 'yellow', yellowCount: 3 },
+          {
+            questionId: 11,
+            formCode: 'qcm',
+            prompt: 'Combien font 2 + 2 ?',
+            formLabel: 'Choix multiples',
+            iconCode: 'checklist',
+            color: '#4c6fff',
+            mark: 'black',
+            yellowCount: 0,
+          },
+          {
+            questionId: 12,
+            formCode: 'qcm',
+            prompt: 'Combien font 3 + 1 ?',
+            formLabel: 'Choix multiples',
+            iconCode: 'checklist',
+            color: '#4c6fff',
+            mark: 'yellow',
+            yellowCount: 3,
+          },
         ],
       },
     });
@@ -104,6 +122,9 @@ describe('SubjectBoardPage', () => {
       jasmine.stringContaining('Combien font 2 + 2 ?'),
       jasmine.stringContaining('Combien font 3 + 1 ?'),
     ]);
+    expect(links[0].textContent).toContain('Choix multiples');
+    expect(links[0].className).toContain('row');
+    expect(links[0].className).toContain('playable');
     expect(links[0].querySelector('[data-testid="lesson-star"]')?.className).toContain('star-black');
     expect(links[0].querySelector('[data-testid="lesson-yellow-count"]')).toBeNull();
     expect(links[1].querySelector('[data-testid="lesson-star"]')?.className).toContain('star-yellow');

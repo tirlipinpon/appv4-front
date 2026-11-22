@@ -18,6 +18,7 @@
       }
     </article>
 
+    <div class="avatar-config">
     @if (person.styles?.length) {
       <details class="avatar-fold" data-testid="profile-styles-toggle">
         <summary>
@@ -74,6 +75,7 @@
         </ul>
       </details>
     }
+    </div>
 
     @if (openZones().length || closedZones().length) {
       <div class="avatar-zones" data-testid="profile-zones">

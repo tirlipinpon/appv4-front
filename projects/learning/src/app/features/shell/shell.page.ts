@@ -76,6 +76,10 @@ export class ShellPage implements OnInit, OnDestroy {
     void this.router.navigateByUrl('/login');
   }
 
+  protected scrollTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   private syncActive(url: string): void {
     const path = url.split('?')[0] ?? url;
     const match = NAV_ITEMS.find((item) => path === item.link || path.startsWith(`${item.link}/`));

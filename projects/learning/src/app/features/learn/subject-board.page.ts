@@ -2,6 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { QuestionFormMarkComponent } from '@appv4/ui';
+
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { knownSubjectIcon, subjectCardTint, subjectIconSrc } from '../../shared/subject-icons/subject-icons';
 import { ChildSubjectBoardService } from './data-access/child-subject-board.service';
@@ -13,7 +15,7 @@ import type { PlayQueueState } from './play-queue';
  */
 @Component({
   selector: 'app-subject-board-page',
-  imports: [RouterLink],
+  imports: [RouterLink, QuestionFormMarkComponent],
   templateUrl: './subject-board.page.html',
   styleUrl: './subject-board.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -2650,12 +2650,25 @@ export interface components {
         };
         ChildSubjectLessonQuestion: {
             /** Format: int64 */
-            questionId?: number;
-            prompt?: string;
-            /** @enum {string} */
-            mark?: "none" | "black" | "yellow";
-            /** Format: int32 */
-            yellowCount?: number;
+            questionId: number;
+            formCode: string;
+            prompt: string;
+            /** @description Libellé de la forme, celui du catalogue professeur. */
+            formLabel: string;
+            /** @description Code du dessin de la forme. Null si la forme n'a pas d'identité. */
+            iconCode?: string;
+            /** @description Couleur #rrggbb de la forme. Null si pas d'identité. */
+            color?: string;
+            /**
+             * @description Étoile de l'enfant sur cette question : none, black ou yellow.
+             * @enum {string}
+             */
+            mark: "none" | "black" | "yellow";
+            /**
+             * Format: int32
+             * @description Nombre d'étoiles jaunes. Zéro s'il n'y en a pas.
+             */
+            yellowCount: number;
         };
         ChildSubjectTopicCard: {
             /** Format: int64 */

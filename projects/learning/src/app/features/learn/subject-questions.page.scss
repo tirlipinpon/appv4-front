@@ -43,15 +43,24 @@ h1 {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
   gap: 0.55rem;
+  align-items: stretch;
+}
+
+.list > li {
+  min-width: 0;
+  display: flex;
 }
 
 .row {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0.2rem;
+  width: 100%;
+  box-sizing: border-box;
   padding: 0.85rem 1rem;
   border-radius: 1rem;
   background: var(--app-surface-card, #fff);

@@ -37,6 +37,35 @@ describe('ShellPage', () => {
     expect(root.querySelector('[data-testid="nav-rewards"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="nav-ranking"]')).not.toBeNull();
     expect(root.querySelector('[data-testid="nav-profile"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="top-nav-home"]')?.textContent).toContain('Home');
+    expect(root.querySelector('[data-testid="top-nav-learn"]')?.textContent).toContain('Apprendre');
+    expect(root.querySelector('[data-testid="top-nav-rewards"]')?.textContent).toContain('Récompenses');
+    expect(root.querySelector('[data-testid="top-nav-ranking"]')?.textContent).toContain('Classement');
+    expect(root.querySelector('[data-testid="top-nav-profile"]')?.textContent).toContain('Profil');
+    const topMenu = root.querySelector('.learn-shell-menu');
+    expect(topMenu?.querySelector('nav')?.getAttribute('aria-label')).toBe('Menu');
+    expect(topMenu?.compareDocumentPosition(root.querySelector('main')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    http.verify();
+  });
+
+  it('remonte en haut de la page', () => {
+    const fixture = TestBed.createComponent(ShellPage);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    http.expectOne('http://localhost:8080/api/ext/me').flush({
+      childId: 7,
+      firstName: 'Léa',
+      avatarCode: 'fox',
+      hasPhoto: false,
+    });
+    fixture.detectChanges();
+
+    spyOn(window, 'scrollTo');
+    const button = fixture.nativeElement.querySelector('[data-testid="scroll-top"]') as HTMLButtonElement;
+    expect(button.getAttribute('aria-label')).toContain('haut');
+    button.click();
+    const options = (window.scrollTo as jasmine.Spy).calls.mostRecent().args[0] as ScrollToOptions;
+    expect(options).toEqual({ top: 0, behavior: 'smooth' });
     http.verify();
   });
 

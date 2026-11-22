@@ -22,4 +22,7 @@ export interface BottomNavItem {
 export class BottomNavComponent {
   readonly items = input.required<readonly BottomNavItem[]>();
   readonly activeId = input.required<string>();
+  readonly placement = input<'top' | 'bottom'>('bottom');
+  readonly label = input('Navigation');
+  readonly testIdPrefix = input('');
 }

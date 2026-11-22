@@ -1,12 +1,13 @@
 :host {
   display: block;
   min-height: 100dvh;
+  --learn-shell-max: 80rem;
 }
 
 .learn-shell {
   min-height: 100dvh;
   box-sizing: border-box;
-  width: min(100%, 26rem);
+  width: min(100%, var(--learn-shell-max));
   margin-inline: auto;
   display: flex;
   flex-direction: column;
@@ -91,8 +92,37 @@
   color: var(--app-error);
 }
 
+.learn-shell-menu {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
 .learn-shell-main {
   flex: 1;
   padding: 8px 16px 16px;
   min-height: 0;
+}
+
+.learn-shell-top {
+  position: fixed;
+  z-index: 4;
+  right: max(1rem, calc((100vw - min(100vw, var(--learn-shell-max))) / 2 + 1rem));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--app-outline);
+  border-radius: 999px;
+  background: var(--app-primary, #7c5cff);
+  color: var(--app-on-primary, #fff);
+  cursor: pointer;
+  box-shadow: var(--app-shadow-soft, none);
+}
+
+.learn-shell-top svg {
+  width: 1.35rem;
+  height: 1.35rem;
 }
