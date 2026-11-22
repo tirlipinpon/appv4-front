@@ -41,6 +41,12 @@ export class ParentChildrenService {
     return this.http.delete<void>(`${environment.apiBaseUrl}/parent/children/${id}`);
   }
 
+  suggestInterests(query: string): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.apiBaseUrl}/parent/interest-suggestions`, {
+      params: { query },
+    });
+  }
+
   photo(id: number): Observable<Blob> {
     return this.http.get(`${environment.apiBaseUrl}/parent/children/${id}/photo`, {
       responseType: 'blob',

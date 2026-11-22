@@ -280,6 +280,16 @@
               </div>
             }
 
+            @if (interestSuggestions().length > 0) {
+              <ul class="suggestions" role="listbox" data-testid="child-interest-suggestions">
+                @for (word of interestSuggestions(); track $index) {
+                  <li role="option" aria-selected="false">
+                    <button type="button" [attr.data-testid]="'interest-suggestion-' + $index" (click)="pickInterest(word)">{{ word }}</button>
+                  </li>
+                }
+              </ul>
+            }
+
             <p class="label">Avatar</p>
             <div class="avatars">
               @for (avatar of avatars; track avatar.code) {
