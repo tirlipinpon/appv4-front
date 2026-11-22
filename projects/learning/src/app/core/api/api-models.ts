@@ -33,6 +33,9 @@ export type ChildTodayResponse = components['schemas']['ChildTodayResponse'];
 export type ChildBadgesResponse = components['schemas']['ChildBadgesResponse'];
 export type ChildFeaturedQuestionsResponse =
   operations['readChildFeaturedQuestions']['responses'][200]['content']['*/*'];
+export type ChildHumeurPromptResponse = components['schemas']['ChildHumeurPromptResponse'];
+export type ChildHumeurChoiceItem = components['schemas']['ChildHumeurChoiceItem'];
+export type ChildHumeurAnswerRequest = components['schemas']['ChildHumeurAnswerRequest'];
 export type ChildBadge = components['schemas']['ChildBadgeResponse'];
 export type ChildBadgeGained = components['schemas']['ChildBadgeGainedResponse'];
 export type ChildBadgeNotice = components['schemas']['ChildBadgeNoticeResponse'];
