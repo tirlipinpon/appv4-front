@@ -63,6 +63,9 @@ export class ShellPage implements OnInit, OnDestroy {
       void this.router.navigateByUrl('/login');
       return;
     }
+    this.sejour.closedMessage$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((message) => this.logout(message));
     this.syncActive(this.router.url);
     this.sejour.enter(this.router.url);
     this.watchActivity();
@@ -90,10 +93,13 @@ export class ShellPage implements OnInit, OnDestroy {
     this.sejour.stop();
   }
 
-  protected logout(): void {
+  protected logout(entryMessage?: string): void {
     this.sejour.hide();
     this.auth.logout();
     this.profileApi.clear();
+    if (entryMessage) {
+      this.auth.rememberEntryMessage(entryMessage);
+    }
     void this.router.navigateByUrl('/login');
   }
 

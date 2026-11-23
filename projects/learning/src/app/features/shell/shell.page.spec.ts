@@ -1,10 +1,26 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter, Router, Routes } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 
 import { ChildAuthService } from '../../core/auth/child-auth.service';
+import { ChildSejourService } from '../sejour/data-access/child-sejour.service';
+import { LoginPage } from '../login/login.page';
 import { ShellPage } from './shell.page';
+
+@Component({ template: '' })
+class OpenStayPage {}
+
+const stayRoutes: Routes = [
+  { path: 'login', component: LoginPage },
+  {
+    path: '',
+    component: ShellPage,
+    children: [{ path: 'home', component: OpenStayPage }],
+  },
+];
 
 describe('ShellPage', () => {
   beforeEach(async () => {
@@ -82,6 +98,53 @@ describe('ShellPage', () => {
     );
 
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+    expect(TestBed.inject(ChildAuthService).getToken()).toBeNull();
+    http.verify();
+  });
+});
+
+describe('ShellPage when the stay read closes the app', () => {
+  const apiMessage = "Fermeture décidée par l'API.";
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    sessionStorage.setItem('learning.jwt', 'child-token');
+    localStorage.setItem('learning.deviceId', 'tablette-1');
+  });
+
+  afterEach(() => {
+    TestBed.inject(ChildSejourService).stop();
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it('shows the API phrase exactly and returns to the login entrance', async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(stayRoutes)],
+    }).compileComponents();
+    const http = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create('/home');
+
+    http.expectOne('http://localhost:8080/api/ext/me').flush({
+      childId: 7,
+      firstName: 'Léa',
+      avatarCode: 'fox',
+      hasPhoto: false,
+    });
+    http.expectOne('http://localhost:8080/api/ext/sejour/signals').flush(null);
+    http
+      .expectOne((req) => req.method === 'GET' && req.url === 'http://localhost:8080/api/ext/sejour')
+      .flush(
+        { message: apiMessage, code: 'UNAUTHORIZED' },
+        { status: 401, statusText: 'Unauthorized' },
+      );
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    const alert = harness.fixture.nativeElement.querySelector('[data-testid="login-alert"]');
+    expect(alert?.textContent?.trim()).toBe(apiMessage);
+    expect(TestBed.inject(Router).url).toBe('/login');
     expect(TestBed.inject(ChildAuthService).getToken()).toBeNull();
     http.verify();
   });

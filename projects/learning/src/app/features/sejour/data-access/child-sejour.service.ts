@@ -1,9 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Subscription, interval } from 'rxjs';
+import { Subject, Subscription, interval } from 'rxjs';
 
 import type { ChildSejourResponse, ChildSejourSignalRequest } from '../../../core/api/api-models';
-import { ChildAuthService } from '../../../core/auth/child-auth.service';
+import { ChildAuthService, apiErrorMessage } from '../../../core/auth/child-auth.service';
 import { environment } from '../../../../environments/environment';
 import { learningQuestionId, learningScreenCode } from '../learning-screen';
 
@@ -26,6 +26,12 @@ export class ChildSejourService {
   private released = false;
   private visible = document.visibilityState !== 'hidden';
   private presence: Subscription | null = null;
+  /**
+   * Phrase de fermeture renvoyée par la lecture.
+   * La coquille la montre telle quelle et ramène à l'entrée. Pas une seconde phrase écrite ici.
+   */
+  private readonly closedMessage = new Subject<string>();
+  readonly closedMessage$ = this.closedMessage.asObservable();
 
   /** L'endroit affiché envoie son code. La partie envoie la question, sans code d'écran. */
   enter(url: string): void {
@@ -122,12 +128,25 @@ export class ChildSejourService {
   private refreshHold(): void {
     this.read().subscribe({
       next: (body) => this.applyHold(body.holds),
-      error: () => {
-        if (!this.released) {
-          this.armPresence();
-        }
-      },
+      error: (err: HttpErrorResponse) => this.onReadError(err),
     });
+  }
+
+  /**
+   * Une phrase dans l'erreur de lecture ferme l'entrée.
+   * On la transmet telle quelle. Sans phrase, la présence continue.
+   */
+  private onReadError(err: HttpErrorResponse): void {
+    const message = apiErrorMessage(err, '');
+    if (message) {
+      this.released = true;
+      this.stopPresence();
+      this.closedMessage.next(message);
+      return;
+    }
+    if (!this.released) {
+      this.armPresence();
+    }
   }
 
   /** Seul `holds === false` arrête les signaux de temps. Un champ absent ne compte pas comme un refus. */
@@ -166,7 +185,7 @@ export class ChildSejourService {
           }
           this.post({ kind: 'presence', deviceId: this.deviceId(), screen });
         },
-        error: () => undefined,
+        error: (err: HttpErrorResponse) => this.onReadError(err),
       });
     });
   }
