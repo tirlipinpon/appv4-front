@@ -989,6 +989,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/sejour/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Envoyer un signal de séjour */
+        post: operations["signalChildSejour"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/humeur": {
         parameters: {
             query?: never;
@@ -1143,6 +1160,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/teacher/students/{childId}/sejours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les séjours d'un élève de la classe */
+        get: operations["listTeacherSejours"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/teacher/question-gamification": {
         parameters: {
             query?: never;
@@ -1288,6 +1322,23 @@ export interface paths {
         };
         /** Lire les parents déjà en partage */
         get: operations["listChildHolders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/parent/children/{childId}/sejours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les séjours d'un enfant */
+        get: operations["listParentSejours"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1512,6 +1563,23 @@ export interface paths {
          * @deprecated
          */
         get: operations["getChildPlayQuestion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ext/sejour": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la popup et si cet appareil tient le séjour */
+        get: operations["readChildSejour"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2584,6 +2652,13 @@ export interface components {
             /** @description Leçon finie. si cet essai vide la leçon. */
             lessonFinishedLabel?: string;
         };
+        ChildSejourSignalRequest: {
+            kind?: string;
+            deviceId?: string;
+            screen?: string;
+            /** Format: int64 */
+            questionId?: number;
+        };
         ChildHumeurAnswerRequest: {
             /** Format: int64 */
             choiceId?: number;
@@ -2710,6 +2785,20 @@ export interface components {
         TeacherStudentsResponse: {
             noClassMessage?: string;
             schools?: components["schemas"]["TeacherStudentSchool"][];
+        };
+        ParentSejourItem: {
+            dateLabel?: string;
+            timeLabel?: string;
+            durationLabel?: string;
+            lines?: components["schemas"]["ParentSejourLineItem"][];
+        };
+        ParentSejourLineItem: {
+            label?: string;
+            subjectName?: string;
+            durationLabel?: string;
+        };
+        ParentSejourListResponse: {
+            sejours?: components["schemas"]["ParentSejourItem"][];
         };
         TeacherQuestionDifficultyItem: {
             code?: string;
@@ -3074,6 +3163,11 @@ export interface components {
             color?: string;
             /** Format: uuid */
             challengeId?: string;
+        };
+        ChildSejourResponse: {
+            holds?: boolean;
+            message?: string;
+            button?: string;
         };
         ChildProgressResponse: {
             /** Format: int32 */
@@ -6317,6 +6411,48 @@ export interface operations {
             };
         };
     };
+    signalChildSejour: {
+        parameters: {
+            query?: never;
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChildSejourSignalRequest"];
+            };
+        };
+        responses: {
+            /** @description Signal accepté, ou sans effet s'il ne confirme rien */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Appareil absent, écran inconnu, ou signal refusé */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     askChildHumeur: {
         parameters: {
             query?: never;
@@ -6653,6 +6789,46 @@ export interface operations {
             };
         };
     };
+    listTeacherSejours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                childId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Même détail que la lecture parent, ou liste vide */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentSejourListResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace professeur */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Cet élève n'est pas dans tes classes */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
     getTeacherQuestionGamification: {
         parameters: {
             query?: never;
@@ -6905,6 +7081,46 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FicheHolderResponse"][];
+                };
+            };
+        };
+    };
+    listParentSejours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                childId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Séjours du plus récent au plus ancien, ou liste vide */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentSejourListResponse"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Cet enfant est introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
         };
@@ -7279,6 +7495,48 @@ export interface operations {
             };
             /** @description Matière ou question absente */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildSejour: {
+        parameters: {
+            query?: {
+                deviceId?: string;
+            };
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Popup due, ou seulement qui tient le séjour */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildSejourResponse"];
+                };
+            };
+            /** @description Appareil absent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

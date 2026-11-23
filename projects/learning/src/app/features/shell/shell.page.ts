@@ -1,13 +1,24 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { filter, Subscription } from 'rxjs';
+import { filter, fromEvent, Subscription } from 'rxjs';
 
 import { BottomNavComponent, type BottomNavItem, ThemeToggleComponent } from '@appv4/ui';
 
 import { ChildAuthService, apiErrorMessage } from '../../core/auth/child-auth.service';
 import { ThemeService } from '../../core/theme/theme.service';
 import { knownChildAvatarEmoji } from '../../shared/avatars/child-avatars';
+import { ChildSejourService } from '../sejour/data-access/child-sejour.service';
 import { ChildProfileService } from './data-access/child-profile.service';
 
 const NAV_ITEMS: readonly BottomNavItem[] = [
@@ -31,7 +42,9 @@ const NAV_ITEMS: readonly BottomNavItem[] = [
 export class ShellPage implements OnInit, OnDestroy {
   private readonly auth = inject(ChildAuthService);
   private readonly profileApi = inject(ChildProfileService);
+  private readonly sejour = inject(ChildSejourService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly theme = inject(ThemeService);
 
   protected readonly navItems = NAV_ITEMS;
@@ -51,9 +64,14 @@ export class ShellPage implements OnInit, OnDestroy {
       return;
     }
     this.syncActive(this.router.url);
+    this.sejour.enter(this.router.url);
+    this.watchActivity();
     this.routeSub = this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => this.syncActive(event.urlAfterRedirects));
+      .subscribe((event) => {
+        this.syncActive(event.urlAfterRedirects);
+        this.sejour.enter(event.urlAfterRedirects);
+      });
 
     this.profileApi.load().subscribe({
       error: (err: HttpErrorResponse) => {
@@ -68,12 +86,34 @@ export class ShellPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+    this.sejour.hide();
+    this.sejour.stop();
   }
 
   protected logout(): void {
+    this.sejour.hide();
     this.auth.logout();
     this.profileApi.clear();
     void this.router.navigateByUrl('/login');
+  }
+
+  /** Geste, présence et départ : la coquille voit tous les écrans, les pages n'appellent pas HTTP. */
+  private watchActivity(): void {
+    fromEvent(document, 'visibilitychange')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (document.visibilityState === 'hidden') {
+          this.sejour.hide();
+        } else {
+          this.sejour.show();
+        }
+      });
+    fromEvent(document, 'pointerdown')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.sejour.gesture());
+    fromEvent(document, 'keydown')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.sejour.gesture());
   }
 
   protected scrollTop(): void {
