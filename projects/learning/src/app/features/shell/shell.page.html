@@ -54,6 +54,30 @@
 
   <app-bottom-nav [items]="navItems" [activeId]="activeId()" />
 
+  @if (stayPopup(); as ask) {
+    <div
+      class="stay-popup"
+      data-testid="stay-popup"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="stay-popup-message"
+    >
+      <div class="stay-popup-card">
+        <p id="stay-popup-message" class="stay-popup-message" data-testid="stay-popup-message">
+          {{ ask.message }}
+        </p>
+        <button
+          type="button"
+          class="stay-popup-button"
+          data-testid="stay-popup-button"
+          (click)="continueStay()"
+        >
+          {{ ask.button }}
+        </button>
+      </div>
+    </div>
+  }
+
   <button
     type="button"
     class="learn-shell-top"

@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Subject, Subscription, interval } from 'rxjs';
 
 import type { ChildSejourResponse, ChildSejourSignalRequest } from '../../../core/api/api-models';
@@ -11,9 +11,10 @@ const DEVICE_KEY = 'learning.deviceId';
 const PRESENCE_MS = 30_000;
 
 /**
- * Signaux de séjour de l'app enfant (LEARN-74, LEARN-75).
+ * Signaux de séjour de l'app enfant (LEARN-74, LEARN-75, LEARN-77).
  * L'écran envoie le code de l'endroit. La partie envoie la question.
  * L'API compte. Cet appareil ne décide pas.
+ * Quand la lecture envoie une phrase et un bouton, l'écran les recopie.
  */
 @Injectable({ providedIn: 'root' })
 export class ChildSejourService {
@@ -32,6 +33,13 @@ export class ChildSejourService {
    */
   private readonly closedMessage = new Subject<string>();
   readonly closedMessage$ = this.closedMessage.asObservable();
+
+  /**
+   * Phrase et bouton renvoyés ensemble par la lecture.
+   * L'écran les recopie. Une phrase sans bouton n'ouvre pas cette popup
+   * et ne déconnecte pas : la fermeture reste closedMessage$.
+   */
+  readonly popup = signal<{ message: string; button: string } | null>(null);
 
   /** L'endroit affiché envoie son code. La partie envoie la question, sans code d'écran. */
   enter(url: string): void {
@@ -119,6 +127,16 @@ export class ChildSejourService {
     this.screen = null;
     this.released = false;
     this.visible = true;
+    this.popup.set(null);
+  }
+
+  /**
+   * Le bouton de la popup confirme que l'enfant est encore là.
+   * Pas de code d'écran : seul cet appareil est renvoyé.
+   * Un geste derrière la popup n'appelle pas cette méthode.
+   */
+  reactivate(): void {
+    this.post({ kind: 'reactivate', deviceId: this.deviceId() }, () => this.popup.set(null));
   }
 
   /**
@@ -127,9 +145,22 @@ export class ChildSejourService {
    */
   private refreshHold(): void {
     this.read().subscribe({
-      next: (body) => this.applyHold(body.holds),
+      next: (body) => {
+        this.notePopup(body);
+        this.applyHold(body.holds);
+      },
       error: (err: HttpErrorResponse) => this.onReadError(err),
     });
+  }
+
+  /**
+   * La lecture n'ouvre la popup que si la phrase et le bouton arrivent ensemble.
+   * Les deux textes sont ceux de l'API. Une phrase seule ne passe pas par ici.
+   */
+  private notePopup(body: ChildSejourResponse): void {
+    if (body.message && body.button) {
+      this.popup.set({ message: body.message, button: body.button });
+    }
   }
 
   /**
@@ -175,6 +206,7 @@ export class ChildSejourService {
       }
       this.read().subscribe({
         next: (body) => {
+          this.notePopup(body);
           if (body.holds === false) {
             this.released = true;
             this.stopPresence();

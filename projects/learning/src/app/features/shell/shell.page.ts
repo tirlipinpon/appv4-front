@@ -48,6 +48,7 @@ export class ShellPage implements OnInit, OnDestroy {
   protected readonly theme = inject(ThemeService);
 
   protected readonly navItems = NAV_ITEMS;
+  protected readonly stayPopup = this.sejour.popup;
   protected readonly activeId = signal('home');
   protected readonly error = signal<string | null>(null);
   protected readonly firstName = this.auth.firstName;
@@ -91,6 +92,11 @@ export class ShellPage implements OnInit, OnDestroy {
     this.routeSub?.unsubscribe();
     this.sejour.hide();
     this.sejour.stop();
+  }
+
+  /** Le bouton de la popup, avec la phrase et le libellé renvoyés par la lecture. */
+  protected continueStay(): void {
+    this.sejour.reactivate();
   }
 
   protected logout(entryMessage?: string): void {

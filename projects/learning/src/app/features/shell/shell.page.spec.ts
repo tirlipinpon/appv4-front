@@ -149,3 +149,72 @@ describe('ShellPage when the stay read closes the app', () => {
     http.verify();
   });
 });
+
+describe('ShellPage when the stay read asks the child to continue', () => {
+  const apiMessage = "Phrase venue de l'API";
+  const apiButton = 'Rester ici';
+  const signals = 'http://localhost:8080/api/ext/sejour/signals';
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    sessionStorage.setItem('learning.jwt', 'child-token');
+    localStorage.setItem('learning.deviceId', 'tablette-1');
+  });
+
+  afterEach(() => {
+    TestBed.inject(ChildSejourService).stop();
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it('recopie la phrase et le bouton de la lecture, et seul ce bouton relance sans code d’écran', async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(stayRoutes)],
+    }).compileComponents();
+    const http = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create('/home');
+
+    http.expectOne('http://localhost:8080/api/ext/me').flush({
+      childId: 7,
+      firstName: 'Léa',
+      avatarCode: 'fox',
+      hasPhoto: false,
+    });
+    http.expectOne(signals).flush(null);
+    http
+      .expectOne((req) => req.method === 'GET' && req.url === 'http://localhost:8080/api/ext/sejour')
+      .flush({ holds: true, message: apiMessage, button: apiButton });
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    const root = harness.fixture.nativeElement as HTMLElement;
+    const popup = root.querySelector('[data-testid="stay-popup"]');
+    expect(popup?.querySelector('[data-testid="stay-popup-message"]')?.textContent?.trim()).toBe(apiMessage);
+    expect(popup?.querySelector('[data-testid="stay-popup-button"]')?.textContent?.trim()).toBe(apiButton);
+    expect(TestBed.inject(Router).url).toBe('/home');
+    expect(TestBed.inject(ChildAuthService).getToken()).toBe('child-token');
+
+    popup?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    const behind = http.match((req) => req.method === 'POST' && req.url === signals);
+    for (const req of behind) {
+      expect((req.request.body as { kind?: string }).kind).not.toBe('reactivate');
+      req.flush(null);
+    }
+
+    (popup?.querySelector('[data-testid="stay-popup-button"]') as HTMLButtonElement).click();
+    const sent = http.expectOne(signals);
+    expect(sent.request.body).toEqual({
+      kind: 'reactivate',
+      deviceId: 'tablette-1',
+    });
+    sent.flush(null);
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    expect(root.querySelector('[data-testid="stay-popup"]')).toBeNull();
+    expect(TestBed.inject(Router).url).toBe('/home');
+    expect(TestBed.inject(ChildAuthService).getToken()).toBe('child-token');
+    http.verify();
+  });
+});
