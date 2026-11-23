@@ -22,6 +22,11 @@ export const PARENT_ROUTES: Routes = [
     canActivate: [spaceGuard(SpaceRoles.parent)],
   },
   {
+    path: 'temps',
+    loadComponent: () => import('./parent-temps.page').then((m) => m.ParentTempsPage),
+    canActivate: [spaceGuard(SpaceRoles.parent)],
+  },
+  {
     path: 'matieres',
     loadComponent: () => import('./parent-subjects.page').then((m) => m.ParentSubjectsPage),
     canActivate: [spaceGuard(SpaceRoles.parent)],

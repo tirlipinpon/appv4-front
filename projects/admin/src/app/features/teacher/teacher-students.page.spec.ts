@@ -136,6 +136,15 @@ describe('TeacherStudentsPage', () => {
     expect(main.querySelector('.student img')).not.toBeNull();
   });
 
+  it('ouvre un élève de la liste vers son séjour', () => {
+    boot(loaded);
+
+    const links = [...fixture.nativeElement.querySelectorAll('a.student')] as HTMLAnchorElement[];
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/teacher/eleves/1', '/teacher/eleves/2']);
+    expect(links[0].textContent).toContain('Léa');
+    expect(links[0].textContent).toContain('Martin');
+  });
+
   it('loads 30 student photos with at most four requests at a time', () => {
     fixture.detectChanges();
     http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });

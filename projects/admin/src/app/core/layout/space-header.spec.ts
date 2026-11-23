@@ -167,6 +167,7 @@ describe('SpaceHeader', () => {
       'Profil',
       'Matières',
       'Humeur',
+      'Temps',
     ]);
     expect(menuLinks()[0].getAttribute('aria-current')).toBe('page');
   });
@@ -185,6 +186,7 @@ describe('SpaceHeader', () => {
       'Profil',
       'Matières',
       'Humeur',
+      'Temps',
     ]);
     const action: HTMLButtonElement = fixture.nativeElement.querySelector('.space-action');
     expect(action.textContent?.trim()).toBe("Demander l'espace professeur");

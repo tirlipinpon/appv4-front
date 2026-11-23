@@ -16,6 +16,8 @@ const TOKEN_KEY = 'learning.jwt';
 export class ChildAuthService {
   private readonly http = inject(HttpClient);
   readonly firstName = signal<string | null>(null);
+  /** Phrase à montrer à l'entrée après une fermeture, lue une seule fois. */
+  private pendingEntryMessage: string | null = null;
 
   getToken(): string | null {
     return sessionStorage.getItem(TOKEN_KEY);
@@ -42,6 +44,18 @@ export class ChildAuthService {
   logout(): void {
     sessionStorage.removeItem(TOKEN_KEY);
     this.firstName.set(null);
+  }
+
+  /** Garde la phrase de l'API pour l'entrée, sans la réécrire. */
+  rememberEntryMessage(message: string): void {
+    this.pendingEntryMessage = message;
+  }
+
+  /** L'entrée affiche la phrase, puis l'oublie. */
+  takeEntryMessage(): string | null {
+    const message = this.pendingEntryMessage;
+    this.pendingEntryMessage = null;
+    return message;
   }
 }
 

@@ -21,7 +21,7 @@ export class LoginPage {
 
   protected readonly firstName = signal('');
   protected readonly pin = signal('');
-  protected readonly error = signal<string | null>(null);
+  protected readonly error = signal<string | null>(this.auth.takeEntryMessage());
   protected readonly busy = signal(false);
 
   protected onFirstName(value: string): void {

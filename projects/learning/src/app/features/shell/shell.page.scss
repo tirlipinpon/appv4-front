@@ -104,6 +104,43 @@
   min-height: 0;
 }
 
+.stay-popup {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: #0e0b1cb8;
+}
+
+.stay-popup-card {
+  width: min(22rem, 100%);
+  padding: 1.25rem;
+  border-radius: 1.4rem;
+  background: #2a2348;
+  color: #fff;
+  text-align: center;
+}
+
+.stay-popup-message {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.stay-popup-button {
+  width: 100%;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  background: #7c5cff;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .learn-shell-top {
   position: fixed;
   z-index: 4;

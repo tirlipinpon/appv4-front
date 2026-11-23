@@ -1,0 +1,51 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content content-wide">
+    <h1>Temps</h1>
+
+    @if (loading()) {
+      <p>Chargement…</p>
+    }
+    @if (error(); as message) {
+      <p class="error" role="alert" data-testid="parent-temps-error">{{ message }}</p>
+    }
+
+    @if (children().length > 0) {
+      <div class="picks">
+        @for (child of children(); track child.id) {
+          <button
+            type="button"
+            [attr.data-testid]="'parent-temps-pick-' + child.id"
+            [attr.aria-current]="child.id === selectedId() ? 'true' : null"
+            (click)="select(child.id)"
+          >
+            {{ child.firstName }}
+          </button>
+        }
+      </div>
+    }
+
+    @if (selected(); as child) {
+      <p data-testid="parent-temps-child">{{ child.firstName }} {{ child.lastName }}</p>
+      @for (sejour of sejours(); track $index) {
+        <article data-testid="parent-temps-sejour">
+          <p>{{ sejour.dateLabel }}</p>
+          <p>{{ sejour.timeLabel }}</p>
+          <p>{{ sejour.durationLabel }}</p>
+          <ul>
+            @for (line of sejour.lines ?? []; track $index) {
+              <li data-testid="parent-temps-line">
+                <span data-testid="parent-temps-label">{{ line.label }}</span>
+                @if (line.subjectName) {
+                  <span data-testid="parent-temps-subject">{{ line.subjectName }}</span>
+                }
+                <span>{{ line.durationLabel }}</span>
+              </li>
+            }
+          </ul>
+        </article>
+      }
+    }
+  </main>
+</div>

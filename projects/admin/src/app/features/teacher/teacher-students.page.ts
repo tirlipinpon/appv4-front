@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
+import { RouterLink } from '@angular/router';
 import { EMPTY, catchError, from, map, mergeMap } from 'rxjs';
 
 import type { TeacherStudentsResponse } from '../../core/api/api-models';
@@ -39,7 +40,7 @@ interface SchoolBlock {
  */
 @Component({
   selector: 'app-teacher-students-page',
-  imports: [MatCardModule, SpaceHeader],
+  imports: [MatCardModule, RouterLink, SpaceHeader],
   templateUrl: './teacher-students.page.html',
   styleUrl: './teacher-students.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
