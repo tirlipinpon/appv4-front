@@ -25,6 +25,11 @@ export const TEACHER_ROUTES: Routes = [
     canActivate: [spaceGuard(SpaceRoles.teacher)],
   },
   {
+    path: 'eleves/:childId',
+    loadComponent: () => import('./teacher-student-sejour.page').then((m) => m.TeacherStudentSejourPage),
+    canActivate: [spaceGuard(SpaceRoles.teacher)],
+  },
+  {
     path: 'matieres',
     loadComponent: () => import('./teacher-subjects.page').then((m) => m.TeacherSubjectsPage),
     canActivate: [spaceGuard(SpaceRoles.teacher)],

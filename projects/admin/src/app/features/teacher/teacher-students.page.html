@@ -44,17 +44,19 @@
                     </summary>
                     <ul class="students">
                       @for (student of grade.students; track student.id) {
-                        <li class="student">
-                          @if (student.hasPhoto && photos()[student.id]) {
-                            <img
-                              [src]="photos()[student.id]"
-                              [alt]="student.firstName + ' ' + student.lastName"
-                            />
-                          } @else {
-                            <span class="avatar" aria-hidden="true">{{ emoji(student.avatarCode) }}</span>
-                          }
-                          <span class="name">{{ student.lastName }} {{ student.firstName }}</span>
-                          <span class="age">{{ student.age }} ans</span>
+                        <li>
+                          <a class="student" [routerLink]="['/teacher/eleves', student.id]">
+                            @if (student.hasPhoto && photos()[student.id]) {
+                              <img
+                                [src]="photos()[student.id]"
+                                [alt]="student.firstName + ' ' + student.lastName"
+                              />
+                            } @else {
+                              <span class="avatar" aria-hidden="true">{{ emoji(student.avatarCode) }}</span>
+                            }
+                            <span class="name">{{ student.lastName }} {{ student.firstName }}</span>
+                            <span class="age">{{ student.age }} ans</span>
+                          </a>
                         </li>
                       }
                     </ul>
