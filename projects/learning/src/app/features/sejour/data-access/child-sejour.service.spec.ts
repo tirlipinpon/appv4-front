@@ -66,7 +66,42 @@ describe('ChildSejourService', () => {
     }
 
     service.enter('/learn/12/play/9');
+    const play = http.expectOne('http://localhost:8080/api/ext/sejour/signals');
+    expect(play.request.body).toEqual({
+      kind: 'question',
+      deviceId: 'tablette-1',
+      questionId: 9,
+    });
+    play.flush(null);
+    flushRead();
+  });
+
+  it('envoie la question de la partie, puis l’écran suivant, et se tait si le séjour n’est plus tenu', () => {
+    localStorage.setItem('learning.deviceId', 'tablette-1');
+
+    service.enter('/learn/12/play/9');
+
+    const question = http.expectOne('http://localhost:8080/api/ext/sejour/signals');
+    expect(question.request.body).toEqual({
+      kind: 'question',
+      deviceId: 'tablette-1',
+      questionId: 9,
+    });
+    question.flush(null);
+    flushRead(false);
+
+    service.enter('/learn/12/play/10');
     http.expectNone('http://localhost:8080/api/ext/sejour/signals');
+
+    service.enter('/learn/12');
+    const board = http.expectOne('http://localhost:8080/api/ext/sejour/signals');
+    expect(board.request.body).toEqual({
+      kind: 'screen',
+      deviceId: 'tablette-1',
+      screen: 'board',
+    });
+    board.flush(null);
+    flushRead();
   });
 
   it('laisse la popup d’humeur sur accueil, sans un second code', () => {

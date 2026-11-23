@@ -5,14 +5,15 @@ import { Subscription, interval } from 'rxjs';
 import type { ChildSejourResponse, ChildSejourSignalRequest } from '../../../core/api/api-models';
 import { ChildAuthService } from '../../../core/auth/child-auth.service';
 import { environment } from '../../../../environments/environment';
-import { learningScreenCode } from '../learning-screen';
+import { learningQuestionId, learningScreenCode } from '../learning-screen';
 
 const DEVICE_KEY = 'learning.deviceId';
 const PRESENCE_MS = 30_000;
 
 /**
- * Signaux de séjour de l'app enfant (LEARN-74).
- * L'écran envoie le code de l'endroit. L'API compte. Cet appareil ne décide pas.
+ * Signaux de séjour de l'app enfant (LEARN-74, LEARN-75).
+ * L'écran envoie le code de l'endroit. La partie envoie la question.
+ * L'API compte. Cet appareil ne décide pas.
  */
 @Injectable({ providedIn: 'root' })
 export class ChildSejourService {
@@ -26,8 +27,13 @@ export class ChildSejourService {
   private visible = document.visibilityState !== 'hidden';
   private presence: Subscription | null = null;
 
-  /** L'endroit affiché envoie son code. La partie et l'inconnu n'envoient rien. */
+  /** L'endroit affiché envoie son code. La partie envoie la question, sans code d'écran. */
   enter(url: string): void {
+    const questionId = learningQuestionId(url);
+    if (questionId != null) {
+      this.signalQuestion(questionId);
+      return;
+    }
     const screen = learningScreenCode(url);
     if (screen == null) {
       this.screen = null;
@@ -38,6 +44,19 @@ export class ChildSejourService {
       return;
     }
     this.signalScreen(screen);
+  }
+
+  /**
+   * La partie envoie la question, pas un code d'écran.
+   * Si la lecture a déjà dit que cet appareil ne tient plus, ce signal ne part pas.
+   */
+  private signalQuestion(questionId: number): void {
+    this.screen = null;
+    this.stopPresence();
+    if (this.released) {
+      return;
+    }
+    this.post({ kind: 'question', deviceId: this.deviceId(), questionId }, () => this.refreshHold());
   }
 
   /** L'écran visible envoie son code, puis la lecture dit si on tient encore le séjour. */
