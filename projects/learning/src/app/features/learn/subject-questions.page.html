@@ -1,0 +1,77 @@
+<section class="subject-questions" data-testid="subject-questions-panel">
+  <header class="subject-questions-top">
+    <a routerLink="/learn" class="back" data-testid="subject-questions-back">← Matières</a>
+    <h1 data-testid="subject-questions-title">{{ subjectName() || 'Questions' }}</h1>
+  </header>
+
+  @if (questions().length > 0) {
+    <ul class="list" data-testid="subject-questions-list">
+      @for (question of questions(); track question.questionId) {
+        <li>
+          @if (canPlay(question.formCode)) {
+            <a
+              class="row playable"
+              [routerLink]="['/learn', subjectId(), 'play', question.questionId]"
+              [state]="questionsQueue()"
+              [attr.data-testid]="'subject-question-' + question.questionId"
+            >
+              <span class="form">
+                <app-question-form-mark
+                  [iconCode]="question.iconCode"
+                  [color]="question.color"
+                  [label]="question.formLabel"
+                />
+              </span>
+              <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
+              @if (question.mark === 'yellow') {
+                <span class="mark">
+                  <span class="star star-yellow" data-testid="question-star" aria-hidden="true">★</span>
+                  <span data-testid="question-yellow-count">{{ question.yellowCount }}</span>
+                </span>
+              } @else if (question.mark === 'black') {
+                <span class="mark">
+                  <span class="star star-black" data-testid="question-star" aria-hidden="true">★</span>
+                </span>
+              }
+            </a>
+          } @else {
+            <div class="row locked" [attr.data-testid]="'subject-question-' + question.questionId">
+              <span class="form">
+                <app-question-form-mark
+                  [iconCode]="question.iconCode"
+                  [color]="question.color"
+                  [label]="question.formLabel"
+                />
+              </span>
+              <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
+              @if (question.mark === 'yellow') {
+                <span class="mark">
+                  <span class="star star-yellow" data-testid="question-star" aria-hidden="true">★</span>
+                  <span data-testid="question-yellow-count">{{ question.yellowCount }}</span>
+                </span>
+              } @else if (question.mark === 'black') {
+                <span class="mark">
+                  <span class="star star-black" data-testid="question-star" aria-hidden="true">★</span>
+                </span>
+              }
+              <span class="hint">Pas encore jouable</span>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  } @else if (!loading() && !error()) {
+    <p class="status" data-testid="subject-questions-empty">Aucune question pour l’instant.</p>
+  }
+
+  @if (loading()) {
+    <p class="status" role="status" data-testid="subject-questions-loading">Chargement…</p>
+  } @else if (error(); as message) {
+    <p class="status error" role="alert" data-testid="subject-questions-error">{{ message }}</p>
+    <button type="button" class="next-page" data-testid="subject-questions-retry" (click)="loadMore()">Réessayer</button>
+  } @else if (nextCursor() !== null) {
+    <button type="button" class="next-page" data-testid="subject-questions-next" (click)="loadMore()">
+      Plus de questions
+    </button>
+  }
+</section>

@@ -1,0 +1,404 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+  font-weight: 600;
+}
+
+.board-modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.board-modes-label {
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.board-modes .mode {
+  border: 1px solid #c5cdd8;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.board-modes .mode.selected {
+  border-color: var(--app-primary);
+  background: color-mix(in srgb, var(--app-primary) 12%, #fff);
+  font-weight: 600;
+}
+
+.board-modes .mode:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: 40rem;
+  background: #e6e1d6;
+}
+
+.board-thumb {
+  display: block;
+  width: 100%;
+  max-width: 12rem;
+  margin: 0.35rem 0 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #d0d7e2;
+}
+
+.stage-label {
+  margin: 0.75rem 0 0.35rem;
+  font-weight: 700;
+}
+
+.stage.board-play {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
+
+/* Damier derrière les trous (mode trous). */
+.stage.holed {
+  background-color: #d9d3c6;
+  background-image:
+    linear-gradient(45deg, #cfc8b8 25%, transparent 25%),
+    linear-gradient(-45deg, #cfc8b8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #cfc8b8 75%),
+    linear-gradient(-45deg, transparent 75%, #cfc8b8 75%);
+  background-size: 1.25rem 1.25rem;
+  background-position:
+    0 0,
+    0 0.625rem,
+    0.625rem -0.625rem,
+    -0.625rem 0;
+}
+
+/* Cadre blanc : l'img garde le ratio, le plateau reste blanc. */
+.stage.blank-board {
+  background: #fff;
+}
+
+.stage > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.stage > img.stage-size-only {
+  opacity: 0;
+}
+
+.click-order {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #0d652d;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+}
+
+.click-rank {
+  font-weight: 700;
+  color: #0d652d;
+}
+
+.stage svg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  pointer-events: all;
+  cursor: crosshair;
+}
+
+.stage svg:not(.editing) {
+  cursor: pointer;
+}
+
+rect.hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+polygon,
+rect:not(.hit),
+ellipse {
+  stroke-width: 0.006;
+  pointer-events: none;
+}
+
+svg.editing polygon,
+svg.editing rect:not(.hit),
+svg.editing ellipse {
+  pointer-events: all;
+  cursor: move;
+}
+
+svg.editing polygon.selected,
+svg.editing rect.selected,
+svg.editing ellipse.selected {
+  stroke: var(--app-primary);
+  stroke-width: 0.014;
+}
+
+polygon.correct,
+rect.correct,
+ellipse.correct {
+  fill: rgb(27 138 62 / 35%);
+  stroke: #1b8a3e;
+}
+
+polygon.wrong,
+rect.wrong,
+ellipse.wrong {
+  fill: rgb(209 36 47 / 35%);
+  stroke: #d1242f;
+}
+
+svg:not(.editing) polygon:not(.correct):not(.wrong):not(.piece),
+svg:not(.editing) rect:not(.hit):not(.correct):not(.wrong):not(.piece),
+svg:not(.editing) ellipse:not(.correct):not(.wrong):not(.piece) {
+  fill: transparent;
+  stroke: none;
+}
+
+polygon.piece,
+rect.piece,
+ellipse.piece {
+  fill: transparent;
+  stroke: none;
+}
+
+svg.editing polygon.piece,
+svg.editing rect.piece,
+svg.editing ellipse.piece {
+  fill: rgb(26 61 124 / 2%);
+  stroke: var(--app-primary);
+  stroke-width: 0.002;
+}
+
+svg.editing polygon.piece.selected,
+svg.editing rect.piece.selected,
+svg.editing ellipse.piece.selected {
+  stroke-width: 0.003;
+}
+
+.zone-list li.selected {
+  outline: 2px solid var(--app-primary);
+  background: #e4ecf8;
+}
+
+polyline.draft {
+  fill: none;
+  stroke: var(--app-primary);
+  stroke-width: 0.005;
+  pointer-events: none;
+}
+
+circle {
+  fill: #fff;
+  stroke: #1a1a1a;
+  stroke-width: 0.004;
+  cursor: grab;
+}
+
+circle.draft-point {
+  fill: var(--app-primary);
+  cursor: pointer;
+}
+
+circle.draft-point.active {
+  fill: #fff;
+  stroke: var(--app-primary);
+  stroke-width: 0.008;
+}
+
+circle.draft-point.origin {
+  stroke: var(--app-primary);
+  stroke-width: 0.008;
+}
+
+circle.active {
+  fill: var(--app-primary);
+}
+
+.tools,
+.zone-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.zone-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.zone-list li {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: var(--app-surface);
+  border-radius: 8px;
+}
+
+
+button.pick.selected {
+  border-color: var(--app-primary);
+  background: var(--app-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+button.pick,
+button.side {
+  border: 1px solid #d0d7e2;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.side.vrai.selected {
+  border-color: #0d652d;
+  background: #e6f4ea;
+  color: #0d652d;
+  font-weight: 700;
+}
+
+button.side.faux.selected {
+  border-color: var(--app-error);
+  background: #fce8e6;
+  color: var(--app-error);
+  font-weight: 700;
+}
+
+.name,
+.shape {
+  width: 12rem;
+}
+
+.hint {
+  margin: 0.35rem 0 0;
+  color: var(--app-text-muted);
+}
+
+.pieces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 40rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pieces li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+
+.pieces img {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: grab;
+  touch-action: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+}
+
+.board {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.token {
+  position: absolute;
+  height: auto;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+}
+
+/** Contour vert qui suit la forme (transparence PNG), ~2 s après un bon placement. */
+.token.fit {
+  animation: token-fit 2s ease-out forwards;
+}
+
+.token.picked {
+  outline: 2px dashed #7c5cff;
+  outline-offset: 2px;
+}
+
+@keyframes token-fit {
+  0%,
+  65% {
+    filter:
+      drop-shadow(0 0 0.75px #1f9d4a)
+      drop-shadow(0 0 2px #1f9d4a)
+      drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+  }
+
+  100% {
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 25%));
+  }
+}
+
+.ghost {
+  position: fixed;
+  z-index: 30;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 35%));
+}
+
+.magnet {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 20rem;
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+
+.magnet input {
+  width: 100%;
+}
+
+.pieces span {
+  font-size: 0.85rem;
+}

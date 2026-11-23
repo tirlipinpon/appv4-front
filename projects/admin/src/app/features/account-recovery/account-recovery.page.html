@@ -1,0 +1,110 @@
+<div class="page">
+  <mat-toolbar color="primary">
+    <span>appv4</span>
+  </mat-toolbar>
+
+  <main class="content content-center">
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Je ne me souviens plus de mon email</mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (maskedEmail()) {
+          <p class="success" role="status" data-testid="recovery-mask">{{ maskedEmail() }}</p>
+        }
+        @if (resultMessage()) {
+          <p class="success" role="status" data-testid="recovery-message">{{ resultMessage() }}</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert" data-testid="recovery-alert">{{ error() }}</p>
+        }
+
+        <button
+          mat-stroked-button
+          class="oauth-btn"
+          type="button"
+          data-testid="recovery-google"
+          [disabled]="busy()"
+          (click)="continueWithGoogle()"
+        >
+          Continuer avec Google
+        </button>
+        <button
+          mat-stroked-button
+          class="oauth-btn"
+          type="button"
+          data-testid="recovery-facebook"
+          [disabled]="busy()"
+          (click)="continueWithFacebook()"
+        >
+          Continuer avec Facebook
+        </button>
+        <button
+          mat-stroked-button
+          class="oauth-btn"
+          type="button"
+          data-testid="recovery-apple"
+          [disabled]="busy()"
+          (click)="continueWithApple()"
+        >
+          Continuer avec Apple
+        </button>
+
+        <mat-divider class="divider"></mat-divider>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Nom affiché</mat-label>
+          <input
+            matInput
+            type="text"
+            name="displayName"
+            data-testid="recovery-name"
+            [ngModel]="displayName()"
+            (ngModelChange)="displayName.set($event)"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Téléphone</mat-label>
+          <input
+            matInput
+            type="tel"
+            name="phone"
+            data-testid="recovery-phone"
+            [ngModel]="phone()"
+            (ngModelChange)="phone.set($event)"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Mail de contact</mat-label>
+          <input
+            matInput
+            type="email"
+            name="contactEmail"
+            data-testid="recovery-contact"
+            [ngModel]="contactEmail()"
+            (ngModelChange)="contactEmail.set($event)"
+          />
+        </mat-form-field>
+        @if (contactEmailFormatError()) {
+          <p class="error" role="alert">{{ contactEmailFormatError() }}</p>
+        }
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <a mat-button routerLink="/forgot-password">Mot de passe oublié</a>
+        <a mat-button routerLink="/login">Retour à la connexion</a>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          data-testid="recovery-submit"
+          [disabled]="!canSubmit()"
+          (click)="submit()"
+        >
+          {{ loading() ? 'Recherche…' : 'Retrouver' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </main>
+</div>

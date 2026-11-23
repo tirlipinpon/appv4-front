@@ -1,0 +1,26 @@
+<div class="boxes">
+  @for (word of words(); track word.start) {
+    <div class="word">
+      @for (index of word.indexes; track index) {
+        <input
+          #box
+          class="box"
+          [class.locked]="locked()[index]"
+          [class.wrong]="wrong()[index]"
+          type="text"
+          inputmode="text"
+          autocomplete="off"
+          [attr.aria-label]="'Lettre ' + (index + 1)"
+          [value]="letters()[index]"
+          [disabled]="busy || locked()[index]"
+          (input)="onInput(index, $event)"
+          (keydown)="onKeydown(index, $event)"
+        />
+      }
+    </div>
+  }
+</div>
+<button mat-stroked-button type="button" [disabled]="busy || !complete()" (click)="submit()">Valider</button>
+@if (message) {
+  <p class="verdict">{{ message }}</p>
+}

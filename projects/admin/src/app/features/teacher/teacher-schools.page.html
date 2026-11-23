@@ -1,0 +1,237 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content content-wide">
+    <mat-card class="card">
+      <mat-card-content>
+        @if (loading()) {
+          <p class="status" role="status">Chargement…</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+        @if (saved()) {
+          <p class="ok" role="status">Enregistré.</p>
+        }
+        @if (pendingNotice()) {
+          <p class="hint" role="status">{{ pendingNotice() }}</p>
+        }
+
+        @if (ready()) {
+          @if (catalogEmpty()) {
+            <p class="hint">Aucune école n'est proposable pour l'instant.</p>
+          }
+
+            @if (canAdd()) {
+              <button mat-stroked-button class="add-school" type="button" [disabled]="saving()" (click)="addSchool()">
+                Ajouter une école
+              </button>
+            }
+
+            @for (block of displayBlocks(); track block.key) {
+              <article class="school">
+                @if (blockError(block.key); as blockMessage) {
+                  <p class="field-error" role="alert">{{ blockMessage }}</p>
+                }
+
+                @if (showsForm(block)) {
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>Pays</mat-label>
+                    <mat-select
+                      [value]="block.country"
+                      [disabled]="saving() || blocked(block.key)"
+                      (selectionChange)="onCountryChange(block.key, $event)"
+                      placeholder="Choisir un pays"
+                    >
+                      @for (country of countries(); track country) {
+                        <mat-option [value]="country">{{ country }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>Rechercher une école</mat-label>
+                    <input matInput [disabled]="!block.country || saving() || blocked(block.key)"
+                      [value]="schoolQueries()[block.key] ?? ''" (input)="onSchoolSearch(block.key, $event)" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>École</mat-label>
+                    <mat-select
+                      [value]="block.schoolId"
+                      [disabled]="saving() || !block.country || blocked(block.key)"
+                      (selectionChange)="onSchoolChange(block.key, $event)"
+                      placeholder="Choisir une école"
+                    >
+                      @for (school of optionsFor(block); track school.id) {
+                        <mat-option [value]="school.id">{{ school.name }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  @if (schoolCursors()[block.key] !== null && schoolCursors()[block.key] !== undefined) {
+                    <button mat-button type="button" (click)="moreSchools(block.key)">Voir plus d'écoles</button>
+                  }
+
+                  @if (gradesFor(block).length) {
+                    <div class="grades">
+                      @for (grade of gradesFor(block); track grade) {
+                        <span
+                          class="grade-wrap"
+                          (mouseenter)="showGradeTip(block, grade)"
+                          (mouseleave)="hideTip()"
+                        >
+                          <mat-checkbox
+                            [checked]="block.grades.includes(grade)"
+                            [disabled]="saving() || blocked(block.key)"
+                            (change)="onGradeChange(block.key, grade, $event)"
+                          >
+                            {{ grade }}
+                          </mat-checkbox>
+                          @if (tipMatches(block.key, grade) && tip(); as current) {
+                            <aside class="impact impact-tip" role="tooltip">
+                              <ng-container [ngTemplateOutlet]="impactBody" [ngTemplateOutletContext]="{ tip: current }" />
+                            </aside>
+                          }
+                        </span>
+                      }
+                    </div>
+                  }
+                } @else {
+                  <div class="school-head">
+                    <div>
+                      <p class="school-name">{{ schoolLabel(block) }}</p>
+                      @if (block.country) {
+                        <p class="hint">{{ block.country }}</p>
+                      }
+                    </div>
+                    <div class="school-actions">
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        [disabled]="saving() || blocked(block.key)"
+                        (click)="editSchool(block.key)"
+                      >
+                        Modifier
+                      </button>
+                      <span class="remove-wrap" (mouseenter)="showSchoolTip(block)" (mouseleave)="hideTip()">
+                        <button
+                          mat-button
+                          type="button"
+                          [disabled]="saving() || blocked(block.key)"
+                          (click)="removeSchool(block.key)"
+                        >
+                          Supprimer
+                        </button>
+                        @if (tipMatches(block.key, null) && tip(); as current) {
+                          <aside class="impact impact-tip" role="tooltip">
+                            <ng-container [ngTemplateOutlet]="impactBody" [ngTemplateOutletContext]="{ tip: current }" />
+                          </aside>
+                        }
+                      </span>
+                    </div>
+                  </div>
+                  @if (block.grades.length) {
+                    <div class="grades">
+                      @for (grade of block.grades; track grade) {
+                        <span
+                          class="grade-wrap"
+                          (mouseenter)="showGradeTip(block, grade)"
+                          (mouseleave)="hideTip()"
+                        >
+                          <span class="grade-chip">{{ grade }}</span>
+                          @if (tipMatches(block.key, grade) && tip(); as current) {
+                            <aside class="impact impact-tip" role="tooltip">
+                              <ng-container [ngTemplateOutlet]="impactBody" [ngTemplateOutletContext]="{ tip: current }" />
+                            </aside>
+                          }
+                        </span>
+                      }
+                    </div>
+                  }
+                }
+
+                @if (showsForm(block)) {
+                  <div class="form-actions">
+                    @if (block.savedSchoolId !== null) {
+                      <span class="remove-wrap" (mouseenter)="showSchoolTip(block)" (mouseleave)="hideTip()">
+                        <button mat-button type="button" [disabled]="saving() || blocked(block.key)" (click)="removeSchool(block.key)">
+                          Supprimer
+                        </button>
+                        @if (tipMatches(block.key, null) && tip(); as current) {
+                          <aside class="impact impact-tip" role="tooltip">
+                            <ng-container [ngTemplateOutlet]="impactBody" [ngTemplateOutletContext]="{ tip: current }" />
+                          </aside>
+                        }
+                      </span>
+                    }
+                    <span class="form-actions-end">
+                      <button mat-button type="button" [disabled]="saving()" (click)="cancelEdit(block.key)">
+                        Annuler
+                      </button>
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="button"
+                        [disabled]="saving() || blocked(block.key)"
+                        (click)="saveSchool(block.key)"
+                      >
+                        {{ savingKey() === block.key ? 'Enregistrement…' : 'Enregistrer' }}
+                      </button>
+                    </span>
+                  </div>
+                }
+              </article>
+            }
+        }
+      </mat-card-content>
+    </mat-card>
+  </main>
+</div>
+
+<ng-template #impactBody let-tip="tip">
+  @if (tip.loading) {
+    <p class="status" role="status">Chargement…</p>
+  }
+  @if (tip.error) {
+    <p class="field-error" role="alert">{{ tip.error }}</p>
+  }
+  @if (tip.view; as view) {
+    <p class="impact-school">{{ view.schoolName }}</p>
+    @if (view.grade) {
+      <p class="impact-grade">{{ view.grade }}</p>
+    }
+    <p class="count">{{ view.studentCountLabel }}</p>
+    @if (view.studentCount === 0) {
+      <p class="hint">{{ view.emptyStudentsLabel }}</p>
+    } @else {
+      <ul class="names">
+        @for (student of view.students ?? []; track student.id) {
+          <li>
+            {{ student.firstName }} {{ student.lastName }}
+            @if (!view.grade) {
+              <span> — {{ student.grade }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+    <p class="count">{{ view.subjectCountLabel }}</p>
+    @if (view.subjectCount === 0) {
+      <p class="hint">{{ view.emptySubjectsLabel }}</p>
+    } @else {
+      <ul class="subjects">
+        @for (subject of view.subjects ?? []; track subject.id) {
+          <li>
+            {{ subject.name }}
+            @if (!view.grade) {
+              <span> — {{ subject.grade }}</span>
+            }
+            @if (subject.followerCount === 0) {
+              <span class="hint"> — {{ subject.followerWarning }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+</ng-template>

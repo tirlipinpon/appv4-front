@@ -1,0 +1,35 @@
+import { Routes } from '@angular/router';
+
+import { spaceGuard } from '../../core/auth/space.guard';
+import { SpaceRoles } from '../../core/auth/space-roles';
+import { ParentSpacePage } from './parent-space.page';
+
+/** Espace parent : le jeton doit dire parent (SCRUM-128). Les enfants sont SCRUM-156. */
+export const PARENT_ROUTES: Routes = [
+  {
+    path: 'enfants',
+    loadComponent: () => import('./parent-children.page').then((m) => m.ParentChildrenPage),
+    canActivate: [spaceGuard(SpaceRoles.parent)],
+  },
+  {
+    path: 'profil',
+    loadComponent: () => import('./parent-profile.page').then((m) => m.ParentProfilePage),
+    canActivate: [spaceGuard(SpaceRoles.parent)],
+  },
+  {
+    path: 'humeur',
+    loadComponent: () => import('./parent-humeur.page').then((m) => m.ParentHumeurPage),
+    canActivate: [spaceGuard(SpaceRoles.parent)],
+  },
+  {
+    path: 'matieres',
+    loadComponent: () => import('./parent-subjects.page').then((m) => m.ParentSubjectsPage),
+    canActivate: [spaceGuard(SpaceRoles.parent)],
+  },
+  {
+    path: '',
+    pathMatch: 'full',
+    component: ParentSpacePage,
+    canActivate: [spaceGuard(SpaceRoles.parent)],
+  },
+];

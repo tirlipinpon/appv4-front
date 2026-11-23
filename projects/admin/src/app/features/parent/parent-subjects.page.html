@@ -1,0 +1,202 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content content-wide">
+    <section class="panel">
+      <header class="heading">
+        <h1 data-testid="parent-subjects-heading">Matières</h1>
+      </header>
+
+      @if (loading()) {
+        <p class="status" role="status">Chargement…</p>
+      }
+      @if (error()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
+      @if (!loading() && children().length === 0) {
+        <p class="hint" data-testid="parent-subjects-empty">Aucun enfant pour l'instant.</p>
+      }
+
+      <ul class="list">
+        @for (child of children(); track child.childId) {
+          <li class="child">
+            <div class="identity">
+              @if (photoOf(child); as src) {
+                <img class="portrait" [src]="src" [alt]="child.firstName + ' ' + child.lastName" />
+              } @else {
+                <span class="portrait" [attr.aria-label]="child.avatarCode">{{ emoji(child.avatarCode) }}</span>
+              }
+              <div>
+                <strong>{{ child.firstName }} {{ child.lastName }}</strong>
+                @if (child.sex) {
+                  <span class="badge">{{ sexLabel(child.sex) }}</span>
+                }
+                <p>
+                  @if (showAge(child)) {
+                    {{ child.age }} ans ·
+                  }
+                  {{ child.schoolName || 'École non renseignée' }} · {{ child.grade }}
+                </p>
+              </div>
+            </div>
+
+            @if (catalogEmpty(child)) {
+              <p class="hint">Aucun cours n'est proposable.</p>
+            }
+            @if (!hasClass(child)) {
+              <p class="hint">Il n'y a pas d'école ou d'année sur cet enfant.</p>
+            }
+
+            <h2>Déjà dans sa liste</h2>
+            @if (hasClass(child)) {
+              <h3>De sa classe</h3>
+              @if (chosen(child, true).length === 0) {
+                <p class="hint" data-testid="parent-chosen-class-empty">Aucune matière</p>
+              }
+              @for (offer of chosen(child, true); track offer.subjectId) {
+                <article class="line" [attr.data-testid]="'parent-offer-' + offer.subjectId">
+                  <p class="name">
+                    @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [class.tinted]="offerAccent(offer) !== null" [style.--subject-accent]="offerAccent(offer)" [code]="offer.iconCode" />
+                    }
+                    {{ offer.name }}
+                    <span class="meta" data-testid="parent-offer-class">Scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
+                  </p>
+                  @if (pendingFor(child.childId, offer.subjectId)) {
+                    <p class="confirm" role="alert" data-testid="parent-offer-confirm">{{ confirmText(child, offer) }}</p>
+                    <p class="actions">
+                      <button mat-button type="button" data-testid="parent-offer-cancel" [disabled]="saving()" (click)="cancelRemove()">Annuler</button>
+                      <button mat-flat-button color="warn" type="button" data-testid="parent-offer-confirm-button" [disabled]="saving()" (click)="confirmRemove(child.childId, offer.subjectId)">
+                        Confirmer le retrait
+                      </button>
+                    </p>
+                  } @else {
+                    <p class="actions">
+                      <button mat-button type="button" data-testid="parent-offer-remove" [disabled]="saving()" (click)="askRemove(child.childId, offer.subjectId)">Retirer</button>
+                    </p>
+                  }
+                </article>
+              }
+            }
+            <h3>Autres cours</h3>
+            @if (chosen(child, false).length === 0) {
+              <p class="hint" data-testid="parent-chosen-other-empty">Aucune matière</p>
+            }
+            @for (offer of chosen(child, false); track offer.subjectId) {
+              <article class="line" [attr.data-testid]="'parent-offer-' + offer.subjectId">
+                <p class="name">
+                  @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [class.tinted]="offerAccent(offer) !== null" [style.--subject-accent]="offerAccent(offer)" [code]="offer.iconCode" />
+                    }
+                  {{ offer.name }}
+                  <span class="meta" data-testid="parent-offer-extra">Extra-scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
+                </p>
+                @if (pendingFor(child.childId, offer.subjectId)) {
+                  <p class="confirm" role="alert" data-testid="parent-offer-confirm">{{ confirmText(child, offer) }}</p>
+                  <p class="actions">
+                    <button mat-button type="button" data-testid="parent-offer-cancel" [disabled]="saving()" (click)="cancelRemove()">Annuler</button>
+                    <button mat-flat-button color="warn" type="button" data-testid="parent-offer-confirm-button" [disabled]="saving()" (click)="confirmRemove(child.childId, offer.subjectId)">
+                      Confirmer le retrait
+                    </button>
+                  </p>
+                } @else {
+                  <p class="actions">
+                    <button mat-button type="button" data-testid="parent-offer-remove" [disabled]="saving()" (click)="askRemove(child.childId, offer.subjectId)">Retirer</button>
+                  </p>
+                }
+              </article>
+            }
+
+            <h2>À ajouter</h2>
+            @if (child.childId; as childId) {
+              <mat-form-field appearance="outline">
+                <mat-label>Nom de la matière</mat-label>
+                <input
+                  matInput
+                  data-testid="parent-subject-query"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  autocomplete="off"
+                  [attr.aria-expanded]="suggestionsFor(childId).length > 0 ? 'true' : 'false'"
+                  [attr.aria-controls]="'subject-suggestions-' + childId"
+                  [value]="searchQueries()[childId] ?? ''"
+                  (input)="onQueryInput(childId, $event)"
+                />
+              </mat-form-field>
+              @if (suggestionsFor(childId).length > 0) {
+                <ul class="suggestions" role="listbox" [id]="'subject-suggestions-' + childId">
+                  @for (offer of suggestionsFor(childId); track offer.subjectId) {
+                    <li role="option" aria-selected="false">
+                      <button
+                        type="button"
+                        [attr.data-testid]="'parent-subject-suggestion-' + offer.subjectId"
+                        (click)="pickSuggestion(childId, offer)"
+                      >
+                        @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [class.tinted]="offerAccent(offer) !== null" [style.--subject-accent]="offerAccent(offer)" [code]="offer.iconCode" />
+                    }
+                        {{ suggestionLabel(offer) }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+              @if (suggestionMore()[childId]) {
+                <p class="hint">D'autres matières correspondent.</p>
+              }
+              @if (nameTooShort(childId)) {
+                <p class="hint">Tape au moins deux lettres du nom pour voir les matières.</p>
+              }
+              @if (suggestionMiss(childId)) {
+                <p class="hint">Aucune matière pour ce nom.</p>
+              }
+              <mat-form-field appearance="outline">
+                <mat-label>Classe (facultatif)</mat-label>
+                <input matInput data-testid="parent-subject-grade" [value]="searchGrades()[childId] ?? ''" (input)="onGradeInput(childId, $event)" />
+              </mat-form-field>
+              <button mat-button type="button" data-testid="parent-subject-search" [disabled]="saving() || searchLoading()[childId]" (click)="search(childId)">Rechercher</button>
+              @if ((searchHistory()[childId]?.length ?? 0) > 1) {
+                <button mat-button type="button" data-testid="parent-subject-previous" [disabled]="saving() || searchLoading()[childId]" (click)="previousOffers(childId)">Précédent</button>
+              }
+              @if (searchCursors()[childId] !== null && searchCursors()[childId] !== undefined) {
+                <button mat-button type="button" data-testid="parent-subject-next" [disabled]="saving() || searchLoading()[childId]" (click)="nextOffers(childId)">Suivant</button>
+              }
+            }
+            @for (offer of proposed(child, false); track offer.subjectId) {
+              <article class="line" [attr.data-testid]="'parent-offer-' + offer.subjectId">
+                <p class="name">
+                  @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [class.tinted]="offerAccent(offer) !== null" [style.--subject-accent]="offerAccent(offer)" [code]="offer.iconCode" />
+                    }
+                  {{ offer.name }}
+                  <span class="meta" data-testid="parent-offer-extra">Extra-scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
+                </p>
+                <p class="actions">
+                  <button mat-flat-button color="primary" type="button" data-testid="parent-offer-add" [disabled]="saving()" (click)="add(child.childId, offer.subjectId)">
+                    Ajouter
+                  </button>
+                </p>
+              </article>
+            }
+            @for (offer of proposed(child, true); track offer.subjectId) {
+              <article class="line" [attr.data-testid]="'parent-offer-' + offer.subjectId">
+                <p class="name">
+                  @if (offer.iconCode) {
+                      <app-subject-icon-view class="subject-icon" [class.tinted]="offerAccent(offer) !== null" [style.--subject-accent]="offerAccent(offer)" [code]="offer.iconCode" />
+                    }
+                  {{ offer.name }}
+                  <span class="meta" data-testid="parent-offer-class">Scolaire · {{ offer.teacherName }} · {{ offer.schoolName }} · {{ offer.grade }} · {{ offer.questionCount ?? 0 }} question{{ (offer.questionCount ?? 0) === 1 ? '' : 's' }}</span>
+                </p>
+                <p class="actions">
+                  <button mat-flat-button color="primary" type="button" data-testid="parent-offer-add" [disabled]="saving()" (click)="add(child.childId, offer.subjectId)">
+                    Ajouter
+                  </button>
+                </p>
+              </article>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  </main>
+</div>

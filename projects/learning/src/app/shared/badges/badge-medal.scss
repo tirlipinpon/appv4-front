@@ -1,0 +1,134 @@
+:host {
+  display: inline-flex;
+}
+
+.medal {
+  --metal: #9aa0b4;
+  --metal-deep: #5c6274;
+  --ink: #1c1830;
+  position: relative;
+  width: 4.6rem;
+  height: 5.3rem;
+  filter: grayscale(0.85) brightness(0.85);
+}
+
+.medal--sm {
+  width: 3.1rem;
+  height: 3.6rem;
+}
+
+.medal--won {
+  filter: none;
+}
+
+.medal-ribbon {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  top: 42%;
+  bottom: 0;
+  background:
+    linear-gradient(90deg, transparent 0 18%, var(--metal-deep) 18% 50%, transparent 50%),
+    linear-gradient(180deg, var(--metal) 0%, var(--metal-deep) 100%);
+  clip-path: polygon(0 0, 100% 0, 82% 100%, 50% 78%, 18% 100%);
+}
+
+.medal-disc {
+  position: absolute;
+  inset: 0 0 auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 35% 30%, #fff 0 8%, transparent 18%),
+    radial-gradient(circle at 50% 42%, #fff6 0 28%, transparent 46%),
+    conic-gradient(from 20deg, var(--metal-deep), #fff, var(--metal), var(--metal-deep));
+  box-shadow:
+    inset 0 0 0 0.28rem var(--metal-deep),
+    0 0.35rem 0.8rem rgb(0 0 0 / 28%);
+}
+
+.medal--sm .medal-disc {
+  box-shadow:
+    inset 0 0 0 0.18rem var(--metal-deep),
+    0 0.2rem 0.45rem rgb(0 0 0 / 28%);
+}
+
+.medal-disc svg {
+  width: 58%;
+  height: 58%;
+  fill: var(--ink);
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.medal-level {
+  position: absolute;
+  right: -0.1rem;
+  bottom: -0.1rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.15rem;
+  text-align: center;
+}
+
+.medal--sm .medal-level {
+  min-width: 0.95rem;
+  height: 0.95rem;
+  font-size: 0.58rem;
+  line-height: 0.95rem;
+}
+
+.medal[data-kind='premiere_etoile_jaune'] {
+  --metal: #f0c14d;
+  --metal-deep: #a56b12;
+}
+
+.medal[data-kind='matiere_au_jaune'] {
+  --metal: #ffb020;
+  --metal-deep: #c45a12;
+}
+
+.medal[data-kind='etoiles_jaunes'] {
+  --metal: #d7c4ff;
+  --metal-deep: #6d5efc;
+}
+
+.medal[data-kind='rattrapage'] {
+  --metal: #7ddec8;
+  --metal-deep: #0f8f78;
+}
+
+.medal[data-kind='bonnes_reponses_affilee'] {
+  --metal: #ffb4a2;
+  --metal-deep: #d4532c;
+}
+
+.medal[data-kind='bonnes_reponses_du_jour'] {
+  --metal: #b7e3ff;
+  --metal-deep: #2f7dbe;
+}
+
+.medal[data-kind='jours_affilee'] {
+  --metal: #ffc36b;
+  --metal-deep: #e05a1a;
+}
+
+.medal[data-kind='jours_joues'] {
+  --metal: #b7f0c8;
+  --metal-deep: #1f8a4c;
+}
+
+.medal[data-kind='missions_terminees'] {
+  --metal: #c7b6ff;
+  --metal-deep: #4b3cc4;
+}

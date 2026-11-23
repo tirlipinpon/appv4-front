@@ -1,0 +1,511 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+
+import { AvatarRenderer } from '@appv4/ui';
+
+import { ChildAuthService } from '../../core/auth/child-auth.service';
+import { ProfilePage } from './profile.page';
+
+describe('ProfilePage', () => {
+  function setup() {
+    TestBed.configureTestingModule({
+      imports: [ProfilePage],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ChildAuthService, useValue: { getToken: () => 'child-token' } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProfilePage);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    return { fixture, http };
+  }
+
+  const lorelei = {
+    seed: '7',
+    styleCode: 'lorelei',
+    styleName: 'Lorelei',
+    presetId: null,
+    credit: null,
+    styles: [{ code: 'lorelei', name: 'Lorelei', credit: null, zoneCodes: ['mouth'] }],
+    presets: [{ id: 'bare', name: 'Bare', options: {} }],
+    zones: [
+      {
+        code: 'mouth',
+        label: 'bouche',
+        seuil: 20,
+        thresholdLabel: '20 XP',
+        missingLabel: 'encore 20 XP',
+        open: false,
+        variants: [{ code: 'happy01', label: 'happy01' }],
+      },
+    ],
+  };
+
+  it('affiche Lorelei et le seuil tant que la zone est fermée, sans sélectionner une variante', async () => {
+    const { fixture, http } = setup();
+    const request = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer child-token');
+    request.flush(lorelei);
+    fixture.detectChanges();
+    await TestBed.inject(AvatarRenderer).load('lorelei');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="profile-style"]')?.textContent).toContain('Lorelei');
+    expect(root.querySelector('[data-testid="profile-face"]')?.getAttribute('src')).toContain('svg');
+    expect(root.querySelector('[data-testid="profile-styles-toggle"] img')).not.toBeNull();
+    expect(root.querySelector('[data-testid="profile-zone-mouth"] svg')).not.toBeNull();
+    expect(root.querySelector('[data-testid="profile-threshold-mouth"]')?.textContent).toContain('20 XP');
+    expect(root.querySelector('[data-testid="profile-missing-mouth"]')?.textContent).toContain('encore 20 XP');
+    expect(root.querySelector('[data-testid="profile-variant-mouth-happy01"]')).toBeNull();
+    http.verify();
+  });
+
+  it('ne dessine pas de seuil tant que la lecture est en cours', () => {
+    const { fixture, http } = setup();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="profile-loading"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="profile-threshold-mouth"]')).toBeNull();
+    expect(root.querySelector('[data-testid="profile-zones"]')).toBeNull();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(lorelei);
+    http.verify();
+  });
+
+  it('affiche le message API et pas de grille quand la lecture échoue', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(
+      { message: 'Session enfant invalide.' },
+      { status: 401, statusText: 'Unauthorized' },
+    );
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="profile-error"]')?.textContent).toContain('Session enfant invalide.');
+    expect(root.querySelector('[data-testid="profile-zones"]')).toBeNull();
+    expect(root.querySelector('[data-testid="profile-preview"]')).toBeNull();
+    http.verify();
+  });
+
+  const withChoices = {
+    ...lorelei,
+    styles: [
+      {
+        code: 'lorelei',
+        name: 'Lorelei',
+        credit: null,
+        zoneCodes: ['mouth'],
+        presets: [{ id: 'bare', name: 'Bare' }],
+      },
+      {
+        code: 'fun-emoji',
+        name: 'Fun Emoji',
+        credit: null,
+        zoneCodes: ['mouth', 'eyes'],
+        presets: [{ id: 'plain', name: 'Plain' }],
+      },
+    ],
+  };
+
+  it('enregistre le style choisi et sa première palette', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(withChoices);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-style"]')?.textContent).toContain('Fun Emoji');
+    expect(root.querySelector('[data-testid="profile-preset-plain"]')?.getAttribute('aria-pressed')).toBe('true');
+
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    const saved = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(saved.request.method).toBe('PUT');
+    expect(saved.request.body).toEqual({ styleCode: 'fun-emoji', presetId: 'plain' });
+    saved.flush({
+      ...withChoices,
+      styleCode: 'fun-emoji',
+      styleName: 'Fun Emoji',
+      presetId: 'plain',
+    });
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-style"]')?.textContent).toContain('Fun Emoji');
+    http.verify();
+  });
+
+  it('enregistre un autre style sans renvoyer la variante d une zone fermée', () => {
+    const person = {
+      ...lorelei,
+      presetId: 'bare',
+      zones: [{ ...lorelei.zones[0], selectedCode: 'happy01' }],
+      styles: [
+        {
+          code: 'lorelei',
+          name: 'Lorelei',
+          credit: null,
+          zoneCodes: ['mouth'],
+          presets: [{ id: 'bare', name: 'Bare' }, { id: 'sepia', name: 'Sepia' }],
+        },
+        {
+          code: 'adventurer',
+          name: 'Adventurer',
+          credit: null,
+          zoneCodes: ['mouth'],
+          presets: [{ id: 'bare', name: 'Bare' }],
+        },
+      ],
+    };
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(person);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-preset-sepia"]') as HTMLButtonElement).click();
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    const palette = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(palette.request.body).toEqual({ styleCode: 'lorelei', presetId: 'sepia' });
+    palette.flush({ ...person, presetId: 'sepia' });
+    fixture.detectChanges();
+
+    (root.querySelector('[data-testid="profile-style-choice-adventurer"]') as HTMLButtonElement).click();
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    const style = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(style.request.body).toEqual({ styleCode: 'adventurer', presetId: 'bare' });
+    style.flush({ ...lorelei, styleCode: 'adventurer', styleName: 'Adventurer', presetId: 'bare' });
+    http.verify();
+  });
+
+  it('change la palette du style choisi avant enregistrement', async () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush({
+      ...withChoices,
+      styles: withChoices.styles.map((style) =>
+        style.code === 'fun-emoji'
+          ? {
+              ...style,
+              presets: [
+                { id: 'plain', name: 'Plain', options: { backgroundColor: ['ffffff'] } },
+                { id: 'ink', name: 'Ink', options: { backgroundColor: ['000000'] } },
+              ],
+            }
+          : style,
+      ),
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await TestBed.inject(AvatarRenderer).load('fun-emoji');
+    fixture.detectChanges();
+    const plain = root.querySelector('[data-testid="profile-face"]')?.getAttribute('src');
+    expect(plain).toContain('svg');
+    (root.querySelector('[data-testid="profile-preset-ink"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-preset-ink"]')?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('[data-testid="profile-face"]')?.getAttribute('src')).not.toBe(plain);
+    http.verify();
+  });
+
+  it('sans enregistrer, rouvrir Profil revient au style déjà gardé', () => {
+    const first = setup();
+    first.http.expectOne('http://localhost:8080/api/ext/avatar').flush(withChoices);
+    first.fixture.detectChanges();
+    const root = first.fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();
+    first.fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-style"]')?.textContent).toContain('Fun Emoji');
+    first.http.verify();
+
+    TestBed.resetTestingModule();
+    const second = setup();
+    second.http.expectOne('http://localhost:8080/api/ext/avatar').flush(withChoices);
+    second.fixture.detectChanges();
+    expect(second.fixture.nativeElement.querySelector('[data-testid="profile-style"]')?.textContent).toContain(
+      'Lorelei',
+    );
+    second.http.verify();
+  });
+
+  it('un refus laisse le style enregistré et montre le message API', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(withChoices);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(
+      { message: 'Palette inconnue pour ce style.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-save-error"]')?.textContent).toContain(
+      'Palette inconnue pour ce style.',
+    );
+    expect(root.querySelector('[data-testid="profile-style"]')?.textContent).toContain('Lorelei');
+    http.verify();
+  });
+
+  const openMouth = {
+    ...lorelei,
+    styleCode: 'lorelei',
+    zones: [
+      {
+        code: 'mouth',
+        label: 'bouche',
+        seuil: 20,
+        thresholdLabel: null,
+        missingLabel: null,
+        open: true,
+        selectedCode: null,
+        variants: [{ code: 'happy01', label: 'happy01' }],
+      },
+      {
+        code: 'hair',
+        label: 'cheveux',
+        seuil: 140,
+        thresholdLabel: '140 XP',
+        missingLabel: 'encore 120 XP',
+        open: false,
+        selectedCode: null,
+        variants: [{ code: 'variant01', label: 'variant01' }],
+      },
+      {
+        code: 'glasses',
+        label: 'lunettes',
+        seuil: 210,
+        thresholdLabel: null,
+        missingLabel: null,
+        open: true,
+        selectedCode: null,
+        variants: [{ code: 'none', label: 'sans' }],
+      },
+    ],
+    styles: [
+      {
+        code: 'lorelei',
+        name: 'Lorelei',
+        credit: null,
+        zoneCodes: ['mouth', 'hair', 'glasses'],
+        presets: [{ id: 'bare', name: 'Bare' }],
+      },
+      {
+        code: 'fun-emoji',
+        name: 'Fun Emoji',
+        credit: null,
+        zoneCodes: ['mouth'],
+        presets: [{ id: 'plain', name: 'Plain' }],
+      },
+    ],
+  };
+
+  it('affiche les zones du style choisi avant enregistrement', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush({
+      ...lorelei,
+      styles: [
+        {
+          code: 'lorelei',
+          name: 'Lorelei',
+          credit: null,
+          zoneCodes: ['mouth'],
+          presets: [{ id: 'bare', name: 'Bare' }],
+          zones: lorelei.zones,
+        },
+        {
+          code: 'big-smile',
+          name: 'Big Smile',
+          credit: null,
+          zoneCodes: ['hair'],
+          presets: [{ id: 'bare', name: 'Bare' }],
+          zones: [
+            {
+              code: 'hair',
+              label: 'cheveux',
+              seuil: 140,
+              thresholdLabel: '140 XP',
+              missingLabel: 'encore 90 XP',
+              open: false,
+              variants: [],
+            },
+          ],
+        },
+      ],
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="profile-zone-mouth"]')).not.toBeNull();
+    (root.querySelector('[data-testid="profile-style-choice-big-smile"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-zone-mouth"]')).toBeNull();
+    expect(root.querySelector('[data-testid="profile-threshold-hair"]')?.textContent).toContain('140 XP');
+    expect(root.querySelector('[data-testid="profile-missing-hair"]')?.textContent).toContain('encore 90 XP');
+    http.verify();
+  });
+
+  it('enregistre la variante du nouveau style et la retrouve au retour dans Profil', () => {
+    const { fixture, http } = setup();
+    const emojiZones = [
+      {
+        ...openMouth.zones[0],
+        variants: [{ code: 'wideSmile', label: 'wideSmile' }],
+      },
+      {
+        ...lorelei.zones[0],
+        code: 'eyes',
+        thresholdLabel: '30 XP',
+        variants: [{ code: 'closed', label: 'closed' }],
+      },
+    ];
+    const person = {
+      ...openMouth,
+      styles: openMouth.styles.map((style) =>
+        style.code === 'fun-emoji' ? { ...style, zoneCodes: ['mouth', 'eyes'], zones: emojiZones } : style,
+      ),
+    };
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(person);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-threshold-eyes"]')?.textContent).toContain('30 XP');
+    expect(root.querySelector('[data-testid="profile-variant-eyes-closed"]')).toBeNull();
+    const mouth = root.querySelector('[data-testid="profile-variant-mouth-wideSmile"]') as HTMLButtonElement;
+    mouth.click();
+    fixture.detectChanges();
+    expect(mouth.getAttribute('aria-pressed')).toBe('true');
+
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    const saved = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(saved.request.body).toEqual({
+      styleCode: 'fun-emoji',
+      presetId: 'plain',
+      pins: [{ zoneCode: 'mouth', variantCode: 'wideSmile' }],
+    });
+    fixture.detectChanges();
+    const style = root.querySelector('[data-testid="profile-style-choice-lorelei"]') as HTMLButtonElement;
+    const preset = root.querySelector('[data-testid="profile-preset-plain"]') as HTMLButtonElement;
+    expect([style.disabled, preset.disabled, mouth.disabled]).toEqual([true, true, true]);
+    style.click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-style"]')?.textContent).toContain('Fun Emoji');
+
+    const response = {
+      ...person,
+      styleCode: 'fun-emoji',
+      styleName: 'Fun Emoji',
+      presetId: 'plain',
+      zones: [{ ...emojiZones[0], selectedCode: 'wideSmile' }, emojiZones[1]],
+    };
+    saved.flush(response);
+    fixture.destroy();
+    const reopened = TestBed.createComponent(ProfilePage);
+    reopened.detectChanges();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(response);
+    reopened.detectChanges();
+    expect(
+      (reopened.nativeElement as HTMLElement)
+        .querySelector('[data-testid="profile-variant-mouth-wideSmile"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+    http.verify();
+  });
+
+  it('choisit une variante ouverte, l’aperçu suit, et l’enregistrement la renvoie', async () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(openMouth);
+    fixture.detectChanges();
+    await TestBed.inject(AvatarRenderer).load('lorelei');
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="profile-open-mouth"]')).not.toBeNull();
+
+    const before = root.querySelector('[data-testid="profile-face"]')?.getAttribute('src');
+    expect(before).toContain('svg');
+    const mouth = root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement;
+    mouth.click();
+    fixture.detectChanges();
+    expect(mouth.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('[data-testid="profile-choices"]')?.textContent).toContain('happy01');
+    expect(root.querySelector('[data-testid="profile-face"]')?.getAttribute('src')).not.toBe(before);
+
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    const saved = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(saved.request.body).toEqual({
+      styleCode: 'lorelei',
+      pins: [{ zoneCode: 'mouth', variantCode: 'happy01' }],
+    });
+    saved.flush({
+      ...openMouth,
+      presetId: 'bare',
+      zones: openMouth.zones.map((zone) =>
+        zone.code === 'mouth' ? { ...zone, selectedCode: 'happy01' } : zone,
+      ),
+    });
+    fixture.detectChanges();
+    expect(
+      (root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement).getAttribute(
+        'aria-pressed',
+      ),
+    ).toBe('true');
+    http.verify();
+  });
+
+  it('ne sélectionne pas une zone fermée et retire les variantes absentes du nouveau style', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush({
+      ...openMouth,
+      styles: openMouth.styles.map((style) =>
+        style.code === 'fun-emoji'
+          ? { ...style, zones: [{ ...openMouth.zones[0], variants: [{ code: 'wideSmile', label: 'wideSmile' }] }] }
+          : style,
+      ),
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="profile-variant-hair-variant01"]')).toBeNull();
+    expect(root.querySelector('[data-testid="profile-threshold-hair"]')?.textContent).toContain('140 XP');
+    expect(root.querySelector('[data-testid="profile-missing-hair"]')?.textContent).toContain('encore 120 XP');
+    expect(root.querySelector('[data-testid="profile-open-mouth"]')).not.toBeNull();
+
+    (root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement).click();
+    (root.querySelector('[data-testid="profile-style-choice-fun-emoji"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    const saved = http.expectOne('http://localhost:8080/api/ext/avatar');
+    expect(saved.request.body).toEqual({
+      styleCode: 'fun-emoji',
+      presetId: 'plain',
+    });
+    saved.flush({ ...openMouth, styleCode: 'fun-emoji', styleName: 'Fun Emoji', presetId: 'plain' });
+    http.verify();
+  });
+
+  it('un refus de variante laisse le visage enregistré', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(openMouth);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="profile-save"]') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/ext/avatar').flush(
+      { message: 'Cette zone n\'est pas encore ouverte.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+    expect(root.querySelector('[data-testid="profile-save-error"]')?.textContent).toContain(
+      'Cette zone n\'est pas encore ouverte.',
+    );
+    expect(
+      (root.querySelector('[data-testid="profile-variant-mouth-happy01"]') as HTMLButtonElement).getAttribute(
+        'aria-pressed',
+      ),
+    ).toBeNull();
+    http.verify();
+  });
+});

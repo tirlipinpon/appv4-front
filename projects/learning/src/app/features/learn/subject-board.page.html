@@ -1,0 +1,76 @@
+<section class="subject-board" data-testid="subject-board">
+  <header class="subject-board-top">
+    <a class="subject-board-back" routerLink="/learn" data-testid="subject-board-back">← Learn</a>
+    @if (board(); as b) {
+      <h1 data-testid="subject-board-title">{{ b.name }}</h1>
+    } @else {
+      <h1>Matière</h1>
+    }
+  </header>
+
+  @if (loading()) {
+    <p class="subject-board-status" data-testid="subject-board-loading">Chargement…</p>
+  } @else if (error()) {
+    <p class="subject-board-status subject-board-error" data-testid="subject-board-error">{{ error() }}</p>
+  } @else if (board(); as b) {
+    <article class="subject-board-hero" [style.--card-tint]="cardTint(b)" data-testid="subject-board-hero">
+      @if (b.grade) {
+        <p class="subject-board-grade" data-testid="subject-board-grade">{{ b.grade }}</p>
+      }
+      <div class="subject-board-actions">
+        <a
+          class="subject-board-questions"
+          data-testid="subject-board-questions"
+          [routerLink]="['/learn', b.subjectId, 'questions']"
+        >
+          Voir les questions
+        </a>
+      </div>
+      <div class="subject-board-hero-icon" aria-hidden="true">
+        @if (iconSrc(b.iconCode); as src) {
+          <img [src]="src" alt="" loading="lazy" />
+        } @else if (iconEmoji(b.iconCode); as emoji) {
+          <span>{{ emoji }}</span>
+        }
+      </div>
+    </article>
+    @if (b.lesson; as lesson) {
+      <section class="subject-board-lesson" data-testid="subject-board-lesson">
+        <p class="subject-board-lesson-count" data-testid="subject-board-lesson-count">
+          {{ lesson.remainingCount }}
+        </p>
+        <ul class="list">
+          @for (question of lesson.questions ?? []; track question.questionId) {
+            <li>
+              <a
+                class="row playable"
+                [routerLink]="['/learn', b.subjectId, 'play', question.questionId]"
+                [state]="lessonQueue(lesson)"
+                [attr.data-testid]="'subject-board-lesson-' + question.questionId"
+              >
+                <span class="form">
+                  <app-question-form-mark
+                    [iconCode]="question.iconCode"
+                    [color]="question.color"
+                    [label]="question.formLabel ?? ''"
+                  />
+                </span>
+                <span class="prompt">{{ question.prompt || 'Sans énoncé' }}</span>
+                @if (question.mark === 'yellow') {
+                  <span class="mark">
+                    <span class="star star-yellow" data-testid="lesson-star" aria-hidden="true">★</span>
+                    <span data-testid="lesson-yellow-count">{{ question.yellowCount }}</span>
+                  </span>
+                } @else if (question.mark === 'black') {
+                  <span class="mark">
+                    <span class="star star-black" data-testid="lesson-star" aria-hidden="true">★</span>
+                  </span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</section>

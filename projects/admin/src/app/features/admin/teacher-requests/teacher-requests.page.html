@@ -1,0 +1,109 @@
+<div class="page">
+  <app-space-header [showSpaceActions]="false" />
+
+  <main class="content content-wide">
+    <h1>Demandes professeur</h1>
+    <p><a routerLink="/admin/humeurs">Humeurs</a></p>
+    <ul class="queue-count">
+      <li><strong>{{ pending().length }}</strong> en attente</li>
+      <li><strong>{{ approved().length }}</strong> {{ approved().length === 1 ? 'traitée' : 'traitées' }}</li>
+      <li><strong>{{ revoked().length }}</strong> {{ revoked().length === 1 ? 'révoquée' : 'révoquées' }}</li>
+    </ul>
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+    @if (truncated()) {
+      <p class="hint" role="status">
+        Seules les 100 premières demandes de la file sont affichées. Il en reste d'autres, et le
+        serveur ne propose pas encore de page suivante.
+      </p>
+    }
+
+    <section data-testid="requests-pending">
+      <h2 data-testid="requests-pending-title">En attente</h2>
+      @if (pending().length === 0) {
+        <p class="empty" data-testid="requests-pending-empty">{{ emptyLabel('en attente') }}</p>
+      }
+      @for (item of pending(); track item.id) {
+        <article class="row" [attr.data-testid]="'request-' + item.id">
+          <div>
+            <strong>{{ item.displayName || item.email }}</strong>
+            @if (item.displayName) {
+              <span>{{ item.email }}</span>
+            }
+            <span data-testid="request-age">Demande faite le {{ when(item.createdAt) }} ({{ age(item.createdAt) }})</span>
+          </div>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            data-testid="request-approve"
+            [disabled]="approvingId() === item.id"
+            (click)="approve(item)"
+          >
+            Valider
+          </button>
+        </article>
+      }
+    </section>
+
+    <section data-testid="requests-approved">
+      <h2 data-testid="requests-approved-title">Déjà traitées</h2>
+      @if (approved().length === 0) {
+        <p class="empty" data-testid="requests-approved-empty">{{ emptyLabel('traitée') }}</p>
+      }
+      @for (item of approved(); track item.id) {
+        <article class="row" [attr.data-testid]="'request-' + item.id">
+          <div>
+            <strong>{{ item.displayName || item.email }}</strong>
+            @if (item.displayName) {
+              <span>{{ item.email }}</span>
+            }
+            <span>Demande faite le {{ when(item.createdAt) }}</span>
+            <span data-testid="request-validated">{{ validatedOn(item) }}</span>
+          </div>
+          <button
+            mat-stroked-button
+            color="warn"
+            type="button"
+            data-testid="request-revoke"
+            [disabled]="approvingId() === item.id"
+            (click)="revoke(item)"
+          >
+            Révoquer
+          </button>
+        </article>
+      }
+    </section>
+
+    <section data-testid="requests-revoked">
+      <h2 data-testid="requests-revoked-title">Révoquées</h2>
+      @if (revoked().length === 0) {
+        <p class="empty" data-testid="requests-revoked-empty">{{ emptyLabel('révoquée') }}</p>
+      }
+      @for (item of revoked(); track item.id) {
+        <article class="row" [attr.data-testid]="'request-' + item.id">
+          <div>
+            <strong>{{ item.displayName || item.email }}</strong>
+            @if (item.displayName) {
+              <span>{{ item.email }}</span>
+            }
+            <span>Demande faite le {{ when(item.createdAt) }}</span>
+            <span data-testid="request-validated">{{ validatedOn(item) }}</span>
+            <span data-testid="request-revoked-on">{{ revokedOn(item) }}</span>
+          </div>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            data-testid="request-reapprove"
+            [disabled]="approvingId() === item.id"
+            (click)="approve(item)"
+          >
+            Re-valider
+          </button>
+        </article>
+      }
+    </section>
+  </main>
+</div>

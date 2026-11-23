@@ -1,0 +1,39 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-1);
+}
+
+.tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-1);
+}
+
+.tab {
+  appearance: none;
+  background: transparent;
+  color: var(--app-text);
+  border: 0;
+  border-radius: var(--app-radius-pill);
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+}
+
+.tab.is-current {
+  font-weight: 700;
+  color: var(--app-primary);
+  background: var(--app-primary-soft);
+}
+
+.tab:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.switch-error {
+  font-size: 0.85rem;
+  color: var(--app-error);
+}

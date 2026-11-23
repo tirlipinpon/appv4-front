@@ -1,0 +1,143 @@
+.panel {
+  width: 100%;
+}
+
+.heading h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: var(--app-surface-card);
+  border-radius: 8px;
+  padding: 0.75rem 1rem 1rem;
+}
+
+.identity {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.portrait {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  background: var(--app-primary-soft);
+  font-size: 1.6rem;
+  flex: none;
+}
+
+.badge {
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--app-text-muted);
+}
+
+.child p {
+  margin: 0.15rem 0 0;
+  color: var(--app-text-muted);
+}
+
+.child h2,
+.child h3 {
+  margin: 0.85rem 0 0.15rem;
+  font-size: 1rem;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  margin-top: 0.45rem;
+  background: var(--app-surface);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+}
+
+.name {
+  margin: 0;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.subject-icon {
+  margin-right: 0.3rem;
+  font-size: 1.1rem;
+  vertical-align: -0.1em;
+}
+
+.subject-icon.tinted {
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px var(--subject-accent);
+}
+
+.meta {
+  display: block;
+  margin-top: 0.15rem;
+  font-weight: 400;
+  color: var(--app-text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.hint {
+  margin: 0.35rem 0 0;
+  color: var(--app-text-muted);
+}
+
+.suggestions {
+  list-style: none;
+  margin: -0.35rem 0 0.35rem;
+  padding: 0.25rem 0;
+  background: var(--app-surface-card);
+  border: 1px solid var(--app-outline);
+  border-radius: 8px;
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.suggestions button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  color: var(--app-text);
+}
+
+.suggestions button:hover,
+.suggestions button:focus-visible {
+  background: var(--app-primary-soft);
+}
+
+.error,
+.confirm {
+  color: var(--app-error);
+  margin: 0.35rem 0 0;
+}

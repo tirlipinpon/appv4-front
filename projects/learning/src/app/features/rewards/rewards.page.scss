@@ -1,0 +1,105 @@
+:host {
+  display: block;
+  color: var(--app-text, #f5f5ff);
+}
+
+.rewards {
+  padding: 8px 4px 24px;
+}
+
+.rewards-top {
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.rewards-eyebrow {
+  margin: 0 0 2px;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--app-text, #fff) 60%, transparent);
+}
+
+.rewards-top h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.rewards-status {
+  margin: 16px 0 0;
+  text-align: center;
+  color: color-mix(in srgb, var(--app-text, #fff) 70%, transparent);
+}
+
+.rewards-error {
+  color: #ff8a9a;
+}
+
+.rewards-notice {
+  margin: 0 0 16px;
+  padding: 0.9rem 1rem;
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, #6d5efc 22%, var(--app-surface-card, #1c1830));
+  border: 1px solid color-mix(in srgb, #c1b4ff 40%, transparent);
+  font-weight: 700;
+}
+
+.rewards-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.rewards-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0.85rem 0.95rem;
+  border-radius: 1.2rem;
+  background: color-mix(in srgb, var(--app-surface-card, #1c1830) 88%, #6d5efc);
+  border: 1px solid color-mix(in srgb, #c1b4ff 18%, transparent);
+}
+
+.rewards-card--won {
+  border-color: color-mix(in srgb, #c1b4ff 45%, transparent);
+  background: color-mix(in srgb, #6d5efc 18%, var(--app-surface-card, #1c1830));
+}
+
+.rewards-name,
+.rewards-level,
+.rewards-gauge,
+.rewards-date {
+  margin: 0;
+}
+
+.rewards-name {
+  font-weight: 800;
+}
+
+.rewards-level,
+.rewards-gauge,
+.rewards-date {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--app-text, #fff) 68%, transparent);
+}
+
+.rewards-meter {
+  display: block;
+  margin-top: 8px;
+  height: 0.55rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--app-text, #fff) 16%, transparent);
+}
+
+.rewards-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #c1b4ff;
+}

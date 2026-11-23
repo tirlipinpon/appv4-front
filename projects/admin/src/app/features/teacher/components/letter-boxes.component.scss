@@ -1,0 +1,65 @@
+.boxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin-top: 0.5rem;
+  align-items: center;
+}
+
+.word {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.box {
+  box-sizing: border-box;
+  width: 2.85rem;
+  height: 3.1rem;
+  padding: 0;
+  border: 2px solid color-mix(in srgb, var(--app-primary, #7c5cff) 45%, #c5c9d6);
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--app-primary, #7c5cff) 8%, #fff);
+  color: var(--app-text, #1c2b3a);
+  font-family: inherit;
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-align: center;
+  text-transform: lowercase;
+  caret-color: var(--app-primary, #7c5cff);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--app-primary, #7c5cff) 18%, transparent);
+  outline: none;
+}
+
+.box:focus {
+  border-color: var(--app-primary, #7c5cff);
+  background: color-mix(in srgb, var(--app-primary, #7c5cff) 14%, #fff);
+  box-shadow:
+    0 3px 0 color-mix(in srgb, var(--app-primary, #7c5cff) 22%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--app-primary, #7c5cff) 22%, transparent);
+}
+
+.box.locked,
+.box.locked:disabled {
+  border-color: var(--app-form-vrai-faux, #2bb673);
+  background: color-mix(in srgb, var(--app-form-vrai-faux, #2bb673) 18%, #fff);
+  color: var(--app-form-vrai-faux, #2bb673);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--app-form-vrai-faux, #2bb673) 28%, transparent);
+  cursor: default;
+}
+
+.box.wrong:not(.locked) {
+  border-color: var(--app-error, #b3261e);
+  background: color-mix(in srgb, var(--app-error, #b3261e) 14%, #fff);
+  color: var(--app-error, #b3261e);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--app-error, #b3261e) 22%, transparent);
+}
+
+.verdict {
+  margin: 0.35rem 0 0;
+}
+
+button {
+  margin-top: 0.5rem;
+}

@@ -1,0 +1,38 @@
+<section class="rewards" data-testid="rewards-panel">
+  <header class="rewards-top">
+    <p class="rewards-eyebrow">Collection</p>
+    <h1>Récompenses</h1>
+  </header>
+
+  @if (badges.loading()) {
+    <p class="rewards-status" data-testid="rewards-loading">Chargement…</p>
+  } @else if (badges.error()) {
+    <p class="rewards-status rewards-error" data-testid="rewards-error">{{ badges.error() }}</p>
+  } @else if (badges.collection(); as collection) {
+    @if (collection.notice?.label) {
+      <p class="rewards-notice" data-testid="rewards-notice">{{ collection.notice.label }}</p>
+    }
+    <ul class="rewards-list" data-testid="rewards-list">
+      @for (badge of collection.badges ?? []; track badge.code) {
+        <li class="rewards-card" [class.rewards-card--won]="(badge.level ?? 0) > 0" [attr.data-testid]="'reward-' + badge.code">
+          <app-badge-medal [code]="badge.code ?? ''" [level]="badge.level ?? 0" />
+          <div class="rewards-copy">
+            <p class="rewards-name">{{ badge.name }}</p>
+            <p class="rewards-level">Niveau {{ badge.level }}</p>
+            @if (hasGauge(badge)) {
+              <p class="rewards-gauge" [attr.data-testid]="'reward-gauge-' + badge.code">
+                {{ badge.progressValue }} / {{ badge.nextThreshold }}
+              </p>
+              <span class="rewards-meter" aria-hidden="true">
+                <span class="rewards-meter-fill" [style.width.%]="gaugeWidth(badge)"></span>
+              </span>
+            }
+            @if (badge.unlockedOn) {
+              <p class="rewards-date" [attr.data-testid]="'reward-date-' + badge.code">{{ badge.unlockedOn }}</p>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>

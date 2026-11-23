@@ -1,0 +1,75 @@
+<div class="learn-shell">
+  <header class="learn-shell-header">
+    <div class="learn-shell-identity" data-testid="shell-identity">
+      <div class="learn-shell-avatar" aria-hidden="true">
+        @if (photoUrl(); as src) {
+          <img [src]="src" alt="" data-testid="shell-photo" />
+        } @else if (avatarEmoji(); as emoji) {
+          <span data-testid="shell-avatar">{{ emoji }}</span>
+        } @else {
+          <span class="learn-shell-avatar-empty" data-testid="shell-avatar-empty"></span>
+        }
+      </div>
+      <div class="learn-shell-hello">
+        @if (firstName(); as name) {
+          <p class="learn-shell-name" data-testid="shell-first-name">Bonjour {{ name }} !</p>
+        } @else {
+          <p class="learn-shell-name">Bonjour !</p>
+        }
+      </div>
+    </div>
+    <div class="learn-shell-actions">
+      <app-theme-toggle
+        testId="theme-toggle"
+        [dark]="theme.isDark()"
+        (toggled)="theme.toggle()"
+      />
+      <button
+        type="button"
+        class="learn-shell-logout"
+        data-testid="logout"
+        (click)="logout()"
+      >
+        Sortir
+      </button>
+    </div>
+  </header>
+
+  @if (error(); as message) {
+    <p class="learn-shell-error" role="alert">{{ message }}</p>
+  }
+
+  <app-bottom-nav
+    class="learn-shell-menu"
+    [items]="navItems"
+    [activeId]="activeId()"
+    placement="top"
+    label="Menu"
+    testIdPrefix="top-"
+  />
+
+  <main class="learn-shell-main">
+    <router-outlet />
+  </main>
+
+  <app-bottom-nav [items]="navItems" [activeId]="activeId()" />
+
+  <button
+    type="button"
+    class="learn-shell-top"
+    data-testid="scroll-top"
+    aria-label="Remonter en haut de la page"
+    (click)="scrollTop()"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M6 14l6-6 6 6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </button>
+</div>

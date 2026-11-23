@@ -1,0 +1,44 @@
+<div class="page">
+  <app-space-header [showSpaceActions]="false" />
+
+  <main class="content content-wide">
+    <h1>Humeurs</h1>
+
+    @if (error()) {
+      <p class="error" role="alert" data-testid="humeur-error">{{ error() }}</p>
+    }
+
+    <form (submit)="$event.preventDefault(); save()">
+      <label>
+        Icône
+        <input data-testid="humeur-icon" [value]="icon()" (input)="icon.set(inputValue($event))" />
+      </label>
+      <label>
+        Mot
+        <input data-testid="humeur-word" [value]="word()" (input)="word.set(inputValue($event))" />
+      </label>
+      <button mat-flat-button color="primary" type="submit" data-testid="humeur-save">Enregistrer</button>
+    </form>
+
+    @if (loading()) {
+      <p>Chargement…</p>
+    } @else if (choices().length === 0) {
+      <p data-testid="humeur-empty">Aucune humeur.</p>
+    } @else {
+      <ul>
+        @for (choice of choices(); track choice.id) {
+          <li [attr.data-testid]="'humeur-' + choice.id">
+            @if (choice.icon) {
+              <span data-testid="humeur-choice-icon">{{ choice.icon }}</span>
+            }
+            @if (choice.word) {
+              <span data-testid="humeur-choice-word">{{ choice.word }}</span>
+            }
+            <button type="button" (click)="edit(choice)">Modifier</button>
+            <button type="button" (click)="remove(choice)">Retirer</button>
+          </li>
+        }
+      </ul>
+    }
+  </main>
+</div>

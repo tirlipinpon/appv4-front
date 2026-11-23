@@ -1,0 +1,163 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideRouter } from '@angular/router';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import type { TeacherStudentsResponse } from '../../core/api/api-models';
+import { TeacherStudentsPage } from './teacher-students.page';
+
+const studentsUrl = 'http://localhost:8080/api/int/teacher/students';
+const spacesUrl = 'http://localhost:8080/api/int/auth/spaces';
+const accountUrl = 'http://localhost:8080/api/int/auth/me';
+
+const empty: TeacherStudentsResponse = {
+  noClassMessage: "Aucune classe à afficher tant que le profil n'a pas d'école.",
+  schools: [],
+};
+
+const loaded: TeacherStudentsResponse = {
+  noClassMessage: "Aucune classe à afficher tant que le profil n'a pas d'école.",
+  schools: [
+    {
+      schoolId: 1,
+      schoolName: 'École du parc',
+      curriculumLabel: 'France',
+      grades: [
+        {
+          grade: 'CE1',
+          countLabel: '2 élèves',
+          emptyMessage: 'Aucun élève inscrit dans cette classe.',
+          students: [
+            {
+              id: 1,
+              firstName: 'Léa',
+              lastName: 'Martin',
+              age: 7,
+              avatarCode: 'owl',
+              hasPhoto: false,
+            },
+            {
+              id: 2,
+              firstName: 'Tom',
+              lastName: 'Martin',
+              age: 7,
+              avatarCode: 'fox',
+              hasPhoto: true,
+            },
+          ],
+        },
+        {
+          grade: 'CE2',
+          countLabel: '0 élève',
+          emptyMessage: 'Aucun élève inscrit dans cette classe.',
+          students: [],
+        },
+      ],
+    },
+  ],
+};
+
+describe('TeacherStudentsPage', () => {
+  let fixture: ComponentFixture<TeacherStudentsPage>;
+  let http: HttpTestingController;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [TeacherStudentsPage],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideAnimationsAsync(),
+        provideRouter([]),
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(TeacherStudentsPage);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    http.verify();
+  });
+
+  function boot(body: TeacherStudentsResponse): void {
+    fixture.detectChanges();
+    http.expectOne(studentsUrl).flush(body);
+    http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
+    const photo = http.match(`${studentsUrl}/2/photo`);
+    for (const request of photo) {
+      request.flush(new Blob(['img'], { type: 'image/png' }));
+    }
+    fixture.detectChanges();
+  }
+
+  it('dit qu’aucune classe n’est à afficher', () => {
+    boot(empty);
+
+    const main: HTMLElement = fixture.nativeElement.querySelector('main');
+    expect(main.textContent).toContain("Aucune classe à afficher tant que le profil n'a pas d'école.");
+    expect(main.querySelector('input, button, textarea')).toBeNull();
+  });
+
+  it('affiche les élèves de la classe et le groupe vide', () => {
+    boot(loaded);
+
+    const main: HTMLElement = fixture.nativeElement.querySelector('main');
+    const text = main.textContent ?? '';
+    expect(text).toContain('École du parc');
+    const school = main.querySelector('details.school-toggle') as HTMLDetailsElement | null;
+    expect(school?.open).toBeFalse();
+    expect(school?.querySelector('summary')?.textContent).toContain('France');
+    expect(school?.querySelector('summary')?.textContent).toContain('École du parc');
+    expect(school?.querySelector('.school-country')?.nextElementSibling?.textContent).toContain('École du parc');
+    expect(school?.querySelector('summary')?.textContent).toContain('2 classes');
+    expect(text).toContain('CE1');
+    expect(text).not.toContain('France — CE1');
+    expect(text).toContain('2 élèves');
+    expect(text).toContain('Liste élèves');
+    const list = main.querySelector('details.student-list') as HTMLDetailsElement | null;
+    expect(list).not.toBeNull();
+    expect(list?.open).toBeFalse();
+    expect(list?.querySelector('summary')?.textContent).toContain('Liste élèves');
+    expect(list?.querySelector('summary')?.textContent).toContain('2 élèves');
+    expect(main.querySelectorAll('details.student-list').length).toBe(1);
+    expect(text).toContain('Martin Léa');
+    expect(text).toContain('Martin Tom');
+    expect(text).toContain('7 ans');
+    expect(text).toContain('CE2');
+    expect(text).not.toContain('France — CE2');
+    expect(text).toContain('0 élève');
+    expect(text).not.toContain('Aucun élève inscrit dans cette classe.');
+    expect(text).not.toContain('PIN');
+    expect(main.querySelector('input, button, textarea')).toBeNull();
+    expect(main.querySelectorAll('.student').length).toBe(2);
+    expect(main.querySelector('.student img')).not.toBeNull();
+  });
+
+  it('loads 30 student photos with at most four requests at a time', () => {
+    fixture.detectChanges();
+    http.expectOne(spacesUrl).flush({ roles: ['teacher'], teacherRequest: 'none' });
+    http.expectOne(accountUrl).flush({ displayName: 'Anne' });
+    http.expectOne(studentsUrl).flush({
+      schools: [{
+        schoolId: 1, schoolName: 'School', curriculumLabel: 'France',
+        grades: [{
+          grade: 'CE1', students: Array.from({ length: 30 }, (_, i) => ({
+            id: i + 1, firstName: `Student${i}`, lastName: 'Test', age: 8, hasPhoto: true,
+          })),
+        }],
+      }],
+    });
+    let count = 0;
+    for (let first = 1; first <= 30; first += 4) {
+      const requests = http.match((request) => request.url.startsWith(`${studentsUrl}/`) && request.url.endsWith('/photo'));
+      expect(requests.length).toBe(Math.min(4, 31 - first));
+      count += requests.length;
+      requests.forEach((request) => request.flush(new Blob(['image'], { type: 'image/png' })));
+    }
+    expect(count).toBe(30);
+    fixture.destroy();
+  });
+});

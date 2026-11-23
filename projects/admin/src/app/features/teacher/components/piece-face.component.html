@@ -1,0 +1,61 @@
+<div class="piece-face">
+  <div class="chips" role="group" [attr.aria-label]="legend()">
+    <button
+      class="form-chip"
+      type="button"
+      [class.selected]="!imageMode() && !colorMode()"
+      [disabled]="disabled()"
+      (click)="face.emit('text')"
+    >
+      Texte
+    </button>
+    <button
+      class="form-chip"
+      type="button"
+      [class.selected]="imageMode()"
+      [disabled]="disabled()"
+      (click)="face.emit('image')"
+    >
+      Image
+    </button>
+    @if (allowColor()) {
+      <button
+        class="form-chip"
+        type="button"
+        [class.selected]="colorMode()"
+        [disabled]="disabled()"
+        (click)="colorSelected.emit()"
+      >
+        Couleur
+      </button>
+    }
+  </div>
+  @if (imageMode()) {
+    @if (imageDataUrl()) {
+      <img class="piece-thumb" [src]="imageDataUrl()" alt="" />
+    } @else if (imageDataUrl() === '') {
+      <p class="hint">Image en cours…</p>
+    }
+    <input
+      type="file"
+      accept="image/jpeg,image/png,image/gif,image/webp"
+      [attr.aria-label]="'Image : ' + legend()"
+      [disabled]="disabled()"
+      (change)="onFile($event)"
+    />
+  } @else if (colorMode()) {
+    <input
+      class="simon-picker"
+      type="color"
+      [attr.aria-label]="'Couleur : ' + legend()"
+      [value]="color()"
+      [disabled]="disabled()"
+      (input)="onColor($event)"
+    />
+  } @else {
+    <mat-form-field appearance="outline" class="field">
+      <mat-label>{{ legend() }}</mat-label>
+      <input matInput [value]="text()" [disabled]="disabled()" (input)="onText($event)" />
+    </mat-form-field>
+  }
+</div>

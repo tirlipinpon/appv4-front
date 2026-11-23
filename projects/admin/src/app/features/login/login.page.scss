@@ -1,0 +1,26 @@
+.login-card {
+  width: min(100%, 32rem);
+}
+
+.full {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.error {
+  color: var(--app-error);
+  margin: 0 0 1rem;
+}
+
+.oauth-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.facebook-btn {
+  margin-top: 0.75rem;
+}
+
+.divider {
+  margin: 1.25rem 0;
+}

@@ -1,0 +1,71 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content content-wide">
+    <mat-card class="card">
+      <mat-card-header>
+        <mat-card-title>Élèves</mat-card-title>
+        <mat-card-subtitle>Les enfants inscrits dans tes classes</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (loading()) {
+          <p class="status" role="status">Chargement…</p>
+        }
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        @if (ready() && schools().length === 0) {
+          <p class="hint">{{ noClassMessage() }}</p>
+        }
+
+        @for (school of schools(); track school.schoolId) {
+          <section class="school">
+            <details class="school-toggle">
+              <summary class="school-name">
+                @if (school.curriculumLabel) {
+                  <span class="school-country">{{ school.curriculumLabel }}</span>
+                }
+                <span class="school-title">{{ school.schoolName }}</span>
+                <span class="school-count">{{ classCountLabel(school.grades.length) }}</span>
+              </summary>
+            @for (grade of school.grades; track grade.grade) {
+              <article class="grade">
+                <h3 class="grade-name">{{ grade.grade }}</h3>
+                @if (grade.students.length === 0) {
+                  <p class="count">{{ grade.countLabel }}</p>
+                } @else {
+                  <details class="student-list">
+                    <summary>
+                      <span class="summary-row">
+                        <span class="list-label">Liste élèves</span>
+                        <span class="count">{{ grade.countLabel }}</span>
+                      </span>
+                    </summary>
+                    <ul class="students">
+                      @for (student of grade.students; track student.id) {
+                        <li class="student">
+                          @if (student.hasPhoto && photos()[student.id]) {
+                            <img
+                              [src]="photos()[student.id]"
+                              [alt]="student.firstName + ' ' + student.lastName"
+                            />
+                          } @else {
+                            <span class="avatar" aria-hidden="true">{{ emoji(student.avatarCode) }}</span>
+                          }
+                          <span class="name">{{ student.lastName }} {{ student.firstName }}</span>
+                          <span class="age">{{ student.age }} ans</span>
+                        </li>
+                      }
+                    </ul>
+                  </details>
+                }
+              </article>
+            }
+            </details>
+          </section>
+        }
+      </mat-card-content>
+    </mat-card>
+  </main>
+</div>

@@ -1,0 +1,107 @@
+.play {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  padding: 1rem 1.1rem 2rem;
+  color: var(--app-text, #1c2b3a);
+}
+
+.play-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.back {
+  color: var(--app-text-muted, #6b7385);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.status {
+  color: var(--app-text-muted, #6b7385);
+}
+
+.status.error {
+  color: var(--app-error, #b3261e);
+}
+
+.submit {
+  margin-top: 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.75rem 1.25rem;
+  background: var(--app-primary, #7c5cff);
+  color: var(--app-on-primary, #fff);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.submit.secondary {
+  background: transparent;
+  color: var(--app-primary, #7c5cff);
+  border: 1px solid var(--app-primary, #7c5cff);
+}
+
+.submit.link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.verdict {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+}
+
+.verdict.ok {
+  background: #dcfce7;
+}
+
+.verdict.ko {
+  background: #fee2e2;
+}
+
+.verdict-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.35rem 0 0;
+  font-weight: 700;
+}
+
+.star-yellow {
+  color: #f5c518;
+}
+
+.star-black {
+  color: #141414;
+  filter: drop-shadow(0 0 1px #fff);
+}
+
+.after {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}

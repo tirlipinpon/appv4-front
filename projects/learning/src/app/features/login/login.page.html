@@ -1,0 +1,55 @@
+<main class="learn-login">
+  <p class="visually-hidden" data-testid="cd-check">CD check · SCRUM-80 · release</p>
+  <div class="learn-top">
+    <span class="learn-top-spacer" aria-hidden="true"></span>
+    <app-theme-toggle
+      testId="theme-toggle"
+      [dark]="theme.isDark()"
+      (toggled)="theme.toggle()"
+    />
+  </div>
+  <div class="learn-mascot" aria-hidden="true">
+    <svg viewBox="0 0 88 88">
+      <circle cx="44" cy="44" r="44" fill="#ffb703" />
+      <circle cx="44" cy="48" r="24" fill="#ffe8a3" />
+      <circle cx="22" cy="24" r="10" fill="#ffb703" />
+      <circle cx="66" cy="24" r="10" fill="#ffb703" />
+      <circle cx="22" cy="24" r="5" fill="#ff8c42" />
+      <circle cx="66" cy="24" r="5" fill="#ff8c42" />
+      <circle cx="35" cy="46" r="3" fill="#2a2348" />
+      <circle cx="53" cy="46" r="3" fill="#2a2348" />
+      <ellipse cx="44" cy="54" rx="4" ry="3" fill="#ff8c42" />
+    </svg>
+  </div>
+  <h1>Bonjour !</h1>
+  <p class="learn-lead">Entre ton prénom et ton code pour continuer.</p>
+
+  <form (submit)="submit($event)">
+    @if (error(); as message) {
+      <p class="learn-error" role="alert" data-testid="login-alert">{{ message }}</p>
+    }
+    <app-text-field
+      label="Ton prénom"
+      icon="name"
+      testId="login-first-name"
+      autocomplete="given-name"
+      [value]="firstName()"
+      (valueChange)="onFirstName($event)"
+    />
+    <app-text-field
+      label="Ton code"
+      icon="lock"
+      type="password"
+      testId="login-pin"
+      inputMode="numeric"
+      autocomplete="off"
+      [maxlength]="4"
+      [reveal]="true"
+      [value]="pin()"
+      (valueChange)="onPin($event)"
+    />
+    <app-button testId="login-submit" [disabled]="!canSubmit()">
+      {{ busy() ? 'Entrée…' : 'Entrer' }}
+    </app-button>
+  </form>
+</main>

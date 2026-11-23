@@ -1,0 +1,149 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable, Subject, shareReplay } from 'rxjs';
+
+import type { components } from '@appv4/api';
+import type { MemoryMatch, PlayAnswer, PlayQuestion } from '@appv4/ui';
+import type {
+  CloneTeacherSubjectQuestionsRequest,
+  CreateTeacherSubjectQuestionRequest,
+  DeleteTeacherSubjectQuestionsRequest,
+  DeleteTeacherSubjectQuestionsResponse,
+  LetterAttemptRequest,
+  LetterAttemptResponse,
+  TeacherQuestionFormsResponse,
+  TeacherQuestionGamificationCatalog,
+  TeacherSubjectFollowersResponse,
+  TeacherSubjectQuestionItem,
+  TeacherSubjectQuestionsResponse,
+} from '../../../core/api/api-models';
+import { environment } from '../../../../environments/environment';
+
+/**
+ * Choix multiple d'une matière (SCRUM-174).
+ * La liste des formes vient de l'API. Le formulaire n'existe que pour le code renvoyé.
+ */
+@Injectable({ providedIn: 'root' })
+export class TeacherQuestionsService {
+  private readonly http = inject(HttpClient);
+  private readonly copiedSubject = new Subject<number>();
+  private formsRequest?: Observable<TeacherQuestionFormsResponse>;
+
+  /** La matière qui vient de recevoir des copies, pour recharger sa liste. */
+  readonly copiedToSubject$ = this.copiedSubject.asObservable();
+
+  noteCopied(subjectId: number): void {
+    this.copiedSubject.next(subjectId);
+  }
+
+  /** Défaut d'une question neuve et barème des difficultés. */
+  gamification(): Observable<TeacherQuestionGamificationCatalog> {
+    return this.http.get<TeacherQuestionGamificationCatalog>(
+      `${environment.apiBaseUrl}/teacher/question-gamification`,
+    );
+  }
+
+  forms(): Observable<TeacherQuestionFormsResponse> {
+    return (this.formsRequest ??= this.http.get<TeacherQuestionFormsResponse>(`${environment.apiBaseUrl}/teacher/question-forms`)
+      .pipe(shareReplay({ bufferSize: 1, refCount: true })));
+  }
+
+  get(subjectId: number, questionId: number): Observable<TeacherSubjectQuestionItem> {
+    return this.http.get<TeacherSubjectQuestionItem>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/${questionId}`,
+    );
+  }
+
+  list(subjectId: number, afterId = 0): Observable<TeacherSubjectQuestionsResponse> {
+    const url = `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions`;
+    return afterId > 0
+      ? this.http.get<TeacherSubjectQuestionsResponse>(url, { params: { afterId } })
+      : this.http.get<TeacherSubjectQuestionsResponse>(url);
+  }
+
+  create(subjectId: number, body: CreateTeacherSubjectQuestionRequest): Observable<TeacherSubjectQuestionItem> {
+    return this.http.post<TeacherSubjectQuestionItem>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions`,
+      body,
+    );
+  }
+
+  update(
+    subjectId: number,
+    questionId: number,
+    body: CreateTeacherSubjectQuestionRequest,
+  ): Observable<TeacherSubjectQuestionItem> {
+    return this.http.put<TeacherSubjectQuestionItem>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/${questionId}`,
+      body,
+    );
+  }
+
+  clone(
+    subjectId: number,
+    body: CloneTeacherSubjectQuestionsRequest,
+  ): Observable<TeacherSubjectQuestionsResponse> {
+    return this.http.post<TeacherSubjectQuestionsResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/clone`,
+      body,
+    );
+  }
+
+  /** Enfants qui suivent encore ce cours : nombre, phrase, et noms. */
+  followers(subjectId: number): Observable<TeacherSubjectFollowersResponse> {
+    return this.http.get<TeacherSubjectFollowersResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/followers`,
+    );
+  }
+
+  deleteQuestions(
+    subjectId: number,
+    body: DeleteTeacherSubjectQuestionsRequest,
+  ): Observable<DeleteTeacherSubjectQuestionsResponse> {
+    return this.http.post<DeleteTeacherSubjectQuestionsResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/delete`,
+      body,
+    );
+  }
+
+  /** Mot composé dans les cases. Le message affiché est celui de l'API. */
+  tryLetter(
+    subjectId: number,
+    questionId: number,
+    body: LetterAttemptRequest,
+  ): Observable<LetterAttemptResponse> {
+    return this.http.post<LetterAttemptResponse>(
+      `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/${questionId}/attempt`,
+      body,
+    );
+  }
+
+  getPreview(subjectId: number, questionId: number): Observable<PlayQuestion> {
+    return this.http.get<PlayQuestion>(this.previewUrl(subjectId, questionId));
+  }
+
+  gradePreview(subjectId: number, questionId: number, answer: PlayAnswer, previewSequence?: number[]) {
+    return this.http.post<components['schemas']['PreviewVerdict']>(
+      `${this.previewUrl(subjectId, questionId)}/attempts`,
+      { answer, previewSequence },
+    );
+  }
+
+  previewLetterLocks(subjectId: number, questionId: number, attempt: string) {
+    return this.http.post<components['schemas']['ChildLetterLocksResponse']>(
+      `${this.previewUrl(subjectId, questionId)}/letter-locks`,
+      { attempt },
+    );
+  }
+
+  previewMemoryPair(subjectId: number, questionId: number, match: MemoryMatch) {
+    return this.http.post<components['schemas']['MemoryPairResponse']>(
+      `${this.previewUrl(subjectId, questionId)}/memory-pair`,
+      match,
+    );
+  }
+
+  private previewUrl(subjectId: number, questionId: number): string {
+    return `${environment.apiBaseUrl}/teacher/subjects/${subjectId}/questions/${questionId}/preview`;
+  }
+}

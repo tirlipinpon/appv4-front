@@ -39,6 +39,10 @@ module.exports = defineConfig([
       angular.configs.templateRecommended,
       angular.configs.templateAccessibility,
     ],
-    rules: {},
+    rules: {
+      // Interdit == et != dans les templates, y compris == null.
+      // La CI s'arrête là : écrire === null et !== null.
+      "@angular-eslint/template/eqeqeq": "error",
+    },
   }
 ]);

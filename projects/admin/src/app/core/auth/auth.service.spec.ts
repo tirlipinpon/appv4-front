@@ -1,0 +1,95 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+
+import { AuthService } from './auth.service';
+import { SpaceRoles } from './space-roles';
+
+describe('AuthService', () => {
+  let service: AuthService;
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(AuthService);
+  });
+
+  it('stores and clears token', () => {
+    expect(service.isAuthenticated()).toBeFalse();
+    service.setToken('abc.jwt.token');
+    expect(service.getToken()).toBe('abc.jwt.token');
+    expect(service.isAuthenticated()).toBeFalse();
+    service.logout();
+    expect(service.getToken()).toBeNull();
+    expect(service.isAuthenticated()).toBeFalse();
+  });
+
+  it('rejects an expired or shapeless token and accepts one still in date', () => {
+    const now = Date.parse('2026-01-01T00:00:00Z');
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(now));
+
+    service.setToken(
+      rawToken({ exp: 1, activeRole: SpaceRoles.parent, roles: [SpaceRoles.parent] }),
+    );
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.session().activeRole).toBeNull();
+
+    service.setToken(rawToken({ activeRole: SpaceRoles.parent, roles: [SpaceRoles.parent] }));
+    expect(service.isAuthenticated()).toBeFalse();
+
+    service.setToken(
+      rawToken({
+        exp: Math.floor(now / 1000) + 60,
+        activeRole: SpaceRoles.parent,
+        roles: [SpaceRoles.parent],
+      }),
+    );
+    expect(service.isAuthenticated()).toBeTrue();
+    expect(service.session().activeRole).toBe(SpaceRoles.parent);
+
+    jasmine.clock().mockDate(new Date(now + 61_000));
+    expect(service.isAuthenticated()).toBeFalse();
+
+    jasmine.clock().uninstall();
+  });
+
+  it('reads the active role from the token', () => {
+    service.setToken(fakeToken({ activeRole: SpaceRoles.parent, roles: [SpaceRoles.parent] }));
+
+    expect(service.session().activeRole).toBe(SpaceRoles.parent);
+    expect(service.session().roles).toEqual([SpaceRoles.parent]);
+
+    service.setToken(
+      fakeToken({ activeRole: SpaceRoles.teacher, roles: [SpaceRoles.parent, SpaceRoles.teacher] }),
+    );
+
+    expect(service.session().activeRole).toBe(SpaceRoles.teacher);
+    expect(service.session().roles).toEqual([SpaceRoles.parent, SpaceRoles.teacher]);
+  });
+
+  it('reads admin without treating it as a space', () => {
+    service.setToken(fakeToken({ roles: ['admin'] }));
+
+    expect(service.session().admin).toBeTrue();
+    expect(service.session().roles).toEqual([]);
+    expect(service.session().activeRole).toBeNull();
+  });
+
+  it('leaves the space empty when the token does not choose one', () => {
+    service.setToken(fakeToken({ roles: [SpaceRoles.parent, SpaceRoles.teacher] }));
+    expect(service.session().activeRole).toBeNull();
+  });
+});
+
+function fakeToken(payload: object): string {
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  return rawToken({ exp, ...payload });
+}
+
+function rawToken(payload: object): string {
+  const body = btoa(JSON.stringify(payload)).replace(/=+$/, '');
+  return `e30.${body}.sig`;
+}

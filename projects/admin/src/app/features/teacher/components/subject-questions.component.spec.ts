@@ -1,0 +1,1701 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
+
+import { SubjectQuestionsComponent } from './subject-questions.component';
+
+const formsUrl = 'http://localhost:8080/api/int/teacher/question-forms';
+const questionsUrl = 'http://localhost:8080/api/int/teacher/subjects/4/questions';
+const gamificationUrl = 'http://localhost:8080/api/int/teacher/question-gamification';
+const gamificationCatalog = {
+  defaults: {
+    maxAttempts: 1,
+    difficulty: 'facile',
+    difficultyLabel: 'Facile',
+    customizePoints: false,
+    gamificationDisabled: false,
+    points: [10],
+  },
+  difficulties: [
+    { code: 'facile', label: 'Facile', pointsByAttempt: [10, 5, 2, 1, 1] },
+    { code: 'modere', label: 'Modéré', pointsByAttempt: [20, 10, 5, 2, 1] },
+    { code: 'difficile', label: 'Difficile', pointsByAttempt: [30, 15, 8, 4, 2] },
+  ],
+};
+
+describe('SubjectQuestionsComponent', () => {
+  let fixture: ComponentFixture<SubjectQuestionsComponent>;
+  let http: HttpTestingController;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [SubjectQuestionsComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideAnimationsAsync()],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(SubjectQuestionsComponent);
+    fixture.componentInstance.subjectId = 4;
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    for (const pending of http.match(gamificationUrl)) {
+      if (!pending.cancelled) {
+        pending.flush(gamificationCatalog);
+      }
+    }
+    http.verify();
+  });
+
+  function boot(): void {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+  }
+
+  it('loads questions independently and retries an unavailable forms catalogue', () => {
+    fixture.detectChanges();
+    const forms = http.expectOne(formsUrl);
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    forms.flush({}, { status: 503, statusText: 'Unavailable' });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.loading()).toBeFalse();
+    expect(fixture.componentInstance.formsError()).not.toBeNull();
+    fixture.componentInstance.loadForms();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'qcm', label: 'QCM' }] });
+    expect(fixture.componentInstance.formsError()).toBeNull();
+    expect(fixture.componentInstance.forms().length).toBe(1);
+    http.expectNone(questionsUrl);
+  });
+
+  it('shows the form returned by the API and posts a multiple choice question', () => {
+    boot();
+
+    expect(fixture.nativeElement.textContent).toContain('Choix multiples');
+    expect(fixture.nativeElement.textContent).toContain('Énoncé');
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Combien font 2 + 2 ?');
+    page.setChoiceLabel(0, '3');
+    page.setChoiceLabel(1, '4');
+    page.setChoiceCorrect(1, true);
+    fixture.detectChanges();
+
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (button) => button.textContent?.includes('Enregistrer'),
+    );
+    save?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      formCode: 'qcm',
+      prompt: 'Combien font 2 + 2 ?',
+      choices: [
+        { label: '3', correct: false },
+        { label: '4', correct: true },
+      ],
+    });
+    req.flush({
+      id: 7,
+      formCode: 'qcm',
+      formLabel: 'Choix multiples',
+      prompt: 'Combien font 2 + 2 ?',
+      choices: [
+        { id: 1, label: '3', correct: false },
+        { id: 2, label: '4', correct: true },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Combien font 2 + 2 ?');
+    expect(fixture.nativeElement.textContent).toContain('3');
+    expect(fixture.nativeElement.textContent).toContain('Bonne réponse');
+    const html = fixture.nativeElement.innerHTML as string;
+    expect(html.indexOf('class="forms"')).toBeLessThan(html.indexOf('class="saved"'));
+  });
+
+  it('navigates bounded pages and clears selection', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'qcm', label: 'QCM', sortOrder: 1 }] });
+    http.expectOne(questionsUrl).flush({
+      questions: [{ id: 10, formCode: 'qcm', prompt: 'First', choices: [] }], nextCursor: 10,
+    });
+    const page = fixture.componentInstance;
+    page.selectedIds.set([10]);
+    page.nextPage();
+    http.expectOne(`${questionsUrl}?afterId=10`).flush({
+      questions: [{ id: 11, formCode: 'qcm', prompt: 'Second', choices: [] }], nextCursor: null,
+    });
+    expect(page.questions().map((question) => question.id)).toEqual([11]);
+    expect(page.selectedIds()).toEqual([]);
+    expect(page.nextCursor()).toBeNull();
+    page.previousPage();
+    http.expectOne(questionsUrl).flush({
+      questions: [{ id: 10, formCode: 'qcm', prompt: 'First', choices: [] }], nextCursor: 10,
+    });
+    expect(page.questions().map((question) => question.id)).toEqual([10]);
+  });
+
+  it('shows the API refusal', () => {
+    boot();
+
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (button) => button.textContent?.includes('Enregistrer'),
+    );
+    save?.click();
+
+    http.expectOne(questionsUrl).flush(
+      { message: "L'énoncé est obligatoire." },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain("L'énoncé est obligatoire.");
+  });
+
+  it('reopens an existing question and puts the correction', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2*2 ?',
+          choices: [
+            { id: 1, label: '3', correct: false },
+            { id: 2, label: '4', correct: true },
+          ],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const edit = buttonNamed('Modifier');
+    edit?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Tu modifies cette question.');
+    expect(fixture.componentInstance.prompt()).toBe('2*2 ?');
+
+    fixture.componentInstance.setPrompt('2*3 ?');
+    fixture.componentInstance.setChoiceLabel(1, '6');
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(`${questionsUrl}/7`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body.prompt).toBe('2*3 ?');
+    expect(req.request.body.choices[1]).toEqual({ label: '6', correct: true });
+    req.flush({
+      id: 7,
+      formCode: 'qcm',
+      formLabel: 'Choix multiples',
+      prompt: '2*3 ?',
+      choices: [
+        { id: 3, label: '3', correct: false },
+        { id: 4, label: '6', correct: true },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('2*3 ?');
+    expect(fixture.nativeElement.textContent).not.toContain('Tu modifies cette question.');
+  });
+
+  it('posts a memory question with its pairs', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [
+        { code: 'qcm', label: 'Choix multiples', sortOrder: 1 },
+        { code: 'memory', label: 'Memory', sortOrder: 2 },
+      ],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    buttonNamed('Memory')?.click();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPairSide(0, 'questionSide', '2 + 2');
+    page.setPairSide(0, 'answerSide', '4');
+    page.setPairSide(1, 'questionSide', '3 + 3');
+    page.setPairSide(1, 'answerSide', '6');
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      formCode: 'memory',
+      prompt: '',
+      pairs: [
+        { questionSide: '2 + 2', answerSide: '4' },
+        { questionSide: '3 + 3', answerSide: '6' },
+      ],
+    });
+    req.flush({
+      id: 8,
+      formCode: 'memory',
+      formLabel: 'Memory',
+      prompt: '',
+      choices: [],
+      pairs: [
+        { id: 1, questionSide: '2 + 2', answerSide: '4' },
+        { id: 2, questionSide: '3 + 3', answerSide: '6' },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('2 + 2 — 4');
+    expect(fixture.nativeElement.textContent).toContain('3 + 3 — 6');
+  });
+
+  it('posts an ordered list and shows the items in that order', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [
+        { code: 'qcm', label: 'Choix multiples', sortOrder: 1 },
+        { code: 'memory', label: 'Memory', sortOrder: 2 },
+        { code: 'order', label: 'Ordre', sortOrder: 3 },
+      ],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    buttonNamed('Ordre')?.click();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setItemLabel(0, 'Lundi');
+    page.setItemLabel(1, 'Mardi');
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      formCode: 'order',
+      prompt: '',
+      timelineEnabled: false,
+      items: [{ label: 'Lundi' }, { label: 'Mardi' }],
+    });
+    req.flush({
+      id: 9,
+      formCode: 'order',
+      formLabel: 'Ordre',
+      prompt: '',
+      choices: [],
+      pairs: [],
+      timelineEnabled: false,
+      items: [
+        { id: 1, label: 'Lundi' },
+        { id: 2, label: 'Mardi' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const labels = Array.from(fixture.nativeElement.querySelectorAll('ol.ordered li') as NodeListOf<HTMLElement>).map(
+      (item) => item.textContent?.trim(),
+    );
+    expect(labels).toEqual(['Lundi', 'Mardi']);
+  });
+
+  it('posts true or false phrases and shows each side', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'vrai_faux', label: 'Vrai ou faux', sortOrder: 4 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    buttonNamed('Vrai ou faux')?.click();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Dis si chaque phrase est vraie.');
+    page.setStatementLabel(0, '2 + 2 = 4');
+    page.setStatementSide(0, true);
+    page.setStatementLabel(1, '3 + 3 = 5');
+    page.setStatementSide(1, false);
+    fixture.detectChanges();
+
+    const vraiButtons = Array.from(
+      fixture.nativeElement.querySelectorAll('button.side.vrai') as NodeListOf<HTMLButtonElement>,
+    );
+    const fauxButtons = Array.from(
+      fixture.nativeElement.querySelectorAll('button.side.faux') as NodeListOf<HTMLButtonElement>,
+    );
+    expect(vraiButtons[0]?.classList.contains('selected')).toBeTrue();
+    expect(vraiButtons[0]?.getAttribute('aria-pressed')).toBe('true');
+    expect(fauxButtons[0]?.classList.contains('selected')).toBeFalse();
+    expect(fauxButtons[1]?.classList.contains('selected')).toBeTrue();
+    expect(vraiButtons[1]?.classList.contains('selected')).toBeFalse();
+
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes('Enregistrer'),
+    );
+    save[save.length - 1]?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      formCode: 'vrai_faux',
+      prompt: 'Dis si chaque phrase est vraie.',
+      statements: [
+        { label: '2 + 2 = 4', truthful: true },
+        { label: '3 + 3 = 5', truthful: false },
+      ],
+    });
+    req.flush({
+      id: 10,
+      formCode: 'vrai_faux',
+      formLabel: 'Vrai ou faux',
+      prompt: 'Dis si chaque phrase est vraie.',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [
+        { id: 1, label: '2 + 2 = 4', truthful: true },
+        { id: 2, label: '3 + 3 = 5', truthful: false },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Dis si chaque phrase est vraie.');
+    expect(fixture.nativeElement.textContent).toContain('2 + 2 = 4');
+    expect(fixture.nativeElement.textContent).toContain('Vrai');
+    expect(fixture.nativeElement.textContent).toContain('3 + 3 = 5');
+    expect(fixture.nativeElement.textContent).toContain('Faux');
+  });
+
+  it('posts linked words and shows each answer', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'liens', label: 'Liens', sortOrder: 5 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    buttonNamed('Liens')?.click();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Relie chaque mot.');
+    page.setLinkSide(0, 'leftLabel', 'Pomme');
+    page.setLinkSide(0, 'rightLabel', 'Fruit');
+    page.setLinkSide(1, 'leftLabel', 'Chien');
+    page.setLinkSide(1, 'rightLabel', 'Animal');
+    fixture.detectChanges();
+
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes('Enregistrer'),
+    );
+    save[save.length - 1]?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'liens',
+      prompt: 'Relie chaque mot.',
+      links: [
+        { leftLabel: 'Pomme', rightLabel: 'Fruit' },
+        { leftLabel: 'Chien', rightLabel: 'Animal' },
+      ],
+    });
+    req.flush({
+      id: 11,
+      formCode: 'liens',
+      formLabel: 'Liens',
+      prompt: 'Relie chaque mot.',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [
+        { id: 1, leftLabel: 'Pomme', rightLabel: 'Fruit' },
+        { id: 2, leftLabel: 'Chien', rightLabel: 'Animal' },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Relie chaque mot.');
+    expect(fixture.nativeElement.textContent).toContain('Pomme — Fruit');
+    expect(fixture.nativeElement.textContent).toContain('Chien — Animal');
+  });
+
+  it('posts a sentence with its answer and its decoys', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'case_vide', label: 'Case vide', sortOrder: 6 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Complète.');
+    page.setSentence('Le chat mange une ___ dans le jardin.');
+    page.setAnswer(0, 'pomme');
+    page.setDecoy(0, 'poire');
+    page.addDecoy();
+    page.setDecoy(1, 'voiture');
+    fixture.detectChanges();
+
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes('Enregistrer'),
+    );
+    save[save.length - 1]?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'case_vide',
+      prompt: 'Complète.',
+      sentence: 'Le chat mange une ___ dans le jardin.',
+      answers: [{ label: 'pomme' }],
+      decoys: [
+        { label: 'poire' },
+        { label: 'voiture' },
+      ],
+    });
+    req.flush({
+      id: 12,
+      formCode: 'case_vide',
+      formLabel: 'Case vide',
+      prompt: 'Complète.',
+      sentence: 'Le chat mange une ___ dans le jardin.',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+      answers: [{ id: 1, label: 'pomme' }],
+      decoys: [
+        { id: 2, label: 'poire' },
+        { id: 3, label: 'voiture' },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Complète.');
+    expect(fixture.nativeElement.textContent).toContain('Le chat mange une ___ dans le jardin.');
+    expect(fixture.nativeElement.textContent).toContain('pomme');
+    expect(fixture.nativeElement.textContent).toContain('poire');
+    expect(fixture.nativeElement.textContent).toContain('voiture');
+  });
+
+  it('removes an extra row and the hole that matches it', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [
+        { code: 'qcm', label: 'Choix multiples', sortOrder: 1 },
+        { code: 'memory', label: 'Memory', sortOrder: 2 },
+        { code: 'order', label: 'Ordre', sortOrder: 3 },
+        { code: 'vrai_faux', label: 'Vrai ou faux', sortOrder: 4 },
+        { code: 'liens', label: 'Liens', sortOrder: 5 },
+        { code: 'case_vide', label: 'Case vide', sortOrder: 6 },
+      ],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    buttonNamed('Choix multiples')?.click();
+    fixture.detectChanges();
+    page.addChoice();
+    fixture.detectChanges();
+    buttonsNamed('Enlever')[2]?.click();
+    fixture.detectChanges();
+    expect(page.choices().length).toBe(2);
+
+    buttonNamed('Memory')?.click();
+    fixture.detectChanges();
+    page.addPair();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.pairs().length).toBe(2);
+
+    buttonNamed('Ordre')?.click();
+    fixture.detectChanges();
+    page.addItem();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.items().length).toBe(2);
+
+    buttonNamed('Vrai ou faux')?.click();
+    fixture.detectChanges();
+    page.addStatement();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.statements().length).toBe(2);
+
+    buttonNamed('Liens')?.click();
+    fixture.detectChanges();
+    page.addLink();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    expect(page.links().length).toBe(2);
+
+    buttonNamed('Case vide')?.click();
+    fixture.detectChanges();
+    page.setSentence('Le ___ mange une ___.');
+    page.setAnswer(0, 'chat');
+    page.setAnswer(1, 'pomme');
+    page.setDecoy(0, 'poire');
+    page.addDecoy();
+    page.setDecoy(1, 'voiture');
+    fixture.detectChanges();
+    buttonsNamed('Enlever')[0]?.click();
+    fixture.detectChanges();
+    buttonsNamed('Enlever').at(-1)?.click();
+    fixture.detectChanges();
+
+    expect(page.sentence()).toBe('Le mange une ___.');
+    expect(page.answers()).toEqual([{ label: 'pomme' }]);
+    expect(page.decoys()).toEqual([{ label: 'poire' }]);
+    expect(fixture.nativeElement.textContent).toContain('Énoncé');
+  });
+
+  function buttonsNamed(label: string): HTMLButtonElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(
+      (button) => button.textContent?.includes(label),
+    );
+  }
+
+  it('copies the selected questions onto another subject', () => {
+    fixture.componentInstance.destinations = [
+      { id: 4, label: 'École — CE1 — Maths' },
+      { id: 9, label: 'École — CE2 — Histoire' },
+    ];
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+        {
+          id: 8,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '3 + 3',
+          choices: [{ id: 2, label: '6', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.copy')).toBeNull();
+    expect(fixture.componentInstance.destinationLabel({ id: 9, label: 'École — CE2 — Histoire' })).toBe(
+      'École — CE2 — Histoire',
+    );
+
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.copy')).not.toBeNull();
+    buttonNamed('Annuler')?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.copy')).toBeNull();
+    expect(fixture.componentInstance.selectedIds()).toEqual([]);
+
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.componentInstance.toggleSelected(8, true);
+    fixture.componentInstance.setTarget(9);
+    fixture.detectChanges();
+    expect(buttonNamed('Copier')?.disabled).toBe(false);
+
+    buttonNamed('Copier')?.click();
+
+    const req = http.expectOne(`${questionsUrl}/clone`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ targetSubjectId: 9, questionIds: [7, 8] });
+    req.flush({
+      questions: [
+        {
+          id: 21,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: 'copie seule',
+          choices: [{ id: 3, label: '4', correct: true }],
+        },
+        {
+          id: 22,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: 'autre copie',
+          choices: [{ id: 4, label: '6', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Questions copiées.');
+    expect(fixture.nativeElement.textContent).not.toContain('copie seule');
+    expect(fixture.nativeElement.textContent).toContain('2 + 2');
+  });
+
+  it('appends a copy kept on the same subject', () => {
+    fixture.componentInstance.destinations = [{ id: 4, label: 'École — CE1 — Maths' }];
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.destinationLabel({ id: 4, label: 'École — CE1 — Maths' })).toBe(
+      'École — CE1 — Maths (cette matière)',
+    );
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.componentInstance.setTarget(4);
+    fixture.detectChanges();
+    buttonNamed('Copier')?.click();
+
+    const req = http.expectOne(`${questionsUrl}/clone`);
+    expect(req.request.body).toEqual({ targetSubjectId: 4, questionIds: [7] });
+    req.flush({
+      questions: [
+        {
+          id: 21,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 3, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Question copiée.');
+    expect(fixture.nativeElement.textContent.match(/2 \+ 2/g)?.length).toBe(2);
+  });
+
+  it('shows who follows the course before deleting the selected questions', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+        {
+          id: 8,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '3 + 3',
+          choices: [{ id: 2, label: '6', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance.toggleSelected(7, true);
+    fixture.componentInstance.toggleSelected(8, true);
+    fixture.detectChanges();
+    buttonNamed('Supprimer')?.click();
+
+    const followers = http.expectOne('http://localhost:8080/api/int/teacher/subjects/4/followers');
+    expect(followers.request.method).toBe('GET');
+    followers.flush({
+      childCount: 2,
+      warning: '2 enfants suivent ce cours.',
+      names: ['Léa Martin', 'Nina Bernard'],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.copy .warning')).not.toBeNull();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('2 enfants suivent ce cours.');
+    expect(text).toContain('Léa Martin');
+    expect(text).toContain('Nina Bernard');
+    expect(text).toContain('2 + 2');
+
+    buttonNamed('Confirmer la suppression')?.click();
+    const deleted = http.expectOne(`${questionsUrl}/delete`);
+    expect(deleted.request.method).toBe('POST');
+    expect(deleted.request.body).toEqual({ questionIds: [7, 8] });
+    deleted.flush({ deletedIds: [7, 8] });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('2 + 2');
+    expect(fixture.nativeElement.textContent).toContain('Questions supprimées.');
+  });
+
+  it('does not delete when the teacher cancels after seeing the children', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    buttonsNamed('Supprimer')[0]?.click();
+    http.expectOne('http://localhost:8080/api/int/teacher/subjects/4/followers').flush({
+      childCount: 0,
+      warning: 'Aucun enfant ne suit ce cours.',
+      names: [],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Aucun enfant ne suit ce cours.');
+    buttonNamed('Annuler la suppression')?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('2 + 2');
+    expect(fixture.nativeElement.textContent).not.toContain('Aucun enfant ne suit ce cours.');
+  });
+
+  it('posts a free text prompt and its expected answer', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'texte', label: 'Réponse libre', sortOrder: 11 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Capitale de la France');
+    page.setExpectedAnswer('Paris');
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      expectedAnswer: 'Paris',
+    });
+    req.flush({
+      id: 13,
+      formCode: 'texte',
+      formLabel: 'Réponse libre',
+      prompt: 'Capitale de la France',
+      expectedAnswer: 'Paris',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Réponse libre');
+    expect(fixture.nativeElement.textContent).toContain('Capitale de la France');
+    expect(fixture.nativeElement.textContent).toContain('Paris');
+
+    buttonNamed('Modifier')?.click();
+    fixture.detectChanges();
+    expect(page.prompt()).toBe('Capitale de la France');
+    expect(page.expectedAnswer()).toBe('Paris');
+    expect(page.editingId()).toBe(13);
+  });
+
+  it('displays the server verdict from a free text preview', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'texte', label: 'Réponse libre', sortOrder: 11 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 13,
+          formCode: 'texte',
+          formLabel: 'Réponse libre',
+          prompt: 'Capitale de la France',
+          expectedAnswer: 'Paris',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    (root.querySelector('[data-testid="teacher-question-preview"]') as HTMLButtonElement).click();
+    http.expectOne(`${questionsUrl}/13/preview`).flush({
+      formCode: 'texte', formLabel: 'Réponse libre', prompt: 'Capitale de la France', content: {},
+    });
+    fixture.detectChanges();
+
+    const input = root.querySelector('[data-testid="child-play-view-free-text"]') as HTMLInputElement;
+    const submit = root.querySelector('[data-testid="teacher-child-preview-submit"]') as HTMLButtonElement;
+    expect(submit.disabled).toBeTrue();
+    input.value = '  Pâris  ';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    submit.click();
+    const grade = http.expectOne(`${questionsUrl}/13/preview/attempts`);
+    expect(grade.request.body.answer).toEqual(jasmine.objectContaining({ formCode: 'texte', attempt: '  Pâris  ' }));
+    grade.flush({ passed: true, scorePercent: 100 });
+    fixture.detectChanges();
+
+    expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('Bravo');
+    expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('100 %');
+  });
+
+  it('counts supplementary Unicode characters as one box', () => {
+    expect(fixture.componentInstance.letterCount('A\u{1F600}')).toBe(2);
+  });
+
+  it('posts a letter by letter word and validates the boxes through the API', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'reponse_libre', label: 'Lettre par lettre', sortOrder: 9 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Capitale de la France');
+    page.setExpectedAnswer('Paris');
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const created = http.expectOne(questionsUrl);
+    expect(created.request.body).toEqual({
+      formCode: 'reponse_libre',
+      prompt: 'Capitale de la France',
+      expectedAnswer: 'Paris',
+    });
+    created.flush({
+      id: 15,
+      formCode: 'reponse_libre',
+      formLabel: 'Lettre par lettre',
+      prompt: 'Capitale de la France',
+      expectedAnswer: 'Paris',
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+    });
+    fixture.detectChanges();
+
+    const inputs = Array.from(
+      fixture.nativeElement.querySelectorAll('app-letter-boxes input') as NodeListOf<HTMLInputElement>,
+    );
+    expect(inputs.length).toBe(5);
+    expect(buttonNamed('Valider')?.disabled).toBe(true);
+
+    for (const [index, letter] of ['p', 'a', 'r', 'i', 's'].entries()) {
+      inputs[index].value = letter;
+      inputs[index].dispatchEvent(new InputEvent('input', { bubbles: true, data: letter }));
+    }
+    fixture.detectChanges();
+
+    buttonNamed('Valider')?.click();
+    const attempt = http.expectOne('http://localhost:8080/api/int/teacher/subjects/4/questions/15/attempt');
+    expect(attempt.request.body).toEqual({ attempt: 'paris' });
+    attempt.flush({ accepted: true, message: 'La réponse est acceptée.' });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('La réponse est acceptée.');
+  });
+
+  it('posts a click image with its zones and the rule', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'image_interactive', label: 'Image à cliquer', sortOrder: 8 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.selectForm('image_interactive');
+    page.setPrompt('Trouve le soleil');
+    page.setClickImage('data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAA=');
+    page.setRequireAllCorrect(true);
+    page.setClickZones([
+      {
+        label: 'le soleil',
+        correct: true,
+        shape: 'polygon',
+        points: [
+          { x: 0.1, y: 0.2 },
+          { x: 0.3, y: 0.2 },
+          { x: 0.2, y: 0.4 },
+        ],
+      },
+      {
+        label: 'le nuage',
+        correct: false,
+        shape: 'rect',
+        points: [
+          { x: 0.5, y: 0.55 },
+          { x: 0.8, y: 0.75 },
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'image_interactive',
+      prompt: 'Trouve le soleil',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      requireAllCorrect: true,
+      clicksOrdered: true,
+      zones: [
+        {
+          label: 'le soleil',
+          correct: true,
+          shape: 'polygon',
+          points: [
+            { x: 0.1, y: 0.2 },
+            { x: 0.3, y: 0.2 },
+            { x: 0.2, y: 0.4 },
+          ],
+          clickOrder: 1,
+        },
+        {
+          label: 'le nuage',
+          correct: false,
+          shape: 'rect',
+          points: [
+            { x: 0.5, y: 0.55 },
+            { x: 0.8, y: 0.75 },
+          ],
+        },
+      ],
+    });
+    req.flush({
+      id: 14,
+      formCode: 'image_interactive',
+      formLabel: 'Image à cliquer',
+      prompt: 'Trouve le soleil',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      requireAllCorrect: true,
+      zones: [
+        {
+          id: 1,
+          label: 'le soleil',
+          correct: true,
+          shape: 'polygon',
+          points: [
+            { x: 0.1, y: 0.2 },
+            { x: 0.3, y: 0.2 },
+            { x: 0.2, y: 0.4 },
+          ],
+          clickOrder: 1,
+        },
+      ],
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Image à cliquer');
+    expect(fixture.nativeElement.textContent).toContain('le soleil');
+    expect(fixture.nativeElement.querySelector('polygon.correct')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Toutes les zones correctes sont à cliquer.');
+    expect(fixture.nativeElement.textContent).toContain('Ordre des clics : 1. le soleil');
+  });
+
+  it('posts a puzzle with named pieces and no correct side', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'puzzle', label: 'Puzzle', sortOrder: 10 }],
+    });
+    http.expectOne(questionsUrl).flush({ questions: [] });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.selectForm('puzzle');
+    page.setPrompt('Reconstitue le dessin');
+    page.setClickImage('data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAA=');
+    page.setBoardImage('data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAA=');
+    page.setClickZones([
+      {
+        label: 'le ciel',
+        correct: true,
+        shape: 'rect',
+        points: [
+          { x: 0, y: 0 },
+          { x: 1, y: 0.5 },
+        ],
+        slot: { x: 0.05, y: 0.1, width: 0.9 },
+      },
+      {
+        label: 'le sol',
+        correct: false,
+        shape: 'ellipse',
+        points: [
+          { x: 0.5, y: 0.75 },
+          { x: 0.7, y: 0.9 },
+        ],
+        slot: { x: 0.4, y: 0.6, width: 0.35 },
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Correcte');
+    expect(fixture.nativeElement.textContent).not.toContain('Incorrecte');
+    expect(fixture.nativeElement.querySelector('polygon.correct, rect.correct, ellipse.correct')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Magnétisme');
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'puzzle',
+      prompt: 'Reconstitue le dessin',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      boardMode: 'fond',
+      boardImageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      snapDistance: 0.08,
+      pieces: [
+        {
+          label: 'le ciel',
+          shape: 'rect',
+          points: [
+            { x: 0, y: 0 },
+            { x: 1, y: 0.5 },
+          ],
+          slotX: 0.05,
+          slotY: 0.1,
+          slotWidth: 0.9,
+        },
+        {
+          label: 'le sol',
+          shape: 'ellipse',
+          points: [
+            { x: 0.5, y: 0.75 },
+            { x: 0.7, y: 0.9 },
+          ],
+          slotX: 0.4,
+          slotY: 0.6,
+          slotWidth: 0.35,
+        },
+      ],
+    });
+    req.flush({
+      id: 15,
+      formCode: 'puzzle',
+      formLabel: 'Puzzle',
+      prompt: 'Reconstitue le dessin',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      boardMode: 'fond',
+      boardImageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      pieces: [
+        {
+          id: 1,
+          label: 'le ciel',
+          shape: 'rect',
+          points: [
+            { x: 0, y: 0 },
+            { x: 1, y: 0.5 },
+          ],
+          slotX: 0.05,
+          slotY: 0.1,
+          slotWidth: 0.9,
+        },
+        {
+          id: 2,
+          label: 'le sol',
+          shape: 'ellipse',
+          points: [
+            { x: 0.5, y: 0.75 },
+            { x: 0.7, y: 0.9 },
+          ],
+          slotX: 0.4,
+          slotY: 0.6,
+          slotWidth: 0.35,
+        },
+      ],
+      choices: [],
+      pairs: [],
+      items: [],
+      statements: [],
+      links: [],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Puzzle');
+    expect(fixture.nativeElement.textContent).toContain('le ciel');
+    expect(fixture.nativeElement.querySelector('polygon.correct, rect.correct, ellipse.correct')).toBeNull();
+  });
+
+  function bootSimon(questions: unknown[] = []): void {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'simon', label: 'Simon', sortOrder: 7 }] });
+    http.expectOne(questionsUrl).flush({ questions });
+    fixture.detectChanges();
+  }
+
+  it('posts a simon built by touching the elements in order and shows its summary', () => {
+    bootSimon();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Refais la suite');
+    page.setSimonElementLabel(0, 'rouge');
+    page.setSimonElementColor(0, '#ff0000');
+    page.setSimonElementLabel(1, 'bleu');
+    page.setSimonElementColor(1, '#0000ff');
+    fixture.detectChanges();
+
+    const stepChip = (label: string) =>
+      Array.from(fixture.nativeElement.querySelectorAll('button.form-chip') as NodeListOf<HTMLButtonElement>).find(
+        (button) => button.textContent?.trim() === label,
+      );
+    expect(stepChip('rouge')).toBeUndefined();
+
+    buttonNamed('Enregistrer')?.click();
+
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'simon',
+      prompt: 'Refais la suite',
+      elementType: 'libre',
+      elements: [{ color: '#ff0000' }, { color: '#0000ff' }],
+    });
+    req.flush({
+      id: 16,
+      formCode: 'simon',
+      formLabel: 'Simon',
+      prompt: 'Refais la suite',
+      elementType: 'couleurs',
+      elements: [
+        { id: 1, label: 'rouge', color: '#ff0000' },
+        { id: 2, label: 'bleu', color: '#0000ff' },
+      ],
+      sequence: [0, 1, 0],
+    });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Genre : couleurs');
+    expect(fixture.nativeElement.querySelectorAll('.saved .swatch').length).toBe(2);
+  });
+
+  it('keeps the simon editor open and says what is missing before sending', () => {
+    bootSimon();
+
+    buttonNamed('Enregistrer')?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Chaque élément est une image');
+    expect(buttonNamed('Ajouter un élément')).toBeTruthy();
+
+    const page = fixture.componentInstance;
+    page.setSimonType('nombres');
+    page.setSimonElementLabel(0, '1');
+    page.setSimonElementLabel(1, '2');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('La suite doit avoir au moins deux pas.');
+    expect(page.simonError()).toBeNull();
+
+    buttonNamed('Enregistrer')?.click();
+    const req = http.expectOne(questionsUrl);
+    expect(req.request.body).toEqual({
+      formCode: 'simon',
+      prompt: '',
+      elementType: 'libre',
+      elements: [{ label: '1' }, { label: '2' }],
+    });
+    req.flush({
+      id: 17,
+      formCode: 'simon',
+      formLabel: 'Simon',
+      elementType: 'nombres',
+      elements: [
+        { id: 1, label: '1' },
+        { id: 2, label: '2' },
+      ],
+      sequence: [1, 0],
+    });
+  });
+
+  it('drops the steps of a removed simon element and keeps the others on their element', () => {
+    boot();
+    const page = fixture.componentInstance;
+    page.addSimonElement();
+    page.addSimonStep(0);
+    page.addSimonStep(2);
+    page.addSimonStep(1);
+    page.addSimonStep(2);
+
+    page.removeSimonElement(1);
+
+    expect(page.simonElements().length).toBe(2);
+    expect(page.simonSequence()).toEqual([0, 1, 1]);
+  });
+
+  it('previews Simon with the issued sequence and the server verdict without Valider', fakeAsync(() => {
+    bootSimon([
+      {
+        id: 16,
+        formCode: 'simon',
+        formLabel: 'Simon',
+        prompt: 'Refais la suite',
+        elementType: 'nombres',
+        elements: [
+          { id: 1, label: '1' },
+          { id: 2, label: '2' },
+        ],
+        sequence: [1, 0],
+      },
+    ]);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Genre : nombres');
+    expect(root.textContent).toContain('Suite : 1. 2, 2. 1');
+
+    (root.querySelector('[data-testid="teacher-question-preview"]') as HTMLButtonElement).click();
+    http.expectOne(`${questionsUrl}/16/preview`).flush({
+      formCode: 'simon', formLabel: 'Simon', prompt: 'Refais la suite',
+      content: { elementType: 'nombres', elements: [{ label: '1' }, { label: '2' }], sequence: [1, 0] },
+    });
+    fixture.detectChanges();
+    expect(root.textContent).toContain('Regardez');
+    expect(root.querySelector('[data-testid="teacher-child-preview-submit"]')).toBeNull();
+
+    tick(3000);
+    fixture.detectChanges();
+    expect(root.textContent).toContain('Reproduisez');
+
+    (root.querySelector('[data-testid="child-play-view-simon-element-1"]') as HTMLButtonElement).click();
+    tick(4000);
+    fixture.detectChanges();
+    (root.querySelector('[data-testid="child-play-view-simon-element-1"]') as HTMLButtonElement).click();
+    (root.querySelector('[data-testid="child-play-view-simon-element-0"]') as HTMLButtonElement).click();
+    const grade = http.expectOne(`${questionsUrl}/16/preview/attempts`);
+    expect(grade.request.body.previewSequence).toEqual([1, 0]);
+    expect(grade.request.body.answer.simonSequence).toEqual([1, 0]);
+    grade.flush({ passed: true, scorePercent: 100 });
+    fixture.detectChanges();
+
+    expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('Bravo');
+    expect(root.querySelector('[data-testid="teacher-child-preview-result"]')?.textContent).toContain('100 %');
+    flush();
+  }));
+
+  it('sends the gamification chosen on the panel and reloads a saved question as returned', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [{
+        id: 7,
+        formCode: 'qcm',
+        formLabel: 'Choix multiples',
+        prompt: 'Déjà là',
+        choices: [
+          { id: 1, label: 'bleu', correct: true },
+          { id: 2, label: 'vert', correct: false },
+        ],
+        gamification: {
+          maxAttempts: 2,
+          difficulty: 'difficile',
+          difficultyLabel: 'Difficile',
+          customizePoints: true,
+          gamificationDisabled: true,
+          points: [30, 15],
+        },
+      }],
+    });
+    http.expectOne(gamificationUrl).flush(gamificationCatalog);
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    expect(page.gamification()?.difficultyLabel).toBe('Facile');
+    page.setAttempts('2');
+    page.setDifficultyIndex('1');
+    page.setCustomize(true);
+    page.setGamificationPoint(0, '20');
+    page.setGamificationPoint(1, '10');
+    page.setPrompt('Couleur du ciel ?');
+    page.setChoiceLabel(0, 'bleu');
+    page.setChoiceLabel(1, 'vert');
+    page.setChoiceCorrect(0, true);
+    page.save();
+
+    const created = http.expectOne(questionsUrl);
+    expect(created.request.method).toBe('POST');
+    expect(created.request.body.gamification).toEqual({
+      maxAttempts: 2,
+      difficulty: 'modere',
+      customizePoints: true,
+      gamificationDisabled: false,
+      points: [20, 10],
+    });
+    created.flush({
+      id: 8,
+      formCode: 'qcm',
+      formLabel: 'Choix multiples',
+      prompt: 'Couleur du ciel ?',
+      choices: [
+        { id: 1, label: 'bleu', correct: true },
+        { id: 2, label: 'vert', correct: false },
+      ],
+      gamification: {
+        maxAttempts: 2,
+        difficulty: 'modere',
+        difficultyLabel: 'Modéré',
+        customizePoints: true,
+        gamificationDisabled: false,
+        points: [20, 10],
+      },
+    });
+    fixture.detectChanges();
+
+    const editSaved = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((button) => button.textContent?.includes('Modifier') && button.closest('li')?.textContent?.includes('Déjà là'));
+    editSaved?.click();
+    fixture.detectChanges();
+    expect(page.gamification()).toEqual({
+      maxAttempts: 2,
+      difficulty: 'difficile',
+      difficultyLabel: 'Difficile',
+      customizePoints: true,
+      gamificationDisabled: true,
+      points: [30, 15],
+    });
+  });
+
+  it('keeps the edited timeline and its reordered image when the detail arrives', () => {
+    const question = {
+      id: 41,
+      formCode: 'order',
+      formLabel: 'Ordre',
+      prompt: 'Les étapes',
+      timelineEnabled: true,
+      items: [
+        { id: 11, label: '', axisLabel: 'Matin', hasImage: true },
+        { id: 12, label: 'Après-midi', axisLabel: '15 h' },
+      ],
+    };
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'order', label: 'Ordre' }] });
+    http.expectOne(questionsUrl).flush({ questions: [question] });
+    fixture.detectChanges();
+
+    buttonNamed('Modifier')?.click();
+    const detail = http.expectOne(`${questionsUrl}/41`);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const axis = [...root.querySelectorAll<HTMLInputElement>('input')].find((input) => input.value === 'Matin')!;
+    axis.value = '8 h';
+    axis.dispatchEvent(new Event('input', { bubbles: true }));
+    buttonNamed('↓')?.click();
+    fixture.detectChanges();
+    expect(buttonNamed('Enregistrer')?.disabled).toBeTrue();
+
+    detail.flush({
+      ...question,
+      items: [{ ...question.items[0], imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=' }, question.items[1]],
+    });
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+
+    const put = http.expectOne(`${questionsUrl}/41`);
+    expect(put.request.body.items).toEqual([
+      { label: 'Après-midi', axisLabel: '15 h' },
+      { imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=', axisLabel: '8 h' },
+    ]);
+    put.flush(question);
+  });
+
+  it('cancels older image loads when switching questions or canceling the edit', () => {
+    const question = {
+      id: 41,
+      formCode: 'qcm',
+      formLabel: 'Choix multiples',
+      prompt: 'Première',
+      choices: [{ id: 11, hasImage: true, correct: true }, { id: 12, label: 'Non', correct: false }],
+    };
+    const another = { ...question, id: 42, prompt: 'Deuxième' };
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'qcm', label: 'Choix multiples' }] });
+    http.expectOne(questionsUrl).flush({ questions: [question, another] });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const edit = [...root.querySelectorAll('button')].filter((button) => button.textContent?.trim() === 'Modifier');
+    edit[0].click();
+    const first = http.expectOne(`${questionsUrl}/41`);
+    edit[1].click();
+    const second = http.expectOne(`${questionsUrl}/42`);
+    expect(first.cancelled).toBeTrue();
+    if (!first.cancelled) {
+      first.flush({}, { status: 500, statusText: 'Server Error' });
+    }
+    fixture.detectChanges();
+    expect(root.textContent).toContain('Chargement des images');
+    expect(fixture.componentInstance.editingId()).toBe(42);
+    expect(fixture.componentInstance.error()).toBeNull();
+
+    buttonNamed('Annuler')?.click();
+    expect(second.cancelled).toBeTrue();
+    if (!second.cancelled) {
+      second.flush(another);
+    }
+    fixture.detectChanges();
+    expect(root.textContent).not.toContain('Chargement des images');
+  });
+
+  it('keeps edited text next to the image loaded for a Memory pair', () => {
+    const question = {
+      id: 43,
+      formCode: 'memory',
+      formLabel: 'Memory',
+      prompt: 'Associe chaque réponse',
+      pairs: [
+        { id: 11, questionHasImage: true, answerSide: 'Chat' },
+        { id: 12, questionSide: 'Balle', answerSide: 'Jouet' },
+      ],
+    };
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'memory', label: 'Memory' }] });
+    http.expectOne(questionsUrl).flush({ questions: [question] });
+    fixture.detectChanges();
+    buttonNamed('Modifier')?.click();
+    const detail = http.expectOne(`${questionsUrl}/43`);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const text = [...root.querySelectorAll<HTMLInputElement>('input')].find((input) => input.value === 'Chat')!;
+    expect(text.disabled).toBeFalse();
+    text.value = 'Chat noir';
+    text.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const image = 'UklGRiQAAABXRUJQVlA4IBgAAAA=';
+    detail.flush({ ...question, pairs: [{ ...question.pairs[0], questionImageWebp: image }, question.pairs[1]] });
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+    const put = http.expectOne(`${questionsUrl}/43`);
+    expect(put.request.body.pairs).toEqual([
+      { questionImageWebp: image, answerSide: 'Chat noir' },
+      { questionSide: 'Balle', answerSide: 'Jouet' },
+    ]);
+    put.flush(question);
+  });
+
+  it('loads the puzzle and its background while keeping the prompt edited during the request', () => {
+    const question = {
+      id: 42,
+      formCode: 'puzzle',
+      formLabel: 'Puzzle',
+      prompt: 'Place la pièce',
+      boardMode: 'fond',
+      snapDistance: 0.04,
+      pieces: [{
+        label: 'Le carré',
+        shape: 'rect',
+        points: [{ x: 0.1, y: 0.1 }, { x: 0.3, y: 0.3 }],
+        slotX: 0.5,
+        slotY: 0.5,
+      }],
+    };
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({ forms: [{ code: 'puzzle', label: 'Puzzle' }] });
+    http.expectOne(questionsUrl).flush({ questions: [question] });
+    fixture.detectChanges();
+    buttonNamed('Modifier')?.click();
+
+    const detail = http.expectOne(`${questionsUrl}/42`);
+    fixture.componentInstance.setPrompt('Place le carré');
+    const loaded = {
+      ...question,
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      boardImageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAE=',
+    };
+    detail.flush(loaded);
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+
+    const put = http.expectOne(`${questionsUrl}/42`);
+    expect(put.request.body).toEqual(jasmine.objectContaining({
+      prompt: 'Place le carré',
+      boardMode: 'fond',
+      imageWebp: loaded.imageWebp,
+      boardImageWebp: loaded.boardImageWebp,
+      pieces: question.pieces,
+    }));
+    put.flush(loaded);
+  });
+
+  it('reloads click image bytes before saving an edit from the stripped list', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'image_interactive', label: 'Image à cliquer', sortOrder: 8 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 42,
+          formCode: 'image_interactive',
+          formLabel: 'Image à cliquer',
+          prompt: 'Trouve le soleil',
+          imageWebp: '',
+          requireAllCorrect: true,
+          clicksOrdered: true,
+          zones: [
+            {
+              label: 'le soleil',
+              correct: true,
+              shape: 'polygon',
+              points: [
+                { x: 0.1, y: 0.2 },
+                { x: 0.3, y: 0.2 },
+                { x: 0.2, y: 0.4 },
+              ],
+              clickOrder: 1,
+            },
+          ],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    buttonNamed('Modifier')?.click();
+    const detail = http.expectOne(`${questionsUrl}/42`);
+    expect(detail.request.method).toBe('GET');
+    detail.flush({
+      id: 42,
+      formCode: 'image_interactive',
+      formLabel: 'Image à cliquer',
+      prompt: 'Trouve le soleil',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      requireAllCorrect: true,
+      clicksOrdered: true,
+      zones: [
+        {
+          label: 'le soleil',
+          correct: true,
+          shape: 'polygon',
+          points: [
+            { x: 0.1, y: 0.2 },
+            { x: 0.3, y: 0.2 },
+            { x: 0.2, y: 0.4 },
+          ],
+          clickOrder: 1,
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance;
+    page.setPrompt('Trouve encore le soleil');
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+
+    const put = http.expectOne(`${questionsUrl}/42`);
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body.prompt).toBe('Trouve encore le soleil');
+    expect(put.request.body.imageWebp).toBe('UklGRiQAAABXRUJQVlA4IBgAAAA=');
+    put.flush({
+      id: 42,
+      formCode: 'image_interactive',
+      formLabel: 'Image à cliquer',
+      prompt: 'Trouve encore le soleil',
+      imageWebp: 'UklGRiQAAABXRUJQVlA4IBgAAAA=',
+      requireAllCorrect: true,
+      clicksOrdered: true,
+      zones: [
+        {
+          label: 'le soleil',
+          correct: true,
+          shape: 'polygon',
+          points: [
+            { x: 0.1, y: 0.2 },
+            { x: 0.3, y: 0.2 },
+            { x: 0.2, y: 0.4 },
+          ],
+          clickOrder: 1,
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Trouve encore le soleil');
+  });
+
+  it('keeps the question list visible when a save returns a validation error', () => {
+    fixture.detectChanges();
+    http.expectOne(formsUrl).flush({
+      forms: [{ code: 'qcm', label: 'Choix multiples', sortOrder: 1 }],
+    });
+    http.expectOne(questionsUrl).flush({
+      questions: [
+        {
+          id: 7,
+          formCode: 'qcm',
+          formLabel: 'Choix multiples',
+          prompt: '2 + 2',
+          choices: [{ id: 1, label: '4', correct: true }],
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    buttonNamed('Modifier')?.click();
+    fixture.detectChanges();
+    fixture.componentInstance.setPrompt('2 + 3');
+    fixture.detectChanges();
+    buttonNamed('Enregistrer')?.click();
+
+    const put = http.expectOne(`${questionsUrl}/7`);
+    put.flush(
+      { message: "L'image est obligatoire." },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain("L'image est obligatoire.");
+    expect(fixture.nativeElement.textContent).toContain('2 + 2');
+    expect(fixture.nativeElement.querySelector('.saved')).not.toBeNull();
+  });
+
+  function buttonNamed(label: string): HTMLButtonElement | undefined {
+    return Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (button) => button.textContent?.includes(label),
+    );
+  }
+});

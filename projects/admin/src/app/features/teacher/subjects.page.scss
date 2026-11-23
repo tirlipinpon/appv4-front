@@ -1,0 +1,309 @@
+.card {
+  width: 100%;
+  height: fit-content;
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  color: var(--app-text-muted);
+}
+
+.error,
+.field-error,
+.confirm {
+  color: var(--app-error);
+  margin: 0.35rem 0 0;
+}
+
+.follower-names {
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 1.2rem;
+}
+
+.school {
+  margin-top: 1.5rem;
+  border: 1px solid var(--app-outline);
+  border-left: 4px solid var(--app-primary);
+  border-radius: var(--app-radius-card);
+  background: var(--app-surface-card);
+  box-shadow: 0 1px 2px rgb(26 61 124 / 8%);
+}
+
+.school-toggle[open] {
+  padding-bottom: 1rem;
+}
+
+.school-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.75rem;
+  row-gap: 0.15rem;
+  margin: 0;
+  padding: 0.7rem 1rem;
+  background: var(--app-primary-soft);
+  color: var(--app-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--app-outline);
+  cursor: pointer;
+  list-style: none;
+}
+
+.school-name::-webkit-details-marker {
+  display: none;
+}
+
+.school-name::marker {
+  content: '';
+}
+
+.school-name::before {
+  content: '▸';
+  color: var(--app-text-muted);
+  font-weight: 500;
+}
+
+.school-toggle[open] > .school-name::before {
+  content: '▾';
+}
+
+.school-toggle:not([open]) > .school-name {
+  border-bottom: 0;
+}
+
+.school-count {
+  margin-left: auto;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--app-text-muted);
+}
+
+.section-list {
+  flex: 1 0 100%;
+  padding-left: 1.15rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--app-text-muted);
+}
+
+.grade {
+  margin: 0 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--app-outline);
+}
+
+.grade:first-of-type {
+  border-top: 0;
+}
+
+.grade-name {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.subject-list {
+  margin-top: 0.75rem;
+}
+
+.subject-list summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.subject-list summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--app-outline);
+  border-radius: 8px;
+}
+
+.summary-row::after {
+  content: '▸';
+  color: var(--app-text-muted);
+}
+
+.subject-list[open] .summary-row::after {
+  content: '▾';
+}
+
+.list-label {
+  font-weight: 600;
+}
+
+.subject-list .count {
+  margin: 0 0 0 auto;
+}
+
+.subjects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.subject {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.75rem 0.4rem;
+  border: 1px solid var(--app-outline);
+  border-radius: 8px;
+}
+
+.headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.75rem;
+  width: 100%;
+}
+
+.name {
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.question-count {
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.name.inactive {
+  color: var(--app-text-muted);
+  font-weight: 500;
+}
+
+.subject .hint {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem 0.15rem;
+  margin: 0.1rem 0 0 -0.5rem;
+}
+
+.icon-picker {
+  flex: 1 1 100%;
+  margin: 0.35rem 0;
+}
+
+.add-icon {
+  flex: 1 1 100%;
+}
+
+.subject-icon {
+  margin-left: 0.35rem;
+  font-size: 1.1rem;
+}
+
+.subject-icon.tinted {
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px var(--subject-accent);
+}
+
+.add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.invites {
+  margin: 0.75rem 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--app-outline);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.invites-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.invite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.shared {
+  margin: 0;
+}
+
+.owner,
+.shared strong {
+  font-weight: 700;
+}
+
+.transfer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  width: 100%;
+}
+
+.colleagues,
+.colleague-list {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+  width: 100%;
+}
+
+.colleague-list li,
+.colleagues li {
+  flex: 0 0 auto;
+}
+
+.colleague-list button,
+.colleagues button {
+  white-space: nowrap;
+}
+
+button.selected {
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.refused,
+.list-label {
+  margin-left: 0.35rem;
+  font-style: italic;
+}
+
+.add-field,
+.rename-field {
+  flex: 1;
+  min-width: 12rem;
+  margin-bottom: -0.75rem;
+}
+
+.add-reuse {
+  flex: 1 1 100%;
+}
+
+.rename-field {
+  align-self: stretch;
+  width: 100%;
+}

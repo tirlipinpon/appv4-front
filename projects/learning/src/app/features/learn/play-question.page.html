@@ -1,0 +1,104 @@
+<section class="play" data-testid="play-question-panel">
+  <header class="play-top">
+    <a [routerLink]="['/learn', subjectId(), 'questions']" class="back" data-testid="play-back">← Questions</a>
+    <h1 data-testid="play-title">Jouer</h1>
+  </header>
+
+  @if (play.loading()) {
+    <p class="status" data-testid="play-loading">Chargement…</p>
+  } @else if (play.error(); as message) {
+    <p class="status error" role="alert" data-testid="play-error">{{ message }}</p>
+  }
+
+  @if (play.model(); as model) {
+    <app-child-question-play-view
+      [question]="model"
+      [interactive]="!play.result()"
+      [disabled]="play.disabled()"
+      [verifyMemoryPair]="play.verifyMemoryPair"
+      (choiceToggle)="play.onSelectionChange()"
+      (statementPick)="play.onSelectionChange()"
+      (memoryChange)="play.onSelectionChange()"
+      (orderChange)="play.onSelectionChange()"
+      (classificationChange)="play.onSelectionChange()"
+      (linksChange)="play.onSelectionChange()"
+      (gapsChange)="play.onSelectionChange()"
+      (imageChange)="play.onSelectionChange()"
+      (lettersChange)="play.onSelectionChange()"
+      (freeTextChange)="play.onSelectionChange()"
+      (puzzleChange)="play.onSelectionChange()"
+      (simonChange)="play.onSelectionChange()"
+    />
+
+    @if (!play.result() && !play.autoSubmit() && !play.needsReplay() && !play.canRetry() && !play.attemptsExhausted()) {
+      <button
+        type="button"
+        class="submit"
+        data-testid="play-submit"
+        [disabled]="!play.canSubmit()"
+        (click)="play.submit()"
+      >
+        {{ model.formCode === 'order' ? "Valider l'ordre" : 'Valider' }}
+      </button>
+    }
+
+    @if (play.attemptsRemaining() !== null) {
+      <p data-testid="play-attempts">Essais restants : {{ play.attemptsRemaining() }}</p>
+    }
+
+    @if (play.result(); as verdict) {
+      <div class="verdict" [class.ok]="verdict.passed === true" [class.ko]="verdict.passed !== true" data-testid="play-result">
+        <p class="verdict-title">{{ verdict.passed === true ? 'Bravo !' : 'Pas encore' }}</p>
+        <p data-testid="play-score">Score : {{ verdict.scorePercent }} %</p>
+        @if (verdict.pointsAwarded !== undefined && verdict.pointsAwarded !== null) {
+          <p data-testid="play-points">Points : {{ verdict.pointsAwarded }}</p>
+        }
+        @if (lessonFinishedLabel(verdict); as finished) {
+          <p data-testid="play-lesson-finished">{{ finished }}</p>
+        }
+        @if (verdict.mark === 'yellow') {
+          <p class="mark">
+            <span class="star star-yellow" data-testid="play-star" aria-hidden="true">★</span>
+            <span data-testid="play-yellow-count">{{ verdict.yellowCount }}</span>
+          </p>
+        } @else if (verdict.mark === 'black') {
+          <p class="mark">
+            <span class="star star-black" data-testid="play-star" aria-hidden="true">★</span>
+          </p>
+        }
+      </div>
+      <div class="after">
+        @if (verdict.replayAvailable === true) {
+          <button type="button" class="submit secondary" data-testid="play-replay" (click)="play.replay()">Rejouer</button>
+        }
+        @if (nextId(); as following) {
+          <a
+            [routerLink]="['/learn', subjectId(), 'play', following]"
+            [state]="sameQueue()"
+            class="submit secondary link"
+            data-testid="play-next"
+          >
+            Question suivante
+          </a>
+        }
+        <a
+          [routerLink]="['/learn', subjectId(), 'questions']"
+          class="submit secondary link"
+          data-testid="play-to-list"
+        >
+          Retour aux questions
+        </a>
+      </div>
+    }
+  }
+
+  @if (play.saving()) {
+    <p class="status" role="status">Enregistrement…</p>
+  } @else if (play.canRetry()) {
+    <button type="button" class="submit" data-testid="play-retry" (click)="play.retry()">Renvoyer ma réponse</button>
+  } @else if (play.needsReplay()) {
+    <button type="button" class="submit secondary" data-testid="play-replay" (click)="play.replay()">
+      {{ play.model() ? 'Rejouer' : 'Recharger la question' }}
+    </button>
+  }
+</section>

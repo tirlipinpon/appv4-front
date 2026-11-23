@@ -1,0 +1,153 @@
+<section class="avatar" data-testid="profile-panel">
+  @if (loading()) {
+    <p class="avatar-status" data-testid="profile-loading">Chargement…</p>
+  } @else if (error(); as message) {
+    <p class="avatar-status avatar-error" role="alert" data-testid="profile-error">{{ message }}</p>
+  } @else if (avatar(); as person) {
+    <p class="avatar-eyebrow">Ton personnage</p>
+    <h1>Mon avatar</h1>
+
+    <article class="avatar-preview" data-testid="profile-preview">
+      @if (faceUri(); as src) {
+        <img class="avatar-face" data-testid="profile-face" [src]="src" alt="" />
+      }
+      <p class="avatar-style" data-testid="profile-style">{{ styleName() }}</p>
+      <p class="avatar-choices" data-testid="profile-choices">{{ choiceText() }}</p>
+      @if (styleCredit()) {
+        <p class="avatar-credit" data-testid="profile-credit">{{ styleCredit() }}</p>
+      }
+    </article>
+
+    <div class="avatar-config">
+    @if (person.styles?.length) {
+      <details class="avatar-fold" data-testid="profile-styles-toggle">
+        <summary>
+          @if (faceUri(); as src) {
+            <img class="avatar-config-icon" [src]="src" alt="" />
+          }
+          <span class="avatar-fold-label">{{ styleName() }}</span>
+        </summary>
+        <ul class="avatar-chips" data-testid="profile-styles">
+          @for (style of person.styles; track style.code) {
+            <li>
+              <button
+                type="button"
+                class="avatar-chip"
+                [class.avatar-chip--on]="draftStyle() === style.code"
+                [attr.data-testid]="'profile-style-choice-' + style.code"
+                [attr.aria-pressed]="draftStyle() === style.code"
+                [disabled]="saving()"
+                (click)="chooseStyle(style.code)"
+              >
+                {{ style.name }}
+              </button>
+            </li>
+          }
+        </ul>
+      </details>
+    }
+
+    @if (draftPresets().length) {
+      <details class="avatar-fold" data-testid="profile-presets-toggle">
+        <summary>
+          <span
+            class="avatar-config-icon avatar-swatch"
+            [style.background]="presetSwatch()"
+          ></span>
+          <span class="avatar-fold-label">{{ presetName() }}</span>
+        </summary>
+        <ul class="avatar-chips" data-testid="profile-presets">
+          @for (preset of draftPresets(); track preset.id) {
+            <li>
+              <button
+                type="button"
+                class="avatar-chip"
+                [class.avatar-chip--on]="draftPreset() === preset.id"
+                [attr.data-testid]="'profile-preset-' + preset.id"
+                [attr.aria-pressed]="draftPreset() === preset.id"
+                [disabled]="saving()"
+                (click)="choosePreset(preset.id)"
+              >
+                {{ preset.name }}
+              </button>
+            </li>
+          }
+        </ul>
+      </details>
+    }
+    </div>
+
+    @if (openZones().length || closedZones().length) {
+      <div class="avatar-zones" data-testid="profile-zones">
+        @for (zone of openZones(); track zone.code) {
+          <details class="avatar-fold" [attr.data-testid]="'profile-zone-' + zone.code">
+            <summary>
+              <app-avatar-zone-icon [code]="zone.code ?? null" />
+              <span class="avatar-fold-label">{{ zone.label }}</span>
+              <span class="avatar-fold-side" [attr.data-testid]="'profile-open-' + zone.code">Ouvert</span>
+            </summary>
+            @if (zone.variants) {
+              <ul class="avatar-grid">
+                @for (variant of zone.variants; track variant.code) {
+                  <li>
+                    <button
+                      type="button"
+                      class="avatar-tile"
+                      [class.avatar-tile--on]="pressed(zone.code, variant.code) === true"
+                      [attr.aria-pressed]="pressed(zone.code, variant.code)"
+                      [attr.data-testid]="'profile-variant-' + zone.code + '-' + variant.code"
+                      [disabled]="saving()"
+                      (click)="chooseVariant(zone.code, variant.code)"
+                    >
+                      @if (tileUri(zone.code, variant.code); as tile) {
+                        <img [src]="tile" alt="" />
+                      }
+                      <span class="avatar-tile-label">{{ variant.label }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </details>
+        }
+        @for (zone of closedZones(); track zone.code) {
+          <article class="avatar-later" [attr.data-testid]="'profile-zone-' + zone.code">
+            <span class="avatar-lock-badge">
+              <app-avatar-zone-icon [code]="zone.code ?? null" />
+              <svg class="avatar-lock" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="6" y="11" width="12" height="9" rx="2" />
+                <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+              </svg>
+            </span>
+            <div class="avatar-later-copy">
+              <h2>{{ zone.label }}</h2>
+              @if (zone.missingLabel) {
+                <p class="avatar-missing" [attr.data-testid]="'profile-missing-' + zone.code">
+                  {{ zone.missingLabel }}
+                </p>
+              }
+            </div>
+            @if (zone.thresholdLabel) {
+              <p class="avatar-lock-chip" [attr.data-testid]="'profile-threshold-' + zone.code">
+                {{ zone.thresholdLabel }}
+              </p>
+            }
+          </article>
+        }
+      </div>
+    }
+
+    <button
+      type="button"
+      class="avatar-save"
+      data-testid="profile-save"
+      [disabled]="saving()"
+      (click)="save()"
+    >
+      Enregistrer
+    </button>
+    @if (saveError(); as message) {
+      <p class="avatar-status avatar-error" role="alert" data-testid="profile-save-error">{{ message }}</p>
+    }
+  }
+</section>

@@ -1,0 +1,20 @@
+@if (tabs().length > 0) {
+  <nav class="tabs" aria-label="Espaces">
+    @for (tab of tabs(); track tab.role) {
+      <button
+        type="button"
+        class="tab"
+        [class.is-current]="tab.current"
+        [attr.aria-current]="tab.current ? 'page' : null"
+        [attr.data-testid]="'role-tab-' + tab.role"
+        [disabled]="loading()"
+        (click)="open(tab.role)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+}
+@if (error()) {
+  <span class="switch-error" role="alert">{{ error() }}</span>
+}

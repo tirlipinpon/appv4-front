@@ -1,0 +1,66 @@
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.queue-count {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-space-2);
+  margin: var(--app-space-2) 0 var(--app-space-3);
+  padding: 0;
+  list-style: none;
+  color: var(--app-text-muted);
+}
+
+.queue-count strong {
+  color: var(--app-text);
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+section + section {
+  margin-top: 2rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--app-space-2);
+  padding: 0.85rem var(--app-space-2);
+  margin-bottom: var(--app-space-1);
+  background: var(--app-surface-card);
+  border-radius: var(--app-radius-card);
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.row span {
+  display: block;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+}
+
+.empty {
+  margin: 0;
+  color: var(--app-text-muted);
+}
+
+.hint {
+  margin: 0 0 1.25rem;
+  color: var(--app-text-muted);
+}
+
+.error {
+  color: var(--app-error);
+}

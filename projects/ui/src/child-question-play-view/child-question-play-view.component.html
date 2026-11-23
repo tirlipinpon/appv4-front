@@ -1,0 +1,718 @@
+<div class="child-play-view" data-testid="child-question-play-view">
+  @if (question().formLabel || question().formIconCode) {
+    <p class="child-play-view-form" data-testid="child-play-view-form">
+      <app-question-form-mark
+        [iconCode]="question().formIconCode"
+        [color]="question().formColor"
+        [label]="question().formLabel ?? ''"
+      />
+    </p>
+  }
+  @if (question().prompt && !isOrderedImage()) {
+    <p class="child-play-view-prompt" data-testid="child-play-view-prompt">{{ question().prompt }}</p>
+  }
+
+  @if (!playable()) {
+    <p class="child-play-view-empty" data-testid="child-play-view-unsupported">
+      Aperçu enfant pas encore disponible pour cette forme.
+    </p>
+  }
+
+  @if (isQcm()) {
+    <ul class="child-play-view-options" data-testid="child-play-view-qcm">
+      @for (choice of displayChoices(); track choice.choiceId ?? choice.label) {
+        <li>
+          <button
+            type="button"
+            class="child-play-view-option"
+            [class.selected]="choiceSelected(choice.choiceId)"
+            [disabled]="disabled() || !interactive()"
+            [attr.data-testid]="'child-play-view-choice-' + (choice.choiceId ?? 'x')"
+            (click)="onChoice(choice)"
+          >
+            @if (choice.imageWebp) {
+              <img [src]="pieceSrc(choice.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 8rem; object-fit: contain" />
+            } @else {
+              {{ choice.label }}
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (isTrueFalse()) {
+    <ul class="child-play-view-statements" data-testid="child-play-view-true-false">
+      @for (statement of displayStatements(); track statement.statementId ?? statement.label; let i = $index) {
+        <li class="child-play-view-card" [attr.data-testid]="'child-play-view-statement-' + statementKey(statement, i)">
+          <p class="child-play-view-statement-label">
+            @if (statement.imageWebp) {
+              <img [src]="pieceSrc(statement.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 8rem; object-fit: contain" />
+            } @else {
+              {{ statement.label }}
+            }
+          </p>
+          <div class="child-play-view-tf">
+            @for (value of tfOrderFor(statementKey(statement, i)); track value) {
+              <button
+                type="button"
+                class="child-play-view-tf-btn"
+                [class.selected]="statementValue(statementKey(statement, i)) === value"
+                [disabled]="disabled() || !interactive()"
+                [attr.data-testid]="
+                  'child-play-view-tf-' + statementKey(statement, i) + '-' + (value === true ? 'true' : 'false')
+                "
+                (click)="onStatement(statementKey(statement, i), value)"
+              >
+                {{ value === true ? 'Vrai' : 'Faux' }}
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (isMemory()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-memory-hint">
+      Retourne deux cartes. Les paires vont ensemble.
+    </p>
+    <div class="child-play-view-memory" data-testid="child-play-view-memory">
+      @for (card of displayMemoryCards(); track card.key) {
+        <button
+          type="button"
+          class="child-play-view-memory-card"
+          [class.face-up]="cardFaceUp(card)"
+          [class.matched]="cardMatched(card)"
+          [class.active]="flippedKeys().includes(card.key) && !cardMatched(card)"
+          [disabled]="disabled() || !interactive() || flipBusy() || cardMatched(card)"
+          [attr.data-testid]="'child-play-view-memory-card-' + card.key"
+          (click)="onMemoryCard(card)"
+        >
+          {{ cardFaceUp(card) ? '' : '?' }}
+          @if (cardFaceUp(card) && card.imageWebp) {
+            <img [src]="pieceSrc(card.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+          } @else if (cardFaceUp(card)) {
+            {{ card.label }}
+          }
+        </button>
+      }
+    </div>
+    @if (memoryError()) {
+      <p class="child-play-view-memory-status" role="alert">
+        Impossible de vérifier les cartes. Tu peux les retourner à nouveau.
+      </p>
+    }
+    @if (memoryStatus()) {
+      <p class="child-play-view-memory-status" data-testid="child-play-view-memory-status">
+        {{ memoryStatus() }}
+      </p>
+    }
+  }
+
+  @if (isOrder()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-order-hint">
+      Glisse les étapes, ou utilise les flèches haut / bas.
+    </p>
+    <ul
+      class="child-play-view-order"
+      [class.timeline]="isTimeline()"
+      cdkDropList
+      data-testid="child-play-view-order"
+      [cdkDropListDisabled]="disabled() || !interactive()"
+      (cdkDropListDropped)="onOrderDrop($event)"
+    >
+      @for (item of orderedItems(); track item.key; let i = $index) {
+        <li
+          class="child-play-view-order-row"
+          cdkDrag
+          [cdkDragDisabled]="disabled() || !interactive()"
+          [attr.data-testid]="'child-play-view-order-item-' + item.key"
+        >
+          <span class="child-play-view-order-index">{{ i + 1 }}</span>
+          <span class="child-play-view-order-label">
+            @if (isTimeline() && item.axisLabel) {
+              <span class="child-play-view-order-axis" [attr.data-testid]="'child-play-view-order-axis-' + item.key">
+                {{ item.axisLabel }}
+              </span>
+            }
+            @if (item.imageWebp) {
+              <img [src]="pieceSrc(item.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+            } @else {
+              {{ item.label }}
+            }
+          </span>
+          <div class="child-play-view-order-actions">
+            <button
+              type="button"
+              class="child-play-view-order-move"
+              data-testid="child-play-view-order-up"
+              [disabled]="disabled() || !interactive() || i === 0"
+              (click)="moveOrderItem(i, -1)"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              class="child-play-view-order-move"
+              data-testid="child-play-view-order-down"
+              [disabled]="disabled() || !interactive() || i === orderedItems().length - 1"
+              (click)="moveOrderItem(i, 1)"
+            >
+              ↓
+            </button>
+            <button
+              type="button"
+              class="child-play-view-order-handle"
+              cdkDragHandle
+              data-testid="child-play-view-order-handle"
+              [disabled]="disabled() || !interactive()"
+              aria-label="Glisser"
+            >
+              ⋮⋮
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (isClassification()) {
+    <div class="child-play-view-class" data-testid="child-play-view-classement">
+      <section class="child-play-view-class-pile">
+        <header class="child-play-view-class-head">
+          <h3>Cartes à classer</h3>
+          <span class="child-play-view-class-badge" data-testid="child-play-view-class-remaining">
+            {{ remainingCount() }} restante{{ remainingCount() === 1 ? '' : 's' }}
+          </span>
+        </header>
+        <div
+          class="child-play-view-class-drop"
+          id="source"
+          cdkDropList
+          role="button"
+          tabindex="0"
+          [cdkDropListData]="sourceCards()"
+          [cdkDropListConnectedTo]="classListIds()"
+          [cdkDropListDisabled]="disabled() || !interactive()"
+          data-testid="child-play-view-class-source"
+          (cdkDropListDropped)="onClassDrop($event, 'source')"
+          (click)="onSourceTap()"
+          (keydown.enter)="onSourceTap()"
+          (keydown.space)="$event.preventDefault(); onSourceTap()"
+        >
+          @for (card of sourceCards(); track card.key) {
+            <button
+              type="button"
+              class="child-play-view-class-card"
+              cdkDrag
+              [cdkDragDisabled]="disabled() || !interactive()"
+              [class.selected]="selectedClassCardKey() === card.key"
+              [attr.data-testid]="'child-play-view-class-card-' + card.key"
+              (click)="$event.stopPropagation(); onClassCardTap(card)"
+            >
+              @if (card.imageWebp) {
+                <img [src]="pieceSrc(card.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+              } @else {
+                {{ card.label }}
+              }
+            </button>
+          } @empty {
+            <p class="child-play-view-class-empty">Toutes les cartes sont placées</p>
+          }
+        </div>
+      </section>
+
+      @for (column of classColumns(); track column.key; let colIndex = $index) {
+        <section class="child-play-view-class-column" [attr.data-accent]="colIndex % 4">
+          <header class="child-play-view-class-head">
+            <h3>{{ column.label }}</h3>
+            <span class="child-play-view-class-count">{{ column.cards.length }}</span>
+          </header>
+          <div
+            class="child-play-view-class-drop"
+            [id]="column.key"
+            cdkDropList
+            role="button"
+            tabindex="0"
+            [cdkDropListData]="column.cards"
+            [cdkDropListConnectedTo]="classListIds()"
+            [cdkDropListDisabled]="disabled() || !interactive()"
+            [attr.data-testid]="'child-play-view-class-column-' + column.key"
+            (cdkDropListDropped)="onClassDrop($event, column.key)"
+            (click)="onColumnTap(column)"
+            (keydown.enter)="onColumnTap(column)"
+            (keydown.space)="$event.preventDefault(); onColumnTap(column)"
+          >
+            @for (card of column.cards; track card.key) {
+              <button
+                type="button"
+                class="child-play-view-class-card"
+                cdkDrag
+                [cdkDragDisabled]="disabled() || !interactive()"
+                [class.selected]="selectedClassCardKey() === card.key"
+                [attr.data-testid]="'child-play-view-class-card-' + card.key"
+                (click)="$event.stopPropagation(); onClassCardTap(card)"
+              >
+                @if (card.imageWebp) {
+                <img [src]="pieceSrc(card.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+              } @else {
+                {{ card.label }}
+              }
+              </button>
+            } @empty {
+              <p class="child-play-view-class-empty">Déposez les cartes ici</p>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+
+  @if (isLinks()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-links-hint">
+      Choisis un mot, puis sa réponse.
+    </p>
+    <div class="child-play-view-links" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem" data-testid="child-play-view-links">
+      <ul class="child-play-view-options">
+        @for (row of linkLefts(); track row.key) {
+          <li>
+            <button
+              type="button"
+              class="child-play-view-option"
+              [class.selected]="linkLeftSelected(row.key) || linkSidePaired(row.key, 'left')"
+              [disabled]="disabled() || !interactive()"
+              [attr.data-testid]="'child-play-view-link-left-' + row.key"
+              (click)="onLinkLeft(row)"
+            >
+              @if (row.imageWebp) {
+                <img [src]="pieceSrc(row.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+              } @else {
+                {{ row.label }}
+              }
+            </button>
+          </li>
+        }
+      </ul>
+      <ul class="child-play-view-options">
+        @for (row of linkRights(); track row.key) {
+          <li>
+            <button
+              type="button"
+              class="child-play-view-option"
+              [class.selected]="linkSidePaired(row.key, 'right')"
+              [disabled]="disabled() || !interactive()"
+              [attr.data-testid]="'child-play-view-link-right-' + row.key"
+              (click)="onLinkRight(row)"
+            >
+              @if (row.imageWebp) {
+                <img [src]="pieceSrc(row.imageWebp)" alt="" style="display: block; max-width: 100%; max-height: 6rem; object-fit: contain" />
+              } @else {
+                {{ row.label }}
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+    @if (linksStatus()) {
+      <p class="child-play-view-hint" data-testid="child-play-view-links-status">{{ linksStatus() }}</p>
+    }
+  }
+
+  @if (isGaps()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-gaps-hint">
+      Choisis un trou, puis un mot. Tu peux aussi glisser le mot dans le trou.
+    </p>
+    <p
+      data-testid="child-play-view-gaps"
+      style="margin: 0 0 0.85rem; font-weight: 700; line-height: 2.6rem"
+    >
+      @for (part of gapParts(); track $index) {
+        @if (part.kind === 'text') {
+          <span>{{ part.text }}</span>
+        } @else {
+          <span
+            cdkDropList
+            cdkDropListSortingDisabled
+            [id]="'gap-hole-' + part.holeIndex"
+            [cdkDropListData]="gapHoleWords(part.holeIndex)"
+            [cdkDropListConnectedTo]="gapDropIds()"
+            [cdkDropListDisabled]="disabled() || !interactive()"
+            role="button"
+            tabindex="0"
+            [style.width]="gapHoleSize()"
+            [style.min-width]="gapHoleSize()"
+            [style.max-width]="gapHoleSize()"
+            [style.border-color]="selectedGapHole() === part.holeIndex ? 'var(--app-primary, #7c5cff)' : 'color-mix(in srgb, var(--app-primary, #7c5cff) 55%, var(--app-outline, #e4e7ee))'"
+            [style.background]="gapHoleWords(part.holeIndex).length > 0 || selectedGapHole() === part.holeIndex ? 'color-mix(in srgb, var(--app-primary, #7c5cff) 22%, transparent)' : 'transparent'"
+            style="display: inline-flex; vertical-align: middle; align-items: center; justify-content: center; box-sizing: border-box; height: 2.25rem; min-height: 2.25rem; max-height: 2.25rem; margin: 0 0.15rem; padding: 0 0.45rem; overflow: hidden; border-radius: 999px; border: 2px solid; cursor: pointer; color: inherit"
+            [attr.data-testid]="'child-play-view-gap-hole-' + part.holeIndex"
+            (click)="onGapHole(part.holeIndex)"
+            (keydown.enter)="onGapHole(part.holeIndex)"
+            (keydown.space)="$event.preventDefault(); onGapHole(part.holeIndex)"
+            (cdkDropListDropped)="onGapDrop($event, part.holeIndex)"
+          >
+            @for (word of gapHoleWords(part.holeIndex); track word.key) {
+              <button
+                type="button"
+                cdkDrag
+                [cdkDragData]="word"
+                [cdkDragDisabled]="disabled() || !interactive()"
+                style="display: block; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 800; line-height: 1; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+                (click)="$event.stopPropagation(); onGapChip(word)"
+              >
+                {{ word.label }}
+              </button>
+            } @empty {
+              <span style="font-weight: 800; opacity: 0.75">—</span>
+            }
+          </span>
+        }
+      }
+    </p>
+    <div
+      cdkDropList
+      id="gap-bank"
+      [cdkDropListData]="gapBank()"
+      [cdkDropListConnectedTo]="gapDropIds()"
+      [cdkDropListDisabled]="disabled() || !interactive()"
+      data-testid="child-play-view-gap-bank"
+      style="display: flex; flex-wrap: wrap; gap: 0.5rem"
+      (cdkDropListDropped)="onGapDrop($event, null)"
+    >
+      @for (word of gapBank(); track word.key) {
+        <button
+          type="button"
+          class="child-play-view-option"
+          style="width: auto"
+          cdkDrag
+          [cdkDragData]="word"
+          [cdkDragDisabled]="disabled() || !interactive()"
+          [disabled]="disabled() || !interactive()"
+          [attr.data-testid]="'child-play-view-gap-word-' + word.key"
+          (click)="onGapWord(word)"
+        >
+          {{ word.label }}
+        </button>
+      }
+    </div>
+    @if (gapsStatus()) {
+      <p class="child-play-view-hint" data-testid="child-play-view-gaps-status">{{ gapsStatus() }}</p>
+    }
+  }
+
+  @if (isImage()) {
+    @if (isOrderedImage()) {
+      <p class="child-play-view-prompt" data-testid="child-play-view-click-prompt">{{ currentClickPrompt() }}</p>
+      <p class="child-play-view-hint" data-testid="child-play-view-click-progress">{{ clickProgress() }}</p>
+    } @else if ((question().clickSteps ?? []).length) {
+      <p class="child-play-view-hint" data-testid="child-play-view-click-targets-title">À trouver :</p>
+    }
+    @if ((question().clickSteps ?? []).length) {
+      <ul
+        data-testid="child-play-view-click-targets"
+        style="margin: 0 0 0.75rem; padding: 0; list-style: none; display: grid; gap: 0.4rem"
+      >
+        @for (step of question().clickSteps ?? []; track step.zoneId ?? step.prompt; let i = $index) {
+          <li
+            [attr.data-testid]="'child-play-view-click-target-' + (step.zoneId ?? i)"
+            [style.opacity]="isOrderedImage() && i > clickStep() ? '0.4' : '1'"
+            [style.font-weight]="isOrderedImage() && i === clickStep() ? '800' : '600'"
+            style="display: flex; align-items: center; gap: 0.5rem"
+          >
+            @if (markForZone(step.zoneId); as mark) {
+              <span
+                [attr.data-testid]="'child-play-view-click-target-mark-' + mark"
+                style="display: grid; width: 1.5rem; height: 1.5rem; flex: 0 0 1.5rem; place-items: center; border-radius: 999px; background: #7c5cff; color: #fff; font-weight: 800; font-size: 0.85rem"
+              >{{ mark }}</span>
+            } @else if (isOrderedImage() && i === clickStep()) {
+              <span
+                data-testid="child-play-view-click-target-current"
+                style="display: grid; width: 1.5rem; height: 1.5rem; flex: 0 0 1.5rem; place-items: center; border-radius: 999px; border: 2px solid #7c5cff; color: #7c5cff; font-weight: 800; font-size: 0.85rem"
+                aria-hidden="true"
+              >{{ i + 1 }}</span>
+            } @else {
+              <span
+                style="display: grid; width: 1.5rem; height: 1.5rem; flex: 0 0 1.5rem; place-items: center; border-radius: 999px; border: 2px dashed color-mix(in srgb, currentColor 35%, transparent)"
+                aria-hidden="true"
+              ></span>
+            }
+            <span>{{ step.prompt }}</span>
+          </li>
+        }
+      </ul>
+    }
+    @if (imageSrc()) {
+      <div
+        data-testid="child-play-view-click-image"
+        role="button"
+        tabindex="0"
+        style="position: relative; width: 100%; border-radius: 1rem; overflow: hidden"
+        (click)="onImageClick($event)"
+        (keydown.enter)="$event.preventDefault()"
+        (keydown.space)="$event.preventDefault()"
+      >
+        <img [src]="imageSrc()" alt="" style="display: block; width: 100%; height: auto" />
+        @for (mark of clickMarks(); track $index) {
+          <span
+            [attr.data-testid]="'child-play-view-click-mark-' + mark.n"
+            [style.left.%]="mark.x * 100"
+            [style.top.%]="mark.y * 100"
+            style="position: absolute; z-index: 1; display: grid; width: 1.75rem; height: 1.75rem; place-items: center; border-radius: 999px; background: #7c5cff; color: #fff; font-weight: 800; transform: translate(-50%, -50%); pointer-events: none"
+          >{{ mark.n }}</span>
+        }
+      </div>
+    }
+    @if (clickMiss()) {
+      <p class="child-play-view-hint" data-testid="child-play-view-click-miss">Pas celle-ci.</p>
+    } @else if (!isOrderedImage()) {
+      <p class="child-play-view-hint" data-testid="child-play-view-click-hint">
+        Touche chaque élément de la liste, puis Valider.
+      </p>
+    } @else {
+      <p class="child-play-view-hint" data-testid="child-play-view-click-hint">
+        Un bon clic passe à la question suivante.
+      </p>
+    }
+  }
+
+  @if (isPuzzle()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-puzzle-hint">
+      Glisse chaque pièce sur le plateau. Elle se colle toute seule près du bon endroit.
+    </p>
+    <div
+      data-testid="child-play-view-puzzle-layout"
+      style="display: flex; gap: 0.65rem; align-items: flex-start; width: 100%"
+    >
+      <div
+        #puzzleStage
+        data-testid="child-play-view-puzzle-board"
+        [style.position]="'relative'"
+        [style.flex]="'1 1 auto'"
+        [style.min-width]="'0'"
+        [style.border-radius]="'1rem'"
+        [style.overflow]="'hidden'"
+        [style.background]="
+          puzzleBoardBlank()
+            ? 'color-mix(in srgb, var(--app-surface-card, #1a1436) 70%, #fff)'
+            : 'transparent'
+        "
+        [style.min-height]="puzzleBoardBlank() && !puzzleBoardSrc() ? '14rem' : null"
+        [style.aspect-ratio]="
+          puzzleBoardBlank() && !puzzleBoardSrc() ? puzzleBoardAspect() : null
+        "
+        [style.touch-action]="'none'"
+      >
+        @if (puzzleBoardSrc()) {
+          <img [src]="puzzleBoardSrc()" alt="" style="display: block; width: 100%; height: auto; pointer-events: none" />
+        }
+        @for (piece of puzzlePieces(); track piece.key; let pieceIndex = $index) {
+          @if (piece.placement; as spot) {
+            @if (piece.url) {
+              <img
+                [src]="piece.url"
+                alt=""
+                draggable="false"
+                [attr.aria-label]="piece.label || 'Pièce'"
+                [attr.data-testid]="'child-play-view-puzzle-token-' + (piece.pieceId ?? pieceIndex)"
+                [style.position]="'absolute'"
+                [style.left.%]="spot.x * 100"
+                [style.top.%]="spot.y * 100"
+                [style.width.%]="pieceWidthPercent(piece)"
+                [style.height]="'auto'"
+                [style.z-index]="puzzleDragIndex() === pieceIndex ? 1000 : pieceIndex + 1"
+                [style.outline]="isPuzzleFit(pieceIndex) ? '3px solid var(--app-form-vrai-faux, #2bb673)' : null"
+                [style.outline-offset]="'2px'"
+                [style.cursor]="disabled() || !interactive() ? 'default' : 'grab'"
+                [style.opacity]="puzzleDragIndex() === pieceIndex ? '0.35' : '1'"
+                [style.pointer-events]="disabled() || !interactive() ? 'none' : 'auto'"
+                (pointerdown)="onPuzzlePieceDown($event, pieceIndex)"
+              />
+            }
+          }
+        }
+      </div>
+      <ul
+        data-testid="child-play-view-puzzle-tray"
+        style="list-style: none; margin: 0; padding: 0.35rem 0.2rem; display: flex; flex: 0 0 4.75rem; flex-direction: column; gap: 0.55rem; align-items: center; overflow-y: auto; max-height: min(70vh, 28rem)"
+      >
+        @for (row of puzzleTrayPieces(); track row.piece.key) {
+          <li style="display: grid; gap: 0.2rem; justify-items: center; width: 100%">
+            @if (row.piece.url) {
+              <img
+                [src]="row.piece.url"
+                alt=""
+                draggable="false"
+                [attr.aria-label]="row.piece.label || 'Pièce'"
+                [attr.data-testid]="'child-play-view-puzzle-tray-' + (row.piece.pieceId ?? row.index)"
+                style="width: 3.4rem; height: auto; max-height: 3.4rem; object-fit: contain; cursor: grab; touch-action: none"
+                [style.opacity]="puzzleDragIndex() === row.index ? '0.35' : '1'"
+                [style.pointer-events]="disabled() || !interactive() ? 'none' : 'auto'"
+                (pointerdown)="onPuzzlePieceDown($event, row.index)"
+              />
+            }
+            <span style="font-size: 0.65rem; font-weight: 700; text-align: center; line-height: 1.15; max-width: 100%; overflow: hidden; text-overflow: ellipsis">{{
+              row.piece.label || 'Pièce'
+            }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+    @if (puzzleGhost(); as ghost) {
+      <img
+        [src]="ghost.url"
+        alt=""
+        draggable="false"
+        data-testid="child-play-view-puzzle-ghost"
+        [style.position]="'fixed'"
+        [style.left.px]="ghost.left"
+        [style.top.px]="ghost.top"
+        [style.width.px]="ghost.width"
+        [style.height]="'auto'"
+        [style.z-index]="'2000'"
+        [style.pointer-events]="'none'"
+        [style.opacity]="'0.95'"
+      />
+    }
+  }
+
+  @if (isFreeText()) {
+    <input
+      type="text"
+      autocomplete="off"
+      maxlength="500"
+      aria-label="Réponse"
+      data-testid="child-play-view-free-text"
+      [value]="freeText()"
+      [disabled]="disabled() || !interactive()"
+      [style.box-sizing]="'border-box'"
+      [style.width]="'100%'"
+      [style.max-width]="'28rem'"
+      [style.margin]="'0.35rem 0 0.75rem'"
+      [style.padding]="'0.85rem 1rem'"
+      [style.border]="'2px solid color-mix(in srgb, var(--app-primary, #7c5cff) 45%, var(--app-outline, #4a3f6e))'"
+      [style.border-radius]="'0.9rem'"
+      [style.font]="'inherit'"
+      [style.font-size]="'1.15rem'"
+      [style.font-weight]="'700'"
+      [style.color]="'var(--app-text, #f5f1ff)'"
+      [style.background]="'color-mix(in srgb, var(--app-surface-card, #1a1436) 88%, var(--app-primary, #7c5cff))'"
+      (input)="onFreeTextInput($event)"
+    />
+  }
+
+  @if (isLetters()) {
+    <div
+      class="child-play-view-letters"
+      data-testid="child-play-view-letters"
+      style="display: flex; flex-wrap: wrap; gap: 0.65rem 1rem; margin: 0.35rem 0 0.65rem; align-items: center"
+    >
+      @for (word of letterWords(); track word.start) {
+        <div
+          class="child-play-view-letter-word"
+          [attr.data-testid]="'child-play-view-letter-word-' + word.start"
+          style="display: flex; flex-wrap: nowrap; gap: 0.55rem; align-items: center"
+        >
+          @for (index of word.indexes; track index) {
+            <input
+              #letterBox
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              class="child-play-view-letter"
+              [attr.aria-label]="'Lettre ' + (index + 1)"
+              [attr.data-testid]="'child-play-view-letter-' + index"
+              [value]="letterBoxes()[index]"
+              [disabled]="disabled() || !interactive() || letterLocked(index)"
+              [style.box-sizing]="'border-box'"
+              [style.width]="'2.85rem'"
+              [style.height]="'3.1rem'"
+              [style.padding]="'0'"
+              [style.border]="'2px solid'"
+              [style.border-radius]="'0.7rem'"
+              [style.font-family]="'inherit'"
+              [style.font-size]="'1.35rem'"
+              [style.font-weight]="'800'"
+              [style.text-align]="'center'"
+              [style.text-transform]="'lowercase'"
+              [style.outline]="'none'"
+              [style.caret-color]="'var(--app-primary, #7c5cff)'"
+              [style.color]="'var(--app-text, #f5f1ff)'"
+              [style.border-color]="
+                letterLocked(index)
+                  ? 'var(--app-form-vrai-faux, #2bb673)'
+                  : letterWrong(index)
+                    ? 'var(--app-error, #e35d6a)'
+                    : letterBoxes()[index] !== ''
+                      ? 'var(--app-primary, #7c5cff)'
+                      : 'color-mix(in srgb, var(--app-primary, #7c5cff) 45%, var(--app-outline, #4a3f6e))'
+              "
+              [style.background]="
+                letterLocked(index)
+                  ? 'color-mix(in srgb, var(--app-form-vrai-faux, #2bb673) 28%, var(--app-surface-card, #1a1436))'
+                  : letterWrong(index)
+                    ? 'color-mix(in srgb, var(--app-error, #e35d6a) 28%, var(--app-surface-card, #1a1436))'
+                    : letterBoxes()[index] !== ''
+                      ? 'color-mix(in srgb, var(--app-primary, #7c5cff) 28%, var(--app-surface-card, #1a1436))'
+                      : 'color-mix(in srgb, var(--app-surface-card, #1a1436) 88%, var(--app-primary, #7c5cff))'
+              "
+              [style.box-shadow]="
+                letterLocked(index)
+                  ? '0 4px 0 color-mix(in srgb, var(--app-form-vrai-faux, #2bb673) 35%, transparent)'
+                  : letterWrong(index)
+                    ? '0 4px 0 color-mix(in srgb, var(--app-error, #e35d6a) 35%, transparent)'
+                    : '0 4px 0 color-mix(in srgb, var(--app-primary, #7c5cff) 22%, transparent)'
+              "
+              [style.opacity]="disabled() && !letterLocked(index) ? '0.55' : '1'"
+              [style.cursor]="letterLocked(index) || disabled() || !interactive() ? 'default' : 'text'"
+              (input)="onLetterInput(index, $event)"
+              (keydown)="onLetterKeydown(index, $event)"
+            />
+          }
+        </div>
+      }
+    </div>
+    <p class="child-play-view-hint" data-testid="child-play-view-letters-hint">
+      Une lettre par case (l’espace se saute), puis Valider.
+    </p>
+  }
+
+  @if (isSimon()) {
+    <p class="child-play-view-hint" data-testid="child-play-view-simon-phase" aria-live="polite">
+      {{ simonPhase() === 'watch' ? 'Regardez…' : 'Reproduisez depuis le début' }}
+    </p>
+    <div
+      data-testid="child-play-view-simon"
+      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: 0.75rem; margin: 0 0 0.75rem"
+    >
+      @for (element of question().elements ?? []; track $index) {
+        <button
+          type="button"
+          [attr.data-testid]="'child-play-view-simon-element-' + $index"
+          [attr.data-lit]="simonLit() === $index ? 'true' : null"
+          [disabled]="disabled() || !interactive() || simonPhase() !== 'play' || simonMissed() || simonPlayed() >= simonTotal()"
+          [style.background]="simonFill(element, $index)"
+          [style.color]="simonInk(element, $index)"
+          [style.box-shadow]="simonGlow(element, $index)"
+          [style.opacity]="simonPhase() === 'watch' && simonLit() !== $index ? '0.55' : '1'"
+          [style.transform]="simonLit() === $index ? 'scale(1.08)' : 'none'"
+          [style.cursor]="simonPhase() === 'play' && interactive() && !disabled() ? 'pointer' : 'default'"
+          style="min-height: 5.5rem; padding: 0.75rem; border: 0; border-radius: 1.25rem; font: inherit; font-size: 1.2rem; font-weight: 800; overflow-wrap: anywhere; transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease"
+          (click)="onSimonElement($index)"
+        >
+          @if (element.imageWebp) {
+            <img [src]="pieceSrc(element.imageWebp)" alt="" style="display: block; width: 100%; max-height: 5.5rem; object-fit: contain" />
+          } @else if (!element.color) {
+            {{ element.label }}
+          }
+        </button>
+      }
+    </div>
+    @if (simonPhase() === 'play') {
+      <p class="child-play-view-hint" data-testid="child-play-view-simon-progress">
+        Manche {{ simonRound() }} · {{ simonPlayed() }} / {{ simonRound() }}
+      </p>
+    }
+  }
+</div>

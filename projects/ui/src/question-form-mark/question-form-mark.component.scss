@@ -1,0 +1,26 @@
+:host {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  font-weight: 700;
+}
+
+.mark.tinted {
+  color: var(--mark);
+}
+
+svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+}
+
+.label {
+  min-width: 0;
+}

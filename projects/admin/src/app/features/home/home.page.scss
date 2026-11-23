@@ -1,0 +1,31 @@
+.hello-card {
+  width: min(100%, 28rem);
+}
+
+.cd-check {
+  margin: 0.75rem 1rem 0;
+  color: var(--app-success);
+  font-size: 0.875rem;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+h1 {
+  margin: 0.75rem 0 0;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.error {
+  margin: 0.75rem 0 0;
+  color: var(--app-error);
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  color: var(--app-text-muted);
+}

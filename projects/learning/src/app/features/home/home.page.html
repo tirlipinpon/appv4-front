@@ -1,0 +1,181 @@
+@if (humeur(); as prompt) {
+  @if (prompt.ask === true && (prompt.choices ?? []).length > 0) {
+    <div class="humeur-popup" data-testid="humeur-popup" role="dialog" aria-modal="true" aria-labelledby="humeur-message">
+      <div class="humeur-card">
+        @if (prompt.message) {
+          <p id="humeur-message" class="humeur-message" data-testid="humeur-message">{{ prompt.message }}</p>
+        }
+        <div class="humeur-grid">
+          @for (choice of prompt.choices ?? []; track choice.id) {
+            <button
+              type="button"
+              class="humeur-choice"
+              [attr.data-testid]="'humeur-choice-' + choice.id"
+              (click)="chooseHumeur(choice)"
+            >
+              @if (choice.icon) {
+                <span class="humeur-choice-icon" data-testid="humeur-choice-icon">{{ choice.icon }}</span>
+              }
+              @if (choice.word) {
+                <span class="humeur-choice-word" data-testid="humeur-choice-word">{{ choice.word }}</span>
+              }
+            </button>
+          }
+        </div>
+        <button type="button" class="humeur-close" data-testid="humeur-close" (click)="closeHumeur()">Fermer</button>
+      </div>
+    </div>
+  }
+}
+
+<section class="home-progress" data-testid="home-panel">
+  <header class="home-progress-top">
+    <p class="home-progress-eyebrow">Progression</p>
+    <h1>Home</h1>
+  </header>
+
+  @if (loading()) {
+    <p class="home-progress-status" data-testid="home-progress-loading">Chargement…</p>
+  } @else if (error()) {
+    <p class="home-progress-status home-progress-error" data-testid="home-progress-error">{{ error() }}</p>
+  } @else if (progress(); as p) {
+    <div class="home-progress-stats" data-testid="home-progress-stats">
+      <article class="home-stat" data-testid="home-stat-streak">
+        <p class="home-stat-label">Série</p>
+        <p class="home-stat-value">{{ p.currentStreak }}</p>
+        <p class="home-stat-hint">jours</p>
+      </article>
+      <article class="home-stat" data-testid="home-stat-xp">
+        <p class="home-stat-label">XP</p>
+        <p class="home-stat-value">{{ p.xpTotal }}</p>
+        <p class="home-stat-hint">total</p>
+      </article>
+      <article class="home-stat" data-testid="home-stat-league">
+        <p class="home-stat-label">Palier</p>
+        <p class="home-stat-value home-stat-value--text">{{ p.leagueLabel }}</p>
+        <p class="home-stat-hint">ligue</p>
+      </article>
+    </div>
+
+    <section class="home-week" data-testid="home-week">
+      <h2>Cette semaine</h2>
+      <ul class="home-week-grid">
+        @for (cell of weekCells(); track cell.label + $index) {
+          <li
+            class="home-week-day"
+            [class.home-week-day--played]="cell.played"
+            [attr.data-played]="cell.played ? 'true' : 'false'"
+          >
+            <span class="home-week-label">{{ cell.label }}</span>
+            <span class="home-week-dot" aria-hidden="true"></span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (!todayLoading() && !todayError() && continueModule(); as cont) {
+    <section class="home-continue" data-testid="home-continue">
+      <p class="home-continue-eyebrow">Continuer à apprendre</p>
+      <h2 class="home-continue-title" data-testid="home-continue-title">{{ cont.title }}</h2>
+      <p class="home-continue-meta" data-testid="home-continue-meta">
+        {{ cont.progress }} / {{ cont.target }}
+        @if (cont.statusLabel) {
+          · {{ cont.statusLabel }}
+        }
+      </p>
+      <a class="home-play" data-testid="home-continue-play" [routerLink]="cont.commands">Continuer</a>
+    </section>
+  }
+
+  @if (featuredLoading()) {
+    <p class="home-progress-status home-featured-status" data-testid="home-featured-loading">Chargement…</p>
+  } @else if (featuredError(); as message) {
+    <p class="home-progress-status home-progress-error home-featured-status" data-testid="home-featured-error">
+      {{ message }}
+    </p>
+  } @else if (featured(); as items) {
+    @if (items.length > 0) {
+      <section class="home-featured" data-testid="home-featured">
+        @for (item of items; track $index) {
+          <a class="home-featured-link" [routerLink]="['/learn', item.subjectId, 'play', item.questionId]">
+            <span class="home-featured-mark" aria-hidden="true"></span>
+            <span class="home-featured-copy">
+              <span class="home-featured-subject">{{ item.subjectName }}</span>
+              <span class="home-featured-prompt">{{ item.prompt }}</span>
+            </span>
+            <span class="home-featured-go" aria-hidden="true"></span>
+          </a>
+        }
+      </section>
+    }
+  }
+
+  <section class="home-mission" data-testid="home-mission">
+    @if (todayLoading()) {
+      <p class="home-progress-status" data-testid="home-mission-loading">Chargement…</p>
+    } @else if (todayError()) {
+      <p class="home-progress-status home-progress-error" data-testid="home-mission-error">{{ todayError() }}</p>
+    } @else if (today()?.mission; as mission) {
+      <header class="home-mission-head">
+        <h2>Mission du jour</h2>
+        <p class="home-mission-status" data-testid="home-mission-status">{{ mission.statusLabel }}</p>
+      </header>
+      <p class="home-mission-objective" data-testid="home-mission-objective">{{ mission.objective }}</p>
+      @if (remainingLabel(mission); as remaining) {
+        <p class="home-mission-remaining" data-testid="home-mission-remaining">{{ remaining }}</p>
+      }
+      <div class="home-mission-meter" data-testid="home-mission-progress">
+        <span class="home-mission-meter-fill" [style.width.%]="barWidth(mission)"></span>
+      </div>
+      <p class="home-mission-count">{{ mission.progress }} / {{ mission.target }} · {{ mission.rewardXp }} XP</p>
+      @if (missionPlayCommands(mission); as commands) {
+        <a class="home-play" data-testid="home-mission-play" [routerLink]="commands">Play</a>
+      }
+
+      <ul class="home-plan" data-testid="home-plan">
+        @for (task of mission.tasks ?? []; track task.id) {
+          <li class="home-plan-task" [attr.data-status]="task.status" [attr.data-testid]="'home-task-' + task.id">
+            <div>
+              <p class="home-plan-label">{{ task.label }}</p>
+              <p class="home-plan-meta">{{ task.statusLabel }} · {{ task.progress }} / {{ task.target }} · {{ task.rewardXp }} XP</p>
+            </div>
+            @if (playCommands(task); as commands) {
+              <a class="home-play home-play--small" [routerLink]="commands" [attr.data-testid]="'home-task-play-' + task.id">Play</a>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="home-progress-status" data-testid="home-mission-empty">Aucune mission aujourd'hui.</p>
+    }
+  </section>
+
+  @if (badges.loading()) {
+    <p class="home-progress-status" data-testid="home-badges-loading">Chargement…</p>
+  } @else if (badges.error()) {
+    <p class="home-progress-status home-progress-error" data-testid="home-badges-error">{{ badges.error() }}</p>
+  } @else if (badges.collection(); as collection) {
+    @if ((collection.gainedToday ?? []).length > 0) {
+      <section class="home-today" data-testid="home-badges-today">
+        <p class="home-today-eyebrow">Aujourd'hui</p>
+        <ul class="home-today-list">
+          @for (gained of collection.gainedToday ?? []; track gained.code) {
+            <li class="home-today-card" [attr.data-testid]="'home-badge-' + gained.code">
+              <a class="home-today-link" routerLink="/rewards">
+                <app-badge-medal [code]="gained.code ?? ''" [level]="gained.level ?? 0" size="sm" />
+                <span class="home-today-copy">
+                  <span class="home-today-name">{{ gained.name }}</span>
+                  <span class="home-today-meta">Niveau {{ gained.level }}</span>
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    @if (collection.notice?.label) {
+      <p class="home-today-notice" data-testid="home-badge-notice">{{ collection.notice.label }}</p>
+    }
+  }
+</section>
