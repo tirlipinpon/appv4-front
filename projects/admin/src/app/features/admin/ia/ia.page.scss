@@ -53,7 +53,8 @@ label {
   color: var(--app-text-muted);
 }
 
-input {
+input,
+select {
   box-sizing: border-box;
   height: 40px;
   min-width: 0;
@@ -66,9 +67,24 @@ input {
   font-size: 0.95rem;
 }
 
+.catalogs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-space-1);
+  margin: 0 0 var(--app-space-2);
+  padding: 0;
+  list-style: none;
+  color: var(--app-text-muted);
+  font-size: 0.8rem;
+}
+
+.catalogs .down {
+  color: var(--app-danger, #9b1c1c);
+}
+
 .create {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   gap: var(--app-space-2);
   align-items: end;
 }

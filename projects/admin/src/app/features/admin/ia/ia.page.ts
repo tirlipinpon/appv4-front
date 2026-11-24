@@ -1,16 +1,22 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 
-import type { ConnexionResponse, EssaiResponse } from '../../../core/api/api-models';
+import type {
+  ConnexionResponse,
+  EssaiResponse,
+  FournisseurResponse,
+  LectureResponse,
+  ModeleResponse,
+} from '../../../core/api/api-models';
 import { SpaceHeader } from '../../../core/layout/space-header';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { AdminSectionNav } from '../admin-section-nav/admin-section-nav';
 import { AiConnectionsService } from './data-access/ai-connections.service';
 
 /**
- * Zone pour ajouter un modèle et l'essayer (ADMIN-82).
- * La page affiche la liste renvoyée. Elle ne réécrit pas le message d'essai.
+ * Zone pour choisir un modèle dans les catalogues et l'essayer.
+ * Les fournisseurs et les modèles viennent de l'API. La page ne les complète pas.
  */
 @Component({
   selector: 'app-ia-page',
@@ -23,6 +29,9 @@ export class IaPage implements OnInit {
   private readonly api = inject(AiConnectionsService);
 
   readonly connections = signal<ConnexionResponse[]>([]);
+  readonly catalogs = signal<LectureResponse[]>([]);
+  readonly providers = signal<FournisseurResponse[]>([]);
+  readonly search = signal('');
   readonly provider = signal('');
   readonly model = signal('');
   readonly apiKey = signal('');
@@ -30,13 +39,43 @@ export class IaPage implements OnInit {
   readonly trials = signal<Record<number, EssaiResponse>>({});
   readonly loading = signal(true);
 
+  readonly visibleProviders = computed(() => {
+    const query = this.search().trim().toLowerCase();
+    const providers = this.providers();
+    if (query.length === 0) {
+      return providers;
+    }
+    return providers.filter((item) => this.providerMatches(item, query));
+  });
+
+  readonly visibleModels = computed(() => {
+    const selected = this.providers().find((item) => item.code === this.provider());
+    const models = selected?.models ?? [];
+    const query = this.search().trim().toLowerCase();
+    if (query.length === 0) {
+      return models;
+    }
+    return models.filter((item) => this.modelMatches(item, query));
+  });
+
   ngOnInit(): void {
     this.reload();
+    this.loadCatalog();
   }
 
   inputValue(event: Event): string {
     const target = event.target;
     return target instanceof HTMLInputElement ? target.value : '';
+  }
+
+  selectValue(event: Event): string {
+    const target = event.target;
+    return target instanceof HTMLSelectElement ? target.value : '';
+  }
+
+  chooseProvider(event: Event): void {
+    this.provider.set(this.selectValue(event));
+    this.model.set('');
   }
 
   create(): void {
@@ -81,6 +120,18 @@ export class IaPage implements OnInit {
     return this.trials()[id] ?? null;
   }
 
+  private providerMatches(item: FournisseurResponse, query: string): boolean {
+    const name = (item.name ?? item.code ?? '').toLowerCase();
+    if (name.includes(query)) {
+      return true;
+    }
+    return (item.models ?? []).some((model) => this.modelMatches(model, query));
+  }
+
+  private modelMatches(item: ModeleResponse, query: string): boolean {
+    return (item.name ?? '').toLowerCase().includes(query) || (item.id ?? '').toLowerCase().includes(query);
+  }
+
   private reload(): void {
     this.api.list().subscribe({
       next: (connections) => {
@@ -90,6 +141,18 @@ export class IaPage implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
         this.error.set(httpErrorMessage(err, 'Connexions indisponibles.'));
+      },
+    });
+  }
+
+  private loadCatalog(): void {
+    this.api.catalog().subscribe({
+      next: (body) => {
+        this.catalogs.set(body.catalogs ?? []);
+        this.providers.set(body.providers ?? []);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error.set(httpErrorMessage(err, 'Catalogue indisponible.'));
       },
     });
   }
