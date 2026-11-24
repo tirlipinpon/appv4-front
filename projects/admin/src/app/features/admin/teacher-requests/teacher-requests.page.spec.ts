@@ -32,6 +32,7 @@ describe('TeacherRequestsPage', () => {
         requests: [{ id: 7, email: 'prof@exemple.com', displayName: 'Prof', status: 'pending' }],
       });
     http.expectOne('http://localhost:8080/api/int/auth/me').flush({ displayName: 'Admin' });
+    http.expectOne('http://localhost:8080/api/int/auth/spaces').flush({ roles: [], teacherRequest: 'none' });
     fixture.detectChanges();
   });
 
@@ -82,6 +83,7 @@ describe('TeacherRequestsPage tronquée', () => {
       .expectOne((req) => req.method === 'GET' && req.url.includes('/admin/teacher-requests'))
       .flush({ requests: [], truncated: true });
     http.expectOne('http://localhost:8080/api/int/auth/me').flush({ displayName: 'Admin' });
+    http.expectOne('http://localhost:8080/api/int/auth/spaces').flush({ roles: [], teacherRequest: 'none' });
     fixture.detectChanges();
   });
 

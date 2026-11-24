@@ -35,6 +35,7 @@ describe('IaPage', () => {
     });
     flushBesoins();
     http.expectOne('http://localhost:8080/api/int/auth/me').flush({ displayName: 'Admin' });
+    http.expectOne('http://localhost:8080/api/int/auth/spaces').flush({ roles: [], teacherRequest: 'none' });
     fixture.detectChanges();
   });
 
