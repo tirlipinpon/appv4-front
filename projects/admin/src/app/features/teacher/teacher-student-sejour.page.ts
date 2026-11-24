@@ -1,9 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import type { JourneeMonthResponse, TeacherStudentsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
+import { SpaceTrailNames } from '../../core/layout/space-trail';
 import { JourneeMonthComponent } from '../../shared/journee-month/journee-month.component';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { TeacherSejourService } from './data-access/teacher-sejour.service';
@@ -24,6 +25,9 @@ export class TeacherStudentSejourPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly studentsApi = inject(TeacherStudentsService);
   private readonly sejoursApi = inject(TeacherSejourService);
+  private readonly trailNames = inject(SpaceTrailNames);
+  private readonly destroyRef = inject(DestroyRef);
+  private trailGeneration = 0;
 
   readonly name = signal<string | null>(null);
   readonly month = signal<JourneeMonthResponse | null>(null);
@@ -33,6 +37,7 @@ export class TeacherStudentSejourPage implements OnInit {
   private request = 0;
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.trailNames.clearStudent(this.trailGeneration));
     const childId = Number(this.route.snapshot.paramMap.get('childId'));
     if (!Number.isInteger(childId)) {
       this.loading.set(false);
@@ -40,8 +45,15 @@ export class TeacherStudentSejourPage implements OnInit {
     }
     this.childId = childId;
     this.studentsApi.load().subscribe({
-      next: (body) => this.name.set(studentName(body, childId)),
-      error: () => this.loading.set(false),
+      next: (body) => {
+        const found = studentName(body, childId);
+        this.name.set(found);
+        this.trailGeneration = this.trailNames.publishStudent(found);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.trailGeneration = this.trailNames.publishStudent(null);
+      },
     });
     this.load();
   }

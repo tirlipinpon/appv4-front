@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { ChildAuthService } from '../../core/auth/child-auth.service';
+import { ChildTrailNames } from '../shell/child-trail';
 import { SubjectBoardPage } from './subject-board.page';
 
 describe('SubjectBoardPage', () => {
@@ -54,6 +55,7 @@ describe('SubjectBoardPage', () => {
 
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('[data-testid="subject-board-title"]')?.textContent).toContain('Mathématiques');
+    expect(TestBed.inject(ChildTrailNames).subjectName()).toBe('Mathématiques');
     expect(root.querySelector('[data-testid="subject-board-grade"]')?.textContent).toContain('CE1');
     expect(root.querySelector('[data-testid="subject-board-world"]')).toBeNull();
     expect(root.querySelector('[data-testid="subject-board-topics"]')).toBeNull();

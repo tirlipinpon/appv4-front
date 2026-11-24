@@ -9,6 +9,7 @@ import { ActiveRoleService } from '../auth/active-role.service';
 import { AuthService } from '../auth/auth.service';
 import { SpaceRoles, type SpaceRole } from '../auth/space-roles';
 import { SpaceHeader } from './space-header';
+import { SpaceTrailNames } from './space-trail';
 
 @Component({ template: '', standalone: true })
 class BlankPage {}
@@ -32,8 +33,12 @@ describe('SpaceHeader', () => {
           { path: 'parent/enfants', component: BlankPage },
           { path: 'parent/profil', component: BlankPage },
           { path: 'parent/matieres', component: BlankPage },
+          { path: 'parent/humeur', component: BlankPage },
+          { path: 'parent/temps', component: BlankPage },
           { path: 'teacher', component: BlankPage },
           { path: 'teacher/profil', component: BlankPage },
+          { path: 'teacher/eleves', component: BlankPage },
+          { path: 'teacher/eleves/:childId', component: BlankPage },
           { path: 'teacher-pending', component: BlankPage },
           { path: 'admin/teacher-requests', component: BlankPage },
           { path: 'admin/humeurs', component: BlankPage },
@@ -48,6 +53,7 @@ describe('SpaceHeader', () => {
 
   afterEach(() => {
     http.verify();
+    TestBed.inject(SpaceTrailNames).studentName.set(null);
     sessionStorage.clear();
   });
 
@@ -219,6 +225,72 @@ describe('SpaceHeader', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Passer en');
   });
 
+  it('montre Parent puis Temps, et seul Parent est un lien', async () => {
+    await show({
+      url: '/parent/temps',
+      token: { activeRole: SpaceRoles.parent, roles: [SpaceRoles.parent] },
+    });
+
+    const crumbs = trailCrumbs();
+    expect(crumbs.map((crumb) => crumb.text)).toEqual(['Parent', 'Temps']);
+    expect(crumbs[0].href).toBe('/parent');
+    expect(crumbs[1].href).toBeNull();
+  });
+
+  it('montre Professeur puis Élèves puis le nom déjà connu', async () => {
+    await show({
+      url: '/teacher/eleves/1',
+      token: { activeRole: SpaceRoles.teacher, roles: [SpaceRoles.teacher] },
+      studentName: 'Léa Martin',
+    });
+
+    const crumbs = trailCrumbs();
+    expect(crumbs.map((crumb) => crumb.text)).toEqual(['Professeur', 'Élèves', 'Léa Martin']);
+    expect(crumbs[0].href).toBe('/teacher');
+    expect(crumbs[1].href).toBe('/teacher/eleves');
+    expect(crumbs[2].href).toBeNull();
+  });
+
+  it('omet le nom de l’élève tant qu’il n’est pas là', async () => {
+    await show({
+      url: '/teacher/eleves/1',
+      token: { activeRole: SpaceRoles.teacher, roles: [SpaceRoles.teacher] },
+    });
+
+    const crumbs = trailCrumbs();
+    expect(crumbs.map((crumb) => crumb.text)).toEqual(['Professeur', 'Élèves']);
+    expect(crumbs[0].href).toBe('/teacher');
+    expect(crumbs[1].href).toBe('/teacher/eleves');
+  });
+
+  it('garde le menu parent et la rangée admin sur Humeurs, sans fil', async () => {
+    await show({
+      url: '/admin/humeurs',
+      token: { activeRole: SpaceRoles.parent, roles: [SpaceRoles.parent, 'admin'] },
+    });
+
+    const spaceLinks = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="space-nav"] a'),
+    ) as HTMLAnchorElement[];
+    expect(spaceLinks.map((link) => link.textContent?.trim())).toEqual([
+      'Accueil',
+      'Enfants',
+      'Profil',
+      'Matières',
+      'Humeur',
+      'Temps',
+    ]);
+    const adminLinks = Array.from(
+      fixture.nativeElement.querySelectorAll('app-admin-section-nav a'),
+    ) as HTMLAnchorElement[];
+    expect(adminLinks.map((link) => link.textContent?.trim())).toEqual([
+      'Demandes professeur',
+      'Humeurs',
+      'IA',
+    ]);
+    expect(trailCrumbs()).toEqual([]);
+  });
+
   it('ne marque aucune page du sous-menu hors des adresses parent et professeur', async () => {
     await show({
       url: '/',
@@ -235,6 +307,7 @@ describe('SpaceHeader', () => {
     token?: object;
     showSpaceActions?: boolean;
     spaces?: object;
+    studentName?: string;
   }): Promise<void> {
     const auth = TestBed.inject(AuthService);
     auth.logout();
@@ -242,6 +315,9 @@ describe('SpaceHeader', () => {
       auth.setToken(fakeToken(options.token));
     }
     await TestBed.inject(Router).navigateByUrl(options.url);
+    if (options.studentName != null) {
+      TestBed.inject(SpaceTrailNames).studentName.set(options.studentName);
+    }
     fixture = TestBed.createComponent(SpaceHeader);
     if (options.showSpaceActions === false) {
       fixture.componentRef.setInput('showSpaceActions', false);
@@ -268,6 +344,17 @@ describe('SpaceHeader', () => {
 
   function menuLinks(): HTMLAnchorElement[] {
     return Array.from(fixture.nativeElement.querySelectorAll('.subnav a'));
+  }
+
+  function trailCrumbs(): { text: string; href: string | null }[] {
+    const trail: HTMLElement | null = fixture.nativeElement.querySelector('[data-testid="trail"]');
+    if (trail == null) {
+      return [];
+    }
+    return Array.from(trail.querySelectorAll('a, span[data-testid^="trail-"]')).map((node) => ({
+      text: node.textContent?.trim() ?? '',
+      href: node instanceof HTMLAnchorElement ? node.getAttribute('href') : null,
+    }));
   }
 });
 

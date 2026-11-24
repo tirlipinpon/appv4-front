@@ -88,6 +88,8 @@ describe('TeacherStudentSejourPage', () => {
     const root = harness.routeNativeElement as HTMLElement;
     expect(root.querySelector('[data-testid="teacher-sejour-child"]')?.textContent).toContain('Léa');
     expect(root.querySelector('[data-testid="teacher-sejour-child"]')?.textContent).toContain('Martin');
+    expect(root.querySelector('[data-testid="trail-Léa Martin"]')?.textContent?.trim()).toBe('Léa Martin');
+    expect(root.querySelector('[data-testid="trail-Élèves"]')?.getAttribute('href')).toBe('/teacher/eleves');
     expect(root.querySelector('[data-testid="teacher-sejour-month"]')?.textContent?.trim()).toBe('novembre 2026');
     expect(root.querySelector('[data-testid="teacher-sejour-day-22"]')).not.toBeNull();
     expect(root.textContent).not.toContain('Plafond');

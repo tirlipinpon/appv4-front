@@ -4,7 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 
 import type { HumeurChoiceItem } from '../../../core/api/api-models';
 import { SpaceHeader } from '../../../core/layout/space-header';
-import { AdminSectionNav } from '../../../core/layout/admin-section-nav/admin-section-nav';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { HumeursService } from './data-access/humeurs.service';
 
@@ -14,7 +13,7 @@ import { HumeursService } from './data-access/humeurs.service';
  */
 @Component({
   selector: 'app-humeurs-page',
-  imports: [MatButtonModule, AdminSectionNav, SpaceHeader],
+  imports: [MatButtonModule, SpaceHeader],
   templateUrl: './humeurs.page.html',
   styleUrl: './humeurs.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

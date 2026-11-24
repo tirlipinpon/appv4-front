@@ -6,9 +6,11 @@ import {
   computed,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
@@ -19,20 +21,14 @@ import { SpaceRoles } from '../auth/space-roles';
 import { RoleSwitch } from './role-switch';
 import { SpaceAccess } from './space-access';
 import { AdminSectionNav } from './admin-section-nav/admin-section-nav';
-
-interface SpaceMenuItem {
-  label: string;
-  path: string;
-  /** Repère stable pour les tests. Absent si aucun scénario ne clique ce lien. */
-  testId?: string;
-}
+import { PARENT_MENU, SpaceMenuEntry, SpaceTrailNames, TEACHER_MENU, spaceTrail } from './space-trail';
 
 /**
  * Bandeau des pages déjà connectées (SCRUM-166).
  * Le nom, puis les onglets Parent et Professeur, puis la déconnexion.
  * Un espace encore fermé (demande professeur, ouvrir parent) reste sur la ligne d'en dessous.
- * Ensuite viennent les pages de l'espace. Un compte admin y voit aussi Demandes professeur, Humeurs et IA.
- * Sur les pages admin elles-mêmes, ces liens sont déjà dans la page : le bandeau ne les répète pas.
+ * Ensuite viennent les pages de l'espace. Un compte admin y voit aussi Demandes professeur, Humeurs et IA, y compris sur ces pages.
+ * Le fil reprend le catalogue du menu. Il ne remplace aucune rangée.
  * Le titre du bandeau est le nom du compte, parent ou professeur.
  */
 @Component({
@@ -47,6 +43,8 @@ export class SpaceHeader implements OnInit {
   private readonly account = inject(ConnectedAccountService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly trailNames = inject(SpaceTrailNames);
+  private readonly url = signal(this.router.url);
 
   /** Nom du parent ou du professeur connecté. Vide tant que l'API n'a pas répondu. */
   readonly displayName = this.account.displayName;
@@ -59,38 +57,27 @@ export class SpaceHeader implements OnInit {
   readonly showAdminNav = computed(() => this.showSpaceActions() && this.auth.session().admin);
 
   /** Pages de l'espace actif. Vide tant qu'aucun espace parent ou professeur n'est choisi. */
-  readonly menu = computed((): { label: string; items: SpaceMenuItem[] } | null => {
+  readonly menu = computed((): { label: string; items: readonly SpaceMenuEntry[] } | null => {
     const role = this.auth.session().activeRole;
     if (role === SpaceRoles.parent) {
-      return {
-        label: 'Pages parent',
-        items: [
-          { label: 'Accueil', path: '/parent', testId: 'parent-nav-home' },
-          { label: 'Enfants', path: '/parent/enfants', testId: 'parent-nav-children' },
-          { label: 'Profil', path: '/parent/profil', testId: 'parent-nav-profile' },
-          { label: 'Matières', path: '/parent/matieres', testId: 'parent-nav-subjects' },
-          { label: 'Humeur', path: '/parent/humeur', testId: 'parent-nav-humeur' },
-          { label: 'Temps', path: '/parent/temps', testId: 'parent-nav-temps' },
-        ],
-      };
+      return { label: 'Pages parent', items: PARENT_MENU };
     }
     if (role === SpaceRoles.teacher) {
-      return {
-        label: 'Pages professeur',
-        items: [
-          { label: 'Accueil', path: '/teacher' },
-          { label: 'Profil', path: '/teacher/profil' },
-          { label: 'Écoles', path: '/teacher/ecoles' },
-          { label: 'Élèves', path: '/teacher/eleves' },
-          { label: 'Matières', path: '/teacher/matieres' },
-          { label: 'Questions', path: '/teacher/questions' },
-        ],
-      };
+      return { label: 'Pages professeur', items: TEACHER_MENU };
     }
     return null;
   });
 
+  readonly trail = computed(() => spaceTrail(this.url(), this.trailNames.studentName()));
+
   ngOnInit(): void {
+    this.url.set(this.router.url);
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((event) => this.url.set(event.urlAfterRedirects));
     this.account
       .load()
       .pipe(takeUntilDestroyed(this.destroyRef))
