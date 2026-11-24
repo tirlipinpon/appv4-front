@@ -1,0 +1,75 @@
+<div class="page">
+  <app-space-header [showSpaceActions]="false" />
+  <app-admin-section-nav />
+
+  <main class="content content-wide">
+    <header class="head">
+      <h1>IA</h1>
+      <p class="lead">Ajouter un modèle, brancher sa clé, et essayer la connexion.</p>
+    </header>
+
+    @if (error(); as message) {
+      <p class="error" role="alert" data-testid="ia-error">{{ message }}</p>
+    }
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Nouvelle connexion</h2>
+        <p class="hint">La clé part une fois. Elle n'est pas réaffichée.</p>
+      </div>
+      <form class="create" (submit)="$event.preventDefault(); create()">
+        <label>
+          Fournisseur
+          <input data-testid="ia-provider" [value]="provider()" (input)="provider.set(inputValue($event))" />
+        </label>
+        <label>
+          Modèle
+          <input data-testid="ia-model" [value]="model()" (input)="model.set(inputValue($event))" />
+        </label>
+        <label>
+          Clé
+          <input
+            data-testid="ia-key"
+            type="password"
+            autocomplete="off"
+            [value]="apiKey()"
+            (input)="apiKey.set(inputValue($event))"
+          />
+        </label>
+        <button mat-flat-button color="primary" type="submit" data-testid="ia-create">Ajouter</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Connexions</h2>
+      @if (loading()) {
+        <p class="empty">Chargement…</p>
+      } @else if (connections().length === 0) {
+        <p class="empty" data-testid="ia-empty">Aucune connexion.</p>
+      } @else {
+        <ul class="connections">
+          @for (connection of connections(); track connection.id) {
+            <li [attr.data-testid]="'ia-connection-' + connection.id">
+              <div>
+                <p class="name">{{ connection.model }}</p>
+                <p class="provider">{{ connection.provider }}</p>
+              </div>
+              <button mat-stroked-button type="button" data-testid="ia-test" (click)="test(connection)">
+                Essayer
+              </button>
+              @if (trial(connection.id); as result) {
+                <p
+                  class="trial"
+                  data-testid="ia-trial"
+                  [class.error]="result.success === false"
+                >
+                  {{ result.message }}
+                </p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </main>
+</div>

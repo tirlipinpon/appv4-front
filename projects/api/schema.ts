@@ -938,6 +938,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/admin/ai/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les connexions de modèles */
+        get: operations["listAiConnections"];
+        put?: never;
+        /** Ajouter une connexion de modèle */
+        post: operations["createAiConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/admin/ai/connections/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Essayer une connexion de modèle */
+        post: operations["testAiConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/subjects/{subjectId}/questions/{questionId}/play": {
         parameters: {
             query?: never;
@@ -2515,6 +2550,21 @@ export interface components {
             /** Format: date-time */
             revokedAt?: string;
         };
+        CreateConnexionRequest: {
+            provider?: string;
+            model?: string;
+            apiKey?: string;
+        };
+        ConnexionResponse: {
+            /** Format: int64 */
+            id?: number;
+            provider?: string;
+            model?: string;
+        };
+        EssaiResponse: {
+            success?: boolean;
+            message?: string;
+        };
         OpenPlayRequest: {
             /** Format: uuid */
             playId?: string;
@@ -3038,6 +3088,9 @@ export interface components {
         };
         HumeurChoiceListResponse: {
             choices?: components["schemas"]["HumeurChoiceItem"][];
+        };
+        ConnexionListResponse: {
+            connections?: components["schemas"]["ConnexionResponse"][];
         };
         ChildTodayMission: {
             /** Format: int64 */
@@ -6344,6 +6397,72 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    listAiConnections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnexionListResponse"];
+                };
+            };
+        };
+    };
+    createAiConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConnexionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConnexionResponse"];
+                };
+            };
+        };
+    };
+    testAiConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EssaiResponse"];
                 };
             };
         };

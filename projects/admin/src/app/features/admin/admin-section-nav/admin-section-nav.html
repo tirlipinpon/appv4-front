@@ -1,0 +1,10 @@
+<nav class="subnav" aria-label="Pages admin">
+  @for (item of items; track item.path) {
+    <a
+      [routerLink]="item.path"
+      routerLinkActive="is-current"
+    >
+      {{ item.label }}
+    </a>
+  }
+</nav>

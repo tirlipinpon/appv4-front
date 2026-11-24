@@ -114,3 +114,7 @@ export type ChildSubjectsResponse = components['schemas']['ChildSubjectsResponse
 export type ChildSubjectOffer = components['schemas']['ChildSubjectOffer'];
 export type ParentSubjectsResponse = components['schemas']['ParentSubjectsResponse'];
 export type AddChildSubjectRequest = components['schemas']['AddChildSubjectRequest'];
+export type CreateConnexionRequest = components['schemas']['CreateConnexionRequest'];
+export type ConnexionResponse = components['schemas']['ConnexionResponse'];
+export type ConnexionListResponse = components['schemas']['ConnexionListResponse'];
+export type EssaiResponse = components['schemas']['EssaiResponse'];
