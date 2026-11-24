@@ -139,27 +139,41 @@
         </ul>
       }
       <form class="create" (submit)="$event.preventDefault(); create()">
-        <label class="search">
-          Filtrer
-          <input data-testid="ia-search" [value]="search()" (input)="search.set(inputValue($event))" />
-        </label>
-        <label>
+        <label class="suggest">
           Fournisseur
-          <select data-testid="ia-provider" [value]="provider()" (change)="chooseProvider($event)">
-            <option value="">Choisir</option>
-            @for (item of visibleProviders(); track item.code) {
-              <option [value]="item.code">{{ item.name }}</option>
-            }
-          </select>
+          <input
+            data-testid="ia-provider"
+            autocomplete="off"
+            [value]="providerQuery()"
+            (input)="chooseProvider($event)"
+          />
+          @if (providerSuggestions().length > 0) {
+            <ul class="suggestions" data-testid="ia-provider-suggestions">
+              @for (item of providerSuggestions(); track item.code) {
+                <li>
+                  <button type="button" (click)="pickProvider(item)">{{ item.name }}</button>
+                </li>
+              }
+            </ul>
+          }
         </label>
-        <label>
+        <label class="suggest">
           Modèle
-          <select data-testid="ia-model" [value]="model()" (change)="model.set(selectValue($event))">
-            <option value="">Choisir</option>
-            @for (item of visibleModels(); track item.id) {
-              <option [value]="item.id">{{ item.name }}</option>
-            }
-          </select>
+          <input
+            data-testid="ia-model"
+            autocomplete="off"
+            [value]="modelQuery()"
+            (input)="typeModel(inputValue($event))"
+          />
+          @if (modelSuggestions().length > 0) {
+            <ul class="suggestions" data-testid="ia-model-suggestions">
+              @for (item of modelSuggestions(); track item.id) {
+                <li>
+                  <button type="button" (click)="pickModel(item)">{{ item.name }}</button>
+                </li>
+              }
+            </ul>
+          }
         </label>
         <label>
           Clé

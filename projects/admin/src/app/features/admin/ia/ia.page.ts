@@ -14,7 +14,7 @@ import type {
 } from '../../../core/api/api-models';
 import { SpaceHeader } from '../../../core/layout/space-header';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
-import { AdminSectionNav } from '../admin-section-nav/admin-section-nav';
+import { AdminSectionNav } from '../../../core/layout/admin-section-nav/admin-section-nav';
 import { AiConnectionsService } from './data-access/ai-connections.service';
 import { AiRoutesService } from './data-access/ai-routes.service';
 
@@ -36,8 +36,9 @@ export class IaPage implements OnInit {
   readonly connections = signal<ConnexionResponse[]>([]);
   readonly catalogs = signal<LectureResponse[]>([]);
   readonly providers = signal<FournisseurResponse[]>([]);
-  readonly search = signal('');
+  readonly providerQuery = signal('');
   readonly provider = signal('');
+  readonly modelQuery = signal('');
   readonly model = signal('');
   readonly apiKey = signal('');
   readonly routes = signal<RouteResponse[]>([]);
@@ -54,23 +55,21 @@ export class IaPage implements OnInit {
   readonly trials = signal<Record<number, EssaiResponse>>({});
   readonly loading = signal(true);
 
-  readonly visibleProviders = computed(() => {
-    const query = this.search().trim().toLowerCase();
-    const providers = this.providers();
-    if (query.length === 0) {
-      return providers;
+  readonly providerSuggestions = computed(() => {
+    const query = this.providerQuery().trim().toLowerCase();
+    if (query.length === 0 || this.providerChosen(query)) {
+      return [];
     }
-    return providers.filter((item) => this.providerMatches(item, query));
+    return this.providers().filter((item) => this.providerMatchesQuery(item, query)).slice(0, 8);
   });
 
-  readonly visibleModels = computed(() => {
+  readonly modelSuggestions = computed(() => {
     const selected = this.providers().find((item) => item.code === this.provider());
-    const models = selected?.models ?? [];
-    const query = this.search().trim().toLowerCase();
-    if (query.length === 0) {
-      return models;
+    const query = this.modelQuery().trim().toLowerCase();
+    if (selected == null || query.length === 0 || this.modelChosen(selected, query)) {
+      return [];
     }
-    return models.filter((item) => this.modelMatches(item, query));
+    return (selected.models ?? []).filter((item) => this.modelMatches(item, query)).slice(0, 8);
   });
 
   ngOnInit(): void {
@@ -92,8 +91,26 @@ export class IaPage implements OnInit {
   }
 
   chooseProvider(event: Event): void {
-    this.provider.set(this.selectValue(event));
+    this.typeProvider(this.inputValue(event));
+  }
+
+  pickProvider(item: FournisseurResponse): void {
+    this.provider.set(item.code ?? '');
+    this.providerQuery.set(item.name ?? item.code ?? '');
     this.model.set('');
+    this.modelQuery.set('');
+  }
+
+  typeModel(value: string): void {
+    this.modelQuery.set(value);
+    const selected = this.providers().find((item) => item.code === this.provider());
+    const match = (selected?.models ?? []).find((item) => this.sameText(item.name, value) || this.sameText(item.id, value));
+    this.model.set(match?.id ?? value);
+  }
+
+  pickModel(item: ModeleResponse): void {
+    this.model.set(item.id ?? '');
+    this.modelQuery.set(item.name ?? item.id ?? '');
   }
 
   createBesoin(): void {
@@ -210,12 +227,37 @@ export class IaPage implements OnInit {
     return this.trials()[id] ?? null;
   }
 
-  private providerMatches(item: FournisseurResponse, query: string): boolean {
-    const name = (item.name ?? item.code ?? '').toLowerCase();
-    if (name.includes(query)) {
-      return true;
+  private typeProvider(value: string): void {
+    this.providerQuery.set(value);
+    const match = this.providers().find(
+      (item) => this.sameText(item.name, value) || this.sameText(item.code, value),
+    );
+    if (match?.code !== this.provider()) {
+      this.model.set('');
+      this.modelQuery.set('');
     }
-    return (item.models ?? []).some((model) => this.modelMatches(model, query));
+    this.provider.set(match?.code ?? value);
+  }
+
+  private providerChosen(query: string): boolean {
+    const selected = this.providers().find((item) => item.code === this.provider());
+    return selected != null && (selected.name ?? selected.code ?? '').toLowerCase() === query;
+  }
+
+  private providerMatchesQuery(item: FournisseurResponse, query: string): boolean {
+    return (item.name ?? '').toLowerCase().includes(query) || (item.code ?? '').toLowerCase().includes(query);
+  }
+
+  private modelChosen(selected: FournisseurResponse, query: string): boolean {
+    const model = (selected.models ?? []).find((item) => item.id === this.model());
+    if (model == null) {
+      return false;
+    }
+    return (model.name ?? model.id ?? '').toLowerCase() === query;
+  }
+
+  private sameText(left: string | undefined, right: string): boolean {
+    return (left ?? '').toLowerCase() === right.trim().toLowerCase();
   }
 
   private modelMatches(item: ModeleResponse, query: string): boolean {

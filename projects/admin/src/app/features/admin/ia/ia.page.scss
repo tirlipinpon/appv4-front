@@ -78,13 +78,44 @@ select {
   font-size: 0.8rem;
 }
 
-.catalogs .down {
-  color: var(--app-danger, #9b1c1c);
+.suggest {
+  position: relative;
+}
+
+.suggestions {
+  position: absolute;
+  z-index: 2;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--app-outline);
+  border-radius: var(--app-radius-card);
+  background: var(--app-surface-card);
+  max-height: 180px;
+  overflow: auto;
+}
+
+.suggestions button {
+  width: 100%;
+  height: auto;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--app-text);
+  font: inherit;
+  text-align: left;
+}
+
+.suggestions button:hover {
+  background: var(--app-surface-muted);
 }
 
 .create {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
   gap: var(--app-space-2);
   align-items: end;
 }
