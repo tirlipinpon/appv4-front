@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import type { ParentSejourListResponse } from '../../../core/api/api-models';
+import type { JourneeMonthResponse } from '../../../core/api/api-models';
 import { environment } from '../../../../environments/environment';
 
 /**
@@ -13,8 +13,8 @@ import { environment } from '../../../../environments/environment';
 export class TeacherSejourService {
   private readonly http = inject(HttpClient);
 
-  list(childId: number): Observable<ParentSejourListResponse> {
-    return this.http.get<ParentSejourListResponse>(
+  list(childId: number): Observable<JourneeMonthResponse> {
+    return this.http.get<JourneeMonthResponse>(
       `${environment.apiBaseUrl}/teacher/students/${childId}/sejours`,
     );
   }

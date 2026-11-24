@@ -56,10 +56,10 @@ describe('TeacherStudentSejourPage', () => {
     const sejour = http.expectOne(`${studentsUrl}/1/sejours`);
     expect(sejour.request.method).toBe('GET');
     sejour.flush({
-      sejours: [
+      monthLabel: 'novembre 2026',
+      journees: [
         {
           dateLabel: '22 novembre 2026',
-          timeLabel: '21:50',
           durationLabel: '1 min 30',
           lines: [
             { label: 'Accueil', durationLabel: '40 s' },
@@ -76,7 +76,6 @@ describe('TeacherStudentSejourPage', () => {
     expect(root.querySelector('[data-testid="teacher-sejour-child"]')?.textContent).toContain('Martin');
     const row = root.querySelector('[data-testid="teacher-sejour-sejour"]') as HTMLElement;
     expect(row.textContent).toContain('22 novembre 2026');
-    expect(row.textContent).toContain('21:50');
     expect(row.textContent).toContain('1 min 30');
     const lines = [...row.querySelectorAll('[data-testid="teacher-sejour-line"]')] as HTMLElement[];
     expect(lines.map((line) => line.querySelector('[data-testid="teacher-sejour-label"]')?.textContent)).toEqual([
@@ -101,7 +100,7 @@ describe('TeacherStudentSejourPage', () => {
         },
       ],
     });
-    http.expectOne(`${studentsUrl}/1/sejours`).flush({ sejours: [] });
+    http.expectOne(`${studentsUrl}/1/sejours`).flush({ journees: [] });
     flushHeader();
     harness.detectChanges();
 

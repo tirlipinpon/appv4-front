@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import type { ParentSejourItem, TeacherStudentsResponse } from '../../core/api/api-models';
+import type { JourneeItem, TeacherStudentsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { SejourListComponent } from '../../shared/sejour-list/sejour-list.component';
@@ -26,7 +26,7 @@ export class TeacherStudentSejourPage implements OnInit {
   private readonly sejoursApi = inject(TeacherSejourService);
 
   readonly name = signal<string | null>(null);
-  readonly sejours = signal<ParentSejourItem[]>([]);
+  readonly sejours = signal<JourneeItem[]>([]);
   readonly error = signal<string | null>(null);
   readonly loading = signal(true);
 
@@ -42,7 +42,7 @@ export class TeacherStudentSejourPage implements OnInit {
     });
     this.sejoursApi.list(childId).subscribe({
       next: (body) => {
-        this.sejours.set(body.sejours ?? []);
+        this.sejours.set(body.journees ?? []);
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
