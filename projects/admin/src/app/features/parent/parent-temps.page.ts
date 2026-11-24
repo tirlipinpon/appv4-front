@@ -1,7 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 
-import type { JourneeMonthResponse, ParentChildResponse } from '../../core/api/api-models';
+import type {
+  ParentChildResponse,
+  ParentJourneeMonthResponse,
+  PlafondRequest,
+  PlafondResponse,
+} from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { JourneeMonthComponent } from '../../shared/journee-month/journee-month.component';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
@@ -10,8 +15,8 @@ import { ParentSejourService } from './data-access/parent-sejour.service';
 import { ParentTempsEvolution } from './parent-temps-evolution';
 
 /**
- * Page Temps du parent (ADMIN-80).
- * Le mois et les journées viennent de la lecture. Le sélecteur garde un espace entier.
+ * Page Temps du parent (ADMIN-80, ADMIN-57).
+ * Le mois, les journées et le plafond viennent de la lecture. La phrase n'est pas écrite ici.
  */
 @Component({
   selector: 'app-parent-temps-page',
@@ -26,7 +31,8 @@ export class ParentTempsPage implements OnInit {
 
   readonly children = signal<ParentChildResponse[]>([]);
   readonly selectedId = signal<number | null>(null);
-  readonly month = signal<JourneeMonthResponse | null>(null);
+  readonly month = signal<ParentJourneeMonthResponse | null>(null);
+  readonly draft = signal('');
   readonly error = signal<string | null>(null);
   readonly loading = signal(true);
   private request = 0;
@@ -94,6 +100,7 @@ export class ParentTempsPage implements OnInit {
           return;
         }
         this.month.set(body);
+        this.draft.set(minutesText(body.plafond?.limitMinutes));
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
@@ -106,4 +113,59 @@ export class ParentTempsPage implements OnInit {
       },
     });
   }
+
+  onDraft(event: Event): void {
+    const target = event.target;
+    if (target instanceof HTMLInputElement) {
+      this.draft.set(target.value);
+    }
+  }
+
+  save(): void {
+    this.post(this.draftBody());
+  }
+
+  clear(): void {
+    this.draft.set('');
+    this.post({});
+  }
+
+  private draftBody(): PlafondRequest {
+    const raw = this.draft().trim();
+    if (raw === '') {
+      return {};
+    }
+    return { limitMinutes: Number(raw) };
+  }
+
+  private post(body: PlafondRequest): void {
+    const childId = this.selectedId();
+    if (childId == null || this.month()?.plafond?.editable !== true) {
+      return;
+    }
+    if (body.limitMinutes != null && Number.isNaN(body.limitMinutes)) {
+      return;
+    }
+    this.error.set(null);
+    this.sejoursApi.save(childId, body).subscribe({
+      next: (plafond) => this.apply(childId, plafond),
+      error: (err: HttpErrorResponse) => this.error.set(httpErrorMessage(err, 'Temps indisponible.')),
+    });
+  }
+
+  private apply(childId: number, plafond: PlafondResponse): void {
+    if (this.selectedId() !== childId) {
+      return;
+    }
+    const shown = this.month();
+    if (shown == null) {
+      return;
+    }
+    this.month.set({ ...shown, plafond });
+    this.draft.set(minutesText(plafond.limitMinutes));
+  }
+}
+
+function minutesText(minutes: number | null | undefined): string {
+  return minutes == null ? '' : String(minutes);
 }

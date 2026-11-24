@@ -111,6 +111,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/{childId}/sejours/plafond": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Poser ou retirer le plafond du jour */
+        put: operations["saveParentPlafond"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/admin/humeurs/{id}": {
         parameters: {
             query?: never;
@@ -2178,6 +2195,16 @@ export interface components {
              */
             pendingTransferCount?: number;
         };
+        PlafondRequest: {
+            limitMinutes?: number;
+        };
+        PlafondResponse: {
+            /** Format: int32 */
+            limitMinutes?: number;
+            exceeded?: boolean;
+            message?: string;
+            editable?: boolean;
+        };
         HumeurChoiceRequest: {
             icon?: string;
             word?: string;
@@ -2948,6 +2975,16 @@ export interface components {
             /** Format: int64 */
             userId?: number;
             label?: string;
+        };
+        ParentJourneeMonthResponse: {
+            monthLabel?: string;
+            /** Format: int32 */
+            year?: number;
+            /** Format: int32 */
+            month?: number;
+            currentMonth?: boolean;
+            journees?: components["schemas"]["JourneeItem"][];
+            plafond?: components["schemas"]["PlafondResponse"];
         };
         TransferResponse: {
             /** Format: int64 */
@@ -4405,6 +4442,59 @@ export interface operations {
                 content?: never;
             };
             /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    saveParentPlafond: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                childId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlafondRequest"];
+            };
+        };
+        responses: {
+            /** @description Plafond enregistré, déjà comparé à aujourd'hui */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlafondResponse"];
+                };
+            };
+            /** @description Nombre hors de 1 à 960, ou parent qui n'est pas le référent */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Cet enfant est introuvable */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7128,13 +7218,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Mois demandé, journées de la plus récente à la plus ancienne */
+            /** @description Mois demandé, journées, et plafond comparé à aujourd'hui */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["JourneeMonthResponse"];
+                    "*/*": components["schemas"]["ParentJourneeMonthResponse"];
                 };
             };
             /** @description Mois futur ou mois inconnu */
