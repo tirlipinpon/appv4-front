@@ -1167,7 +1167,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lire les séjours d'un élève de la classe */
+        /** Lire le mois d'un élève, une journée par jour */
         get: operations["listTeacherSejours"];
         put?: never;
         post?: never;
@@ -1337,7 +1337,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lire les séjours d'un enfant */
+        /** Lire le mois d'un enfant, une journée par jour */
         get: operations["listParentSejours"];
         put?: never;
         post?: never;
@@ -2786,19 +2786,36 @@ export interface components {
             noClassMessage?: string;
             schools?: components["schemas"]["TeacherStudentSchool"][];
         };
-        ParentSejourItem: {
+        JourneeItem: {
+            /** Format: int32 */
+            year?: number;
+            /** Format: int32 */
+            month?: number;
+            /** Format: int32 */
+            day?: number;
+            today?: boolean;
             dateLabel?: string;
-            timeLabel?: string;
             durationLabel?: string;
-            lines?: components["schemas"]["ParentSejourLineItem"][];
+            /** Format: int64 */
+            durationSeconds?: number;
+            lines?: components["schemas"]["JourneeLineItem"][];
         };
-        ParentSejourLineItem: {
+        JourneeLineItem: {
+            space?: string;
             label?: string;
             subjectName?: string;
             durationLabel?: string;
+            /** Format: int64 */
+            durationSeconds?: number;
         };
-        ParentSejourListResponse: {
-            sejours?: components["schemas"]["ParentSejourItem"][];
+        JourneeMonthResponse: {
+            monthLabel?: string;
+            /** Format: int32 */
+            year?: number;
+            /** Format: int32 */
+            month?: number;
+            currentMonth?: boolean;
+            journees?: components["schemas"]["JourneeItem"][];
         };
         TeacherQuestionDifficultyItem: {
             code?: string;
@@ -6791,7 +6808,10 @@ export interface operations {
     };
     listTeacherSejours: {
         parameters: {
-            query?: never;
+            query?: {
+                year?: number;
+                month?: number;
+            };
             header?: never;
             path: {
                 childId: number;
@@ -6800,13 +6820,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Même détail que la lecture parent, ou liste vide */
+            /** @description Même mois que la lecture parent */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ParentSejourListResponse"];
+                    "*/*": components["schemas"]["JourneeMonthResponse"];
+                };
+            };
+            /** @description Mois futur ou mois inconnu */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
             /** @description Le jeton n'est pas dans l'espace professeur */
@@ -7087,7 +7116,10 @@ export interface operations {
     };
     listParentSejours: {
         parameters: {
-            query?: never;
+            query?: {
+                year?: number;
+                month?: number;
+            };
             header?: never;
             path: {
                 childId: number;
@@ -7096,13 +7128,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Séjours du plus récent au plus ancien, ou liste vide */
+            /** @description Mois demandé, journées de la plus récente à la plus ancienne */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ParentSejourListResponse"];
+                    "*/*": components["schemas"]["JourneeMonthResponse"];
+                };
+            };
+            /** @description Mois futur ou mois inconnu */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
                 };
             };
             /** @description Le jeton n'est pas dans l'espace parent */
