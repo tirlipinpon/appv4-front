@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
 /**
  * Menu des pages admin : demandes, humeurs, IA.
+ * Il est dans le bandeau des espaces, et repris sur les pages admin.
  */
 @Component({
   selector: 'app-admin-section-nav',

@@ -36,6 +36,8 @@ describe('SpaceHeader', () => {
           { path: 'teacher/profil', component: BlankPage },
           { path: 'teacher-pending', component: BlankPage },
           { path: 'admin/teacher-requests', component: BlankPage },
+          { path: 'admin/humeurs', component: BlankPage },
+          { path: 'admin/ia', component: BlankPage },
         ]),
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -89,6 +91,27 @@ describe('SpaceHeader', () => {
     expect(text).not.toContain('Parent');
     expect(text).not.toContain('Professeur');
     expect(text).not.toContain('Administration');
+  });
+
+  it('montre Demandes professeur, Humeurs et IA au parent qui est admin', async () => {
+    await show({
+      url: '/parent',
+      token: { activeRole: SpaceRoles.parent, roles: [SpaceRoles.parent, 'admin'] },
+    });
+
+    const adminLinks = Array.from(
+      fixture.nativeElement.querySelectorAll('app-admin-section-nav a'),
+    ) as HTMLAnchorElement[];
+    expect(adminLinks.map((link) => link.textContent?.trim())).toEqual([
+      'Demandes professeur',
+      'Humeurs',
+      'IA',
+    ]);
+    expect(adminLinks.map((link) => link.getAttribute('href'))).toEqual([
+      '/admin/teacher-requests',
+      '/admin/humeurs',
+      '/admin/ia',
+    ]);
   });
 
   it('marque l’onglet et la page professeur, sans entrée Administration', async () => {

@@ -132,15 +132,23 @@ describe('IaPage', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('OpenRouter');
     expect(text).toContain('Clé Artificial Analysis absente.');
-    const providers = fixture.nativeElement.querySelector('[data-testid="ia-provider"]') as HTMLSelectElement;
-    expect(providers.textContent).toContain('DeepSeek');
-    expect(providers.textContent).toContain('Qwen');
-    providers.value = 'qwen';
-    providers.dispatchEvent(new Event('change'));
+    const provider = fixture.nativeElement.querySelector('[data-testid="ia-provider"]') as HTMLInputElement;
+    provider.value = 'qw';
+    provider.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    const models = fixture.nativeElement.querySelector('[data-testid="ia-model"]') as HTMLSelectElement;
-    expect(models.textContent).toContain('Qwen4 Max');
-    expect(models.textContent).not.toContain('DeepSeek Flash');
+    const providerList = fixture.nativeElement.querySelector('[data-testid="ia-provider-suggestions"]') as HTMLElement;
+    expect(providerList.textContent).toContain('Qwen');
+    expect(providerList.textContent).not.toContain('DeepSeek');
+    (providerList.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const model = fixture.nativeElement.querySelector('[data-testid="ia-model"]') as HTMLInputElement;
+    model.value = 'max';
+    model.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const modelList = fixture.nativeElement.querySelector('[data-testid="ia-model-suggestions"]') as HTMLElement;
+    expect(modelList.textContent).toContain('Qwen4 Max');
+    expect(modelList.textContent).not.toContain('DeepSeek Flash');
   });
 
   it('affiche le modèle et le fournisseur renvoyés, sans clé', () => {

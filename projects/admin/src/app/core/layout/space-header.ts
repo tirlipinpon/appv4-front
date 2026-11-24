@@ -18,6 +18,7 @@ import { ConnectedAccountService } from '../auth/connected-account.service';
 import { SpaceRoles } from '../auth/space-roles';
 import { RoleSwitch } from './role-switch';
 import { SpaceAccess } from './space-access';
+import { AdminSectionNav } from './admin-section-nav/admin-section-nav';
 
 interface SpaceMenuItem {
   label: string;
@@ -30,12 +31,13 @@ interface SpaceMenuItem {
  * Bandeau des pages déjà connectées (SCRUM-166).
  * Le nom, puis les onglets Parent et Professeur, puis la déconnexion.
  * Un espace encore fermé (demande professeur, ouvrir parent) reste sur la ligne d'en dessous.
- * Ensuite viennent les pages de l'espace. La file admin ne montre ni les onglets ni le sous-menu.
+ * Ensuite viennent les pages de l'espace. Un compte admin y voit aussi Demandes professeur, Humeurs et IA.
+ * Sur les pages admin elles-mêmes, ces liens sont déjà dans la page : le bandeau ne les répète pas.
  * Le titre du bandeau est le nom du compte, parent ou professeur.
  */
 @Component({
   selector: 'app-space-header',
-  imports: [MatToolbarModule, MatButtonModule, RouterLink, RouterLinkActive, RoleSwitch, SpaceAccess],
+  imports: [MatToolbarModule, MatButtonModule, RouterLink, RouterLinkActive, RoleSwitch, SpaceAccess, AdminSectionNav],
   templateUrl: './space-header.html',
   styleUrl: './space-header.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +54,9 @@ export class SpaceHeader implements OnInit {
 
   /** Faux sur la file de modération : pas d'onglets parent ou professeur. */
   readonly showSpaceActions = input(true);
+
+  /** Vrai si le jeton porte le rôle admin, en plus de l'espace parent ou professeur. */
+  readonly showAdminNav = computed(() => this.showSpaceActions() && this.auth.session().admin);
 
   /** Pages de l'espace actif. Vide tant qu'aucun espace parent ou professeur n'est choisi. */
   readonly menu = computed((): { label: string; items: SpaceMenuItem[] } | null => {

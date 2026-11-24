@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 
 import type { TeacherRequestItem } from '../../../core/api/api-models';
 import { SpaceHeader } from '../../../core/layout/space-header';
-import { AdminSectionNav } from '../admin-section-nav/admin-section-nav';
+import { AdminSectionNav } from '../../../core/layout/admin-section-nav/admin-section-nav';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherRequestsService } from './data-access/teacher-requests.service';
 
