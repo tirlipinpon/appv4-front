@@ -63,12 +63,34 @@
               </div>
               <p class="provider">{{ route.code }}</p>
               <form class="pair" (submit)="changeRoute(route, $event)">
-                <select name="provider" [value]="route.provider">
-                  @for (adapter of adapters(); track adapter) {
-                    <option [value]="adapter">{{ adapter }}</option>
+                <label>
+                  Fournisseur
+                  <select name="provider" [value]="route.provider">
+                    @for (adapter of adapters(); track adapter) {
+                      <option [value]="adapter">{{ adapter }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="suggest">
+                  Modèle
+                  <input
+                    name="model"
+                    data-testid="ia-route-model"
+                    autocomplete="off"
+                    [value]="shownRouteModel(route)"
+                    (focus)="focusRouteModel(route)"
+                    (input)="typeRouteModel(route, $event)"
+                  />
+                  @if (routeSuggestions(route).length > 0) {
+                    <ul class="suggestions" data-testid="ia-route-models">
+                      @for (item of routeSuggestions(route); track item.id) {
+                        <li>
+                          <button type="button" (click)="pickRouteModel(route, item)">{{ item.name }}</button>
+                        </li>
+                      }
+                    </ul>
                   }
-                </select>
-                <input name="model" [value]="route.model" />
+                </label>
                 <button mat-stroked-button type="submit" data-testid="ia-route-change">Changer</button>
               </form>
               <button mat-stroked-button type="button" data-testid="ia-route-active" (click)="toggle(route)">
