@@ -62,7 +62,12 @@
               <span>{{ cell.day }}</span>
               <span class="bar">
                 @for (line of journee.lines ?? []; track $index) {
-                  <i class="seg" [attr.data-space]="line.space" [style.flex-grow]="line.durationSeconds ?? 0"></i>
+                  <i
+                    class="seg"
+                    [class.is-muted]="opened() === journee && isMuted(line.space)"
+                    [attr.data-space]="line.space"
+                    [style.flex-grow]="line.durationSeconds ?? 0"
+                  ></i>
                 }
               </span>
             </button>
@@ -76,10 +81,25 @@
         <article class="detail" data-testid="parent-temps-detail">
           <header>
             <p>{{ journee.dateLabel }}</p>
-            <p>{{ journee.durationLabel }}</p>
+            <label class="filter">
+              Voir
+              <select
+                data-testid="parent-temps-filter"
+                [value]="filter() === null ? '' : filter()"
+                (change)="choose($event)"
+              >
+                <option value="">Tout</option>
+                @for (choice of choices(journee); track choice.space) {
+                  <option [value]="choice.space">{{ choice.label }}</option>
+                }
+              </select>
+            </label>
+            @if (shownDuration(journee); as duration) {
+              <p data-testid="parent-temps-duration">{{ duration }}</p>
+            }
           </header>
           <ul>
-            @for (line of journee.lines ?? []; track $index) {
+            @for (line of visibleLines(journee); track line.space + '-' + line.label + '-' + (line.subjectName ?? '')) {
               <li data-testid="parent-temps-line" [attr.data-space]="line.space">
                 <span class="swatch" [attr.data-space]="line.space"></span>
                 <span data-testid="parent-temps-label">{{ line.label }}</span>
@@ -92,6 +112,7 @@
           </ul>
         </article>
       }
+      <app-parent-temps-evolution [month]="shown" />
     }
   </main>
 </div>

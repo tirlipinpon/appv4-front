@@ -123,6 +123,27 @@ h1 {
   height: 100%;
 }
 
+.seg.is-muted {
+  opacity: 0.25;
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+}
+
+.filter select {
+  border: 1px solid var(--app-outline);
+  border-radius: 999px;
+  background: var(--app-surface-card);
+  padding: 0.25rem 0.7rem;
+  color: var(--app-text);
+  font: inherit;
+}
+
 .detail {
   margin-top: 1rem;
   border: 1px solid var(--app-outline);

@@ -1,19 +1,25 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 
-import type { JourneeItem, JourneeMonthResponse, ParentChildResponse } from '../../core/api/api-models';
+import type {
+  JourneeItem,
+  JourneeLineItem,
+  JourneeMonthResponse,
+  ParentChildResponse,
+} from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { ParentChildrenService } from './data-access/parent-children.service';
 import { ParentSejourService } from './data-access/parent-sejour.service';
+import { ParentTempsEvolution } from './parent-temps-evolution';
 
 /**
  * Page Temps du parent (ADMIN-80).
- * Le mois et les journées viennent de la lecture. Le premier enfant est ouvert.
+ * Le mois et les journées viennent de la lecture. Le sélecteur garde un espace entier.
  */
 @Component({
   selector: 'app-parent-temps-page',
-  imports: [SpaceHeader],
+  imports: [SpaceHeader, ParentTempsEvolution],
   templateUrl: './parent-temps.page.html',
   styleUrl: './parent-temps.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,6 +32,8 @@ export class ParentTempsPage implements OnInit {
   readonly selectedId = signal<number | null>(null);
   readonly month = signal<JourneeMonthResponse | null>(null);
   readonly opened = signal<JourneeItem | null>(null);
+  /** Espace affiché. Vide : toute la journée. `question` regroupe les questions jouées et l'écran Questions. */
+  readonly filter = signal<string | null>(null);
   readonly error = signal<string | null>(null);
   readonly loading = signal(true);
   private request = 0;
@@ -85,7 +93,68 @@ export class ParentTempsPage implements OnInit {
   }
 
   open(journee: JourneeItem): void {
+    if (this.opened() !== journee) {
+      this.filter.set(null);
+    }
     this.opened.set(journee);
+  }
+
+  choose(event: Event): void {
+    const raw = (event.target as HTMLSelectElement).value;
+    this.filter.set(raw === '' ? null : raw);
+  }
+
+  choices(journee: JourneeItem): { space: string; label: string }[] {
+    const lines = journee.lines ?? [];
+    const seen = new Set<string>();
+    const choices: { space: string; label: string }[] = [];
+    for (const line of lines) {
+      const space = this.groupOf(line.space);
+      if (space == null || seen.has(space)) {
+        continue;
+      }
+      seen.add(space);
+      choices.push({ space, label: this.groupLabel(space, lines) });
+    }
+    return choices;
+  }
+
+  visibleLines(journee: JourneeItem): JourneeLineItem[] {
+    const lines = journee.lines ?? [];
+    const picked = this.filter();
+    if (picked == null) {
+      return lines;
+    }
+    return lines.filter((line) => this.groupOf(line.space) === picked);
+  }
+
+  shownDuration(journee: JourneeItem): string | undefined {
+    return this.filter() == null ? journee.durationLabel : undefined;
+  }
+
+  isMuted(lineSpace: string | undefined): boolean {
+    const picked = this.filter();
+    if (picked == null) {
+      return false;
+    }
+    return this.groupOf(lineSpace) !== picked;
+  }
+
+  private groupOf(space: string | undefined): string | null {
+    if (space == null || space === '') {
+      return null;
+    }
+    if (space === 'question' || space === 'questions') {
+      return 'question';
+    }
+    return space;
+  }
+
+  private groupLabel(space: string, lines: JourneeLineItem[]): string {
+    if (space === 'question') {
+      return lines.find((line) => line.space === 'questions' && line.label)?.label ?? 'Questions';
+    }
+    return lines.find((line) => line.space === space && line.label)?.label ?? space;
   }
 
   cells(): { day: number | null; journee: JourneeItem | null }[] {
@@ -115,6 +184,7 @@ export class ParentTempsPage implements OnInit {
   private load(childId: number, year?: number, month?: number, openToday = true): void {
     this.error.set(null);
     this.opened.set(null);
+    this.filter.set(null);
     const request = ++this.request;
     this.sejoursApi.list(childId, year, month).subscribe({
       next: (body) => {
