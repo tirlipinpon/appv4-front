@@ -1,0 +1,83 @@
+@if (month(); as shown) {
+  <div class="month-nav">
+    <button type="button" [attr.data-testid]="testId() + '-prev'" (click)="previous.emit()">Mois précédent</button>
+    <p [attr.data-testid]="testId() + '-month'">{{ shown.monthLabel }}</p>
+    <button
+      type="button"
+      [attr.data-testid]="testId() + '-next'"
+      [disabled]="shown.currentMonth === true"
+      (click)="next.emit()"
+    >
+      Mois suivant
+    </button>
+  </div>
+
+  <div class="weekdays" aria-hidden="true">
+    <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+  </div>
+  <div class="grid">
+    @for (cell of cells(); track $index) {
+      @if (cell.day === null) {
+        <span></span>
+      } @else if (cell.journee; as journee) {
+        <button
+          type="button"
+          class="day"
+          [attr.data-testid]="testId() + '-day-' + cell.day"
+          [attr.aria-current]="opened() === journee ? 'date' : null"
+          (click)="open(journee)"
+        >
+          <span>{{ cell.day }}</span>
+          <span class="bar">
+            @for (line of journee.lines ?? []; track $index) {
+              <i
+                class="seg"
+                [class.is-muted]="opened() === journee && isMuted(line.space)"
+                [attr.data-space]="line.space"
+                [style.flex-grow]="line.durationSeconds ?? 0"
+              ></i>
+            }
+          </span>
+        </button>
+      } @else {
+        <span class="quiet" [attr.data-testid]="testId() + '-quiet-' + cell.day">{{ cell.day }}</span>
+      }
+    }
+  </div>
+
+  @if (opened(); as journee) {
+    <article class="detail" [attr.data-testid]="testId() + '-detail'">
+      <header>
+        <p>{{ journee.dateLabel }}</p>
+        <label class="filter">
+          Voir
+          <select
+            [attr.data-testid]="testId() + '-filter'"
+            [value]="filter() === null ? '' : filter()"
+            (change)="choose($event)"
+          >
+            <option value="">Tout</option>
+            @for (choice of choices(journee); track choice.space) {
+              <option [value]="choice.space">{{ choice.label }}</option>
+            }
+          </select>
+        </label>
+        @if (shownDuration(journee); as duration) {
+          <p [attr.data-testid]="testId() + '-duration'">{{ duration }}</p>
+        }
+      </header>
+      <ul>
+        @for (line of visibleLines(journee); track line.space + '-' + line.label + '-' + (line.subjectName ?? '')) {
+          <li [attr.data-testid]="testId() + '-line'" [attr.data-space]="line.space">
+            <span class="swatch" [attr.data-space]="line.space"></span>
+            <span [attr.data-testid]="testId() + '-label'">{{ line.label }}</span>
+            @if (line.subjectName) {
+              <span [attr.data-testid]="testId() + '-subject'">{{ line.subjectName }}</span>
+            }
+            <span>{{ line.durationLabel }}</span>
+          </li>
+        }
+      </ul>
+    </article>
+  }
+}

@@ -57,13 +57,27 @@ describe('TeacherStudentSejourPage', () => {
     expect(sejour.request.method).toBe('GET');
     sejour.flush({
       monthLabel: 'novembre 2026',
+      year: 2026,
+      month: 11,
+      currentMonth: true,
       journees: [
         {
+          year: 2026,
+          month: 11,
+          day: 22,
+          today: true,
           dateLabel: '22 novembre 2026',
           durationLabel: '1 min 30',
+          durationSeconds: 90,
           lines: [
-            { label: 'Accueil', durationLabel: '40 s' },
-            { label: 'Combien font 2 + 2 ?', subjectName: 'Maths', durationLabel: '2 min' },
+            { space: 'accueil', label: 'Accueil', durationLabel: '40 s', durationSeconds: 40 },
+            {
+              space: 'question',
+              label: 'Combien font 2 + 2 ?',
+              subjectName: 'Maths',
+              durationLabel: '2 min',
+              durationSeconds: 120,
+            },
           ],
         },
       ],
@@ -74,10 +88,13 @@ describe('TeacherStudentSejourPage', () => {
     const root = harness.routeNativeElement as HTMLElement;
     expect(root.querySelector('[data-testid="teacher-sejour-child"]')?.textContent).toContain('Léa');
     expect(root.querySelector('[data-testid="teacher-sejour-child"]')?.textContent).toContain('Martin');
-    const row = root.querySelector('[data-testid="teacher-sejour-sejour"]') as HTMLElement;
-    expect(row.textContent).toContain('22 novembre 2026');
-    expect(row.textContent).toContain('1 min 30');
-    const lines = [...row.querySelectorAll('[data-testid="teacher-sejour-line"]')] as HTMLElement[];
+    expect(root.querySelector('[data-testid="teacher-sejour-month"]')?.textContent?.trim()).toBe('novembre 2026');
+    expect(root.querySelector('[data-testid="teacher-sejour-day-22"]')).not.toBeNull();
+    expect(root.textContent).not.toContain('Plafond');
+    const detail = root.querySelector('[data-testid="teacher-sejour-detail"]') as HTMLElement;
+    expect(detail.textContent).toContain('22 novembre 2026');
+    expect(detail.textContent).toContain('1 min 30');
+    const lines = [...detail.querySelectorAll('[data-testid="teacher-sejour-line"]')] as HTMLElement[];
     expect(lines.map((line) => line.querySelector('[data-testid="teacher-sejour-label"]')?.textContent)).toEqual([
       'Accueil',
       'Combien font 2 + 2 ?',
@@ -100,14 +117,20 @@ describe('TeacherStudentSejourPage', () => {
         },
       ],
     });
-    http.expectOne(`${studentsUrl}/1/sejours`).flush({ journees: [] });
+    http.expectOne(`${studentsUrl}/1/sejours`).flush({
+      monthLabel: 'novembre 2026',
+      year: 2026,
+      month: 11,
+      currentMonth: true,
+      journees: [],
+    });
     flushHeader();
     harness.detectChanges();
 
     const root = harness.routeNativeElement as HTMLElement;
     expect(root.querySelector('[data-testid="teacher-sejour-child"]')?.textContent).toContain('Léa');
     expect(root.querySelector('[data-testid="teacher-sejour-child"]')?.textContent).toContain('Martin');
-    expect(root.querySelectorAll('[data-testid="teacher-sejour-sejour"]').length).toBe(0);
+    expect(root.querySelector('[data-testid="teacher-sejour-detail"]')).toBeNull();
     expect(root.textContent).not.toContain('40 s');
     expect(root.textContent).not.toContain('22 novembre 2026');
   });
@@ -129,7 +152,7 @@ describe('TeacherStudentSejourPage', () => {
     expect(root.querySelector('[data-testid="teacher-sejour-error"]')?.textContent?.trim()).toBe(sentence);
     expect(root.textContent?.split(sentence).length).toBe(2);
     expect(root.querySelector('[data-testid="teacher-sejour-child"]')).toBeNull();
-    expect(root.querySelectorAll('[data-testid="teacher-sejour-sejour"]').length).toBe(0);
+    expect(root.querySelector('[data-testid="teacher-sejour-detail"]')).toBeNull();
     expect(root.textContent).not.toContain('Temps indisponible.');
   });
 

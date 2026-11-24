@@ -12,6 +12,6 @@
     @if (name(); as childName) {
       <h1 data-testid="teacher-sejour-child">{{ childName }}</h1>
     }
-    <app-sejour-list [sejours]="sejours()" testId="teacher-sejour" />
+    <app-journee-month [month]="month()" testId="teacher-sejour" (previous)="previous()" (next)="next()" />
   </main>
 </div>

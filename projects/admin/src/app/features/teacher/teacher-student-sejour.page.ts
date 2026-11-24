@@ -2,20 +2,20 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import type { JourneeItem, TeacherStudentsResponse } from '../../core/api/api-models';
+import type { JourneeMonthResponse, TeacherStudentsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
+import { JourneeMonthComponent } from '../../shared/journee-month/journee-month.component';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
-import { SejourListComponent } from '../../shared/sejour-list/sejour-list.component';
 import { TeacherSejourService } from './data-access/teacher-sejour.service';
 import { TeacherStudentsService } from './data-access/teacher-students.service';
 
 /**
- * Séjour d'un élève ouvert depuis la liste (ADMIN-79).
- * Le nom vient des élèves de la classe. Les libellés restent ceux de la lecture.
+ * Mois d'un élève ouvert depuis la classe (ADMIN-81).
+ * Même calendrier que le parent. Pas de plafond, pas de courbe.
  */
 @Component({
   selector: 'app-teacher-student-sejour-page',
-  imports: [SpaceHeader, SejourListComponent],
+  imports: [SpaceHeader, JourneeMonthComponent],
   templateUrl: './teacher-student-sejour.page.html',
   styleUrl: './teacher-student-sejour.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,9 +26,11 @@ export class TeacherStudentSejourPage implements OnInit {
   private readonly sejoursApi = inject(TeacherSejourService);
 
   readonly name = signal<string | null>(null);
-  readonly sejours = signal<JourneeItem[]>([]);
+  readonly month = signal<JourneeMonthResponse | null>(null);
   readonly error = signal<string | null>(null);
   readonly loading = signal(true);
+  private childId: number | null = null;
+  private request = 0;
 
   ngOnInit(): void {
     const childId = Number(this.route.snapshot.paramMap.get('childId'));
@@ -36,17 +38,54 @@ export class TeacherStudentSejourPage implements OnInit {
       this.loading.set(false);
       return;
     }
+    this.childId = childId;
     this.studentsApi.load().subscribe({
       next: (body) => this.name.set(studentName(body, childId)),
       error: () => this.loading.set(false),
     });
-    this.sejoursApi.list(childId).subscribe({
+    this.load();
+  }
+
+  previous(): void {
+    const year = this.month()?.year;
+    const month = this.month()?.month;
+    if (year == null || month == null) {
+      return;
+    }
+    const earlier = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+    this.load(earlier.year, earlier.month);
+  }
+
+  next(): void {
+    const shown = this.month();
+    const year = shown?.year;
+    const month = shown?.month;
+    if (year == null || month == null || shown?.currentMonth === true) {
+      return;
+    }
+    const later = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
+    this.load(later.year, later.month);
+  }
+
+  private load(year?: number, month?: number): void {
+    if (this.childId == null) {
+      return;
+    }
+    this.error.set(null);
+    const request = ++this.request;
+    this.sejoursApi.list(this.childId, year, month).subscribe({
       next: (body) => {
-        this.sejours.set(body.journees ?? []);
+        if (request !== this.request) {
+          return;
+        }
+        this.month.set(body);
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
-        this.sejours.set([]);
+        if (request !== this.request) {
+          return;
+        }
+        this.month.set(null);
         this.loading.set(false);
         this.error.set(httpErrorMessage(err, 'Temps indisponible.'));
       },
