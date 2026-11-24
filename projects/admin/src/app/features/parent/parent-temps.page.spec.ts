@@ -68,6 +68,32 @@ describe('ParentTempsPage', () => {
     expect(lines[0].querySelector('[data-testid="parent-temps-label"]')?.textContent).toBe('Accueil');
     expect(lines[0].textContent).toContain('6 min 45');
     expect(lines[1].querySelector('[data-testid="parent-temps-subject"]')?.textContent).toBe('Maths');
+
+    const filter = fixture.nativeElement.querySelector('[data-testid="parent-temps-filter"]') as HTMLSelectElement;
+    expect([...filter.options].map((option) => option.textContent?.trim())).toEqual(['Tout', 'Accueil', 'Questions']);
+    filter.value = 'question';
+    filter.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const filtered = [...fixture.nativeElement.querySelectorAll('[data-testid="parent-temps-line"]')] as HTMLElement[];
+    expect(filtered.map((line) => line.getAttribute('data-space'))).toEqual(['question']);
+    expect(filtered[0].querySelector('[data-testid="parent-temps-subject"]')?.textContent).toBe('Maths');
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-duration"]')).toBeNull();
+    filter.value = 'accueil';
+    filter.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(
+      [...fixture.nativeElement.querySelectorAll('[data-testid="parent-temps-line"]')].map((line) =>
+        (line as HTMLElement).getAttribute('data-space'),
+      ),
+    ).toEqual(['accueil']);
+    filter.value = '';
+    filter.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="parent-temps-line"]').length).toBe(2);
+    expect(text('[data-testid="parent-temps-duration"]')).toBe('7 min');
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-evolution"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-from"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-to"]')).not.toBeNull();
     const bar = fixture.nativeElement.querySelector('[data-testid="parent-temps-day-22"] .bar') as HTMLElement;
     expect([...bar.querySelectorAll('.seg')].map((seg) => seg.getAttribute('data-space'))).toEqual([
       'accueil',
