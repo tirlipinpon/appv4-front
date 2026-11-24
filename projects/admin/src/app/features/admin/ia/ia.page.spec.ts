@@ -29,6 +29,10 @@ describe('IaPage', () => {
     http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/connections')).flush({
       connections: [],
     });
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/catalog')).flush({
+      catalogs: [],
+      providers: [],
+    });
     http.expectOne('http://localhost:8080/api/int/auth/me').flush({ displayName: 'Admin' });
     fixture.detectChanges();
   });
@@ -39,6 +43,43 @@ describe('IaPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Aucune connexion.');
     expect(fixture.nativeElement.textContent).not.toContain('openai');
     expect(fixture.nativeElement.querySelector('[data-testid="ia-key"]')).not.toBeNull();
+  });
+
+  it('propose les fournisseurs et les modèles renvoyés par les catalogues', () => {
+    page.ngOnInit();
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/connections')).flush({
+      connections: [],
+    });
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/catalog')).flush({
+      catalogs: [
+        { code: 'openrouter', name: 'OpenRouter', available: true, message: '1 modèles' },
+        { code: 'modelsdev', name: 'models.dev', available: true, message: '1 modèles' },
+        {
+          code: 'artificial-analysis',
+          name: 'Artificial Analysis',
+          available: false,
+          message: 'Clé Artificial Analysis absente.',
+        },
+      ],
+      providers: [
+        { code: 'deepseek', name: 'DeepSeek', models: [{ id: 'deepseek-flash', name: 'DeepSeek Flash', catalogs: ['openrouter'] }] },
+        { code: 'qwen', name: 'Qwen', models: [{ id: 'qwen4-max', name: 'Qwen4 Max', catalogs: ['modelsdev'] }] },
+      ],
+    });
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('OpenRouter');
+    expect(text).toContain('Clé Artificial Analysis absente.');
+    const providers = fixture.nativeElement.querySelector('[data-testid="ia-provider"]') as HTMLSelectElement;
+    expect(providers.textContent).toContain('DeepSeek');
+    expect(providers.textContent).toContain('Qwen');
+    providers.value = 'qwen';
+    providers.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const models = fixture.nativeElement.querySelector('[data-testid="ia-model"]') as HTMLSelectElement;
+    expect(models.textContent).toContain('Qwen4 Max');
+    expect(models.textContent).not.toContain('DeepSeek Flash');
   });
 
   it('affiche le modèle et le fournisseur renvoyés, sans clé', () => {
@@ -100,6 +141,10 @@ describe('IaPage', () => {
     page.ngOnInit();
     http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/connections')).flush({
       connections,
+    });
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/catalog')).flush({
+      catalogs: [],
+      providers: [],
     });
     fixture.detectChanges();
   }

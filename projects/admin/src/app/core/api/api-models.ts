@@ -118,3 +118,7 @@ export type CreateConnexionRequest = components['schemas']['CreateConnexionReque
 export type ConnexionResponse = components['schemas']['ConnexionResponse'];
 export type ConnexionListResponse = components['schemas']['ConnexionListResponse'];
 export type EssaiResponse = components['schemas']['EssaiResponse'];
+export type CatalogueResponse = components['schemas']['CatalogueResponse'];
+export type LectureResponse = components['schemas']['LectureResponse'];
+export type FournisseurResponse = components['schemas']['FournisseurResponse'];
+export type ModeleResponse = components['schemas']['ModeleResponse'];

@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import type {
+  CatalogueResponse,
   ConnexionListResponse,
   ConnexionResponse,
   CreateConnexionRequest,
@@ -22,6 +23,10 @@ export class AiConnectionsService {
     return this.http
       .get<ConnexionListResponse>(`${environment.apiBaseUrl}/admin/ai/connections`)
       .pipe(map((body) => body.connections ?? []));
+  }
+
+  catalog(): Observable<CatalogueResponse> {
+    return this.http.get<CatalogueResponse>(`${environment.apiBaseUrl}/admin/ai/catalog`);
   }
 
   create(body: CreateConnexionRequest): Observable<ConnexionResponse> {

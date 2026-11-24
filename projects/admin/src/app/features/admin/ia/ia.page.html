@@ -15,16 +15,39 @@
     <section class="panel">
       <div class="panel-head">
         <h2>Nouvelle connexion</h2>
-        <p class="hint">La clé part une fois. Elle n'est pas réaffichée.</p>
+        <p class="hint">Le choix vient des catalogues. La clé part une fois et n'est pas réaffichée.</p>
       </div>
+      @if (catalogs().length > 0) {
+        <ul class="catalogs">
+          @for (catalog of catalogs(); track catalog.code) {
+            <li [attr.data-testid]="'ia-catalog-' + catalog.code" [class.down]="catalog.available === false">
+              {{ catalog.name }} — {{ catalog.message }}
+            </li>
+          }
+        </ul>
+      }
       <form class="create" (submit)="$event.preventDefault(); create()">
+        <label class="search">
+          Filtrer
+          <input data-testid="ia-search" [value]="search()" (input)="search.set(inputValue($event))" />
+        </label>
         <label>
           Fournisseur
-          <input data-testid="ia-provider" [value]="provider()" (input)="provider.set(inputValue($event))" />
+          <select data-testid="ia-provider" [value]="provider()" (change)="chooseProvider($event)">
+            <option value="">Choisir</option>
+            @for (item of visibleProviders(); track item.code) {
+              <option [value]="item.code">{{ item.name }}</option>
+            }
+          </select>
         </label>
         <label>
           Modèle
-          <input data-testid="ia-model" [value]="model()" (input)="model.set(inputValue($event))" />
+          <select data-testid="ia-model" [value]="model()" (change)="model.set(selectValue($event))">
+            <option value="">Choisir</option>
+            @for (item of visibleModels(); track item.id) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select>
         </label>
         <label>
           Clé

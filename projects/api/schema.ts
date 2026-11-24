@@ -1535,6 +1535,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/admin/ai/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les fournisseurs et modèles des catalogues */
+        get: operations["readAiCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/today": {
         parameters: {
             query?: never;
@@ -3091,6 +3108,26 @@ export interface components {
         };
         ConnexionListResponse: {
             connections?: components["schemas"]["ConnexionResponse"][];
+        };
+        CatalogueResponse: {
+            catalogs?: components["schemas"]["LectureResponse"][];
+            providers?: components["schemas"]["FournisseurResponse"][];
+        };
+        FournisseurResponse: {
+            code?: string;
+            name?: string;
+            models?: components["schemas"]["ModeleResponse"][];
+        };
+        LectureResponse: {
+            code?: string;
+            name?: string;
+            available?: boolean;
+            message?: string;
+        };
+        ModeleResponse: {
+            id?: string;
+            name?: string;
+            catalogs?: string[];
         };
         ChildTodayMission: {
             /** Format: int64 */
@@ -7558,6 +7595,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readAiCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CatalogueResponse"];
                 };
             };
         };
