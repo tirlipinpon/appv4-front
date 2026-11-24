@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import type { ParentChildResponse, ParentSejourItem } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
+import { SejourListComponent } from '../../shared/sejour-list/sejour-list.component';
 import { ParentChildrenService } from './data-access/parent-children.service';
 import { ParentSejourService } from './data-access/parent-sejour.service';
 
@@ -13,7 +14,7 @@ import { ParentSejourService } from './data-access/parent-sejour.service';
  */
 @Component({
   selector: 'app-parent-temps-page',
-  imports: [SpaceHeader],
+  imports: [SpaceHeader, SejourListComponent],
   templateUrl: './parent-temps.page.html',
   styleUrl: './parent-temps.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

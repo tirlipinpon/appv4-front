@@ -1,0 +1,32 @@
+<div class="sejours">
+  @for (sejour of sejours(); track $index) {
+    <article class="sejour" [attr.data-testid]="testId() + '-sejour'">
+      <header class="head">
+        <div>
+          <p class="date">{{ sejour.dateLabel }}</p>
+          <p class="time">{{ sejour.timeLabel }}</p>
+        </div>
+        <p class="total">{{ sejour.durationLabel }}</p>
+      </header>
+      @if (sejour.lines; as lines) {
+        <ul class="lines">
+          @for (line of lines; track $index) {
+            <li
+              class="line"
+              [class.is-question]="!!line.subjectName"
+              [attr.data-testid]="testId() + '-line'"
+            >
+              <div class="text">
+                <span class="label" [attr.data-testid]="testId() + '-label'">{{ line.label }}</span>
+                @if (line.subjectName) {
+                  <span class="subject" [attr.data-testid]="testId() + '-subject'">{{ line.subjectName }}</span>
+                }
+              </div>
+              <span class="duration">{{ line.durationLabel }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </article>
+  }
+</div>
