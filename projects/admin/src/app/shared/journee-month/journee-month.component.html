@@ -28,6 +28,9 @@
           (click)="open(journee)"
         >
           <span>{{ cell.day }}</span>
+          @if (journee.today === true && todayPhrase() !== '') {
+            <span class="today-phrase" [attr.data-testid]="testId() + '-today-phrase'">{{ todayPhrase() }}</span>
+          }
           <span class="bar">
             @for (line of journee.lines ?? []; track $index) {
               <i

@@ -70,6 +70,12 @@
   box-shadow: inset 0 0 0 1px var(--app-primary);
 }
 
+.today-phrase {
+  color: var(--app-danger, #9b1c1c);
+  font-size: 0.65rem;
+  line-height: 1.2;
+}
+
 .bar {
   display: flex;
   height: 0.35rem;

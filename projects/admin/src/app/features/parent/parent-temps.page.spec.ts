@@ -183,6 +183,121 @@ describe('ParentTempsPage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-month"]')).toBeNull();
   });
 
+  it('montre la phrase au-dessus du mois et sur le jour en cours', () => {
+    openAkira(exceeded());
+
+    expect(text('[data-testid="parent-temps-alert"]')).toBe('Plafond du jour dépassé.');
+    expect(text('[data-testid="parent-temps-today-phrase"]')).toBe('Plafond du jour dépassé.');
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-day-21"]')?.textContent).not.toContain(
+      'Plafond du jour dépassé.',
+    );
+    expect((fixture.nativeElement.querySelector('[data-testid="parent-temps-limit"]') as HTMLInputElement).value).toBe(
+      '30',
+    );
+  });
+
+  it('garde la phrase au-dessus quand le mois affiché est passé', () => {
+    openAkira({
+      monthLabel: 'octobre 2026',
+      year: 2026,
+      month: 10,
+      currentMonth: false,
+      journees: [],
+      plafond: {
+        limitMinutes: 30,
+        exceeded: true,
+        message: 'Plafond du jour dépassé.',
+        editable: true,
+      },
+    });
+
+    expect(text('[data-testid="parent-temps-alert"]')).toBe('Plafond du jour dépassé.');
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-today-phrase"]')).toBeNull();
+  });
+
+  it('laisse le parent en partage lire le plafond sans l’écrire', () => {
+    openAkira({
+      ...november(),
+      plafond: {
+        limitMinutes: 30,
+        exceeded: false,
+        message: '',
+        editable: false,
+      },
+    });
+
+    expect(text('[data-testid="parent-temps-limit"]')).toBe('30');
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-save"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-clear"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-alert"]')).toBeNull();
+  });
+
+  it('enregistre le nouveau nombre et retire la phrase renvoyée vide', () => {
+    openAkira(exceeded());
+    const input = fixture.nativeElement.querySelector('[data-testid="parent-temps-limit"]') as HTMLInputElement;
+    input.value = '31';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('[data-testid="parent-temps-save"]') as HTMLButtonElement).click();
+
+    const saved = http.expectOne((req) => req.method === 'PUT' && req.url === `${sejoursUrl(2)}/plafond`);
+    expect(saved.request.body).toEqual({ limitMinutes: 31 });
+    saved.flush({ limitMinutes: 31, exceeded: false, message: '', editable: true });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-alert"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-today-phrase"]')).toBeNull();
+    expect((fixture.nativeElement.querySelector('[data-testid="parent-temps-limit"]') as HTMLInputElement).value).toBe(
+      '31',
+    );
+  });
+
+  it('retire le plafond en envoyant un corps vide', () => {
+    openAkira(exceeded());
+    (fixture.nativeElement.querySelector('[data-testid="parent-temps-clear"]') as HTMLButtonElement).click();
+
+    const cleared = http.expectOne((req) => req.method === 'PUT' && req.url === `${sejoursUrl(2)}/plafond`);
+    expect(cleared.request.body).toEqual({});
+    cleared.flush({ exceeded: false, message: '', editable: true });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement.querySelector('[data-testid="parent-temps-limit"]') as HTMLInputElement).value).toBe(
+      '',
+    );
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-alert"]')).toBeNull();
+  });
+
+  it('affiche le refus de l’API et garde le plafond déjà montré', () => {
+    openAkira(exceeded());
+    const input = fixture.nativeElement.querySelector('[data-testid="parent-temps-limit"]') as HTMLInputElement;
+    input.value = '0';
+    input.dispatchEvent(new Event('input'));
+    (fixture.nativeElement.querySelector('[data-testid="parent-temps-save"]') as HTMLButtonElement).click();
+
+    const refused = http.expectOne((req) => req.method === 'PUT' && req.url === `${sejoursUrl(2)}/plafond`);
+    expect(refused.request.body).toEqual({ limitMinutes: 0 });
+    refused.flush(
+      { message: 'Le plafond est entre 1 et 960 minutes.' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+
+    expect(text('[data-testid="parent-temps-error"]')).toBe('Le plafond est entre 1 et 960 minutes.');
+    expect(text('[data-testid="parent-temps-alert"]')).toBe('Plafond du jour dépassé.');
+    expect((fixture.nativeElement.querySelector('[data-testid="parent-temps-limit"]') as HTMLInputElement).value).toBe(
+      '0',
+    );
+  });
+
+  function openAkira(month: object): void {
+    http.expectOne(childrenUrl).flush({
+      children: [{ id: 2, firstName: 'Akira', lastName: 'Iris' }],
+    });
+    http.expectOne(sejoursUrl(2)).flush(month);
+    flushHeader();
+    fixture.detectChanges();
+  }
+
   function menuLabels(): string[] {
     return [...fixture.nativeElement.querySelectorAll('[data-testid="space-nav"] a')].map((link: HTMLAnchorElement) =>
       link.textContent?.trim() ?? '',
@@ -203,6 +318,18 @@ describe('ParentTempsPage', () => {
 
 function sejoursUrl(childId: number): string {
   return `http://localhost:8080/api/int/parent/children/${childId}/sejours`;
+}
+
+function exceeded() {
+  return {
+    ...november(),
+    plafond: {
+      limitMinutes: 30,
+      exceeded: true,
+      message: 'Plafond du jour dépassé.',
+      editable: true,
+    },
+  };
 }
 
 function november() {

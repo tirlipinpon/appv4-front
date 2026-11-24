@@ -1,6 +1,11 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
 
-import type { JourneeItem, JourneeLineItem, JourneeMonthResponse } from '../../core/api/api-models';
+import type {
+  JourneeItem,
+  JourneeLineItem,
+  JourneeMonthResponse,
+  ParentJourneeMonthResponse,
+} from '../../core/api/api-models';
 
 /**
  * Mois d'un enfant : grille, barre et détail.
@@ -13,7 +18,9 @@ import type { JourneeItem, JourneeLineItem, JourneeMonthResponse } from '../../c
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JourneeMonthComponent {
-  readonly month = input<JourneeMonthResponse | null>(null);
+  readonly month = input<JourneeMonthResponse | ParentJourneeMonthResponse | null>(null);
+  /** Phrase du jour en cours, déjà écrite par la lecture. Vide : rien sur la case. */
+  readonly todayPhrase = input('');
   readonly testId = input.required<string>();
   readonly previous = output<void>();
   readonly next = output<void>();

@@ -31,7 +31,41 @@
     }
 
     @if (month(); as shown) {
-      <app-journee-month [month]="shown" testId="parent-temps" (previous)="previous()" (next)="next()" />
+      @if (shown.plafond; as plafond) {
+        <section class="plafond" data-testid="parent-temps-plafond">
+          @if (plafond.editable === true) {
+            <label>
+              Plafond
+              <input
+                data-testid="parent-temps-limit"
+                type="number"
+                step="any"
+                [value]="draft()"
+                (input)="onDraft($event)"
+              />
+            </label>
+            <button type="button" data-testid="parent-temps-save" (click)="save()">Enregistrer</button>
+            <button type="button" data-testid="parent-temps-clear" (click)="clear()">Retirer</button>
+          } @else {
+            <p>
+              Plafond
+              @if (plafond.limitMinutes !== undefined && plafond.limitMinutes !== null) {
+                <span data-testid="parent-temps-limit">{{ plafond.limitMinutes }}</span>
+              }
+            </p>
+          }
+          @if (plafond.message) {
+            <p class="alert" data-testid="parent-temps-alert">{{ plafond.message }}</p>
+          }
+        </section>
+      }
+      <app-journee-month
+        [month]="shown"
+        [todayPhrase]="shown.plafond?.message ?? ''"
+        testId="parent-temps"
+        (previous)="previous()"
+        (next)="next()"
+      />
       <app-parent-temps-evolution [month]="shown" />
     }
   </main>
