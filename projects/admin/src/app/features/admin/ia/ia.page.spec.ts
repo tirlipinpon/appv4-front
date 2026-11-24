@@ -33,6 +33,7 @@ describe('IaPage', () => {
       catalogs: [],
       providers: [],
     });
+    flushBesoins();
     http.expectOne('http://localhost:8080/api/int/auth/me').flush({ displayName: 'Admin' });
     fixture.detectChanges();
   });
@@ -41,8 +42,67 @@ describe('IaPage', () => {
 
   it('montre une liste vide sans connexion d’exemple', () => {
     expect(fixture.nativeElement.textContent).toContain('Aucune connexion.');
+    expect(fixture.nativeElement.textContent).toContain('Aucun besoin.');
     expect(fixture.nativeElement.textContent).not.toContain('openai');
     expect(fixture.nativeElement.querySelector('[data-testid="ia-key"]')).not.toBeNull();
+  });
+
+  it('affiche le besoin, la consommation et l’historique renvoyés', () => {
+    page.ngOnInit();
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/connections')).flush({
+      connections: [],
+    });
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/catalog')).flush({
+      catalogs: [],
+      providers: [],
+    });
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/routes')).flush({
+      routes: [
+        { code: 'question-draft', label: 'Proposer des questions', provider: 'openai', model: 'depart', active: true },
+      ],
+      providers: ['openai'],
+    });
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/usage')).flush({
+      from: '2026-11-23',
+      to: '2026-11-23',
+      lines: [
+        {
+          date: '2026-11-23',
+          code: 'question-draft',
+          label: 'Proposer des questions',
+          provider: 'openai',
+          model: 'depart',
+          calls: 1,
+          tokens: 20,
+        },
+      ],
+    });
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/route-changes')).flush({
+      changes: [
+        {
+          code: 'question-draft',
+          label: 'Proposer des questions',
+          adminName: 'Ada',
+          dateLabel: '24 novembre 2026',
+          timeLabel: '00:30',
+          oldProvider: 'openai',
+          oldModel: 'depart',
+          newProvider: 'openai',
+          newModel: 'mini',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const route = fixture.nativeElement.querySelector('[data-testid="ia-route-question-draft"]') as HTMLElement;
+    expect(route.textContent).toContain('Proposer des questions');
+    expect(route.textContent).toContain('Actif');
+    expect(fixture.nativeElement.textContent).toContain('2026-11-23');
+    expect(fixture.nativeElement.textContent).toContain('1 appels');
+    expect(fixture.nativeElement.textContent).toContain('20 tokens');
+    expect(fixture.nativeElement.textContent).toContain('Ada');
+    expect(fixture.nativeElement.textContent).toContain('24 novembre 2026');
+    expect(fixture.nativeElement.textContent).toContain('00:30');
   });
 
   it('propose les fournisseurs et les modèles renvoyés par les catalogues', () => {
@@ -66,6 +126,7 @@ describe('IaPage', () => {
         { code: 'qwen', name: 'Qwen', models: [{ id: 'qwen4-max', name: 'Qwen4 Max', catalogs: ['modelsdev'] }] },
       ],
     });
+    flushBesoins();
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -146,6 +207,22 @@ describe('IaPage', () => {
       catalogs: [],
       providers: [],
     });
+    flushBesoins();
     fixture.detectChanges();
+  }
+
+  function flushBesoins(): void {
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/routes')).flush({
+      routes: [],
+      providers: [],
+    });
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/usage')).flush({
+      from: '2026-11-23',
+      to: '2026-11-23',
+      lines: [],
+    });
+    http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/route-changes')).flush({
+      changes: [],
+    });
   }
 });

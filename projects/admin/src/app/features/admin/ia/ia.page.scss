@@ -113,6 +113,55 @@ select {
   padding-top: 0;
 }
 
+.routes,
+.usage,
+.changes {
+  list-style: none;
+  margin: var(--app-space-2) 0 0;
+  padding: 0;
+}
+
+.routes li,
+.changes li,
+.usage li {
+  padding: var(--app-space-2) 0;
+  border-top: 1px solid var(--app-outline);
+}
+
+.route-title {
+  display: flex;
+  gap: var(--app-space-2);
+  align-items: center;
+}
+
+.pill {
+  margin: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--app-primary, #1a3d7c);
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.pill.off {
+  background: var(--app-text-muted);
+}
+
+.pair,
+.period {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-space-1);
+  align-items: center;
+  margin-top: var(--app-space-1);
+}
+
+.pair select,
+.pair input,
+.period input {
+  height: 40px;
+}
+
 .name {
   font-weight: 500;
 }

@@ -146,6 +146,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/admin/ai/routes/{taskCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Changer le fournisseur et le modèle d'un besoin */
+        put: operations["changeAiRoute"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/admin/ai/routes/{taskCode}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Activer ou désactiver un besoin */
+        put: operations["setAiRouteActive"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/avatar": {
         parameters: {
             query?: never;
@@ -938,6 +972,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/admin/ai/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les besoins et les fournisseurs branchables */
+        get: operations["listAiRoutes"];
+        put?: never;
+        /** Ajouter un besoin */
+        post: operations["createAiRoute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/admin/ai/connections": {
         parameters: {
             query?: never;
@@ -1527,6 +1579,40 @@ export interface paths {
         };
         /** Lister les demandes professeur (pending, approved, revoked), lecture bornée */
         get: operations["listTeacherRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/admin/ai/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la consommation d'une période UTC */
+        get: operations["readAiUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/int/admin/ai/route-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire l'historique des changements de modèle */
+        get: operations["listAiRouteChanges"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2267,6 +2353,20 @@ export interface components {
             icon?: string;
             word?: string;
         };
+        ChangeRouteRequest: {
+            provider?: string;
+            model?: string;
+        };
+        RouteResponse: {
+            code?: string;
+            label?: string;
+            provider?: string;
+            model?: string;
+            active?: boolean;
+        };
+        ActiveRouteRequest: {
+            active?: boolean;
+        };
         AvatarPinRequest: {
             zoneCode?: string;
             variantCode?: string;
@@ -2566,6 +2666,12 @@ export interface components {
             reviewedAt?: string;
             /** Format: date-time */
             revokedAt?: string;
+        };
+        CreateRouteRequest: {
+            code?: string;
+            label?: string;
+            provider?: string;
+            model?: string;
         };
         CreateConnexionRequest: {
             provider?: string;
@@ -3105,6 +3211,43 @@ export interface components {
         };
         HumeurChoiceListResponse: {
             choices?: components["schemas"]["HumeurChoiceItem"][];
+        };
+        UsageLineResponse: {
+            /** Format: date */
+            date?: string;
+            code?: string;
+            label?: string;
+            provider?: string;
+            model?: string;
+            /** Format: int32 */
+            calls?: number;
+            /** Format: int32 */
+            tokens?: number;
+        };
+        UsageResponse: {
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+            lines?: components["schemas"]["UsageLineResponse"][];
+        };
+        RoutesResponse: {
+            routes?: components["schemas"]["RouteResponse"][];
+            providers?: string[];
+        };
+        ChangeResponse: {
+            code?: string;
+            label?: string;
+            adminName?: string;
+            dateLabel?: string;
+            timeLabel?: string;
+            oldProvider?: string;
+            oldModel?: string;
+            newProvider?: string;
+            newModel?: string;
+        };
+        ChangesResponse: {
+            changes?: components["schemas"]["ChangeResponse"][];
         };
         ConnexionListResponse: {
             connections?: components["schemas"]["ConnexionResponse"][];
@@ -4682,6 +4825,58 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    changeAiRoute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RouteResponse"];
+                };
+            };
+        };
+    };
+    setAiRouteActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taskCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActiveRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RouteResponse"];
                 };
             };
         };
@@ -6438,6 +6633,50 @@ export interface operations {
             };
         };
     };
+    listAiRoutes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RoutesResponse"];
+                };
+            };
+        };
+    };
+    createAiRoute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RouteResponse"];
+                };
+            };
+        };
+    };
     listAiConnections: {
         parameters: {
             query?: never;
@@ -7595,6 +7834,49 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readAiUsage: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UsageResponse"];
+                };
+            };
+        };
+    };
+    listAiRouteChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChangesResponse"];
                 };
             };
         };

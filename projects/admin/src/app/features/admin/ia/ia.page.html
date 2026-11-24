@@ -5,12 +5,124 @@
   <main class="content content-wide">
     <header class="head">
       <h1>IA</h1>
-      <p class="lead">Ajouter un modèle, brancher sa clé, et essayer la connexion.</p>
+      <p class="lead">Régler les besoins, lire la consommation, et essayer une connexion.</p>
     </header>
 
     @if (error(); as message) {
       <p class="error" role="alert" data-testid="ia-error">{{ message }}</p>
     }
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Nouveau besoin</h2>
+        <p class="hint">Le code est le crochet. Il ne changera pas.</p>
+      </div>
+      <form class="create" (submit)="$event.preventDefault(); createBesoin()">
+        <label>
+          Nom
+          <input data-testid="ia-besoin-label" [value]="besoinLabel()" (input)="besoinLabel.set(inputValue($event))" />
+        </label>
+        <label>
+          Code
+          <input data-testid="ia-besoin-code" [value]="besoinCode()" (input)="besoinCode.set(inputValue($event))" />
+        </label>
+        <label>
+          Fournisseur
+          <select
+            data-testid="ia-besoin-provider"
+            [value]="besoinProvider()"
+            (change)="besoinProvider.set(selectValue($event))"
+          >
+            <option value="">Choisir</option>
+            @for (adapter of adapters(); track adapter) {
+              <option [value]="adapter">{{ adapter }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Modèle
+          <input data-testid="ia-besoin-model" [value]="besoinModel()" (input)="besoinModel.set(inputValue($event))" />
+        </label>
+        <button mat-flat-button color="primary" type="submit" data-testid="ia-besoin-create">Ajouter</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Besoins</h2>
+      @if (routes().length === 0) {
+        <p class="empty" data-testid="ia-routes-empty">Aucun besoin.</p>
+      } @else {
+        <ul class="routes">
+          @for (route of routes(); track route.code) {
+            <li [attr.data-testid]="'ia-route-' + route.code">
+              <div class="route-title">
+                <p class="name">{{ route.label }}</p>
+                <p class="pill" [class.off]="route.active === false">
+                  {{ route.active === true ? 'Actif' : 'Inactif' }}
+                </p>
+              </div>
+              <p class="provider">{{ route.code }}</p>
+              <form class="pair" (submit)="changeRoute(route, $event)">
+                <select name="provider" [value]="route.provider">
+                  @for (adapter of adapters(); track adapter) {
+                    <option [value]="adapter">{{ adapter }}</option>
+                  }
+                </select>
+                <input name="model" [value]="route.model" />
+                <button mat-stroked-button type="submit" data-testid="ia-route-change">Changer</button>
+              </form>
+              <button mat-stroked-button type="button" data-testid="ia-route-active" (click)="toggle(route)">
+                {{ route.active === true ? 'Désactiver' : 'Réactiver' }}
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Consommation</h2>
+        <p class="hint" data-testid="ia-usage-period">{{ usageFrom() }} — {{ usageTo() }}</p>
+      </div>
+      <form class="period" (submit)="readUsage($event)">
+        <input type="date" name="from" [value]="usageFrom()" />
+        <input type="date" name="to" [value]="usageTo()" />
+        <button mat-stroked-button type="submit" data-testid="ia-usage-read">Lire</button>
+      </form>
+      @if (usageLines().length === 0) {
+        <p class="empty" data-testid="ia-usage-empty">Aucune consommation.</p>
+      } @else {
+        <ul class="usage">
+          @for (line of usageLines(); track line.date + '-' + line.code + '-' + line.provider + '-' + line.model) {
+            <li [attr.data-testid]="'ia-usage-' + line.code">
+              <p>{{ line.date }} · {{ line.label }}</p>
+              <p class="provider">{{ line.provider }} · {{ line.model }}</p>
+              <p>{{ line.calls }} appels · {{ line.tokens }} tokens</p>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="panel">
+      <h2>Historique</h2>
+      @if (changes().length === 0) {
+        <p class="empty" data-testid="ia-changes-empty">Aucun changement.</p>
+      } @else {
+        <ul class="changes">
+          @for (change of changes(); track $index) {
+            <li data-testid="ia-change">
+              <p class="name">{{ change.label }}</p>
+              <p>{{ change.dateLabel }} {{ change.timeLabel }}</p>
+              <p>{{ change.adminName }}</p>
+              <p class="provider">{{ change.oldProvider }} {{ change.oldModel }}</p>
+              <p>{{ change.newProvider }} {{ change.newModel }}</p>
+            </li>
+          }
+        </ul>
+      }
+    </section>
 
     <section class="panel">
       <div class="panel-head">
