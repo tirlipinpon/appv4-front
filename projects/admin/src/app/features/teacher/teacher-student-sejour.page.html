@@ -10,25 +10,8 @@
     }
 
     @if (name(); as childName) {
-      <p data-testid="teacher-sejour-child">{{ childName }}</p>
+      <h1 data-testid="teacher-sejour-child">{{ childName }}</h1>
     }
-    @for (sejour of sejours(); track $index) {
-      <article data-testid="teacher-sejour-sejour">
-        <p>{{ sejour.dateLabel }}</p>
-        <p>{{ sejour.timeLabel }}</p>
-        <p>{{ sejour.durationLabel }}</p>
-        <ul>
-          @for (line of sejour.lines ?? []; track $index) {
-            <li data-testid="teacher-sejour-line">
-              <span data-testid="teacher-sejour-label">{{ line.label }}</span>
-              @if (line.subjectName) {
-                <span data-testid="teacher-sejour-subject">{{ line.subjectName }}</span>
-              }
-              <span>{{ line.durationLabel }}</span>
-            </li>
-          }
-        </ul>
-      </article>
-    }
+    <app-sejour-list [sejours]="sejours()" testId="teacher-sejour" />
   </main>
 </div>

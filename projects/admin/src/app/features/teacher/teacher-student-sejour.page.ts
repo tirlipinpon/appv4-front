@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import type { ParentSejourItem, TeacherStudentsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
+import { SejourListComponent } from '../../shared/sejour-list/sejour-list.component';
 import { TeacherSejourService } from './data-access/teacher-sejour.service';
 import { TeacherStudentsService } from './data-access/teacher-students.service';
 
@@ -14,7 +15,7 @@ import { TeacherStudentsService } from './data-access/teacher-students.service';
  */
 @Component({
   selector: 'app-teacher-student-sejour-page',
-  imports: [SpaceHeader],
+  imports: [SpaceHeader, SejourListComponent],
   templateUrl: './teacher-student-sejour.page.html',
   styleUrl: './teacher-student-sejour.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

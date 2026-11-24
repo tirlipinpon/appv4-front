@@ -11,6 +11,28 @@ h1 {
   margin-bottom: 1rem;
 }
 
+.picks button {
+  border: 1px solid var(--app-outline);
+  border-radius: 999px;
+  background: var(--app-surface-card);
+  padding: 0.35rem 0.9rem;
+  color: var(--app-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.picks button[aria-current='true'] {
+  border-color: var(--app-primary);
+  background: var(--app-primary);
+  color: #fff;
+}
+
+.child {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
 .error {
   color: var(--app-danger, #9b1c1c);
 }
