@@ -10,31 +10,24 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, fromEvent, Subscription } from 'rxjs';
 
-import { BottomNavComponent, type BottomNavItem, ThemeToggleComponent } from '@appv4/ui';
+import { BottomNavComponent, ThemeToggleComponent } from '@appv4/ui';
 
 import { ChildAuthService, apiErrorMessage } from '../../core/auth/child-auth.service';
 import { ThemeService } from '../../core/theme/theme.service';
 import { knownChildAvatarEmoji } from '../../shared/avatars/child-avatars';
 import { ChildSejourService } from '../sejour/data-access/child-sejour.service';
+import { CHILD_MENU, ChildTrailNames, childTrail } from './child-trail';
 import { ChildProfileService } from './data-access/child-profile.service';
-
-const NAV_ITEMS: readonly BottomNavItem[] = [
-  { id: 'home', label: 'Home', link: '/home', testId: 'nav-home' },
-  { id: 'learn', label: 'Apprendre', link: '/learn', testId: 'nav-learn' },
-  { id: 'rewards', label: 'Récompenses', link: '/rewards', testId: 'nav-rewards' },
-  { id: 'ranking', label: 'Classement', link: '/ranking', testId: 'nav-ranking' },
-  { id: 'profile', label: 'Profil', link: '/profile', testId: 'nav-profile' },
-];
 
 /**
  * Coquille de l'app enfant : en-tête (avatar + prénom) et menu bas (LEARN-28).
  */
 @Component({
   selector: 'app-shell-page',
-  imports: [RouterOutlet, BottomNavComponent, ThemeToggleComponent],
+  imports: [RouterOutlet, RouterLink, BottomNavComponent, ThemeToggleComponent],
   templateUrl: './shell.page.html',
   styleUrl: './shell.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,9 +38,11 @@ export class ShellPage implements OnInit, OnDestroy {
   private readonly sejour = inject(ChildSejourService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly trailNames = inject(ChildTrailNames);
+  private readonly url = signal(this.router.url);
   protected readonly theme = inject(ThemeService);
 
-  protected readonly navItems = NAV_ITEMS;
+  protected readonly navItems = CHILD_MENU;
   protected readonly stayPopup = this.sejour.popup;
   protected readonly activeId = signal('home');
   protected readonly error = signal<string | null>(null);
@@ -56,6 +51,7 @@ export class ShellPage implements OnInit, OnDestroy {
   protected readonly avatarEmoji = computed(() =>
     knownChildAvatarEmoji(this.profileApi.profile()?.avatarCode),
   );
+  protected readonly trail = computed(() => childTrail(this.url(), this.trailNames.subjectName()));
 
   private routeSub?: Subscription;
 
@@ -68,12 +64,14 @@ export class ShellPage implements OnInit, OnDestroy {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((message) => this.logout(message));
     this.syncActive(this.router.url);
+    this.url.set(this.router.url);
     this.sejour.enter(this.router.url);
     this.watchActivity();
     this.routeSub = this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
         this.syncActive(event.urlAfterRedirects);
+        this.url.set(event.urlAfterRedirects);
         this.sejour.enter(event.urlAfterRedirects);
       });
 
@@ -134,7 +132,7 @@ export class ShellPage implements OnInit, OnDestroy {
 
   private syncActive(url: string): void {
     const path = url.split('?')[0] ?? url;
-    const match = NAV_ITEMS.find((item) => path === item.link || path.startsWith(`${item.link}/`));
+    const match = CHILD_MENU.find((item) => path === item.link || path.startsWith(`${item.link}/`));
     this.activeId.set(match?.id ?? 'home');
   }
 }

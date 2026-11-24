@@ -28,6 +28,7 @@ describe('HumeursPage', () => {
     fixture.detectChanges();
     http.expectOne((req) => req.method === 'GET' && req.url.includes('/admin/humeurs')).flush({ choices: [] });
     http.expectOne('http://localhost:8080/api/int/auth/me').flush({ displayName: 'Admin' });
+    http.expectOne('http://localhost:8080/api/int/auth/spaces').flush({ roles: [], teacherRequest: 'none' });
     fixture.detectChanges();
   });
 

@@ -14,7 +14,6 @@ import type {
 } from '../../../core/api/api-models';
 import { SpaceHeader } from '../../../core/layout/space-header';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
-import { AdminSectionNav } from '../../../core/layout/admin-section-nav/admin-section-nav';
 import { AiConnectionsService } from './data-access/ai-connections.service';
 import { AiRoutesService } from './data-access/ai-routes.service';
 
@@ -24,7 +23,7 @@ import { AiRoutesService } from './data-access/ai-routes.service';
  */
 @Component({
   selector: 'app-ia-page',
-  imports: [MatButtonModule, SpaceHeader, AdminSectionNav],
+  imports: [MatButtonModule, SpaceHeader],
   templateUrl: './ia.page.html',
   styleUrl: './ia.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

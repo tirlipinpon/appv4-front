@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { QuestionFormMarkComponent } from '@appv4/ui';
@@ -7,6 +7,7 @@ import { QuestionFormMarkComponent } from '@appv4/ui';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { knownSubjectIcon, subjectCardTint, subjectIconSrc } from '../../shared/subject-icons/subject-icons';
 import { ChildSubjectBoardService } from './data-access/child-subject-board.service';
+import { ChildTrailNames } from '../shell/child-trail';
 import type { PlayQueueState } from './play-queue';
 
 /**
@@ -24,12 +25,16 @@ export class SubjectBoardPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(ChildSubjectBoardService);
+  private readonly trailNames = inject(ChildTrailNames);
+  private readonly destroyRef = inject(DestroyRef);
+  private trailGeneration = 0;
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly board = this.api.board;
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.trailNames.clearSubject(this.trailGeneration));
     const id = Number(this.route.snapshot.paramMap.get('subjectId'));
     if (!Number.isFinite(id) || id <= 0) {
       void this.router.navigateByUrl('/learn');
@@ -39,9 +44,11 @@ export class SubjectBoardPage implements OnInit {
       next: () => {
         this.loading.set(false);
         this.error.set(null);
+        this.trailGeneration = this.trailNames.publishSubject(this.api.board()?.name ?? null);
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
+        this.trailGeneration = this.trailNames.publishSubject(null);
         if (err.status === 404) {
           this.error.set(apiErrorMessage(err, 'Matière introuvable.'));
           return;

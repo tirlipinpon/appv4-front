@@ -48,6 +48,21 @@
     testIdPrefix="top-"
   />
 
+  @if (trail().length > 0) {
+    <nav class="trail" data-testid="trail" aria-label="Fil d'Ariane">
+      @for (crumb of trail(); track crumb.label; let last = $last) {
+        @if (crumb.path; as path) {
+          <a [routerLink]="path" [attr.data-testid]="'trail-' + crumb.label">{{ crumb.label }}</a>
+        } @else {
+          <span [attr.data-testid]="'trail-' + crumb.label">{{ crumb.label }}</span>
+        }
+        @if (!last) {
+          <span class="sep" aria-hidden="true">›</span>
+        }
+      }
+    </nav>
+  }
+
   <main class="learn-shell-main">
     <router-outlet />
   </main>

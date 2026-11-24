@@ -8,6 +8,7 @@ import { ChildQuestionPlayViewComponent, QuestionPlaySession } from '@appv4/ui';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { ChildPlayService } from './data-access/child-play.service';
 import { ChildSubjectBoardService } from './data-access/child-subject-board.service';
+import { ChildTrailNames } from '../shell/child-trail';
 import { nextQuestionId, readPlayQueue, type PlayQueueState } from './play-queue';
 
 @Component({
@@ -24,6 +25,8 @@ export class PlayQuestionPage implements OnInit {
   private readonly boardApi = inject(ChildSubjectBoardService);
   private readonly view = viewChild(ChildQuestionPlayViewComponent);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly trailNames = inject(ChildTrailNames);
+  private trailGeneration = 0;
 
   protected readonly subjectId = signal(0);
   private readonly questionId = signal(0);
@@ -56,7 +59,9 @@ export class PlayQuestionPage implements OnInit {
   }
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.trailNames.clearSubject(this.trailGeneration));
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.trailGeneration = this.trailNames.publishSubject(null);
       this.queue.set(readPlayQueue(history.state));
       const subjectId = Number(params.get('subjectId'));
       const questionId = Number(params.get('questionId'));

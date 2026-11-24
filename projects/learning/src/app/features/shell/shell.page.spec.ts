@@ -103,6 +103,82 @@ describe('ShellPage', () => {
   });
 });
 
+describe('ShellPage fil', () => {
+  const trailRoutes: Routes = [
+    { path: 'login', component: LoginPage },
+    {
+      path: '',
+      component: ShellPage,
+      children: [
+        { path: 'home', component: OpenStayPage },
+        { path: 'learn/:subjectId/play/:questionId', component: OpenStayPage },
+      ],
+    },
+  ];
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    sessionStorage.setItem('learning.jwt', 'child-token');
+  });
+
+  afterEach(() => {
+    TestBed.inject(ChildSejourService).stop();
+    sessionStorage.clear();
+  });
+
+  it('montre Home seul sur l’accueil', async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(trailRoutes)],
+    }).compileComponents();
+    const http = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create('/home');
+    flushShell(http);
+    harness.detectChanges();
+
+    const root = harness.fixture.nativeElement as HTMLElement;
+    expect(crumbTexts(root)).toEqual(['Home']);
+    expect(root.querySelector('[data-testid="trail-Home"]')?.tagName).toBe('SPAN');
+    http.verify();
+  });
+
+  it('montre Apprendre, Questions et Jouer sans nom de matière', async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(trailRoutes)],
+    }).compileComponents();
+    const http = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create('/learn/12/play/4');
+    flushShell(http);
+    harness.detectChanges();
+
+    const root = harness.fixture.nativeElement as HTMLElement;
+    expect(crumbTexts(root)).toEqual(['Apprendre', 'Questions', 'Jouer']);
+    expect(root.querySelector('[data-testid="trail-Questions"]')?.getAttribute('href')).toBe(
+      '/learn/12/questions',
+    );
+    expect(root.querySelector('[data-testid="trail-Jouer"]')?.tagName).toBe('SPAN');
+    http.verify();
+  });
+
+  function flushShell(http: HttpTestingController): void {
+    http.expectOne('http://localhost:8080/api/ext/me').flush({
+      childId: 7,
+      firstName: 'Akira',
+      avatarCode: 'fox',
+      hasPhoto: false,
+    });
+    http.expectOne('http://localhost:8080/api/ext/sejour/signals').flush(null);
+    http
+      .expectOne((req) => req.method === 'GET' && req.url === 'http://localhost:8080/api/ext/sejour')
+      .flush({ holds: false });
+  }
+
+  function crumbTexts(root: HTMLElement): string[] {
+    return Array.from(
+      root.querySelectorAll('[data-testid="trail"] a, [data-testid="trail"] span[data-testid^="trail-"]'),
+    ).map((node) => node.textContent?.trim() ?? '');
+  }
+});
+
 describe('ShellPage when the stay read closes the app', () => {
   const apiMessage = "Fermeture décidée par l'API.";
 

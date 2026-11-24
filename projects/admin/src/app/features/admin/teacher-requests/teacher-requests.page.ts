@@ -4,7 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 
 import type { TeacherRequestItem } from '../../../core/api/api-models';
 import { SpaceHeader } from '../../../core/layout/space-header';
-import { AdminSectionNav } from '../../../core/layout/admin-section-nav/admin-section-nav';
 import { httpErrorMessage } from '../../../shared/http-error-message/http-error-message';
 import { TeacherRequestsService } from './data-access/teacher-requests.service';
 
@@ -15,7 +14,7 @@ import { TeacherRequestsService } from './data-access/teacher-requests.service';
  */
 @Component({
   selector: 'app-teacher-requests-page',
-  imports: [MatButtonModule, AdminSectionNav, SpaceHeader],
+  imports: [MatButtonModule, SpaceHeader],
   templateUrl: './teacher-requests.page.html',
   styleUrl: './teacher-requests.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

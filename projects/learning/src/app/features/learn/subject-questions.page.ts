@@ -9,6 +9,7 @@ import { isPlayableQuestionForm, QuestionFormMarkComponent } from '@appv4/ui';
 import type { ChildLearningQuestionItem } from '../../core/api/api-models';
 import { apiErrorMessage } from '../../core/auth/child-auth.service';
 import { ChildPlayService } from './data-access/child-play.service';
+import { ChildTrailNames } from '../shell/child-trail';
 import type { PlayQueueState } from './play-queue';
 import { shuffleCopy } from './shuffle';
 
@@ -27,6 +28,8 @@ export class SubjectQuestionsPage implements OnInit {
   private readonly router = inject(Router);
   private readonly api = inject(ChildPlayService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly trailNames = inject(ChildTrailNames);
+  private trailGeneration = 0;
   private pending?: Subscription;
 
   protected readonly loading = signal(true);
@@ -47,6 +50,7 @@ export class SubjectQuestionsPage implements OnInit {
   }
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.trailNames.clearSubject(this.trailGeneration));
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       this.pending?.unsubscribe();
       const id = Number(params.get('subjectId'));
@@ -56,6 +60,7 @@ export class SubjectQuestionsPage implements OnInit {
       }
       this.subjectId.set(id);
       this.subjectName.set('');
+      this.trailGeneration = this.trailNames.publishSubject(null);
       this.questions.set([]);
       this.nextCursor.set(0);
       this.loadMore();
@@ -73,6 +78,7 @@ export class SubjectQuestionsPage implements OnInit {
     this.pending = this.api.listQuestions(this.subjectId(), cursor).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (body) => {
         this.subjectName.set(body.subjectName);
+        this.trailGeneration = this.trailNames.publishSubject(body.subjectName);
         this.questions.update((current) => [...current, ...shuffleCopy(body.questions)]);
         this.nextCursor.set(body.nextCursor ?? null);
         this.loading.set(false);
