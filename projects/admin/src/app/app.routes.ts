@@ -81,6 +81,11 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'admin/ia',
+    canActivate: [recoveryPromptGuard],
+    loadChildren: () => import('./features/admin/ia/ia.routes').then((m) => m.IA_ROUTES),
+  },
+  {
     path: 'auth/callback/google',
     loadComponent: () =>
       import('./features/login/google-callback/google-callback.page').then((m) => m.GoogleCallbackPage),

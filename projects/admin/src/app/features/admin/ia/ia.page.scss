@@ -1,0 +1,112 @@
+.head {
+  margin-bottom: var(--app-space-3);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+h2 {
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.lead,
+.hint,
+.empty,
+.provider {
+  color: var(--app-text-muted);
+}
+
+.lead,
+.hint {
+  margin-top: var(--app-space-1);
+}
+
+.panel {
+  background: var(--app-surface-card);
+  border: 1px solid var(--app-outline);
+  border-radius: var(--app-radius-card);
+  padding: var(--app-space-2);
+}
+
+.panel + .panel {
+  margin-top: var(--app-space-2);
+}
+
+.panel-head {
+  margin-bottom: var(--app-space-2);
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--app-text-muted);
+}
+
+input {
+  box-sizing: border-box;
+  height: 40px;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--app-outline);
+  border-radius: var(--app-radius-card);
+  background: var(--app-surface-card);
+  color: var(--app-text);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.create {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: var(--app-space-2);
+  align-items: end;
+}
+
+.create button {
+  height: 40px;
+}
+
+.connections {
+  list-style: none;
+  margin: var(--app-space-2) 0 0;
+  padding: 0;
+}
+
+.connections li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--app-space-1) var(--app-space-2);
+  align-items: center;
+  padding: var(--app-space-2) 0;
+  border-top: 1px solid var(--app-outline);
+}
+
+.connections li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.name {
+  font-weight: 500;
+}
+
+.trial {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 800px) {
+  .create {
+    grid-template-columns: 1fr;
+  }
+}
