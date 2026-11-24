@@ -51,6 +51,9 @@ export class IaPage implements OnInit {
   readonly usageTo = signal('');
   readonly usageLines = signal<UsageLineResponse[]>([]);
   readonly changes = signal<ChangeResponse[]>([]);
+  readonly routeModelOpen = signal<string | null>(null);
+  readonly routeModelQuery = signal<Record<string, string>>({});
+  readonly routeModelDraft = signal<Record<string, string>>({});
   readonly error = signal<string | null>(null);
   readonly trials = signal<Record<number, EssaiResponse>>({});
   readonly loading = signal(true);
@@ -65,11 +68,18 @@ export class IaPage implements OnInit {
 
   readonly modelSuggestions = computed(() => {
     const selected = this.providers().find((item) => item.code === this.provider());
-    const query = this.modelQuery().trim().toLowerCase();
-    if (selected == null || query.length === 0 || this.modelChosen(selected, query)) {
+    if (selected == null) {
       return [];
     }
-    return (selected.models ?? []).filter((item) => this.modelMatches(item, query)).slice(0, 8);
+    const models = selected.models ?? [];
+    const query = this.modelQuery().trim().toLowerCase();
+    if (query.length === 0) {
+      return models.slice(0, 12);
+    }
+    if (this.modelChosen(selected, query)) {
+      return [];
+    }
+    return models.filter((item) => this.modelMatches(item, query)).slice(0, 12);
   });
 
   ngOnInit(): void {
@@ -175,6 +185,41 @@ export class IaPage implements OnInit {
     });
   }
 
+  focusRouteModel(route: RouteResponse): void {
+    this.routeModelOpen.set(route.code ?? null);
+  }
+
+  typeRouteModel(route: RouteResponse, event: Event): void {
+    const code = route.code ?? '';
+    this.routeModelOpen.set(code);
+    const value = this.inputValue(event);
+    this.routeModelDraft.update((current) => ({ ...current, [code]: value }));
+    this.routeModelQuery.update((current) => ({ ...current, [code]: value }));
+  }
+
+  pickRouteModel(route: RouteResponse, item: ModeleResponse): void {
+    const code = route.code ?? '';
+    const id = this.callableModelId(route.provider ?? '', item);
+    this.routeModelDraft.update((current) => ({ ...current, [code]: id }));
+    this.routeModelQuery.update((current) => ({ ...current, [code]: '' }));
+    this.routeModelOpen.set(null);
+  }
+
+  shownRouteModel(route: RouteResponse): string {
+    const code = route.code ?? '';
+    return this.routeModelDraft()[code] ?? route.model ?? '';
+  }
+
+  routeSuggestions(route: RouteResponse): ModeleResponse[] {
+    if (this.routeModelOpen() !== route.code) {
+      return [];
+    }
+    const models = this.modelsOf(route.provider ?? '');
+    const query = (this.routeModelQuery()[route.code ?? ''] ?? '').trim().toLowerCase();
+    const matched = query.length === 0 ? models : models.filter((item) => this.modelMatches(item, query));
+    return (matched.length > 0 ? matched : models).slice(0, 12);
+  }
+
   readUsage(event: Event): void {
     event.preventDefault();
     const form = event.target;
@@ -225,6 +270,17 @@ export class IaPage implements OnInit {
       return null;
     }
     return this.trials()[id] ?? null;
+  }
+
+  private modelsOf(provider: string): ModeleResponse[] {
+    const selected = this.providers().find((item) => this.sameText(item.code, provider));
+    return selected?.models ?? [];
+  }
+
+  private callableModelId(provider: string, item: ModeleResponse): string {
+    const id = item.id ?? '';
+    const prefix = provider.trim().toLowerCase() + '/';
+    return id.toLowerCase().startsWith(prefix) ? id.slice(prefix.length) : id;
   }
 
   private typeProvider(value: string): void {

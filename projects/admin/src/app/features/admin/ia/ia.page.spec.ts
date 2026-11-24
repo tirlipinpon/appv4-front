@@ -54,7 +54,13 @@ describe('IaPage', () => {
     });
     http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/catalog')).flush({
       catalogs: [],
-      providers: [],
+      providers: [
+        {
+          code: 'openai',
+          name: 'OpenAI',
+          models: [{ id: 'openai/gpt-4o', name: 'GPT-4o', catalogs: ['openrouter'] }],
+        },
+      ],
     });
     http.expectOne((req) => req.method === 'GET' && req.url.endsWith('/admin/ai/routes')).flush({
       routes: [
@@ -103,6 +109,15 @@ describe('IaPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Ada');
     expect(fixture.nativeElement.textContent).toContain('24 novembre 2026');
     expect(fixture.nativeElement.textContent).toContain('00:30');
+
+    const model = route.querySelector('[data-testid="ia-route-model"]') as HTMLInputElement;
+    model.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    const choices = route.querySelector('[data-testid="ia-route-models"]') as HTMLElement;
+    expect(choices.textContent).toContain('GPT-4o');
+    (choices.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect((route.querySelector('[data-testid="ia-route-model"]') as HTMLInputElement).value).toBe('gpt-4o');
   });
 
   it('propose les fournisseurs et les modèles renvoyés par les catalogues', () => {
@@ -141,6 +156,9 @@ describe('IaPage', () => {
     expect(providerList.textContent).not.toContain('DeepSeek');
     (providerList.querySelector('button') as HTMLButtonElement).click();
     fixture.detectChanges();
+
+    const opened = fixture.nativeElement.querySelector('[data-testid="ia-model-suggestions"]') as HTMLElement;
+    expect(opened.textContent).toContain('Qwen4 Max');
 
     const model = fixture.nativeElement.querySelector('[data-testid="ia-model"]') as HTMLInputElement;
     model.value = 'max';
