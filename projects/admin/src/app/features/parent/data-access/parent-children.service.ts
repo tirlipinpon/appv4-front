@@ -9,6 +9,7 @@ import type {
   ParentChildrenResponse,
   PendingInvitationResponse,
   FicheHolderResponse,
+  SaveParentRankingRequest,
   ShareRequestResponse,
   TransferResponse,
 } from '../../../core/api/api-models';
@@ -32,6 +33,10 @@ export class ParentChildrenService {
 
   update(id: number, body: CreateParentChildRequest): Observable<ParentChildResponse> {
     return this.http.put<ParentChildResponse>(`${environment.apiBaseUrl}/parent/children/${id}`, body);
+  }
+
+  saveRanking(id: number, body: SaveParentRankingRequest): Observable<ParentChildResponse> {
+    return this.http.put<ParentChildResponse>(`${environment.apiBaseUrl}/parent/children/${id}/ranking`, body);
   }
 
   deactivate(id: number): Observable<void> {

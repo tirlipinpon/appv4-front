@@ -1,0 +1,66 @@
+<section class="pod" data-testid="ranking-panel">
+  @if (ranking.loading()) {
+    <p data-testid="ranking-loading">Chargement…</p>
+  } @else if (ranking.error(); as message) {
+    <p class="phrase" data-testid="ranking-error">{{ message }}</p>
+  } @else if (ranking.view(); as view) {
+    <p class="kicker">Classement</p>
+    <h1 data-testid="ranking-group">{{ view.groupLabel }}</h1>
+    <div class="chips">
+      @for (scope of view.scopes ?? []; track scope.code) {
+        <button
+          type="button"
+          [class.on]="scope.selected === true"
+          [attr.data-testid]="'ranking-scope-' + scope.code"
+          (click)="open(scope.code)"
+        >
+          {{ scope.label }}
+        </button>
+      }
+    </div>
+    @if (view.phrase) {
+      <p class="phrase" data-testid="ranking-phrase">{{ view.phrase }}</p>
+    }
+    <div class="steps" data-testid="ranking-podium">
+      @for (card of steps(); track card.childId) {
+        <article [class.tall]="card === leader()" [class.mine]="card.mine === true" [attr.data-testid]="'podium-' + card.childId">
+          @if (photo(card); as src) {
+            <img [src]="src" alt="" />
+          } @else if (character(card); as src) {
+            <img [src]="src" alt="" />
+          } @else if (emoji(card.avatarCode); as face) {
+            <span class="face">{{ face }}</span>
+          } @else {
+            <span class="empty"></span>
+          }
+          <strong>{{ card.place }}</strong>
+          <p>{{ card.firstName }}</p>
+          <p class="xp">{{ card.xp }} XP</p>
+        </article>
+      }
+    </div>
+    @if (rest().length > 0) {
+      <ol data-testid="ranking-rest">
+        @for (card of rest(); track card.childId) {
+          <li [class.mine]="card.mine === true" [attr.data-testid]="'rank-row-' + card.childId">
+            <span class="place">{{ card.place }}</span>
+            @if (photo(card); as src) {
+              <img [src]="src" alt="" />
+            } @else if (character(card); as src) {
+              <img [src]="src" alt="" />
+            } @else if (emoji(card.avatarCode); as face) {
+              <span>{{ face }}</span>
+            } @else {
+              <span class="empty"></span>
+            }
+            <div class="track">
+              <span class="fill" [style.width.%]="width(card.xp)"></span>
+              <span class="name">{{ card.firstName }}</span>
+            </div>
+            <b>{{ card.xp }}</b>
+          </li>
+        }
+      </ol>
+    }
+  }
+</section>

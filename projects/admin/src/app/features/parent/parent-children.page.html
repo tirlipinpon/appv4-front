@@ -390,6 +390,23 @@
               </div>
             }
 
+            @if (editingId() !== null && ranking().length > 0) {
+              <fieldset class="ranking-cases" data-testid="child-ranking">
+                <legend>Classement</legend>
+                @for (row of ranking(); track row.code) {
+                  <label>
+                    <input
+                      type="checkbox"
+                      [checked]="row.checked === true"
+                      [attr.data-testid]="'ranking-' + row.code"
+                      (change)="onRankingChange(row.code, $event)"
+                    />
+                    {{ row.label }}
+                  </label>
+                }
+              </fieldset>
+            }
+
             @if (interestSuggestions().length > 0) {
               <ul class="suggestions" role="listbox" data-testid="child-interest-suggestions">
                 @for (word of interestSuggestions(); track $index) {
