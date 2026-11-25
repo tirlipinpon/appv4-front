@@ -42,6 +42,7 @@ describe('SpaceHeader', () => {
           { path: 'teacher-pending', component: BlankPage },
           { path: 'admin/teacher-requests', component: BlankPage },
           { path: 'admin/humeurs', component: BlankPage },
+          { path: 'admin/horaires', component: BlankPage },
           { path: 'admin/ia', component: BlankPage },
         ]),
         provideHttpClient(),
@@ -99,7 +100,7 @@ describe('SpaceHeader', () => {
     expect(text).not.toContain('Administration');
   });
 
-  it('montre Demandes professeur, Humeurs et IA au parent qui est admin', async () => {
+  it('montre Demandes professeur, Humeurs, IA et Horaires au parent qui est admin', async () => {
     await show({
       url: '/parent',
       token: { activeRole: SpaceRoles.parent, roles: [SpaceRoles.parent, 'admin'] },
@@ -112,11 +113,13 @@ describe('SpaceHeader', () => {
       'Demandes professeur',
       'Humeurs',
       'IA',
+      'Horaires',
     ]);
     expect(adminLinks.map((link) => link.getAttribute('href'))).toEqual([
       '/admin/teacher-requests',
       '/admin/humeurs',
       '/admin/ia',
+      '/admin/horaires',
     ]);
   });
 
@@ -287,6 +290,7 @@ describe('SpaceHeader', () => {
       'Demandes professeur',
       'Humeurs',
       'IA',
+      'Horaires',
     ]);
     expect(trailCrumbs()).toEqual([]);
   });

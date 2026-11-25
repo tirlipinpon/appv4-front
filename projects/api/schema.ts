@@ -146,6 +146,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/admin/app-hours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire les horaires de l'app enfant */
+        get: operations["readAppHours"];
+        /** Changer les horaires de l'app enfant */
+        put: operations["updateAppHours"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/admin/ai/routes/{taskCode}": {
         parameters: {
             query?: never;
@@ -2352,6 +2370,15 @@ export interface components {
             id?: number;
             icon?: string;
             word?: string;
+        };
+        AppHoursRequest: {
+            opensAt?: string;
+            closesAt?: string;
+        };
+        AppHoursResponse: {
+            opensAt?: string;
+            closesAt?: string;
+            closedMessage?: string;
         };
         ChangeRouteRequest: {
             provider?: string;
@@ -4820,6 +4847,77 @@ export interface operations {
             };
             /** @description Choix inconnu */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readAppHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Heure de début, heure de fin, phrase de fermeture */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AppHoursResponse"];
+                };
+            };
+            /** @description Le compte n'est pas admin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    updateAppHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppHoursRequest"];
+            };
+        };
+        responses: {
+            /** @description Horaires enregistrés */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AppHoursResponse"];
+                };
+            };
+            /** @description Heure illisible, ou début qui n'est pas avant la fin */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le compte n'est pas admin */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

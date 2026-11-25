@@ -73,6 +73,12 @@ export const routes: Routes = [
       import('./features/admin/humeurs/humeurs.routes').then((m) => m.HUMEURS_ROUTES),
   },
   {
+    path: 'admin/horaires',
+    canActivate: [recoveryPromptGuard],
+    loadChildren: () =>
+      import('./features/admin/horaires/horaires.routes').then((m) => m.HORAIRES_ROUTES),
+  },
+  {
     path: 'admin/teacher-requests',
     canActivate: [recoveryPromptGuard],
     loadChildren: () =>
