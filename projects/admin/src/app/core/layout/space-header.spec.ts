@@ -39,6 +39,7 @@ describe('SpaceHeader', () => {
           { path: 'teacher/profil', component: BlankPage },
           { path: 'teacher/eleves', component: BlankPage },
           { path: 'teacher/eleves/:childId', component: BlankPage },
+          { path: 'teacher/questions', component: BlankPage },
           { path: 'teacher-pending', component: BlankPage },
           { path: 'admin/teacher-requests', component: BlankPage },
           { path: 'admin/humeurs', component: BlankPage },
@@ -55,6 +56,7 @@ describe('SpaceHeader', () => {
   afterEach(() => {
     http.verify();
     TestBed.inject(SpaceTrailNames).studentName.set(null);
+    TestBed.inject(SpaceTrailNames).subjectName.set(null);
     sessionStorage.clear();
   });
 
@@ -256,6 +258,20 @@ describe('SpaceHeader', () => {
     expect(crumbs[2].href).toBeNull();
   });
 
+  it('montre la matière ouverte après Questions', async () => {
+    await show({
+      url: '/teacher/questions',
+      token: { activeRole: SpaceRoles.teacher, roles: [SpaceRoles.teacher] },
+      subjectName: 'Mathématiques',
+    });
+
+    const crumbs = trailCrumbs();
+    expect(crumbs.map((crumb) => crumb.text)).toEqual(['Professeur', 'Questions', 'Mathématiques']);
+    expect(crumbs[0].href).toBe('/teacher');
+    expect(crumbs[1].href).toBe('/teacher/questions');
+    expect(crumbs[2].href).toBeNull();
+  });
+
   it('omet le nom de l’élève tant qu’il n’est pas là', async () => {
     await show({
       url: '/teacher/eleves/1',
@@ -315,6 +331,7 @@ describe('SpaceHeader', () => {
     showSpaceActions?: boolean;
     spaces?: object;
     studentName?: string;
+    subjectName?: string;
   }): Promise<void> {
     const auth = TestBed.inject(AuthService);
     auth.logout();
@@ -324,6 +341,9 @@ describe('SpaceHeader', () => {
     await TestBed.inject(Router).navigateByUrl(options.url);
     if (options.studentName != null) {
       TestBed.inject(SpaceTrailNames).studentName.set(options.studentName);
+    }
+    if (options.subjectName != null) {
+      TestBed.inject(SpaceTrailNames).subjectName.set(options.subjectName);
     }
     fixture = TestBed.createComponent(SpaceHeader);
     if (options.showSpaceActions === false) {

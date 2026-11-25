@@ -1,8 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 
 import type { TeacherSubjectsResponse } from '../../core/api/api-models';
 import { SpaceHeader } from '../../core/layout/space-header';
+import { SpaceTrailNames } from '../../core/layout/space-trail';
 import { httpErrorMessage } from '../../shared/http-error-message/http-error-message';
 import { SubjectIconViewComponent } from '../../shared/subject-icons/subject-icon-view.component';
 import { QuestionDestination, SubjectQuestionsComponent } from './components/subject-questions.component';
@@ -44,6 +45,8 @@ interface SchoolBlock {
 })
 export class TeacherQuestionsPage implements OnInit {
   private readonly subjectsApi = inject(TeacherSubjectsService);
+  private readonly trailNames = inject(SpaceTrailNames);
+  private trailGeneration = 0;
 
   readonly schools = signal<SchoolBlock[]>([]);
   readonly openId = signal<number | null>(null);
@@ -70,8 +73,13 @@ export class TeacherQuestionsPage implements OnInit {
   readonly ready = signal(false);
   readonly error = signal<string | null>(null);
 
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.trailNames.clearSubject(this.trailGeneration));
+  }
+
   open(id: number): void {
     this.openId.set(id);
+    this.publishOpenSubject();
   }
 
   /** Nombre de sections proposées dans le choix, pour cette école. */
@@ -140,8 +148,14 @@ export class TeacherQuestionsPage implements OnInit {
     if (!choices.some((subject) => subject.id === current)) {
       this.openId.set(choices[0]?.id ?? null);
     }
+    this.publishOpenSubject();
     this.ready.set(true);
     this.loading.set(false);
+  }
+
+  /** Le fil reprend la matière ouverte. Il n'invente pas son nom. */
+  private publishOpenSubject(): void {
+    this.trailGeneration = this.trailNames.publishSubject(this.openSubject()?.name ?? null);
   }
 }
 

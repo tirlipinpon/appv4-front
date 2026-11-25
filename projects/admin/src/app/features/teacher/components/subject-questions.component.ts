@@ -137,6 +137,9 @@ export class SubjectQuestionsComponent implements OnInit {
 
   @Input({ required: true }) subjectId!: number;
 
+  /** Nom de la matière ouverte, déjà connu de la page. Vide si l'API ne l'a pas donné. */
+  @Input() subjectName = '';
+
   readonly destinationChoices = signal<QuestionDestination[]>([]);
 
   @Input()

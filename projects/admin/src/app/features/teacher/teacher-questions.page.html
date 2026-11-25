@@ -78,7 +78,11 @@
             {{ subject.name }}
           </h2>
           <p class="hint">{{ subject.place }} · {{ subject.questionCount }} question{{ subject.questionCount === 1 ? '' : 's' }}</p>
-          <app-subject-questions [subjectId]="subject.id" [destinations]="destinations()" />
+          <app-subject-questions
+            [subjectId]="subject.id"
+            [subjectName]="subject.name"
+            [destinations]="destinations()"
+          />
         </section>
       }
     </section>

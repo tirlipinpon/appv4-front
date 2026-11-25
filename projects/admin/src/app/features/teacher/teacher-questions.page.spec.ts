@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import type { TeacherSubjectsResponse } from '../../core/api/api-models';
+import { SpaceTrailNames } from '../../core/layout/space-trail';
 import { TeacherQuestionsPage } from './teacher-questions.page';
 
 const subjectsUrl = 'http://localhost:8080/api/int/teacher/subjects';
@@ -96,6 +97,10 @@ describe('TeacherQuestionsPage', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Mathématiques');
+    expect(fixture.nativeElement.querySelector('[data-testid="teacher-question-subject"]')?.textContent).toContain(
+      'Mathématiques',
+    );
+    expect(TestBed.inject(SpaceTrailNames).subjectName()).toBe('Mathématiques');
     expect(text).toContain('Combien font 2 + 2 ?');
     expect(text).toContain('Choix multiples');
     expect(text).toContain('3');
@@ -169,6 +174,10 @@ describe('TeacherQuestionsPage', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Quelle date ?');
     expect(text).not.toContain('Combien font 2 + 2 ?');
+    expect(fixture.nativeElement.querySelector('[data-testid="teacher-question-subject"]')?.textContent).toContain(
+      'Histoire',
+    );
+    expect(TestBed.inject(SpaceTrailNames).subjectName()).toBe('Histoire');
   });
 
   it('groupe les matières par école', () => {

@@ -5,10 +5,15 @@ import { of } from 'rxjs';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 import { ChildAuthService } from '../../core/auth/child-auth.service';
+import { ChildTrailNames } from '../shell/child-trail';
 import { PlayQuestionPage } from './play-question.page';
 
 describe('PlayQuestionPage', () => {
-  function setup() {
+  function setup(
+    subjects: { subjectId: number; name?: string; iconCode?: string; accentColor?: string }[] = [
+      { subjectId: 5, name: 'Maths', iconCode: 'math', accentColor: '#C1B4FF' },
+    ],
+  ) {
     TestBed.configureTestingModule({
       imports: [PlayQuestionPage],
       providers: [
@@ -27,8 +32,47 @@ describe('PlayQuestionPage', () => {
     const fixture = TestBed.createComponent(PlayQuestionPage);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
+    http
+      .expectOne((req) => req.method === 'GET' && req.url === 'http://localhost:8080/api/ext/subjects')
+      .flush({ subjects });
+    fixture.detectChanges();
     return { fixture, http };
   }
+
+  it('affiche la matière de la question et la publie dans le fil', () => {
+    const { fixture, http } = setup();
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      content: {},
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const title = root.querySelector('[data-testid="play-title"]') as HTMLElement;
+    expect(root.querySelector('[data-testid="play-subject"]')?.textContent?.trim()).toBe('Maths');
+    expect(root.querySelector('[data-testid="play-subject-icon"]')?.textContent?.trim()).toBe('➗');
+    expect(title.style.getPropertyValue('--card-tint').trim()).toBe('#C1B4FF');
+    expect(root.textContent).not.toContain('Jouer');
+    expect(TestBed.inject(ChildTrailNames).subjectName()).toBe('Maths');
+    http.verify();
+  });
+
+  it('n’affiche pas de matière quand l’API n’en donne pas', () => {
+    const { fixture, http } = setup([]);
+    http.expectOne('http://localhost:8080/api/ext/subjects/5/questions/42/play').flush({
+      formCode: 'texte',
+      prompt: 'Capitale de la France',
+      content: {},
+    });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="play-subject"]')).toBeNull();
+    expect(root.querySelector('[data-testid="play-title"]')).toBeNull();
+    expect(TestBed.inject(ChildTrailNames).subjectName()).toBeNull();
+    http.verify();
+  });
 
   it('réponse libre : un champ, Valider envoie attempt, un blanc ne part pas', () => {
     const { fixture, http } = setup();

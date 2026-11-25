@@ -817,6 +817,9 @@
       <ul class="saved">
         @for (question of questions(); track question.id) {
           <li [class.editing]="editingId() === question.id">
+            @if (subjectName) {
+              <p class="question-subject" data-testid="teacher-question-subject">{{ subjectName }}</p>
+            }
             @if (question.prompt) {
               <p class="prompt">{{ question.prompt }}</p>
             }
@@ -1033,7 +1036,12 @@
       data-testid="teacher-child-preview-dialog"
     >
       <header class="child-preview-header">
-        <h2>Aperçu enfant</h2>
+        <div>
+          <h2>Aperçu enfant</h2>
+          @if (subjectName) {
+            <p class="question-subject" data-testid="teacher-child-preview-subject">{{ subjectName }}</p>
+          }
+        </div>
         <button mat-button type="button" data-testid="teacher-child-preview-close" (click)="closeChildPreview()">
           Fermer
         </button>
