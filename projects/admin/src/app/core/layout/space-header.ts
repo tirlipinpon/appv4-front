@@ -68,7 +68,9 @@ export class SpaceHeader implements OnInit {
     return null;
   });
 
-  readonly trail = computed(() => spaceTrail(this.url(), this.trailNames.studentName()));
+  readonly trail = computed(() =>
+    spaceTrail(this.url(), this.trailNames.studentName(), this.trailNames.subjectName()),
+  );
 
   ngOnInit(): void {
     this.url.set(this.router.url);

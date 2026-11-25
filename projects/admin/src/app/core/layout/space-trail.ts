@@ -33,13 +33,15 @@ export const TEACHER_MENU: readonly SpaceMenuEntry[] = [
 ];
 
 /**
- * Nom déjà affiché par le séjour d'un élève.
- * Le fil le lit. Il ne va pas le chercher.
+ * Noms déjà affichés par l'écran ouvert (élève, matière).
+ * Le fil les lit. Il ne va pas les chercher.
  */
 @Injectable({ providedIn: 'root' })
 export class SpaceTrailNames {
   readonly studentName = signal<string | null>(null);
+  readonly subjectName = signal<string | null>(null);
   private generation = 0;
+  private subjectGeneration = 0;
 
   publishStudent(name: string | null): number {
     this.generation += 1;
@@ -52,10 +54,24 @@ export class SpaceTrailNames {
       this.studentName.set(null);
     }
   }
+
+  /** Nom de matière déjà affiché. Le fil le lit, il ne va pas le chercher. */
+  publishSubject(name: string | null): number {
+    this.subjectGeneration += 1;
+    const trimmed = name?.trim() ?? '';
+    this.subjectName.set(trimmed === '' ? null : trimmed);
+    return this.subjectGeneration;
+  }
+
+  clearSubject(generation: number): void {
+    if (this.subjectGeneration === generation) {
+      this.subjectName.set(null);
+    }
+  }
 }
 
 /** Fil de l'espace ouvert. Vide hors parent et professeur, et sans nom inventé. */
-export function spaceTrail(url: string, studentName: string | null): TrailCrumb[] {
+export function spaceTrail(url: string, studentName: string | null, subjectName: string | null = null): TrailCrumb[] {
   const path = url.split(/[?#]/)[0] ?? url;
   const student = /^\/teacher\/eleves\/[^/]+$/.exec(path);
   if (student) {
@@ -78,10 +94,15 @@ export function spaceTrail(url: string, studentName: string | null): TrailCrumb[
   }
   const teacher = TEACHER_MENU.find((item) => item.path === path);
   if (teacher) {
-    return [
-      { label: 'Professeur', path: '/teacher' },
-      { label: teacher.label, path: null },
-    ];
+    const crumbs: TrailCrumb[] = [{ label: 'Professeur', path: '/teacher' }];
+    const name = path === '/teacher/questions' ? subjectName?.trim() ?? '' : '';
+    if (name !== '') {
+      crumbs.push({ label: teacher.label, path: teacher.path });
+      crumbs.push({ label: name, path: null });
+    } else {
+      crumbs.push({ label: teacher.label, path: null });
+    }
+    return crumbs;
   }
   return [];
 }

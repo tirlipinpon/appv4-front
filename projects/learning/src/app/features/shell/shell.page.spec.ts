@@ -7,6 +7,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 import { ChildAuthService } from '../../core/auth/child-auth.service';
 import { ChildSejourService } from '../sejour/data-access/child-sejour.service';
+import { ChildTrailNames } from './child-trail';
 import { LoginPage } from '../login/login.page';
 import { ShellPage } from './shell.page';
 
@@ -156,6 +157,25 @@ describe('ShellPage fil', () => {
       '/learn/12/questions',
     );
     expect(root.querySelector('[data-testid="trail-Jouer"]')?.tagName).toBe('SPAN');
+    http.verify();
+  });
+
+  it('place la matière publiée entre Apprendre et Questions', async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(trailRoutes)],
+    }).compileComponents();
+    const http = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create('/learn/12/play/4');
+    flushShell(http);
+    TestBed.inject(ChildTrailNames).publishSubject('Mathématiques');
+    harness.detectChanges();
+
+    const root = harness.fixture.nativeElement as HTMLElement;
+    expect(crumbTexts(root)).toEqual(['Apprendre', 'Mathématiques', 'Questions', 'Jouer']);
+    expect(root.querySelector('[data-testid="trail-Mathématiques"]')?.getAttribute('href')).toBe('/learn/12');
+    expect(root.querySelector('[data-testid="trail-Questions"]')?.getAttribute('href')).toBe(
+      '/learn/12/questions',
+    );
     http.verify();
   });
 

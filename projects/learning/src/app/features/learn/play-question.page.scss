@@ -19,10 +19,24 @@
   font-size: 0.9rem;
 }
 
-h1 {
+.play-subject {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
   margin: 0;
   font-size: 1.45rem;
   font-weight: 800;
+}
+
+.play-subject-icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.75rem;
+  display: grid;
+  place-items: center;
+  object-fit: contain;
+  background: color-mix(in srgb, var(--card-tint, #c1b4ff) 55%, transparent);
+  font-size: 1.35rem;
 }
 
 .status {

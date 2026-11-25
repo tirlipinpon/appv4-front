@@ -19,6 +19,15 @@ describe('catalogue du fil enfant', () => {
     ]);
   });
 
+  it('sur Jouer, le fil place la matière entre Apprendre et Questions', () => {
+    expect(childTrail('/learn/12/play/4', 'Mathématiques')).toEqual([
+      { label: 'Apprendre', path: '/learn' },
+      { label: 'Mathématiques', path: '/learn/12' },
+      { label: 'Questions', path: '/learn/12/questions' },
+      { label: 'Jouer', path: null },
+    ]);
+  });
+
   it('laisse le login sans fil', () => {
     expect(childTrail('/login', 'Mathématiques')).toEqual([]);
   });

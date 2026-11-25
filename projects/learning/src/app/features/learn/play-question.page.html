@@ -1,7 +1,16 @@
 <section class="play" data-testid="play-question-panel">
   <header class="play-top">
     <a [routerLink]="['/learn', subjectId(), 'questions']" class="back" data-testid="play-back">← Questions</a>
-    <h1 data-testid="play-title">Jouer</h1>
+    @if (subject(); as item) {
+      <h1 class="play-subject" data-testid="play-title" [style.--card-tint]="cardTint(item)">
+        @if (iconSrc(item.iconCode); as src) {
+          <img class="play-subject-icon" data-testid="play-subject-icon" [src]="src" alt="" />
+        } @else if (iconEmoji(item.iconCode); as emoji) {
+          <span class="play-subject-icon" data-testid="play-subject-icon" aria-hidden="true">{{ emoji }}</span>
+        }
+        <span data-testid="play-subject">{{ item.name }}</span>
+      </h1>
+    }
   </header>
 
   @if (play.loading()) {
