@@ -12,6 +12,12 @@ export const PARENT_ROUTES: Routes = [
     canActivate: [spaceGuard(SpaceRoles.parent)],
   },
   {
+    path: 'classement-prototype',
+    loadComponent: () =>
+      import('./classement-prototype.page').then((m) => m.ClassementPrototypePage),
+    canActivate: [spaceGuard(SpaceRoles.parent)],
+  },
+  {
     path: 'profil',
     loadComponent: () => import('./parent-profile.page').then((m) => m.ParentProfilePage),
     canActivate: [spaceGuard(SpaceRoles.parent)],
