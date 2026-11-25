@@ -31,6 +31,9 @@ export type ChildTodayTask = components['schemas']['ChildTodayTask'];
 export type ChildTodayMission = components['schemas']['ChildTodayMission'];
 export type ChildTodayResponse = components['schemas']['ChildTodayResponse'];
 export type ChildBadgesResponse = components['schemas']['ChildBadgesResponse'];
+export type ChildRankingResponse = components['schemas']['ChildRankingResponse'];
+export type ChildRankingCard = components['schemas']['ChildRankingCardResponse'];
+export type ChildRankingScope = components['schemas']['ChildRankingScopeResponse'];
 export type ChildFeaturedQuestionsResponse =
   operations['readChildFeaturedQuestions']['responses'][200]['content']['*/*'];
 export type ChildHumeurPromptResponse = components['schemas']['ChildHumeurPromptResponse'];

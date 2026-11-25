@@ -27,6 +27,7 @@ import { AvatarRenderer } from '@appv4/ui';
 import type {
   CreateParentChildRequest,
   ParentChildResponse,
+  ParentRankingCase,
   ParentGradeList,
   ParentSchoolOption,
   FicheHolderResponse,
@@ -139,6 +140,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
   readonly country = signal<string | null>(null);
   readonly grade = signal<string | null>(null);
   readonly interests = signal<string[]>([]);
+  readonly ranking = signal<ParentRankingCase[]>([]);
   readonly interestDraft = signal('');
   readonly interestSuggestions = signal<string[]>([]);
   readonly schoolId = signal<number | null>(null);
@@ -394,6 +396,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     this.country.set(child.country ?? null);
     this.grade.set(child.grade ?? null);
     this.interests.set([...(child.interests ?? [])]);
+    this.ranking.set((child.ranking ?? []).map((row) => ({ ...row })));
     if (child.schoolId != null) {
       this.schoolId.set(child.schoolId);
       this.schoolText.set(child.schoolName ?? '');
@@ -848,18 +851,60 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     const request = this.editingId() === null
       ? this.api.add(this.payload())
       : this.api.update(this.editingId()!, this.payload());
+    const ranking = this.ranking();
     request.subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.formOpen.set(false);
-        this.resetForm();
-        this.reload();
+      next: (saved) => {
+        const id = saved.id ?? this.editingId();
+        if (id != null && ranking.length > 0) {
+          this.api.saveRanking(id, this.rankingPayload(ranking)).subscribe({
+            next: () => this.finishSave(),
+            error: (err: HttpErrorResponse) => {
+              this.saving.set(false);
+              this.error.set(this.message(err, 'Enregistrement impossible.'));
+            },
+          });
+          return;
+        }
+        this.finishSave();
       },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
         this.error.set(this.message(err, 'Enregistrement impossible.'));
       },
     });
+  }
+
+  onRankingChange(code: string | undefined, event: Event): void {
+    const input = event.target;
+    if (input instanceof HTMLInputElement) {
+      this.toggleRanking(code, input.checked);
+    }
+  }
+
+  toggleRanking(code: string | undefined, checked: boolean): void {
+    if (!code) {
+      return;
+    }
+    this.ranking.update((rows) => rows.map((row) => row.code === code ? { ...row, checked } : row));
+  }
+
+  private rankingPayload(rows: ParentRankingCase[]) {
+    const on = (code: string) => rows.find((row) => row.code === code)?.checked === true;
+    return {
+      classe: on('classe'),
+      annee: on('annee'),
+      pays: on('pays'),
+      tous: on('tous'),
+      age: on('age'),
+      amitie: on('amitie'),
+    };
+  }
+
+  private finishSave(): void {
+    this.saving.set(false);
+    this.formOpen.set(false);
+    this.resetForm();
+    this.reload();
   }
 
   private reload(): void {
@@ -1029,6 +1074,7 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     this.country.set(null);
     this.grade.set(null);
     this.interests.set([]);
+    this.ranking.set([]);
     this.interestDraft.set('');
     this.clearInterestQuery();
     this.schoolId.set(null);

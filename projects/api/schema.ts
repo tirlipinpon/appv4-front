@@ -111,6 +111,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/{id}/ranking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choisir dans quels classements l'enfant apparaît */
+        put: operations["saveParentChildRanking"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/children/{childId}/sejours/plafond": {
         parameters: {
             query?: never;
@@ -1778,6 +1795,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ext/ranking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire un classement de l'enfant connecté */
+        get: operations["readChildRanking"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ext/ranking/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la photo d'un enfant du classement */
+        get: operations["readChildRankingPhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ext/progress": {
         parameters: {
             query?: never;
@@ -2367,6 +2418,21 @@ export interface components {
              * @description Un transfert en attente vaut 1. Zéro si ce parent ne gère pas la fiche.
              */
             pendingTransferCount?: number;
+            /** @description Où l'enfant apparaît. Toutes les cases sont cochées tant que rien n'est enregistré. */
+            ranking?: components["schemas"]["ParentRankingCase"][];
+        };
+        ParentRankingCase: {
+            code?: string;
+            label?: string;
+            checked?: boolean;
+        };
+        SaveParentRankingRequest: {
+            classe?: boolean;
+            annee?: boolean;
+            pays?: boolean;
+            tous?: boolean;
+            age?: boolean;
+            amitie?: boolean;
         };
         PlafondRequest: {
             limitMinutes?: number;
@@ -3562,6 +3628,41 @@ export interface components {
             holds?: boolean;
             message?: string;
             button?: string;
+        };
+        ChildRankingCardResponse: {
+            /** Format: int32 */
+            place?: number;
+            firstName?: string;
+            /** Format: int32 */
+            xp?: number;
+            mine?: boolean;
+            pinned?: boolean;
+            /** @description personnage, photo, animal ou aucun */
+            face?: string;
+            avatarCode?: string;
+            styleCode?: string;
+            options?: {
+                [key: string]: unknown;
+            };
+            pins?: components["schemas"]["ChildRankingPinResponse"][];
+            /** Format: int64 */
+            childId?: number;
+        };
+        ChildRankingPinResponse: {
+            zoneCode?: string;
+            variantCode?: string;
+        };
+        ChildRankingResponse: {
+            scopes?: components["schemas"]["ChildRankingScopeResponse"][];
+            scope?: string;
+            groupLabel?: string;
+            phrase?: string;
+            cards?: components["schemas"]["ChildRankingCardResponse"][];
+        };
+        ChildRankingScopeResponse: {
+            code?: string;
+            label?: string;
+            selected?: boolean;
         };
         ChildProgressResponse: {
             /** Format: int32 */
@@ -4780,6 +4881,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Enfant introuvable pour ce parent */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    saveParentChildRanking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveParentRankingRequest"];
+            };
+        };
+        responses: {
+            /** @description Cases enregistrées, fiche relue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentChildResponse"];
+                };
             };
             /** @description Enfant introuvable pour ce parent */
             404: {
@@ -8344,6 +8480,82 @@ export interface operations {
             };
             /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildRanking: {
+        parameters: {
+            query?: {
+                scope?: string;
+            };
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cartes, pastilles et phrase éventuelle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChildRankingResponse"];
+                };
+            };
+            /** @description Groupe inconnu */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Badge absent, adulte, expiré, ou fiche arrêtée */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readChildRankingPhoto: {
+        parameters: {
+            query: {
+                scope?: string;
+                childId: number;
+            };
+            header?: {
+                Authorization?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Octets de la photo d'un membre du groupe */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Pas de photo, ou enfant hors du groupe */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

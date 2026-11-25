@@ -609,6 +609,49 @@ describe('ParentChildrenPage liens', () => {
     expect(root.querySelector('[data-testid="child-transfer"]')).toBeNull();
     expect(root.querySelector('[data-testid="child-delete"]')).toBeNull();
   });
+
+  it('enregistre les cases de classement renvoyées par la fiche', () => {
+    page.edit({
+      ...lea,
+      age: 8,
+      country: 'France',
+      grade: 'CE1',
+      avatarCode: 'fox',
+      ranking: [
+        { code: 'classe', label: 'Ma classe', checked: true },
+        { code: 'annee', label: 'Mon année', checked: true },
+        { code: 'pays', label: 'Mon pays', checked: true },
+        { code: 'tous', label: 'Tout le monde', checked: true },
+        { code: 'age', label: 'Mon âge', checked: true },
+        { code: 'amitie', label: 'Amitié', checked: true },
+      ],
+    });
+    fixture.detectChanges();
+    const box = fixture.nativeElement.querySelector('[data-testid="ranking-classe"]') as HTMLInputElement;
+    expect(box).not.toBeNull();
+    expect(box.checked).toBeTrue();
+    box.checked = false;
+    box.dispatchEvent(new Event('change'));
+    page.save();
+    const update = http.expectOne(`${childrenUrl}/1`);
+    expect(update.request.method).toBe('PUT');
+    update.flush({ ...lea, id: 1 });
+    const ranking = http.expectOne(`${childrenUrl}/1/ranking`);
+    expect(ranking.request.body).toEqual({
+      classe: false,
+      annee: true,
+      pays: true,
+      tous: true,
+      age: true,
+      amitie: true,
+    });
+    ranking.flush({ ...lea, id: 1 });
+    http.expectOne(invitationsUrl).flush([]);
+    http.expectOne(demandesUrl).flush([]);
+    expectTransfers(http);
+    http.expectOne(childrenUrl).flush({ children: [lea, noah, camille], schools: [], curricula: [] });
+    expectHolders(http, [1, 2, 3]);
+  });
 });
 
 const schools: ParentSchoolOption[] = [
