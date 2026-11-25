@@ -1,0 +1,152 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content content-wide">
+    <h1>Suivi</h1>
+
+    @if (loading()) {
+      <p>Chargement…</p>
+    }
+    @if (error(); as message) {
+      <p class="error" role="alert" data-testid="parent-suivis-error">{{ message }}</p>
+    }
+
+    @if (children().length > 0) {
+      <div class="picks">
+        @for (child of children(); track child.id) {
+          <button
+            type="button"
+            [attr.data-testid]="'parent-suivis-pick-' + child.id"
+            [attr.aria-current]="child.id === selectedId() ? 'true' : null"
+            (click)="pick(child)"
+          >
+            {{ child.firstName }}
+          </button>
+        }
+      </div>
+    }
+
+    @if (selected(); as child) {
+      <p class="child" data-testid="parent-suivis-child">{{ child.firstName }} {{ child.lastName }}</p>
+    }
+
+    @if (progress(); as shown) {
+      <p class="photo" data-testid="parent-suivis-photo">
+        <strong>{{ shown.xpTotal }} XP</strong>
+        @if (shown.leagueLabel) {
+          <span>{{ shown.leagueLabel }}</span>
+        }
+        <span>série {{ shown.currentStreak }}</span>
+      </p>
+
+      <section>
+        <h2>Évolution</h2>
+        @if (chart(); as drawn) {
+          <svg
+            data-testid="parent-suivis-chart"
+            [attr.viewBox]="'0 0 ' + drawn.width + ' ' + drawn.height"
+            role="img"
+            aria-label="Évolution de l'XP"
+          >
+            <line [attr.x1]="drawn.padL" [attr.y1]="drawn.top" [attr.x2]="drawn.padL" [attr.y2]="drawn.base" />
+            <line [attr.x1]="drawn.padL" [attr.y1]="drawn.base" [attr.x2]="drawn.width - 8" [attr.y2]="drawn.base" />
+            @for (tick of drawn.yTicks; track tick.label) {
+              <line [attr.x1]="drawn.padL" [attr.x2]="drawn.width - 8" [attr.y1]="tick.y" [attr.y2]="tick.y" />
+              <text [attr.x]="drawn.padL - 8" [attr.y]="tick.y! + 4" text-anchor="end">{{ tick.label }}</text>
+            }
+            @for (tick of drawn.xTicks; track tick.label) {
+              <line [attr.x1]="tick.x" [attr.x2]="tick.x" [attr.y1]="drawn.base" [attr.y2]="drawn.base + 6" />
+              <text [attr.x]="tick.x" [attr.y]="drawn.height - 4" text-anchor="middle">{{ tick.label }}</text>
+            }
+            <path [attr.d]="drawn.path" />
+            @for (point of drawn.points; track point.label) {
+              <circle [attr.cx]="point.x" [attr.cy]="point.y" r="3.5" [attr.data-on]="point.on ? 'true' : 'false'" />
+            }
+          </svg>
+        } @else {
+          <p data-testid="parent-suivis-empty">Pas encore de jour.</p>
+        }
+      </section>
+
+      @if (weeks().length > 0) {
+        <div class="weeks">
+          <button
+            type="button"
+            data-testid="parent-suivis-previous"
+            (click)="step(-1)"
+            [disabled]="weekIndex() === 0"
+          >
+            Semaine précédente
+          </button>
+          <strong data-testid="parent-suivis-week">{{ week()?.label }}</strong>
+          <button
+            type="button"
+            data-testid="parent-suivis-next"
+            (click)="step(1)"
+            [disabled]="weekIndex() === weeks().length - 1"
+          >
+            Semaine suivante
+          </button>
+        </div>
+        <div class="calendar">
+          @for (item of weeks(); track item.key; let i = $index) {
+            <button
+              type="button"
+              [attr.data-testid]="'parent-suivis-week-' + item.key"
+              [attr.aria-current]="i === weekIndex() ? 'true' : null"
+              (click)="weekIndex.set(i)"
+            >
+              {{ item.label }}
+            </button>
+          }
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Jour</th>
+              <th>XP du jour</th>
+              <th>XP total</th>
+              <th>Réussis</th>
+              <th>Ratés</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (day of week()?.days ?? []; track day.date) {
+              <tr [attr.data-testid]="'parent-suivis-day-' + day.date">
+                <td>{{ day.date }}</td>
+                <td [attr.data-gain]="(day.xpGained ?? 0) > 0 ? 'plus' : 'zero'">{{ gained(day.xpGained) }}</td>
+                <td>{{ day.xpTotal }}</td>
+                <td>{{ count(day.passed) }}</td>
+                <td [attr.data-fail]="failed(day) ? 'yes' : 'no'">{{ count(day.failed) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <ul class="rest">
+        @if (shown.trend; as trend) {
+          <li data-testid="parent-suivis-trend">
+            Tendance {{ trend.direction }} {{ decimal(trend.deltaSuccessPoints) }} · {{ trend.windowLabel }}
+          </li>
+        }
+        @if (shown.recentSuccess; as success) {
+          <li data-testid="parent-suivis-success">
+            Réussite {{ decimal(success.successRate) }} · {{ success.attemptCount }} essais · {{ success.windowLabel }}
+          </li>
+        }
+        @if (shown.bestTimeSlotLabel) {
+          <li data-testid="parent-suivis-slot">Créneau {{ shown.bestTimeSlotLabel }}</li>
+        }
+        @if (hasNumber(shown.averageSessionMinutes)) {
+          <li data-testid="parent-suivis-minutes">{{ shown.averageSessionMinutes }} min par séjour</li>
+        }
+        @for (forme of shown.repeatedErrorPatterns ?? []; track forme.formCode) {
+          <li [attr.data-testid]="'parent-suivis-forme-' + forme.formCode">
+            {{ forme.label }} raté {{ forme.count }} fois
+          </li>
+        }
+      </ul>
+    }
+  </main>
+</div>

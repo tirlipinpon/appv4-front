@@ -37,7 +37,7 @@ describe('ParentTempsPage', () => {
   });
 
   it('ouvre le mois courant, le jour d’aujourd’hui, et reconnaît les espaces', () => {
-    expect(menuLabels()).toEqual(['Accueil', 'Enfants', 'Profil', 'Matières', 'Humeur', 'Temps']);
+    expect(menuLabels()).toEqual(['Accueil', 'Enfants', 'Profil', 'Matières', 'Humeur', 'Temps', 'Suivi']);
 
     http.expectOne(childrenUrl).flush({
       children: [

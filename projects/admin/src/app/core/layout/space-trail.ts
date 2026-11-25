@@ -19,6 +19,7 @@ export const PARENT_MENU: readonly SpaceMenuEntry[] = [
   { label: 'Matières', path: '/parent/matieres', testId: 'parent-nav-subjects' },
   { label: 'Humeur', path: '/parent/humeur', testId: 'parent-nav-humeur' },
   { label: 'Temps', path: '/parent/temps', testId: 'parent-nav-temps' },
+  { label: 'Suivi', path: '/parent/suivis', testId: 'parent-nav-suivis' },
 ];
 
 /** Une seule liste pour le menu professeur et le fil. */

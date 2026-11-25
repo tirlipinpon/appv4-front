@@ -1,0 +1,148 @@
+h1 {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.picks,
+.weeks,
+.calendar,
+.rest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.picks,
+.calendar {
+  margin-bottom: 1rem;
+}
+
+.weeks {
+  margin: 0.8rem 0 0.5rem;
+}
+
+.picks button,
+.weeks button,
+.calendar button,
+.rest li,
+.photo span {
+  border: 1px solid var(--app-outline);
+  border-radius: 999px;
+  background: var(--app-surface-card);
+}
+
+.picks button,
+.weeks button,
+.calendar button {
+  padding: 0.35rem 0.9rem;
+  color: var(--app-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.picks button[aria-current='true'],
+.calendar button[aria-current='true'] {
+  background: var(--app-text);
+  color: var(--app-surface-card);
+}
+
+.weeks button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.child {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.photo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0 0 0.8rem;
+}
+
+.photo strong {
+  font-size: 2rem;
+}
+
+.photo span {
+  padding: 0.15rem 0.6rem;
+  color: var(--app-text-muted);
+}
+
+svg {
+  width: 100%;
+  height: auto;
+}
+
+line {
+  stroke: var(--app-outline);
+}
+
+path {
+  fill: none;
+  stroke: #1a3d7c;
+  stroke-width: 2.5;
+}
+
+circle {
+  fill: #b7c3d4;
+}
+
+circle[data-on='true'] {
+  fill: #1a3d7c;
+}
+
+text {
+  fill: var(--app-text-muted);
+  font-size: 11px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--app-outline);
+}
+
+th {
+  color: var(--app-text-muted);
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+[data-gain='plus'] {
+  color: #2f9e44;
+}
+
+[data-fail='yes'] {
+  color: #9b1c1c;
+  font-weight: 650;
+}
+
+.rest {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rest li {
+  padding: 0.3rem 0.7rem;
+}

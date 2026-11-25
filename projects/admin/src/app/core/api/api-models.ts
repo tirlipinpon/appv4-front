@@ -131,3 +131,5 @@ export type UsageResponse = components['schemas']['UsageResponse'];
 export type UsageLineResponse = components['schemas']['UsageLineResponse'];
 export type ChangesResponse = components['schemas']['ChangesResponse'];
 export type ChangeResponse = components['schemas']['ChangeResponse'];
+export type ParentProgressResponse = components['schemas']['ParentProgressResponse'];
+export type ProgressDayResponse = components['schemas']['ProgressDayResponse'];

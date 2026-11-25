@@ -1469,6 +1469,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/int/parent/children/{childId}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lire la photo, les jours d'XP et les quatre lectures */
+        get: operations["readParentProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/int/parent/children/transferts": {
         parameters: {
             query?: never;
@@ -3185,6 +3202,49 @@ export interface components {
             currentMonth?: boolean;
             journees?: components["schemas"]["JourneeItem"][];
             plafond?: components["schemas"]["PlafondResponse"];
+        };
+        FormeResponse: {
+            formCode?: string;
+            /** Format: int32 */
+            count?: number;
+            label?: string;
+        };
+        ParentProgressResponse: {
+            bestTimeSlotLabel?: string;
+            /** Format: int32 */
+            averageSessionMinutes?: number;
+            trend?: components["schemas"]["TrendResponse"];
+            repeatedErrorPatterns?: components["schemas"]["FormeResponse"][];
+            /** Format: int32 */
+            xpTotal?: number;
+            /** Format: int32 */
+            currentStreak?: number;
+            leagueLabel?: string;
+            recentSuccess?: components["schemas"]["RecentSuccessResponse"];
+            days?: components["schemas"]["ProgressDayResponse"][];
+        };
+        ProgressDayResponse: {
+            /** Format: date */
+            date?: string;
+            /** Format: int32 */
+            xpGained?: number;
+            /** Format: int32 */
+            xpTotal?: number;
+            /** Format: int32 */
+            passed?: number;
+            /** Format: int32 */
+            failed?: number;
+        };
+        RecentSuccessResponse: {
+            successRate?: number;
+            /** Format: int32 */
+            attemptCount?: number;
+            windowLabel?: string;
+        };
+        TrendResponse: {
+            direction?: string;
+            deltaSuccessPoints?: number;
+            windowLabel?: string;
         };
         TransferResponse: {
             /** Format: int64 */
@@ -7727,6 +7787,46 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Le jeton n'est pas dans l'espace parent */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+            /** @description Cet enfant est introuvable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuthErrorBody"];
+                };
+            };
+        };
+    };
+    readParentProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                childId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Photo, jours, réussite, et les quatre blocs déjà connus */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ParentProgressResponse"];
                 };
             };
             /** @description Le jeton n'est pas dans l'espace parent */

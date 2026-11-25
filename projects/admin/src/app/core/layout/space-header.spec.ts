@@ -200,6 +200,7 @@ describe('SpaceHeader', () => {
       'Matières',
       'Humeur',
       'Temps',
+      'Suivi',
     ]);
     expect(menuLinks()[0].getAttribute('aria-current')).toBe('page');
   });
@@ -219,6 +220,7 @@ describe('SpaceHeader', () => {
       'Matières',
       'Humeur',
       'Temps',
+      'Suivi',
     ]);
     const action: HTMLButtonElement = fixture.nativeElement.querySelector('.space-action');
     expect(action.textContent?.trim()).toBe("Demander l'espace professeur");
@@ -282,6 +284,7 @@ describe('SpaceHeader', () => {
       'Matières',
       'Humeur',
       'Temps',
+      'Suivi',
     ]);
     const adminLinks = Array.from(
       fixture.nativeElement.querySelectorAll('app-admin-section-nav a'),
