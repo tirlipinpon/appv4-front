@@ -27,12 +27,15 @@ export class JourneeMonthComponent {
 
   readonly opened = signal<JourneeItem | null>(null);
   readonly filter = signal<string | null>(null);
+  /** '' garde l'ordre de la lecture. asc / desc trie les lignes visibles par durée. */
+  readonly timeOrder = signal<'' | 'asc' | 'desc'>('');
 
   constructor() {
     effect(() => {
       const shown = this.month();
       const today = (shown?.journees ?? []).find((journee) => journee.today === true) ?? null;
       this.filter.set(null);
+      this.timeOrder.set('');
       this.opened.set(shown?.currentMonth === true ? today : null);
     });
   }
@@ -40,6 +43,7 @@ export class JourneeMonthComponent {
   open(journee: JourneeItem): void {
     if (this.opened() !== journee) {
       this.filter.set(null);
+      this.timeOrder.set('');
     }
     this.opened.set(journee);
   }
@@ -47,6 +51,11 @@ export class JourneeMonthComponent {
   choose(event: Event): void {
     const raw = (event.target as HTMLSelectElement).value;
     this.filter.set(raw === '' ? null : raw);
+  }
+
+  chooseOrder(event: Event): void {
+    const raw = (event.target as HTMLSelectElement).value;
+    this.timeOrder.set(raw === 'asc' || raw === 'desc' ? raw : '');
   }
 
   choices(journee: JourneeItem): { space: string; label: string }[] {
@@ -67,10 +76,15 @@ export class JourneeMonthComponent {
   visibleLines(journee: JourneeItem): JourneeLineItem[] {
     const lines = journee.lines ?? [];
     const picked = this.filter();
-    if (picked == null) {
-      return lines;
+    const shown = picked == null ? lines : lines.filter((line) => groupOf(line.space) === picked);
+    const order = this.timeOrder();
+    if (order === '') {
+      return shown;
     }
-    return lines.filter((line) => groupOf(line.space) === picked);
+    return [...shown].sort((left, right) => {
+      const delta = secondsOf(left) - secondsOf(right);
+      return order === 'asc' ? delta : -delta;
+    });
   }
 
   shownDuration(journee: JourneeItem): string | undefined {
@@ -108,6 +122,10 @@ export class JourneeMonthComponent {
     }
     return cells;
   }
+}
+
+function secondsOf(line: JourneeLineItem): number {
+  return line.durationSeconds ?? 0;
 }
 
 function groupOf(space: string | undefined): string | null {

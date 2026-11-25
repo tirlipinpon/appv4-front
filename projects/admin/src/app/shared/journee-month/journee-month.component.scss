@@ -128,8 +128,16 @@
 
 .detail header {
   margin: 0;
+  flex-wrap: wrap;
   padding: 0.85rem 1rem;
   background: var(--app-primary-soft);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .detail header p {

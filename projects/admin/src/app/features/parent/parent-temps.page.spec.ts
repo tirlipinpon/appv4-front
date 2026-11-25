@@ -64,13 +64,18 @@ describe('ParentTempsPage', () => {
     expect(detail.textContent).toContain('22 novembre 2026');
     expect(detail.textContent).toContain('7 min');
     const lines = [...detail.querySelectorAll('[data-testid="parent-temps-line"]')] as HTMLElement[];
-    expect(lines.map((line) => line.getAttribute('data-space'))).toEqual(['accueil', 'question']);
+    expect(lines.map((line) => line.getAttribute('data-space'))).toEqual(['accueil', 'question', 'profil']);
     expect(lines[0].querySelector('[data-testid="parent-temps-label"]')?.textContent).toBe('Accueil');
     expect(lines[0].textContent).toContain('6 min 45');
     expect(lines[1].querySelector('[data-testid="parent-temps-subject"]')?.textContent).toBe('Maths');
 
     const filter = fixture.nativeElement.querySelector('[data-testid="parent-temps-filter"]') as HTMLSelectElement;
-    expect([...filter.options].map((option) => option.textContent?.trim())).toEqual(['Tout', 'Accueil', 'Questions']);
+    expect([...filter.options].map((option) => option.textContent?.trim())).toEqual([
+      'Tout',
+      'Accueil',
+      'Questions',
+      'Profil',
+    ]);
     filter.value = 'question';
     filter.dispatchEvent(new Event('change'));
     fixture.detectChanges();
@@ -89,8 +94,30 @@ describe('ParentTempsPage', () => {
     filter.value = '';
     filter.dispatchEvent(new Event('change'));
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelectorAll('[data-testid="parent-temps-line"]').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="parent-temps-line"]').length).toBe(3);
     expect(text('[data-testid="parent-temps-duration"]')).toBe('7 min');
+    const sort = fixture.nativeElement.querySelector('[data-testid="parent-temps-sort"]') as HTMLSelectElement;
+    expect([...sort.options].map((option) => option.textContent?.trim())).toEqual([
+      'Journée',
+      'Croissant',
+      'Décroissant',
+    ]);
+    sort.value = 'asc';
+    sort.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(lineSpaces()).toEqual(['question', 'profil', 'accueil']);
+    sort.value = 'desc';
+    sort.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(lineSpaces()).toEqual(['accueil', 'profil', 'question']);
+    (fixture.nativeElement.querySelector('[data-testid="parent-temps-day-21"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('[data-testid="parent-temps-day-22"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect((fixture.nativeElement.querySelector('[data-testid="parent-temps-sort"]') as HTMLSelectElement).value).toBe(
+      '',
+    );
+    expect(lineSpaces()).toEqual(['accueil', 'question', 'profil']);
     expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-evolution"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-from"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="parent-temps-to"]')).not.toBeNull();
@@ -98,6 +125,7 @@ describe('ParentTempsPage', () => {
     expect([...bar.querySelectorAll('.seg')].map((seg) => seg.getAttribute('data-space'))).toEqual([
       'accueil',
       'question',
+      'profil',
     ]);
 
     (fixture.nativeElement.querySelector('[data-testid="parent-temps-day-21"]') as HTMLButtonElement).click();
@@ -308,6 +336,12 @@ describe('ParentTempsPage', () => {
     return fixture.nativeElement.querySelector(selector)?.textContent?.trim() ?? '';
   }
 
+  function lineSpaces(): string[] {
+    return [...fixture.nativeElement.querySelectorAll('[data-testid="parent-temps-line"]')].map(
+      (line) => (line as HTMLElement).getAttribute('data-space') ?? '',
+    );
+  }
+
   function flushHeader(): void {
     http.expectOne('http://localhost:8080/api/int/auth/me').flush({ displayName: 'Parent' });
     http
@@ -356,6 +390,7 @@ function november() {
             durationLabel: '15 s',
             durationSeconds: 15,
           },
+          { space: 'profil', label: 'Profil', durationLabel: '30 s', durationSeconds: 30 },
         ],
       },
       {

@@ -52,19 +52,33 @@
     <article class="detail" [attr.data-testid]="testId() + '-detail'">
       <header>
         <p>{{ journee.dateLabel }}</p>
-        <label class="filter">
-          Voir
-          <select
-            [attr.data-testid]="testId() + '-filter'"
-            [value]="filter() === null ? '' : filter()"
-            (change)="choose($event)"
-          >
-            <option value="">Tout</option>
-            @for (choice of choices(journee); track choice.space) {
-              <option [value]="choice.space">{{ choice.label }}</option>
-            }
-          </select>
-        </label>
+        <div class="filters">
+          <label class="filter">
+            Voir
+            <select
+              [attr.data-testid]="testId() + '-filter'"
+              [value]="filter() === null ? '' : filter()"
+              (change)="choose($event)"
+            >
+              <option value="">Tout</option>
+              @for (choice of choices(journee); track choice.space) {
+                <option [value]="choice.space">{{ choice.label }}</option>
+              }
+            </select>
+          </label>
+          <label class="filter">
+            Temps
+            <select
+              [attr.data-testid]="testId() + '-sort'"
+              [value]="timeOrder()"
+              (change)="chooseOrder($event)"
+            >
+              <option value="">Journée</option>
+              <option value="asc">Croissant</option>
+              <option value="desc">Décroissant</option>
+            </select>
+          </label>
+        </div>
         @if (shownDuration(journee); as duration) {
           <p [attr.data-testid]="testId() + '-duration'">{{ duration }}</p>
         }
