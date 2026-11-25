@@ -1,0 +1,43 @@
+<div class="page">
+  <app-space-header />
+
+  <main class="content content-wide">
+    <h1>Horaires</h1>
+
+    @if (error()) {
+      <p class="error" role="alert" data-testid="hours-error">{{ error() }}</p>
+    }
+
+    @if (loading()) {
+      <p>Chargement…</p>
+    } @else {
+      <form (submit)="$event.preventDefault(); save()">
+        <label>
+          Heure de début
+          <input
+            type="time"
+            data-testid="hours-opens"
+            [value]="opensAt()"
+            (input)="opensAt.set(inputValue($event))"
+          />
+        </label>
+        <label>
+          Heure de fin
+          <input
+            type="time"
+            data-testid="hours-closes"
+            [value]="closesAt()"
+            (input)="closesAt.set(inputValue($event))"
+          />
+        </label>
+        <button mat-flat-button color="primary" type="submit" data-testid="hours-save">
+          Enregistrer
+        </button>
+      </form>
+
+      @if (closedMessage()) {
+        <p data-testid="hours-message">{{ closedMessage() }}</p>
+      }
+    }
+  </main>
+</div>

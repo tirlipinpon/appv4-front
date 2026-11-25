@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 /**
- * Menu des pages admin : demandes, humeurs, IA.
+ * Menu des pages admin : demandes, humeurs, IA, horaires.
  * Il est dans le bandeau des espaces, et repris sur les pages admin.
  */
 @Component({
@@ -17,5 +17,6 @@ export class AdminSectionNav {
     { label: 'Demandes professeur', path: '/admin/teacher-requests' },
     { label: 'Humeurs', path: '/admin/humeurs' },
     { label: 'IA', path: '/admin/ia' },
+    { label: 'Horaires', path: '/admin/horaires' },
   ];
 }

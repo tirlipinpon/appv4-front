@@ -19,6 +19,7 @@ describe('catalogue du fil', () => {
     expect(spaceTrail('/admin/humeurs', null)).toEqual([]);
     expect(spaceTrail('/admin/teacher-requests', null)).toEqual([]);
     expect(spaceTrail('/admin/ia', null)).toEqual([]);
+    expect(spaceTrail('/admin/horaires', null)).toEqual([]);
     expect(spaceTrail('/login', null)).toEqual([]);
     expect(spaceTrail('/teacher-pending', null)).toEqual([]);
   });
