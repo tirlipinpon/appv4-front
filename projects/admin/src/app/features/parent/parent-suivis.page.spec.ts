@@ -71,6 +71,33 @@ describe('ParentSuivisPage', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="parent-suivis-previous"]')?.disabled).toBeTrue();
   });
 
+  it('ouvre un jour passé de la mission et change de semaine', () => {
+    openAkira({
+      ...progress(),
+      dailyMissionDays: missionDays(),
+    });
+
+    expect(text('[data-testid="parent-suivis-mission-hero"]')).toContain('2/3');
+    expect(text('[data-testid="parent-suivis-mission-hero"]')).toContain('En cours');
+    expect(text('[data-testid="parent-suivis-mission-fail-2026-11-22T17:00:00Z"]')).toContain('Maths');
+    expect(text('[data-testid="parent-suivis-mission-fail-2026-11-22T17:05:00Z"]')).toContain('3 + 4');
+
+    (fixture.nativeElement.querySelector('[data-testid="parent-suivis-mission-day-2026-11-21"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(text('[data-testid="parent-suivis-mission-hero"]')).toContain('0/1');
+    expect(text('[data-testid="parent-suivis-mission-hero"]')).toContain("Joue 1 question aujourd'hui");
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-suivis-mission-fail-2026-11-22T17:00:00Z"]')).toBeNull();
+
+    (fixture.nativeElement.querySelector('[data-testid="parent-suivis-mission-previous"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(text('[data-testid="parent-suivis-mission-hero"]')).toContain('2/2');
+    expect(text('[data-testid="parent-suivis-mission-hero"]')).toContain('Terminée');
+    expect(fixture.nativeElement.querySelector('[data-testid="parent-suivis-mission-previous"]')?.disabled).toBeTrue();
+    expect(text('[data-testid="parent-suivis-photo"]')).toContain('86 XP');
+  });
+
   it('cache les blocs absents', () => {
     openAkira({
       xpTotal: 0,
@@ -125,6 +152,53 @@ describe('ParentSuivisPage', () => {
 
 function progressUrl(childId: number): string {
   return `http://localhost:8080/api/int/parent/children/${childId}/progress`;
+}
+
+function missionDays() {
+  const blank = (date: string) => ({ date, failedEssais: null });
+  return [
+    blank('2026-11-09'),
+    blank('2026-11-10'),
+    blank('2026-11-11'),
+    {
+      date: '2026-11-12',
+      objective: "Joue 2 questions aujourd'hui",
+      progress: 2,
+      target: 2,
+      status: 'terminee',
+      statusLabel: 'Terminée',
+      failedEssais: [],
+    },
+    blank('2026-11-13'),
+    blank('2026-11-14'),
+    blank('2026-11-15'),
+    blank('2026-11-16'),
+    blank('2026-11-17'),
+    blank('2026-11-18'),
+    blank('2026-11-19'),
+    blank('2026-11-20'),
+    {
+      date: '2026-11-21',
+      objective: "Joue 1 question aujourd'hui",
+      progress: 0,
+      target: 1,
+      status: 'en_cours',
+      statusLabel: 'En cours',
+      failedEssais: [],
+    },
+    {
+      date: '2026-11-22',
+      objective: "Joue 3 questions aujourd'hui",
+      progress: 2,
+      target: 3,
+      status: 'en_cours',
+      statusLabel: 'En cours',
+      failedEssais: [
+        { subjectLabel: 'Maths', prompt: 'Exemple de texte : 3 + 4', at: '2026-11-22T17:00:00Z' },
+        { subjectLabel: 'Maths', prompt: 'Exemple de texte : 3 + 4', at: '2026-11-22T17:05:00Z' },
+      ],
+    },
+  ];
 }
 
 function progress() {

@@ -7,10 +7,12 @@ import { httpErrorMessage } from '../../shared/http-error-message/http-error-mes
 import { ParentChildrenService } from './data-access/parent-children.service';
 import { ParentProgressService } from './data-access/parent-progress.service';
 
-interface WeekGroup {
+type MissionDay = NonNullable<ParentProgressResponse['dailyMissionDays']>[number];
+
+interface WeekGroup<T> {
   key: string;
   label: string;
-  days: ProgressDayResponse[];
+  days: T[];
 }
 
 interface ChartPoint {
@@ -28,7 +30,7 @@ interface ChartTick {
 
 /**
  * Page Suivi du parent (ADMIN-83).
- * La courbe, la semaine et les blocs viennent de la lecture. La page ne calcule pas l'XP.
+ * La courbe, la semaine, la mission et les blocs viennent de la lecture. La page ne calcule pas l'XP.
  */
 @Component({
   selector: 'app-parent-suivis-page',
@@ -45,6 +47,8 @@ export class ParentSuivisPage implements OnInit {
   readonly selectedId = signal<number | null>(null);
   readonly progress = signal<ParentProgressResponse | null>(null);
   readonly weekIndex = signal(0);
+  readonly missionWeekIndex = signal(0);
+  readonly missionPicked = signal<string | null>(null);
   readonly error = signal<string | null>(null);
   readonly loading = signal(true);
   private request = 0;
@@ -53,6 +57,15 @@ export class ParentSuivisPage implements OnInit {
     () => this.children().find((child) => child.id === this.selectedId()) ?? null,
   );
   readonly weeks = computed(() => weeksOf(this.progress()?.days ?? []));
+  readonly missionWeeks = computed(() => weeksOf(this.progress()?.dailyMissionDays ?? []));
+  readonly missionWeek = computed(() => this.missionWeeks()[this.missionWeekIndex()] ?? null);
+  readonly missionDay = computed(() => {
+    const week = this.missionWeek();
+    if (week == null) {
+      return null;
+    }
+    return week.days.find((day) => day.date === this.missionPicked()) ?? week.days[week.days.length - 1] ?? null;
+  });
   readonly week = computed(() => this.weeks()[this.weekIndex()] ?? null);
   readonly chart = computed(() => draw(this.progress()?.days ?? [], this.week()?.key ?? null));
 
@@ -92,6 +105,54 @@ export class ParentSuivisPage implements OnInit {
     this.weekIndex.set(Math.min(last, Math.max(0, this.weekIndex() + delta)));
   }
 
+  shiftMission(delta: number): void {
+    const last = this.missionWeeks().length - 1;
+    const next = Math.min(last, Math.max(0, this.missionWeekIndex() + delta));
+    this.missionWeekIndex.set(next);
+    const days = this.missionWeeks()[next]?.days ?? [];
+    const withMission = [...days].reverse().find((day) => day.status != null);
+    this.missionPicked.set((withMission ?? days[days.length - 1])?.date ?? null);
+  }
+
+  pickMission(day: MissionDay): void {
+    this.missionPicked.set(day.date ?? null);
+  }
+
+  private openMission(days: MissionDay[]): void {
+    const opened = openMissionWeek(days, parisToday());
+    this.missionWeekIndex.set(opened.index);
+    this.missionPicked.set(opened.picked);
+  }
+
+  missionCount(day: MissionDay): string {
+    if (day.progress == null || day.target == null) {
+      return '—';
+    }
+    return `${day.progress}/${day.target}`;
+  }
+
+  missionNamed(day: MissionDay): boolean {
+    return day.statusLabel != null;
+  }
+
+  missionTime(value: string | null | undefined): string {
+    if (value == null) {
+      return '';
+    }
+    return new Intl.DateTimeFormat('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Paris',
+    }).format(new Date(value));
+  }
+
+  missionDate(value: string | null | undefined): string {
+    if (value == null) {
+      return '';
+    }
+    return shortDate(value);
+  }
+
   count(value: number | null | undefined): string {
     return value == null ? '—' : String(value);
   }
@@ -127,6 +188,7 @@ export class ParentSuivisPage implements OnInit {
         }
         this.progress.set(body);
         this.weekIndex.set(Math.max(0, weeksOf(body.days ?? []).length - 1));
+        this.openMission(body.dailyMissionDays ?? []);
         this.loading.set(false);
       },
       error: (err: HttpErrorResponse) => {
@@ -141,8 +203,8 @@ export class ParentSuivisPage implements OnInit {
   }
 }
 
-function weeksOf(days: ProgressDayResponse[]): WeekGroup[] {
-  const groups = new Map<string, ProgressDayResponse[]>();
+function weeksOf<T extends { date?: string }>(days: T[]): WeekGroup<T>[] {
+  const groups = new Map<string, T[]>();
   for (const day of days) {
     if (day.date == null) {
       continue;
@@ -157,6 +219,19 @@ function weeksOf(days: ProgressDayResponse[]): WeekGroup[] {
     label: weekLabel(key),
     days: group,
   }));
+}
+
+function openMissionWeek(days: MissionDay[], today: string): { index: number; picked: string | null } {
+  const weeks = weeksOf(days);
+  const found = weeks.findIndex((week) => week.days.some((day) => day.date === today));
+  const index = found >= 0 ? found : Math.max(0, weeks.length - 1);
+  const week = weeks[index];
+  const todayDay = week?.days.find((day) => day.date === today);
+  return { index, picked: todayDay?.date ?? week?.days[week.days.length - 1]?.date ?? null };
+}
+
+function parisToday(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date());
 }
 
 function mondayOf(iso: string): string {
