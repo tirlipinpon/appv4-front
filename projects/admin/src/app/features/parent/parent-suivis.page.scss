@@ -59,6 +59,61 @@ h2 {
   cursor: default;
 }
 
+.mission {
+  margin: 0 0 1.2rem;
+}
+
+.mission-track {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.35rem;
+}
+
+.mission-track button {
+  display: grid;
+  min-height: 4.2rem;
+  place-items: center;
+  border: 1px solid var(--app-outline);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.mission-track button[data-selected='true'] {
+  background: var(--app-text);
+  color: var(--app-surface-card);
+}
+
+.mission-track small {
+  display: block;
+}
+
+.mission-hero {
+  padding: 1.2rem 0 0.6rem;
+  text-align: center;
+}
+
+.mission-hero p {
+  margin: 0;
+}
+
+.mission-hero strong {
+  display: block;
+  font-size: 4rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.mission-fail {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--app-outline);
+}
+
 .child {
   margin: 0 0 0.5rem;
   font-size: 1.15rem;

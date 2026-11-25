@@ -1476,7 +1476,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lire la photo, les jours d'XP et les quatre lectures */
+        /** Lire la photo, les jours d'XP, la mission et les quatre lectures */
         get: operations["readParentProgress"];
         put?: never;
         post?: never;
@@ -3203,11 +3203,29 @@ export interface components {
             journees?: components["schemas"]["JourneeItem"][];
             plafond?: components["schemas"]["PlafondResponse"];
         };
+        FailedEssaiResponse: {
+            subjectLabel?: string;
+            prompt?: string;
+            /** Format: date-time */
+            at?: string;
+        };
         FormeResponse: {
             formCode?: string;
             /** Format: int32 */
             count?: number;
             label?: string;
+        };
+        MissionDayResponse: {
+            /** Format: date */
+            date?: string;
+            objective?: string;
+            /** Format: int32 */
+            progress?: number;
+            /** Format: int32 */
+            target?: number;
+            status?: string;
+            statusLabel?: string;
+            failedEssais?: components["schemas"]["FailedEssaiResponse"][];
         };
         ParentProgressResponse: {
             bestTimeSlotLabel?: string;
@@ -3222,6 +3240,8 @@ export interface components {
             leagueLabel?: string;
             recentSuccess?: components["schemas"]["RecentSuccessResponse"];
             days?: components["schemas"]["ProgressDayResponse"][];
+            dailyMissionSummary?: components["schemas"]["MissionDayResponse"];
+            dailyMissionDays?: components["schemas"]["MissionDayResponse"][];
         };
         ProgressDayResponse: {
             /** Format: date */
@@ -7820,7 +7840,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Photo, jours, réussite, et les quatre blocs déjà connus */
+            /** @description Photo, jours, mission du jour, réussite, et les quatre blocs déjà connus */
             200: {
                 headers: {
                     [name: string]: unknown;

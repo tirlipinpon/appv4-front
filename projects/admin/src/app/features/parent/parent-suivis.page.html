@@ -31,6 +31,59 @@
     }
 
     @if (progress(); as shown) {
+      @if (missionWeeks().length > 0) {
+        <section class="mission" data-testid="parent-suivis-mission">
+          <div class="weeks">
+            <button
+              type="button"
+              data-testid="parent-suivis-mission-previous"
+              (click)="shiftMission(-1)"
+              [disabled]="missionWeekIndex() === 0"
+            >
+              Semaine précédente
+            </button>
+            <strong data-testid="parent-suivis-mission-week">{{ missionWeek()?.label }}</strong>
+            <button
+              type="button"
+              data-testid="parent-suivis-mission-next"
+              (click)="shiftMission(1)"
+              [disabled]="missionWeekIndex() === missionWeeks().length - 1"
+            >
+              Semaine suivante
+            </button>
+          </div>
+          <div class="mission-track">
+            @for (day of missionWeek()?.days ?? []; track day.date) {
+              <button
+                type="button"
+                [attr.data-testid]="'parent-suivis-mission-day-' + day.date"
+                [attr.data-selected]="day.date === missionDay()?.date ? 'true' : 'false'"
+                (click)="pickMission(day)"
+              >
+                <small>{{ missionDate(day.date) }}</small>
+                {{ missionCount(day) }}
+              </button>
+            }
+          </div>
+          @if (missionDay(); as day) {
+            <div class="mission-hero" data-testid="parent-suivis-mission-hero">
+              <p>{{ missionDate(day.date) }}</p>
+              <strong>{{ missionCount(day) }}</strong>
+              @if (missionNamed(day)) {
+                <p>{{ day.statusLabel }} · {{ day.objective }}</p>
+              } @else {
+                <p>Pas de mission</p>
+              }
+            </div>
+            @for (fail of day.failedEssais ?? []; track fail.at) {
+              <p class="mission-fail" [attr.data-testid]="'parent-suivis-mission-fail-' + fail.at">
+                <time>{{ missionTime(fail.at) }}</time> {{ fail.subjectLabel }} · {{ fail.prompt }}
+              </p>
+            }
+          }
+        </section>
+      }
+
       <p class="photo" data-testid="parent-suivis-photo">
         <strong>{{ shown.xpTotal }} XP</strong>
         @if (shown.leagueLabel) {
