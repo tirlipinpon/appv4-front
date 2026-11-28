@@ -8,36 +8,49 @@
   justify-content: space-between;
   align-items: center;
   gap: var(--app-space-2);
+  margin-bottom: 0.75rem;
 }
 
 .heading h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 2rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
 .list {
   list-style: none;
-  margin: 1rem 0 0;
+  margin: 1.5rem 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .child {
   display: flex;
-  gap: 0.75rem;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
   justify-content: space-between;
   background: var(--app-surface-card);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
+  border: 1px solid var(--app-outline);
+  border-radius: 12px;
+  padding: 1.15rem 1.25rem;
+  box-shadow: 0 10px 24px rgb(6 10 18 / 28%);
+}
+
+.child > button {
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .identity {
   display: flex;
   gap: 0.75rem;
-  align-items: center;
+  align-items: flex-start;
   min-width: 0;
 }
 
@@ -88,7 +101,19 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.5rem;
+}
+
+.actions button,
+button.mat-mdc-outlined-button {
+  --mat-button-outlined-label-text-color: var(--app-text);
+  --mat-button-outlined-outline-color: var(--app-primary);
+  --mat-button-filled-label-text-color: #ffffff;
+}
+
+button.mat-mdc-outlined-button {
+  color: var(--app-text);
+  border-color: var(--app-primary);
 }
 
 form.invite {
@@ -102,10 +127,10 @@ form.invite {
   select {
     height: 2.4rem;
     padding: 0 0.75rem;
-    border: 1px solid var(--app-border, #d5dbe3);
+    border: 1px solid var(--app-outline);
     border-radius: 8px;
-    background: var(--app-surface, #fff);
-    color: var(--app-text, inherit);
+    background: var(--app-primary-soft);
+    color: var(--app-text);
     font: inherit;
   }
 
@@ -188,23 +213,96 @@ form.invite {
 }
 
 .portrait {
-  width: 3rem;
-  height: 3rem;
+  width: 4.25rem;
+  height: 4.25rem;
   border-radius: 50%;
   object-fit: cover;
   display: grid;
   place-items: center;
   background: var(--app-primary-soft);
-  font-size: 1.6rem;
+  font-size: 2rem;
+}
+
+@media (max-width: 720px) {
+  .child,
+  .identity {
+    flex-direction: column;
+  }
+
+  form.invite:not(.transfer) {
+    flex-direction: column;
+    align-items: stretch;
+
+    input,
+    select,
+    button {
+      flex: 1 1 auto;
+      width: 100%;
+      max-width: 100%;
+    }
+  }
+}
+
+form.invite.transfer {
+  flex-direction: row;
+  flex-wrap: nowrap;
+
+  select,
+  input {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  button {
+    width: auto;
+    max-width: none;
+  }
 }
 
 .character {
   background: #241c3a;
 }
 
+.modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: var(--app-space-2);
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgb(8 12 20 / 62%);
+  cursor: pointer;
+}
+
 .form {
-  max-width: var(--app-content-form);
-  margin-top: 1.25rem;
+  position: relative;
+  z-index: 1;
+  width: min(100%, 40rem);
+  max-height: min(90dvh, 48rem);
+  margin: 0;
+  overflow: auto;
+  background: var(--app-surface-card);
+  color: var(--app-text);
+  border: 1px solid var(--app-outline);
+  border-radius: 12px;
+
+  .mat-mdc-form-field {
+    --mat-form-field-outlined-label-text-color: #c9d6ea;
+    --mat-form-field-outlined-hover-label-text-color: #f3f6fb;
+    --mat-form-field-outlined-input-text-color: #f3f6fb;
+    --mat-form-field-outlined-outline-color: #9eb6f2;
+    --mat-form-field-outlined-hover-outline-color: #f3f6fb;
+    --mat-form-field-outlined-focus-outline-color: #9eb6f2;
+  }
 }
 
 .full {
@@ -253,7 +351,7 @@ form.invite {
   margin: -0.35rem 0 0.75rem;
   padding: 0.25rem 0;
   background: var(--app-surface-card);
-  border: 1px solid #d0d7e2;
+  border: 1px solid var(--app-outline);
   border-radius: 8px;
   max-height: 12rem;
   overflow: auto;

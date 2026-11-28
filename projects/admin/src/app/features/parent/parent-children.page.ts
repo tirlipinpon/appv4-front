@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  HostListener,
   OnDestroy,
   OnInit,
   computed,
@@ -336,6 +337,13 @@ export class ParentChildrenPage implements OnInit, OnDestroy {
     this.formOpen.set(false);
     this.error.set(null);
     this.resetForm();
+  }
+
+  @HostListener('document:keydown.escape')
+  closeFormOnEscape(): void {
+    if (this.formOpen()) {
+      this.closeForm();
+    }
   }
 
   onLinkTarget(childId: number | null): void {

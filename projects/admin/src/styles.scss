@@ -58,6 +58,38 @@ body {
   width: 100%;
 }
 
+.page:has(app-space-header) {
+  --app-primary: #9eb6f2;
+  --app-on-primary: #0c1424;
+  --app-primary-soft: #243044;
+  --app-surface: #121826;
+  --app-surface-muted: #182232;
+  --app-surface-card: #1c283c;
+  --app-text: #f3f6fb;
+  --app-text-muted: #c9d6ea;
+  --app-outline: #3a4a63;
+  --app-error: #ffb4ab;
+  --app-success: #9ed6a4;
+  color-scheme: dark;
+  background: var(--app-surface);
+  color: var(--app-text);
+  padding-left: 15.5rem;
+  caret-color: var(--app-primary);
+  scrollbar-color: var(--app-outline) transparent;
+}
+
+.page:has(app-space-header)::selection,
+.page:has(app-space-header) ::selection {
+  background: var(--app-primary);
+  color: var(--app-on-primary);
+}
+
+@media (max-width: 800px) {
+  .page:has(app-space-header) {
+    padding-left: 0;
+  }
+}
+
 .error {
   color: var(--app-error);
 }

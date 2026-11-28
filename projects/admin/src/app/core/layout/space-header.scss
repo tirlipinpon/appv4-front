@@ -1,9 +1,5 @@
 .banner {
-  display: flex;
-  flex-direction: column;
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  display: contents;
 }
 
 .spacer {
@@ -20,12 +16,84 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 500;
+  font-weight: 650;
 }
 
 .identity app-role-switch,
 .logout {
   flex: 0 0 auto;
+}
+
+.rail {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 4;
+  width: 15.5rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-2);
+  padding: var(--app-space-3) var(--app-space-2);
+  background: #0e1624;
+  border-right: 1px solid var(--app-outline);
+  overflow: auto;
+  scrollbar-color: var(--app-outline) transparent;
+}
+
+.rail-backdrop {
+  display: none;
+}
+
+.nav-toggle {
+  display: none;
+}
+
+.subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.subnav a {
+  color: var(--app-text);
+  text-decoration: none;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+}
+
+.subnav a:hover,
+.subnav a:focus-visible {
+  background: var(--app-surface-muted);
+}
+
+.subnav a:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
+
+.subnav a.is-current {
+  font-weight: 700;
+  color: var(--app-on-primary);
+  background: var(--app-primary);
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--app-surface);
+  border-bottom: 1px solid var(--app-outline);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 3.5rem;
+  padding: 0.35rem var(--app-space-2);
 }
 
 .spaces:has(app-space-access.is-empty) {
@@ -37,34 +105,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--app-space-1);
-  padding: var(--app-space-1) var(--app-space-2);
-  background: var(--app-surface-card);
-  border-bottom: 1px solid var(--app-outline);
-}
-
-.subnav {
-  display: flex;
-  gap: var(--app-space-1);
-  padding: var(--app-space-1) var(--app-space-2);
-  overflow-x: auto;
-  background: var(--app-surface-muted);
-  border-bottom: 1px solid var(--app-outline);
-}
-
-.subnav a {
-  color: var(--app-text);
-  text-decoration: none;
-  white-space: nowrap;
-  font-size: 0.95rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--app-radius-pill);
-}
-
-.subnav a.is-current {
-  font-weight: 700;
-  color: var(--app-primary);
-  background: var(--app-surface-card);
-  box-shadow: inset 0 -2px 0 var(--app-primary);
+  padding: 0 var(--app-space-2) var(--app-space-1);
 }
 
 .trail {
@@ -72,15 +113,14 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.55rem var(--app-space-2);
-  background: var(--app-surface-card);
-  border-bottom: 1px solid var(--app-outline);
+  padding: 0 var(--app-space-2) 0.65rem;
   font-size: 0.92rem;
 }
 
 .trail a {
   color: var(--app-primary);
   text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .trail .sep {
@@ -89,4 +129,50 @@
 
 .trail span[data-testid^='trail-'] {
   font-weight: 700;
+}
+
+@media (max-width: 800px) {
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    margin: 0.65rem var(--app-space-2) 0;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--app-outline);
+    border-radius: 8px;
+    background: var(--app-surface-card);
+    color: var(--app-text);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .nav-toggle:focus-visible {
+    outline: 2px solid var(--app-primary);
+    outline-offset: 2px;
+  }
+
+  .rail {
+    transform: translateX(-105%);
+    transition: transform 180ms ease-out;
+  }
+
+  .banner.nav-open .rail {
+    transform: none;
+  }
+
+  .banner.nav-open .rail-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    border: 0;
+    padding: 0;
+    background: rgb(8 12 20 / 55%);
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail {
+    transition: none;
+  }
 }
