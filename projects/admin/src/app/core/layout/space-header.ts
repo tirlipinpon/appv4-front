@@ -88,7 +88,10 @@ export class SpaceHeader implements OnInit {
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((event) => this.url.set(event.urlAfterRedirects));
+      .subscribe((event) => {
+        this.url.set(event.urlAfterRedirects);
+        this.navOpen.set(false);
+      });
     this.account
       .load()
       .pipe(takeUntilDestroyed(this.destroyRef))

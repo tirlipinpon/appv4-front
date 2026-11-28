@@ -265,17 +265,27 @@ form.invite.transfer {
   background: #241c3a;
 }
 
-.modal-backdrop {
+.modal-root {
   position: fixed;
   inset: 0;
   z-index: 20;
   display: grid;
   place-items: center;
   padding: var(--app-space-2);
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
   background: rgb(8 12 20 / 62%);
+  cursor: pointer;
 }
 
 .form {
+  position: relative;
+  z-index: 1;
   width: min(100%, 40rem);
   max-height: min(90dvh, 48rem);
   margin: 0;

@@ -235,15 +235,16 @@
       }
 
       @if (formOpen()) {
-        <div class="modal-backdrop" (click)="closeForm()">
-        <mat-card
-          class="form"
-          data-testid="child-form"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="child-form-title"
-          (click)="$event.stopPropagation()"
-        >
+        <div class="modal-root">
+          <button type="button" class="modal-backdrop" aria-label="Fermer" (click)="closeForm()"></button>
+          <mat-card
+            class="form"
+            data-testid="child-form"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="child-form-title"
+            (click)="$event.stopPropagation()"
+          >
           <mat-card-header>
             <mat-card-title id="child-form-title" data-testid="child-form-title">{{ editingId() === null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
           </mat-card-header>

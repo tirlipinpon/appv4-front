@@ -2,7 +2,7 @@
   @if (navOpen()) {
     <button type="button" class="rail-backdrop" aria-label="Fermer le menu" (click)="closeNav()"></button>
   }
-  <aside class="rail" id="space-rail" (click)="closeNav()">
+  <aside class="rail" id="space-rail">
     @if (showSpaceActions() && menu(); as section) {
       <nav class="subnav" data-testid="space-nav" [attr.aria-label]="section.label">
         @for (item of section.items; track item.path) {
