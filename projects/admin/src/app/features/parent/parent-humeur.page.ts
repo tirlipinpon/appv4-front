@@ -8,7 +8,8 @@ import { ParentHumeurService } from './data-access/parent-humeur.service';
 
 /**
  * Page Humeur du parent (ADMIN-70).
- * Un enfant sans réponse montre son nom, sans exemple.
+ * Chaque enfant montre son nom et les humeurs reçues, dans l'ordre de l'API.
+ * Sans réponse, seul le nom apparaît.
  */
 @Component({
   selector: 'app-parent-humeur-page',

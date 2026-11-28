@@ -6,8 +6,8 @@ import type { ParentHumeurChildItem, ParentHumeurListResponse } from '../../../c
 import { environment } from '../../../../environments/environment';
 
 /**
- * Dernière humeur des enfants (ADMIN-70).
- * La page affiche les libellés reçus. Elle ne formate pas l'instant.
+ * Historique des humeurs des enfants (ADMIN-70).
+ * La page affiche les libellés reçus, dans l'ordre de l'API. Elle ne formate pas l'instant.
  */
 @Injectable({ providedIn: 'root' })
 export class ParentHumeurService {
