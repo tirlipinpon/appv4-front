@@ -8,59 +8,6 @@
         <button mat-flat-button color="primary" type="button" data-testid="child-add" (click)="openForm()">Ajouter un enfant</button>
       </header>
 
-      <form class="invite" data-testid="child-share-request" (submit)="$event.preventDefault(); sendShareRequest()">
-        <input data-testid="child-share-email" type="email" [value]="shareEmail()" (input)="onShareEmail($event)" placeholder="Email du parent référent" aria-label="Email du parent référent" />
-        <input data-testid="child-share-first" [value]="shareFirstName()" (input)="onShareFirstName($event)" placeholder="Prénom de l'enfant" aria-label="Prénom de l'enfant" />
-        <input data-testid="child-share-last" [value]="shareLastName()" (input)="onShareLastName($event)" placeholder="Nom de l'enfant" aria-label="Nom de l'enfant" />
-        <button mat-stroked-button type="submit" data-testid="child-share-send">Demander</button>
-        @if (shareNotice(); as notice) {
-          <p data-testid="child-share-sent">{{ notice }}</p>
-        }
-      </form>
-
-      @if (shareRequests().length > 0) {
-        <section class="invites" data-testid="child-share-requests" aria-label="Demandes">
-          @for (request of shareRequests(); track request.id) {
-            <article class="invite" [attr.data-testid]="'child-share-' + request.id">
-              <p data-testid="child-share-request-label">demande pour {{ request.firstName }} {{ request.lastName }}</p>
-              @for (match of request.matches ?? []; track match.childId) {
-                <button mat-flat-button color="primary" type="button" [attr.data-testid]="'child-share-accept-' + match.childId" (click)="acceptShare(request, match)">
-                  Accepter {{ match.firstName }}
-                </button>
-              }
-              <button mat-button type="button" data-testid="child-share-refuse" (click)="refuseShare(request)">Refuser</button>
-            </article>
-          }
-        </section>
-      }
-
-      @if (incomingTransfers().length > 0) {
-        <section class="invites" data-testid="child-transfers" aria-label="Transferts">
-          @for (transfer of incomingTransfers(); track transfer.id) {
-            <article class="invite" [attr.data-testid]="'child-transfer-' + transfer.id">
-              <p data-testid="child-transfer-incoming">{{ transfer.message }}</p>
-              <button mat-flat-button color="primary" type="button" data-testid="child-transfer-accept" (click)="acceptTransfer(transfer)">
-                Accepter
-              </button>
-              <button mat-button type="button" data-testid="child-transfer-refuse" (click)="refuseTransfer(transfer)">Refuser</button>
-            </article>
-          }
-        </section>
-      }
-
-      @if (invitations().length > 0) {
-        <section class="invites" data-testid="child-invitations" aria-label="Invitations">
-          @for (invitation of invitations(); track invitation.id) {
-            <article class="invite" [attr.data-testid]="'child-invitation-' + invitation.id">
-              <p data-testid="child-invitation">{{ invitation.firstName }} {{ invitation.lastName }}</p>
-              <button mat-flat-button color="primary" type="button" data-testid="child-invitation-accept" (click)="acceptInvitation(invitation)">
-                Accepter
-              </button>
-            </article>
-          }
-        </section>
-      }
-
       @if (loading()) {
         <p class="status" role="status">Chargement…</p>
       }
@@ -69,32 +16,6 @@
       }
       @if (!loading() && children().length === 0) {
         <p class="hint" data-testid="child-empty">Aucun enfant pour l'instant.</p>
-      }
-
-      @if (familyLines().length > 0) {
-        <div class="family">
-          @for (line of familyLines(); track line.left.id + '-' + line.right.id) {
-            <div class="family-line">
-              <span class="family-person">
-                @if (line.left.hasPhoto && photos()[line.left.id!]) {
-                  <img class="mini" [src]="photos()[line.left.id!]" [alt]="line.left.firstName" />
-                } @else {
-                  <span class="mini">{{ emoji(line.left.avatarCode) }}</span>
-                }
-                {{ line.left.firstName }}
-              </span>
-              <span class="family-word">{{ line.label }}</span>
-              <span class="family-person">
-                @if (line.right.hasPhoto && photos()[line.right.id!]) {
-                  <img class="mini" [src]="photos()[line.right.id!]" [alt]="line.right.firstName" />
-                } @else {
-                  <span class="mini">{{ emoji(line.right.avatarCode) }}</span>
-                }
-                {{ line.right.firstName }}
-              </span>
-            </div>
-          }
-        </div>
       }
 
       <ul class="list">
@@ -172,14 +93,14 @@
                   </p>
                 } @else {
                   <p class="actions">
-                    <button mat-button type="button" data-testid="child-edit" (click)="edit(child)">Modifier</button>
+                    <button mat-flat-button color="primary" type="button" data-testid="child-edit" (click)="edit(child)">Modifier</button>
                     @if (child.referent === true) {
                       @if (child.active === false) {
-                        <button mat-button type="button" data-testid="child-reactivate" (click)="reactivate(child)">Réactiver</button>
+                        <button mat-flat-button color="primary" type="button" data-testid="child-reactivate" (click)="reactivate(child)">Réactiver</button>
                       } @else {
-                        <button mat-button type="button" data-testid="child-deactivate" (click)="askDeactivate(child)">Désactiver</button>
+                        <button mat-flat-button color="primary" type="button" data-testid="child-deactivate" (click)="askDeactivate(child)">Désactiver</button>
                       }
-                      <button mat-button type="button" data-testid="child-delete" (click)="askRemove(child)">Supprimer</button>
+                      <button mat-flat-button color="warn" type="button" data-testid="child-delete" (click)="askRemove(child)">Supprimer</button>
                     }
                   </p>
                   @if (child.referent === true) {
@@ -198,7 +119,7 @@
                       }
                     </form>
                     @if (holdersFor(child).length > 0) {
-                      <form class="invite" (submit)="$event.preventDefault(); sendTransfer(child)">
+                      <form class="invite transfer" (submit)="$event.preventDefault(); sendTransfer(child)">
                         <select
                           data-testid="child-transfer-holder"
                           [value]="transferHolderValue(child)"
@@ -234,10 +155,97 @@
         }
       </ul>
 
+      @if (familyLines().length > 0) {
+        <div class="family">
+          @for (line of familyLines(); track line.left.id + '-' + line.right.id) {
+            <div class="family-line">
+              <span class="family-person">
+                @if (line.left.hasPhoto && photos()[line.left.id!]) {
+                  <img class="mini" [src]="photos()[line.left.id!]" [alt]="line.left.firstName" />
+                } @else {
+                  <span class="mini">{{ emoji(line.left.avatarCode) }}</span>
+                }
+                {{ line.left.firstName }}
+              </span>
+              <span class="family-word">{{ line.label }}</span>
+              <span class="family-person">
+                @if (line.right.hasPhoto && photos()[line.right.id!]) {
+                  <img class="mini" [src]="photos()[line.right.id!]" [alt]="line.right.firstName" />
+                } @else {
+                  <span class="mini">{{ emoji(line.right.avatarCode) }}</span>
+                }
+                {{ line.right.firstName }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+
+      <form class="invite" data-testid="child-share-request" (submit)="$event.preventDefault(); sendShareRequest()">
+        <input data-testid="child-share-email" type="email" [value]="shareEmail()" (input)="onShareEmail($event)" placeholder="Email du parent référent" aria-label="Email du parent référent" />
+        <input data-testid="child-share-first" [value]="shareFirstName()" (input)="onShareFirstName($event)" placeholder="Prénom de l'enfant" aria-label="Prénom de l'enfant" />
+        <input data-testid="child-share-last" [value]="shareLastName()" (input)="onShareLastName($event)" placeholder="Nom de l'enfant" aria-label="Nom de l'enfant" />
+        <button mat-stroked-button type="submit" data-testid="child-share-send">Demander</button>
+        @if (shareNotice(); as notice) {
+          <p data-testid="child-share-sent">{{ notice }}</p>
+        }
+      </form>
+
+      @if (shareRequests().length > 0) {
+        <section class="invites" data-testid="child-share-requests" aria-label="Demandes">
+          @for (request of shareRequests(); track request.id) {
+            <article class="invite" [attr.data-testid]="'child-share-' + request.id">
+              <p data-testid="child-share-request-label">demande pour {{ request.firstName }} {{ request.lastName }}</p>
+              @for (match of request.matches ?? []; track match.childId) {
+                <button mat-flat-button color="primary" type="button" [attr.data-testid]="'child-share-accept-' + match.childId" (click)="acceptShare(request, match)">
+                  Accepter {{ match.firstName }}
+                </button>
+              }
+              <button mat-button type="button" data-testid="child-share-refuse" (click)="refuseShare(request)">Refuser</button>
+            </article>
+          }
+        </section>
+      }
+
+      @if (incomingTransfers().length > 0) {
+        <section class="invites" data-testid="child-transfers" aria-label="Transferts">
+          @for (transfer of incomingTransfers(); track transfer.id) {
+            <article class="invite" [attr.data-testid]="'child-transfer-' + transfer.id">
+              <p data-testid="child-transfer-incoming">{{ transfer.message }}</p>
+              <button mat-flat-button color="primary" type="button" data-testid="child-transfer-accept" (click)="acceptTransfer(transfer)">
+                Accepter
+              </button>
+              <button mat-button type="button" data-testid="child-transfer-refuse" (click)="refuseTransfer(transfer)">Refuser</button>
+            </article>
+          }
+        </section>
+      }
+
+      @if (invitations().length > 0) {
+        <section class="invites" data-testid="child-invitations" aria-label="Invitations">
+          @for (invitation of invitations(); track invitation.id) {
+            <article class="invite" [attr.data-testid]="'child-invitation-' + invitation.id">
+              <p data-testid="child-invitation">{{ invitation.firstName }} {{ invitation.lastName }}</p>
+              <button mat-flat-button color="primary" type="button" data-testid="child-invitation-accept" (click)="acceptInvitation(invitation)">
+                Accepter
+              </button>
+            </article>
+          }
+        </section>
+      }
+
       @if (formOpen()) {
-        <mat-card class="form" data-testid="child-form">
+        <div class="modal-backdrop" (click)="closeForm()">
+        <mat-card
+          class="form"
+          data-testid="child-form"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="child-form-title"
+          (click)="$event.stopPropagation()"
+        >
           <mat-card-header>
-            <mat-card-title data-testid="child-form-title">{{ editingId() === null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
+            <mat-card-title id="child-form-title" data-testid="child-form-title">{{ editingId() === null ? 'Nouvel enfant' : 'Modifier' }}</mat-card-title>
           </mat-card-header>
           <mat-card-content>
             @if (error()) {
@@ -495,12 +503,13 @@
             </mat-form-field>
           </mat-card-content>
           <mat-card-actions align="end">
-            <button mat-button type="button" data-testid="child-form-close" (click)="closeForm()">Fermer</button>
+            <button mat-stroked-button type="button" data-testid="child-form-close" (click)="closeForm()">Fermer</button>
             <button mat-flat-button color="primary" type="button" data-testid="child-form-save" [disabled]="saving()" (click)="save()">
               {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
           </mat-card-actions>
         </mat-card>
+        </div>
       }
     </section>
   </main>

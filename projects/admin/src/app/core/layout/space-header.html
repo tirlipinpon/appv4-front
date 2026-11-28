@@ -1,51 +1,67 @@
-<div class="banner">
-  <mat-toolbar class="identity" color="primary">
-    @if (avatarFace(); as face) {
-      <span class="face" aria-hidden="true">{{ face }}</span>
+<div class="banner" [class.nav-open]="navOpen()">
+  @if (navOpen()) {
+    <button type="button" class="rail-backdrop" aria-label="Fermer le menu" (click)="closeNav()"></button>
+  }
+  <aside class="rail" id="space-rail" (click)="closeNav()">
+    @if (showSpaceActions() && menu(); as section) {
+      <nav class="subnav" data-testid="space-nav" [attr.aria-label]="section.label">
+        @for (item of section.items; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="is-current"
+            [routerLinkActiveOptions]="{ exact: true }"
+            ariaCurrentWhenActive="page"
+            [attr.data-testid]="item.testId"
+          >
+            {{ item.label }}
+          </a>
+        }
+      </nav>
     }
-    <span class="who" data-testid="account-name">{{ displayName() }}</span>
-    @if (showSpaceActions()) {
-      <app-role-switch />
+    @if (showAdminNav()) {
+      <app-admin-section-nav />
     }
-    <span class="spacer"></span>
-    <button mat-button class="logout" type="button" data-testid="account-logout" (click)="logout()">Déconnexion</button>
-  </mat-toolbar>
-  @if (showSpaceActions()) {
-    <div class="spaces">
+  </aside>
+
+  <div class="top">
+    <button
+      type="button"
+      class="nav-toggle"
+      [attr.aria-expanded]="navOpen()"
+      aria-controls="space-rail"
+      (click)="toggleNav()"
+    >
+      Menu
+    </button>
+    <div class="identity">
+      @if (avatarFace(); as face) {
+        <span class="face" aria-hidden="true">{{ face }}</span>
+      }
+      <span class="who" data-testid="account-name">{{ displayName() }}</span>
+      @if (showSpaceActions()) {
+        <app-role-switch />
+      }
       <span class="spacer"></span>
-      <app-space-access />
+      <button mat-button class="logout" type="button" data-testid="account-logout" (click)="logout()">Déconnexion</button>
     </div>
-  }
-  @if (showSpaceActions() && menu(); as section) {
-    <nav class="subnav" data-testid="space-nav" [attr.aria-label]="section.label">
-      @for (item of section.items; track item.path) {
-        <a
-          [routerLink]="item.path"
-          routerLinkActive="is-current"
-          [routerLinkActiveOptions]="{ exact: true }"
-          ariaCurrentWhenActive="page"
-          [attr.data-testid]="item.testId"
-        >
-          {{ item.label }}
-        </a>
-      }
-    </nav>
-  }
-  @if (showAdminNav()) {
-    <app-admin-section-nav />
-  }
-  @if (trail().length > 0) {
-    <nav class="trail" data-testid="trail" aria-label="Fil d'Ariane">
-      @for (crumb of trail(); track crumb.label; let last = $last) {
-        @if (crumb.path; as path) {
-          <a [routerLink]="path" [attr.data-testid]="'trail-' + crumb.label">{{ crumb.label }}</a>
-        } @else {
-          <span [attr.data-testid]="'trail-' + crumb.label">{{ crumb.label }}</span>
+    @if (showSpaceActions()) {
+      <div class="spaces">
+        <app-space-access />
+      </div>
+    }
+    @if (trail().length > 0) {
+      <nav class="trail" data-testid="trail" aria-label="Fil d'Ariane">
+        @for (crumb of trail(); track crumb.label; let last = $last) {
+          @if (crumb.path; as path) {
+            <a [routerLink]="path" [attr.data-testid]="'trail-' + crumb.label">{{ crumb.label }}</a>
+          } @else {
+            <span [attr.data-testid]="'trail-' + crumb.label">{{ crumb.label }}</span>
+          }
+          @if (!last) {
+            <span class="sep" aria-hidden="true">›</span>
+          }
         }
-        @if (!last) {
-          <span class="sep" aria-hidden="true">›</span>
-        }
-      }
-    </nav>
-  }
+      </nav>
+    }
+  </div>
 </div>

@@ -12,7 +12,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { knownAvatarEmoji } from '../../shared/avatars/account-avatars';
 import { AuthService } from '../auth/auth.service';
@@ -24,16 +23,15 @@ import { AdminSectionNav } from './admin-section-nav/admin-section-nav';
 import { PARENT_MENU, SpaceMenuEntry, SpaceTrailNames, TEACHER_MENU, spaceTrail } from './space-trail';
 
 /**
- * Bandeau des pages déjà connectées (SCRUM-166).
- * Le nom, puis les onglets Parent et Professeur, puis la déconnexion.
- * Un espace encore fermé (demande professeur, ouvrir parent) reste sur la ligne d'en dessous.
- * Ensuite viennent les pages de l'espace. Un compte admin y voit aussi Demandes professeur, Humeurs et IA, y compris sur ces pages.
+ * Coque des pages déjà connectées (SCRUM-166).
+ * À gauche, les pages de l'espace. En haut, le nom du compte, les onglets Parent et Professeur, puis la déconnexion.
+ * Un espace encore fermé (demande professeur, ouvrir parent) reste dans la barre du haut.
+ * Un compte admin y voit aussi Demandes professeur, Humeurs et IA, y compris sur ces pages.
  * Le fil reprend le catalogue du menu. Il ne remplace aucune rangée.
- * Le titre du bandeau est le nom du compte, parent ou professeur.
  */
 @Component({
   selector: 'app-space-header',
-  imports: [MatToolbarModule, MatButtonModule, RouterLink, RouterLinkActive, RoleSwitch, SpaceAccess, AdminSectionNav],
+  imports: [MatButtonModule, RouterLink, RouterLinkActive, RoleSwitch, SpaceAccess, AdminSectionNav],
   templateUrl: './space-header.html',
   styleUrl: './space-header.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -71,6 +69,17 @@ export class SpaceHeader implements OnInit {
   readonly trail = computed(() =>
     spaceTrail(this.url(), this.trailNames.studentName(), this.trailNames.subjectName()),
   );
+
+  /** Menu latéral ouvert sur un écran étroit. Sur un grand écran il reste visible. */
+  readonly navOpen = signal(false);
+
+  toggleNav(): void {
+    this.navOpen.update((open) => !open);
+  }
+
+  closeNav(): void {
+    this.navOpen.set(false);
+  }
 
   ngOnInit(): void {
     this.url.set(this.router.url);
