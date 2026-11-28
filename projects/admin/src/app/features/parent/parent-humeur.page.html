@@ -11,22 +11,30 @@
       <p class="error" role="alert">{{ error() }}</p>
     }
 
-    <ul>
+    <ul class="children">
       @for (child of children(); track child.id) {
         <li [attr.data-testid]="'parent-humeur-' + child.id">
           <strong>{{ child.firstName }} {{ child.lastName }}</strong>
-          @if (child.humeur; as humeur) {
-            @if (humeur.icon) {
-              <span data-testid="parent-humeur-icon">{{ humeur.icon }}</span>
+          @if (child.humeurs; as humeurs) {
+            @if (humeurs.length > 0) {
+              <ul class="humeurs">
+                @for (humeur of humeurs; track $index) {
+                  <li>
+                    @if (humeur.icon) {
+                      <span data-testid="parent-humeur-icon">{{ humeur.icon }}</span>
+                    }
+                    @if (humeur.word) {
+                      <span data-testid="parent-humeur-word">{{ humeur.word }}</span>
+                    }
+                    @if (humeur.label) {
+                      <span data-testid="parent-humeur-label">{{ humeur.label }}</span>
+                    }
+                    <span data-testid="parent-humeur-date">{{ humeur.dateLabel }}</span>
+                    <span data-testid="parent-humeur-time">{{ humeur.timeLabel }}</span>
+                  </li>
+                }
+              </ul>
             }
-            @if (humeur.word) {
-              <span data-testid="parent-humeur-word">{{ humeur.word }}</span>
-            }
-            @if (humeur.label) {
-              <span data-testid="parent-humeur-label">{{ humeur.label }}</span>
-            }
-            <span data-testid="parent-humeur-date">{{ humeur.dateLabel }}</span>
-            <span data-testid="parent-humeur-time">{{ humeur.timeLabel }}</span>
           }
         </li>
       }

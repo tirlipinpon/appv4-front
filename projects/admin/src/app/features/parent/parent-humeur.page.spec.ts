@@ -34,9 +34,9 @@ describe('ParentHumeurPage', () => {
         id: 2,
         firstName: 'Akira',
         lastName: 'Iris',
-        humeur: { icon: '🙂', word: 'joie', dateLabel: '22 novembre 2026', timeLabel: '09:51' },
+        humeurs: [{ icon: '🙂', word: 'joie', dateLabel: '22 novembre 2026', timeLabel: '09:51' }],
       },
-      { id: 5, firstName: 'Nao', lastName: 'Iris' },
+      { id: 5, firstName: 'Nao', lastName: 'Iris', humeurs: [] },
     ]);
 
     const first: HTMLElement = fixture.nativeElement.querySelector('[data-testid="parent-humeur-2"]');
@@ -49,7 +49,7 @@ describe('ParentHumeurPage', () => {
     expect(second.textContent).toContain('Nao');
     expect(second.querySelector('[data-testid="parent-humeur-icon"]')).toBeNull();
     expect(second.querySelector('[data-testid="parent-humeur-label"]')).toBeNull();
-    const rows = [...fixture.nativeElement.querySelectorAll('li')].map((item: HTMLElement) =>
+    const rows = [...fixture.nativeElement.querySelectorAll('.children > li')].map((item: HTMLElement) =>
       item.getAttribute('data-testid'),
     );
     expect(rows).toEqual(['parent-humeur-2', 'parent-humeur-5']);
@@ -61,7 +61,7 @@ describe('ParentHumeurPage', () => {
         id: 2,
         firstName: 'Akira',
         lastName: 'Iris',
-        humeur: { label: 'Fermée sans réponse', dateLabel: '22 novembre 2026', timeLabel: '09:51' },
+        humeurs: [{ label: 'Fermée sans réponse', dateLabel: '22 novembre 2026', timeLabel: '09:51' }],
       },
     ]);
 
@@ -69,6 +69,29 @@ describe('ParentHumeurPage', () => {
     expect(row.textContent).toContain('Fermée sans réponse');
     expect(row.querySelector('[data-testid="parent-humeur-icon"]')).toBeNull();
     expect(row.querySelector('[data-testid="parent-humeur-word"]')).toBeNull();
+  });
+
+  it('garde l’ordre reçu, de la plus récente à la plus ancienne', () => {
+    flush([
+      {
+        id: 2,
+        firstName: 'Akira',
+        lastName: 'Iris',
+        humeurs: [
+          { icon: '🙂', word: 'joie', dateLabel: '22 novembre 2026', timeLabel: '09:51' },
+          { label: 'Fermée sans réponse', dateLabel: '22 novembre 2026', timeLabel: '08:51' },
+        ],
+      },
+    ]);
+
+    const lines = [
+      ...fixture.nativeElement.querySelectorAll('[data-testid="parent-humeur-2"] .humeurs > li'),
+    ].map((item: HTMLElement) => item.textContent ?? '');
+    expect(lines[0]).toContain('joie');
+    expect(lines[0]).toContain('09:51');
+    expect(lines[1]).toContain('Fermée sans réponse');
+    expect(lines[1]).toContain('08:51');
+    expect(lines[1]).not.toContain('🙂');
   });
 
   function flush(children: unknown[]): void {

@@ -1425,7 +1425,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Lire la dernière humeur de chaque enfant */
+        /** Lire les humeurs de chaque enfant */
         get: operations["listParentHumeurs"];
         put?: never;
         post?: never;
@@ -3226,7 +3226,7 @@ export interface components {
             id?: number;
             firstName?: string;
             lastName?: string;
-            humeur?: components["schemas"]["ParentHumeurItem"];
+            humeurs?: components["schemas"]["ParentHumeurItem"][];
         };
         ParentHumeurItem: {
             icon?: string;
@@ -3465,6 +3465,16 @@ export interface components {
             playQuestionId?: number;
             playable?: boolean;
             tasks?: components["schemas"]["ChildTodayTask"][];
+            /**
+             * Format: int32
+             * @description XP en plus si la mission est, ou reste, sans faute.
+             */
+            sansFauteBonusXp?: number;
+            /**
+             * Format: int32
+             * @description XP en plus de la prochaine mission si celle-ci finit sans faute.
+             */
+            nextSansFauteBonusXp?: number;
         };
         ChildTodayResponse: {
             mission?: components["schemas"]["ChildTodayMission"];
@@ -3497,6 +3507,16 @@ export interface components {
             iconCode?: string;
             /** @description Teinte #rrggbb de l'icône, ou null. */
             accentColor?: string;
+            /**
+             * Format: int64
+             * @description Questions de la matière déjà en étoile jaune.
+             */
+            yellowQuestionCount?: number;
+            /**
+             * Format: int64
+             * @description Questions de la matière qui ne sont pas en étoile jaune.
+             */
+            notYellowQuestionCount?: number;
         };
         ChildLearningSubjectsResponse: {
             subjects?: components["schemas"]["ChildLearningSubjectItem"][];
@@ -3671,6 +3691,8 @@ export interface components {
             currentStreak?: number;
             leagueLabel?: string;
             weekDays?: boolean[];
+            /** @description Étoiles jaunes du lundi au dimanche. Null pour un jour encore à venir. */
+            weekYellowCounts?: number[];
         };
         ChildProfileResponse: {
             /** Format: int64 */
@@ -7840,7 +7862,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Enfants du parent, avec ou sans humeur */
+            /** @description Enfants du parent, avec leur historique d'humeurs */
             200: {
                 headers: {
                     [name: string]: unknown;
